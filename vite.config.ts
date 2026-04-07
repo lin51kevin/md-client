@@ -9,6 +9,38 @@ const host = process.env.TAURI_DEV_HOST;
 export default defineConfig(async () => ({
   plugins: [react(), tailwindcss()],
 
+  build: {
+    chunkSizeWarningLimit: 700,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          codemirror: [
+            "@codemirror/state",
+            "@codemirror/view",
+            "@codemirror/language",
+            "@codemirror/lang-markdown",
+            "@codemirror/language-data",
+            "@codemirror/autocomplete",
+            "@codemirror/search",
+            "@codemirror/lint",
+            "@codemirror/theme-one-dark",
+            "@uiw/react-codemirror",
+            "codemirror",
+          ],
+          markdown: [
+            "react-markdown",
+            "remark-gfm",
+            "remark-directive",
+            "remark-directive-rehype",
+            "rehype-raw",
+            "rehype-highlight",
+          ],
+          highlight: ["highlight.js"],
+        },
+      },
+    },
+  },
+
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
   // 1. prevent Vite from obscuring rust errors
