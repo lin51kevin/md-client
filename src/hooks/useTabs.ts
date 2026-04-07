@@ -93,6 +93,24 @@ export function useTabs() {
     });
   };
 
+  const openFileWithContent = useCallback((filePath: string, content: string) => {
+    const existing = tabsRef.current.find(t => t.filePath === filePath);
+    if (existing) {
+      setActiveTabId(existing.id);
+      return;
+    }
+    // If the only tab is an untouched Untitled, replace it instead of adding alongside
+    const current = tabsRef.current;
+    if (current.length === 1 && !current[0].filePath && !current[0].isDirty) {
+      setTabs([{ id: current[0].id, filePath, doc: content, isDirty: false }]);
+      setActiveTabId(current[0].id);
+    } else {
+      const newTab: Tab = { id: genTabId(), filePath, doc: content, isDirty: false };
+      setTabs(prev => [...prev, newTab]);
+      setActiveTabId(newTab.id);
+    }
+  }, []);
+
   const markSaved = (id: string) => {
     setTabs(prev => prev.map(t => t.id === id ? { ...t, isDirty: false } : t));
   };
@@ -103,7 +121,7 @@ export function useTabs() {
 
   return {
     tabs, activeTabId, setActiveTabId, activeTabIdRef,
-    getActiveTab, getTabTitle, updateActiveDoc, openFileInTab,
+    getActiveTab, getTabTitle, updateActiveDoc, openFileInTab, openFileWithContent,
     createNewTab, closeTab, reorderTabs, markSaved, markSavedAs,
   };
 }

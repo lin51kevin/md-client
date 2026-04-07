@@ -1,10 +1,11 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import CodeMirror, { type EditorState, type ViewUpdate } from '@uiw/react-codemirror';
 import { type EditorView } from '@codemirror/view';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { languages } from '@codemirror/language-data';
 import { foldGutter } from '@codemirror/language';
 import Split from 'react-split';
+import { invoke } from '@tauri-apps/api/core';
 import './App.css';
 
 import { ViewMode } from './types';
@@ -34,7 +35,7 @@ export default function App() {
   const {
     tabs, activeTabId, setActiveTabId, activeTabIdRef,
     getActiveTab, getTabTitle, updateActiveDoc,
-    openFileInTab, createNewTab, closeTab, reorderTabs,
+    openFileInTab, openFileWithContent, createNewTab, closeTab, reorderTabs,
     markSaved, markSavedAs,
   } = useTabs();
 
@@ -46,6 +47,15 @@ export default function App() {
   const { cursorPos, cursorExtension } = useCursorPosition();
 
   useDragDrop({ isTauri, setIsDragOver, openFileInTab });
+
+  // Open file passed via CLI argument (e.g. double-clicked from file explorer)
+  useEffect(() => {
+    if (!isTauri) return;
+    invoke<{ path: string; content: string } | null>('get_open_file').then((result) => {
+      if (result) openFileWithContent(result.path, result.content);
+    }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const activeTab = getActiveTab();
   useWindowTitle(activeTab, isTauri);
