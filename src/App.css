@@ -7,6 +7,14 @@ body {
   overflow: hidden;
 }
 
+/* Hide scrollbar on tab bar */
+.tabbar-scroll {
+  scrollbar-width: none;
+}
+.tabbar-scroll::-webkit-scrollbar {
+  display: none;
+}
+
 /* React Split Pane Styles */
 .gutter {
   background-color: #f1f5f9;

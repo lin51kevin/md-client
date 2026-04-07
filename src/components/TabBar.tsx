@@ -1,5 +1,5 @@
-import { useRef, useState, useEffect } from 'react';
-import { X, Plus } from 'lucide-react';
+import { useRef, useState, useEffect, useCallback } from 'react';
+import { X, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Tab } from '../types';
 
 interface TabBarProps {
@@ -15,7 +15,36 @@ interface TabBarProps {
 
 export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorder, onContextMenu, getTabTitle }: TabBarProps) {
   const [dragOverTabId, setDragOverTabId] = useState<string | null>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
   const tabDragRef = useRef<{ fromId: string; startX: number; overId: string | null } | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const updateScrollButtons = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 0);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    updateScrollButtons();
+    el.addEventListener('scroll', updateScrollButtons);
+    const ro = new ResizeObserver(updateScrollButtons);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener('scroll', updateScrollButtons);
+      ro.disconnect();
+    };
+  }, [tabs, updateScrollButtons]);
+
+  const scroll = (dir: 'left' | 'right') => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir === 'left' ? -120 : 120, behavior: 'smooth' });
+  };
 
   const handlePointerDown = (e: React.PointerEvent, id: string) => {
     if (e.button !== 0) return;
@@ -53,43 +82,65 @@ export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorde
   }, [onReorder]);
 
   return (
-    <div
-      className="shrink-0 flex items-end bg-slate-200 border-b border-slate-400 overflow-x-auto"
-      style={{ minHeight: 30 }}
-    >
-      {tabs.map(tab => (
-        <div
-          key={tab.id}
-          data-tab-id={tab.id}
-          onPointerDown={(e) => handlePointerDown(e, tab.id)}
-          onContextMenu={(e) => { e.preventDefault(); onActivate(tab.id); onContextMenu(e.clientX, e.clientY, tab.id); }}
-          className={
-            'group relative flex items-center gap-1 pl-3 pr-1.5 py-1 text-xs border-r border-slate-400 cursor-grab whitespace-nowrap select-none ' +
-            (tab.id === activeTabId
-              ? 'bg-white text-slate-800 -mb-px border-t border-t-blue-500 '
-              : 'bg-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-700 ') +
-            (tab.id === dragOverTabId ? 'border-l-2 border-l-blue-500' : '')
-          }
-        >
-          <span className="max-w-45 truncate" title={tab.filePath ?? 'Untitled.md'}>
-            {getTabTitle(tab)}
-          </span>
-          <button
-            onClick={(e) => { e.stopPropagation(); onClose(tab.id); }}
-            className="ml-1 flex items-center justify-center w-4 h-4 rounded opacity-0 group-hover:opacity-100 hover:bg-slate-300 text-slate-400 hover:text-slate-700 transition-opacity"
-            title="关闭"
+    <div className="shrink-0 flex items-stretch bg-slate-200 border-b border-slate-400" style={{ minHeight: 30 }}>
+      <div
+        ref={scrollRef}
+        className="flex items-end flex-1 overflow-x-auto tabbar-scroll min-w-0"
+      >
+        {tabs.map(tab => (
+          <div
+            key={tab.id}
+            data-tab-id={tab.id}
+            onPointerDown={(e) => handlePointerDown(e, tab.id)}
+            onContextMenu={(e) => { e.preventDefault(); onActivate(tab.id); onContextMenu(e.clientX, e.clientY, tab.id); }}
+            className={
+              'group relative flex items-center gap-1 pl-3 pr-1.5 py-1 text-xs border-r border-slate-400 cursor-grab whitespace-nowrap select-none ' +
+              (tab.id === activeTabId
+                ? 'bg-white text-slate-800 -mb-px border-t-3 border-t-blue-500 '
+                : 'bg-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-700 ') +
+              (tab.id === dragOverTabId ? 'border-l-2 border-l-blue-500' : '')
+            }
           >
-            <X size={11} />
+            <span className="max-w-45 truncate" title={tab.filePath ?? 'Untitled.md'}>
+              {getTabTitle(tab)}
+            </span>
+            <button
+              onClick={(e) => { e.stopPropagation(); onClose(tab.id); }}
+              className="ml-1 flex items-center justify-center w-4 h-4 rounded opacity-0 group-hover:opacity-100 hover:bg-slate-300 text-slate-400 hover:text-slate-700 transition-opacity"
+              title="关闭"
+            >
+              <X size={11} />
+            </button>
+          </div>
+        ))}
+        <button
+          onClick={onNew}
+          title="新建标签页"
+          className="flex self-end items-center justify-center w-6 h-6 text-slate-500 hover:text-slate-700 hover:bg-slate-100 shrink-0 ml-0.5"
+        >
+          <Plus size={14} />
+        </button>
+      </div>
+      {(canScrollLeft || canScrollRight) && (
+        <div className="flex items-center shrink-0 border-l border-slate-400">
+          <button
+            onClick={() => scroll('left')}
+            disabled={!canScrollLeft}
+            className="flex self-end items-center justify-center w-6 h-6 text-slate-500 hover:text-slate-700 hover:bg-slate-300 disabled:opacity-30 disabled:cursor-default disabled:hover:bg-transparent"
+            title="向左滚动"
+          >
+            <ChevronLeft size={14} />
+          </button>
+          <button
+            onClick={() => scroll('right')}
+            disabled={!canScrollRight}
+            className="flex self-end items-center justify-center w-6 h-6 text-slate-500 hover:text-slate-700 hover:bg-slate-300 disabled:opacity-30 disabled:cursor-default disabled:hover:bg-transparent border-l border-slate-400"
+            title="向右滚动"
+          >
+            <ChevronRight size={14} />
           </button>
         </div>
-      ))}
-      <button
-        onClick={onNew}
-        title="新建标签页"
-        className="flex items-center justify-center w-7 h-7 text-slate-500 hover:text-slate-700 hover:bg-slate-100 shrink-0 self-center ml-0.5"
-      >
-        <Plus size={14} />
-      </button>
+      )}
     </div>
   );
 }
