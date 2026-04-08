@@ -19,6 +19,7 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useCursorPosition } from './hooks/useCursorPosition';
 import { autoCloseBrackets } from './lib/cmAutocomplete';
 import { vimKeymap } from './lib/cmVim';
+import { createAutoSave } from './lib/auto-save';
 
 import { Toolbar } from './components/Toolbar';
 import { TabBar } from './components/TabBar';
@@ -90,6 +91,26 @@ export default function App() {
   useEffect(() => {
     vimKeymap().then(setVimExtension).catch(console.error);
   }, []);
+
+  // Auto-save: debounce 1s after editing stops
+  const autoSaveRef = useRef<ReturnType<typeof createAutoSave> | null>(null);
+  useEffect(() => {
+    autoSaveRef.current = createAutoSave({
+      delay: 1000,
+      onSave: async () => {
+        const tab = getActiveTab();
+        if (tab.filePath) {
+          await handleSaveFile(activeTabId);
+        }
+      },
+    });
+    return () => { autoSaveRef.current?.dispose(); };
+  }, [activeTabId]); // 每次切换 tab 创建新的 auto-save
+
+  // Trigger auto-save on content change
+  useEffect(() => {
+    autoSaveRef.current?.schedule(activeTab.doc);
+  }, [activeTab.doc, activeTabId]);
 
   const editorExtensions = [
     markdown({ base: markdownLanguage, codeLanguages: languages }),
