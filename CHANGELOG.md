@@ -3,60 +3,59 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
-and this project adheres to [Semantic Versioning](https://semver.org/).
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.1] - 2026-04-08
 
-### Added
+## [v0.1.1] - 2026-04-08
 
-- **PDF Export**: Full-featured PDF generation with proper typography
-  - Support for all markdown elements (headings, tables, code blocks, lists, blockquotes)
-  - Configurable heading spacing with visual hierarchy
-  - H2 headings with underline decoration
-  - Emoji rendering support
-  - Syntax-highlighted code blocks with frames
-  - GFM table support with borders
-- **DOCX Export**: Complete Word document generation
-  - Full markdown element support including tables and code blocks
-  - Professional styling and formatting
-  - Striped table rows for better readability
-  - Code block highlighting with backgrounds
-  - Proper list formatting with multiple levels
-- Export buttons in toolbar UI
-- Empty document validation before export
-- User-friendly error messages in Chinese
-
-### Changed
-
-- Refactored export code into modular structure (lib.rs reduced from 1132 to 58 lines)
-- Optimized PDF spacing to account for element stacking (50% reduction in margins)
-- Improved paragraph and heading spacing for better readability
 
 ### Fixed
 
-- Security: Use process ID for unique temp file names (prevents race conditions and symlink attacks)
-- Consolidated duplicate list-prefix logic across PDF and DOCX exporters
-- Fixed heading spacing in PDF to match DOCX visual style
+- 修复DOCX导出时表格表头丢失的问题 (`71aff60`)
+- 修复PDF导出时表格丢失的问题 (`21cc48b`)
 
-### Technical
 
-- Dependencies added: `pulldown-cmark` (0.12), `docx-rs` (0.4), `genpdf` (0.2), `emojis` (0.8)
-- Binary size: 11MB → 14MB (+27%, includes image processing and font rendering libraries)
-- New modules: `export_pdf.rs`, `export_docx.rs`, `markdown_preprocess.rs`
 
-## [0.1.0] - 2026-04-07
+### Changed
+
+- bump version to 0.1.1 (`c5e70a8`)
+
+
 
 ### Added
 
-- Multi-tab Markdown editing with CodeMirror 6
-- Live split-view preview with react-markdown
-- GFM support (tables, task lists, strikethrough)
-- Syntax-highlighted code blocks via highlight.js
-- File open/save/save-as via Tauri dialog
-- Drag-and-drop file opening
-- Synchronized scroll between editor and preview
-- Keyboard shortcuts (Ctrl+S, Ctrl+O, Ctrl+W, Ctrl+N)
-- Tab context menu (close, close others, close all)
-- Cursor position display in status bar
-- One Dark editor theme
-- Collapsible details blocks via remark-directive
+- add PDF and DOCX export functionality (`bebbf35`)
+- open file passed via CLI argument on app launch (`bb5bfca`)
+- add tab scroll arrows and hide scrollbar on tab bar (`2a1c7cf`)
+
+
+
+
+
+
+
+## [v0.1.0] - 2026-04-07
+
+
+### Fixed
+
+- add fs write permission for save/save-as functionality (`03dd02d`)
+
+
+
+### Performance
+
+- split vendor chunks and suppress chunk size warning (`48092d1`)
+
+
+
+### Added
+
+- initial release of md-client v0.1.0 (`474ad7c`)
+
+
+
+
+
+
+

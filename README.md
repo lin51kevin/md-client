@@ -51,6 +51,29 @@ yarn tauri dev
 yarn tauri build
 ```
 
+## Changelog
+
+This project uses [git-chglog](https://github.com/git-chglog/git-chglog) to generate changelogs from git commit history.
+
+```bash
+# Generate full CHANGELOG.md (all versions)
+yarn changelog
+
+# Preview latest version only
+yarn changelog:latest
+
+# Manual usage (requires git-chglog installed)
+git-chglog                    # Preview all
+git-chglog -o CHANGELOG.md    # Write to file
+git-chglog v0.1.0..           # Changes since v0.1.0
+```
+
+**Note**: Commits should follow [Conventional Commits](https://www.conventionalcommits.org/) format:
+- `feat:` → Added
+- `fix:` → Fixed
+- `perf:` → Performance
+- `refactor:` / `chore:` → Changed
+
 ## Project Structure
 
 ```
