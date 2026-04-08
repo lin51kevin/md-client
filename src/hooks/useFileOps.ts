@@ -1,5 +1,6 @@
-import { open, save } from '@tauri-apps/plugin-dialog';
+import { open, save, message } from '@tauri-apps/plugin-dialog';
 import { writeTextFile } from '@tauri-apps/plugin-fs';
+import { invoke } from '@tauri-apps/api/core';
 import { Tab } from '../types';
 
 interface FileOpsParams {
@@ -57,5 +58,31 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
     }
   };
 
-  return { handleOpenFile, handleSaveFile, handleSaveAsFile };
+  const handleExport = async (format: 'docx' | 'pdf') => {
+    const tab = getActiveTab();
+    if (!tab) return;
+    
+    if (!tab.doc.trim()) {
+      await message('文档内容为空，无法导出。', { title: '提示', kind: 'warning' });
+      return;
+    }
+
+    const filterName = format === 'docx' ? 'Word Document' : 'PDF Document';
+    try {
+      const savePath = await save({
+        filters: [{ name: filterName, extensions: [format] }],
+      });
+      if (savePath) {
+        await invoke('export_document', { markdown: tab.doc, outputPath: savePath, format });
+      }
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      await message(errMsg, { title: `导出 ${format.toUpperCase()} 失败`, kind: 'error' });
+    }
+  };
+
+  const handleExportDocx = () => handleExport('docx');
+  const handleExportPdf = () => handleExport('pdf');
+
+  return { handleOpenFile, handleSaveFile, handleSaveAsFile, handleExportDocx, handleExportPdf };
 }

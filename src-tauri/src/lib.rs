@@ -1,4 +1,12 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
+
+mod markdown_preprocess;
+mod export_pdf;
+mod export_docx;
+
+use export_pdf::export_pdf;
+use export_docx::export_docx;
+
 #[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
@@ -27,13 +35,24 @@ fn get_open_file() -> Option<OpenFileResult> {
     }
 }
 
+#[tauri::command]
+async fn export_document(markdown: String, output_path: String, format: String) -> Result<(), String> {
+    match format.as_str() {
+        "pdf" => export_pdf(&markdown, &output_path),
+        "docx" => export_docx(&markdown, &output_path),
+        _ => Err(format!("不支持的格式: {format}。请使用 'pdf' 或 'docx'。")),
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet, get_open_file])
+        .invoke_handler(tauri::generate_handler![greet, get_open_file, export_document])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
+
+

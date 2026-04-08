@@ -39,7 +39,7 @@ export default function App() {
     markSaved, markSavedAs,
   } = useTabs();
 
-  const { handleOpenFile, handleSaveFile, handleSaveAsFile } = useFileOps({
+  const { handleOpenFile, handleSaveFile, handleSaveAsFile, handleExportDocx, handleExportPdf } = useFileOps({
     getActiveTab, tabs, openFileInTab, markSaved, markSavedAs,
   });
 
@@ -111,6 +111,8 @@ export default function App() {
         onOpenFile={handleOpenFile}
         onSaveFile={() => handleSaveFile()}
         onSaveAsFile={() => handleSaveAsFile()}
+        onExportDocx={handleExportDocx}
+        onExportPdf={handleExportPdf}
         onSetViewMode={setViewMode}
       />
 

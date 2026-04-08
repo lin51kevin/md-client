@@ -1,4 +1,4 @@
-import { FolderOpen, Save, SaveAll, FilePlus, PanelLeftClose, PanelRightClose, Columns2 } from 'lucide-react';
+import { FolderOpen, Save, SaveAll, FilePlus, PanelLeftClose, PanelRightClose, Columns2, FileOutput } from 'lucide-react';
 import { ViewMode } from '../types';
 
 interface ToolbarProps {
@@ -7,10 +7,12 @@ interface ToolbarProps {
   onOpenFile: () => void;
   onSaveFile: () => void;
   onSaveAsFile: () => void;
+  onExportDocx: () => void;
+  onExportPdf: () => void;
   onSetViewMode: (mode: ViewMode) => void;
 }
 
-export function Toolbar({ viewMode, onNewTab, onOpenFile, onSaveFile, onSaveAsFile, onSetViewMode }: ToolbarProps) {
+export function Toolbar({ viewMode, onNewTab, onOpenFile, onSaveFile, onSaveAsFile, onExportDocx, onExportPdf, onSetViewMode }: ToolbarProps) {
   const btnCls = 'flex items-center gap-1.5 px-2.5 py-1 text-xs text-slate-700 hover:bg-white hover:border-slate-300 hover:shadow-sm border border-transparent rounded transition-all';
   const viewBtnCls = (active: boolean) =>
     'flex items-center gap-1.5 px-2.5 py-1 text-xs rounded border transition-all ' +
@@ -32,6 +34,13 @@ export function Toolbar({ viewMode, onNewTab, onOpenFile, onSaveFile, onSaveAsFi
         </button>
         <button onClick={onSaveAsFile} title="另存为… (Ctrl+Shift+S)" className={btnCls}>
           <SaveAll size={15} strokeWidth={1.8} /><span>另存为</span>
+        </button>
+        <div className="w-px h-5 bg-slate-300 mx-1" />
+        <button onClick={onExportDocx} title="导出为 Word 文档" className={btnCls}>
+          <FileOutput size={15} strokeWidth={1.8} /><span>导出DOCX</span>
+        </button>
+        <button onClick={onExportPdf} title="导出为 PDF" className={btnCls}>
+          <FileOutput size={15} strokeWidth={1.8} /><span>导出PDF</span>
         </button>
       </div>
       <div className="flex items-center gap-0.5">
