@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import type { Extension } from '@codemirror/state';
 import CodeMirror, { type EditorState, type ViewUpdate } from '@uiw/react-codemirror';
 import { type EditorView } from '@codemirror/view';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
@@ -17,6 +18,7 @@ import { useWindowTitle } from './hooks/useWindowTitle';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useCursorPosition } from './hooks/useCursorPosition';
 import { autoCloseBrackets } from './lib/cmAutocomplete';
+import { vimKeymap } from './lib/cmVim';
 
 import { Toolbar } from './components/Toolbar';
 import { TabBar } from './components/TabBar';
@@ -83,11 +85,18 @@ export default function App() {
     savedStatesRef.current.set(activeTabId, viewUpdate.state);
   }, [activeTabId]);
 
+  // Vim extension is loaded asynchronously
+  const [vimExtension, setVimExtension] = useState<Extension | null>(null);
+  useEffect(() => {
+    vimKeymap().then(setVimExtension).catch(console.error);
+  }, []);
+
   const editorExtensions = [
     markdown({ base: markdownLanguage, codeLanguages: languages }),
     foldGutter(),
     cursorExtension,
     autoCloseBrackets(),
+    ...(vimExtension ? [vimExtension] : []),
   ];
   const editorSetup = { lineNumbers: true, foldGutter: true, highlightActiveLine: true, tabSize: 2 };
 

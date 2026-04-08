@@ -13,9 +13,9 @@
   - 状态：✅ 完成
   - Checkpoint：见下方日志
   
-- [ ] **F002** — 全局搜索替换（Ctrl+F / Ctrl+H）
-  - 状态：⏳ 待开始
-  - Checkpoint：—
+- [x] **F002** — 全局搜索替换（Ctrl+F / Ctrl+H）
+  - 状态：✅ 完成
+  - Checkpoint：见下方日志
 
 - [ ] **F003** — Vim 键位绑定
   - 状态：⏳ 待开始
@@ -46,7 +46,32 @@
 
 ## Checkpoint 日志
 
-### F001 — 自动补全 — ✅ — 2026-04-08 22:59
+### F002 — 搜索替换 — ✅ — 2026-04-08 23:06
+- **测试结果**：17/17 全部通过 ✅
+  - 基本搜索：4 tests ✅
+  - 大小写敏感：2 tests ✅
+  - 正则搜索：2 tests ✅
+  - 特殊字符转义：2 tests ✅
+  - 全部替换：3 tests ✅
+  - 正则替换：1 test ✅
+  - 单次替换：3 tests ✅
+- **审核结论**：✅ 通过
+  - 核心算法纯函数，100% 可单元测试
+  - 正则特殊字符自动转义（非正则模式）防止误匹配
+  - 安全上限 10000 防止零宽匹配无限循环
+  - UI 组件完整：查找/替换/全部替换/Aa/.*/上下导航
+  - TS 编译零错误
+  - * 注意：搜索高亮（editor 内标记匹配文字背景色）未实现，后续可加 decoration
+- **新增/修改文件**：
+  - `src/lib/search.ts` — 搜索替换核心逻辑
+  - `src/lib/search.test.ts` — 17 个测试用例
+  - `src/components/FindReplaceBar.tsx` — 搜索替换 UI 组件
+  - `src/App.tsx` — 集成 FindReplaceBar + Ctrl+F/H 快捷键
+  - `src/hooks/useKeyboardShortcuts.ts` — 新增 Ctrl+F/H
+- **Commit hash**：`d3e9dc7`
+- **备注**：TDD Green 一次通过，代码质量好
+
+---
 - **测试结果**：18/18 全部通过 ✅
   - 方括号：3 tests ✅
   - 圆括号：2 tests ✅
