@@ -1,6 +1,7 @@
 import { open, save, message } from '@tauri-apps/plugin-dialog';
 import { writeTextFile } from '@tauri-apps/plugin-fs';
 import { invoke } from '@tauri-apps/api/core';
+import { generateHtmlDocument } from '../lib/html-export';
 import { Tab } from '../types';
 
 interface FileOpsParams {
@@ -58,12 +59,24 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
     }
   };
 
-  const handleExport = async (format: 'docx' | 'pdf') => {
+  const handleExport = async (format: 'docx' | 'pdf' | 'html') => {
     const tab = getActiveTab();
     if (!tab) return;
     
     if (!tab.doc.trim()) {
       await message('文档内容为空，无法导出。', { title: '提示', kind: 'warning' });
+      return;
+    }
+
+    // HTML 导出走前端生成，无需 Rust 后端
+    if (format === 'html') {
+      const savePath = await save({
+        filters: [{ name: 'HTML Document', extensions: ['html'] }],
+      });
+      if (savePath) {
+        const html = await generateHtmlDocument(tab.doc);
+        await writeTextFile(savePath, html);
+      }
       return;
     }
 
@@ -83,6 +96,7 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
 
   const handleExportDocx = () => handleExport('docx');
   const handleExportPdf = () => handleExport('pdf');
+  const handleExportHtml = () => handleExport('html');
 
-  return { handleOpenFile, handleSaveFile, handleSaveAsFile, handleExportDocx, handleExportPdf };
+  return { handleOpenFile, handleSaveFile, handleSaveAsFile, handleExportDocx, handleExportPdf, handleExportHtml };
 }

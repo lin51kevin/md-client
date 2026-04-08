@@ -12,8 +12,8 @@
 - [x] **F001** — 自动补全（括号/链接/Markdown语法） ✅ `2d09e52`
 - [x] **F002** — 全局搜索替换（Ctrl+F / Ctrl+H） ✅ `d3e9dc7`
 - [x] **F003** — Vim 键位绑定 ✅ `4f8025b`
-- [ ] **F004** — 自动保存（debounce 1s） ⏳ 进行中
-- [ ] **F005** — 导出 HTML
+- [x] **F004** — 自动保存（debounce 1s） ✅ `checkpoint`
+- [x] **F005** — 导出 HTML ✅ `checkpoint`
 - [ ] **F006** — 实时字数统计
 
 ## 第二梯队（P1 — 1-2周）
@@ -44,5 +44,16 @@
 - **审核**：通过。VimModeManager 状态机 + @replit/codemirror-vim 异步加载
 - **文件**：`vim-mode.ts` / `vim-mode.test.ts` / `cmVim.ts` / `App.tsx`
 - **备注**：Vim 扩展动态 import，不影响首包体积
+
+### F004 — 自动保存 — ✅ — 2026-04-09 06:05
+- **测试**：7/7 ✅ | **TS**：✅ 零错误
+- **审核**：通过。createAutoSave 管理器 + App.tsx 集成（per-tab 实例 + doc change 触发 schedule）
+- **文件**：`auto-save.ts` / `auto-save.test.ts` / `App.tsx`
+
+### F005 — 导出 HTML — ✅ — 2026-04-09 06:05
+- **测试**：19/19 ✅ | **TS**：✅ 零错误
+- **审核**：通过。unified 管道 Markdown→HTML + 完整文档外壳（含默认 GitHub 风格 CSS）
+- **文件**：`html-export.ts` / `html-export.test.ts` / `useFileOps.ts` / `Toolbar.tsx` / `App.tsx`
+- **备注**：HTML 导出纯前端实现，无需 Rust 后端；支持自定义标题和 CSS 注入
 
 ---

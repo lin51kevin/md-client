@@ -9,10 +9,11 @@ interface ToolbarProps {
   onSaveAsFile: () => void;
   onExportDocx: () => void;
   onExportPdf: () => void;
+  onExportHtml: () => void;
   onSetViewMode: (mode: ViewMode) => void;
 }
 
-export function Toolbar({ viewMode, onNewTab, onOpenFile, onSaveFile, onSaveAsFile, onExportDocx, onExportPdf, onSetViewMode }: ToolbarProps) {
+export function Toolbar({ viewMode, onNewTab, onOpenFile, onSaveFile, onSaveAsFile, onExportDocx, onExportPdf, onExportHtml, onSetViewMode }: ToolbarProps) {
   const btnCls = 'flex items-center gap-1.5 px-2.5 py-1 text-xs text-slate-700 hover:bg-white hover:border-slate-300 hover:shadow-sm border border-transparent rounded transition-all';
   const viewBtnCls = (active: boolean) =>
     'flex items-center gap-1.5 px-2.5 py-1 text-xs rounded border transition-all ' +
@@ -41,6 +42,9 @@ export function Toolbar({ viewMode, onNewTab, onOpenFile, onSaveFile, onSaveAsFi
         </button>
         <button onClick={onExportPdf} title="导出为 PDF" className={btnCls}>
           <FileOutput size={15} strokeWidth={1.8} /><span>导出PDF</span>
+        </button>
+        <button onClick={onExportHtml} title="导出为 HTML" className={btnCls}>
+          <FileOutput size={15} strokeWidth={1.8} /><span>导出HTML</span>
         </button>
       </div>
       <div className="flex items-center gap-0.5">
