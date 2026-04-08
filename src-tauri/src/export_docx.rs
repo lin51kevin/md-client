@@ -360,19 +360,25 @@ pub fn export_docx(markdown: &str, output_path: &str) -> Result<(), String> {
             }
             Event::Start(Tag::TableHead) => {
                 in_table_head = true;
-                current_row_cells.clear();
+                current_row_cells.clear(); // 开始新的表头行
             }
             Event::End(TagEnd::TableHead) => {
+                // TableHead 内部没有 TableRow 事件，表头单元格直接在 TableHead 下
+                // 所以在 TableHead 结束时保存表头
+                let n = current_row_cells.len();
+                if n > table_col_count { table_col_count = n; }
+                table_all_rows.push((true, current_row_cells.clone())); // is_header = true
+                current_row_cells.clear();
                 in_table_head = false;
-                // Header rows are pushed by TableRow End event, not here
             }
             Event::Start(Tag::TableRow) => {
                 current_row_cells.clear();
             }
             Event::End(TagEnd::TableRow) => {
+                // 只有数据行才有 TableRow 事件
                 let n = current_row_cells.len();
                 if n > table_col_count { table_col_count = n; }
-                table_all_rows.push((in_table_head, current_row_cells.clone()));
+                table_all_rows.push((false, current_row_cells.clone())); // is_header = false
                 current_row_cells.clear();
             }
             Event::Start(Tag::TableCell) => {
