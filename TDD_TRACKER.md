@@ -14,7 +14,7 @@
 - [x] **F003** — Vim 键位绑定 ✅ `4f8025b`
 - [x] **F004** — 自动保存（debounce 1s） ✅ `checkpoint`
 - [x] **F005** — 导出 HTML ✅ `checkpoint`
-- [ ] **F006** — 实时字数统计
+- [x] **F006** — 实时字数统计 ✅ `checkpoint`
 
 ## 第二梯队（P1 — 1-2周）
 
@@ -55,5 +55,11 @@
 - **审核**：通过。unified 管道 Markdown→HTML + 完整文档外壳（含默认 GitHub 风格 CSS）
 - **文件**：`html-export.ts` / `html-export.test.ts` / `useFileOps.ts` / `Toolbar.tsx` / `App.tsx`
 - **备注**：HTML 导出纯前端实现，无需 Rust 后端；支持自定义标题和 CSS 注入
+
+### F006 — 实时字数统计 — ✅ — 2026-04-09 06:52
+- **测试**：16/16 ✅ | **TS**：✅ 零错误
+- **审核**：通过。纯函数字数/字符/段落/阅读时间统计；中英文混合支持；CJK 标点排除；Markdown 剥离后统计（代码块内容保留）
+- **文件**：`word-count.ts` / `word-count.test.ts`
+- **备注**：待集成到 StatusBar 组件显示实时字数
 
 ---
