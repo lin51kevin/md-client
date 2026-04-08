@@ -24,10 +24,12 @@ import { TabContextMenu } from './components/TabContextMenu';
 import { StatusBar } from './components/StatusBar';
 import { DragOverlay } from './components/DragOverlay';
 import { MarkdownPreview } from './components/MarkdownPreview';
+import { FindReplaceBar } from './components/FindReplaceBar';
 
 
 export default function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('split');
+  const [showFindReplace, setShowFindReplace] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; tabId: string } | null>(null);
 
@@ -64,6 +66,7 @@ export default function App() {
   useKeyboardShortcuts({
     createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile,
     closeTab, setViewMode, activeTabIdRef,
+    toggleFindReplace: () => setShowFindReplace(prev => !prev),
   });
 
   // Per-tab EditorState persistence: preserves cursor position and undo history
@@ -94,6 +97,14 @@ export default function App() {
       style={{ fontFamily: 'Segoe UI, system-ui, sans-serif' }}
     >
       {isDragOver && <DragOverlay />}
+
+      {showFindReplace && (
+        <FindReplaceBar
+          content={activeTab.doc}
+          onContentChange={(newContent) => updateActiveDoc(newContent)}
+          onClose={() => setShowFindReplace(false)}
+        />
+      )}
 
       {ctxMenu && (
         <TabContextMenu

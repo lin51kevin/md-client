@@ -9,9 +9,9 @@
 
 ## 第一梯队（P0 — 依赖已装，快速接入）
 
-- [ ] **F001** — 自动补全（括号/链接/Markdown语法）
-  - 状态：⏳ 待开始
-  - Checkpoint：—
+- [x] **F001** — 自动补全（括号/链接/Markdown语法）
+  - 状态：✅ 完成
+  - Checkpoint：见下方日志
   
 - [ ] **F002** — 全局搜索替换（Ctrl+F / Ctrl+H）
   - 状态：⏳ 待开始
@@ -46,7 +46,31 @@
 
 ## Checkpoint 日志
 
-### 格式
+### F001 — 自动补全 — ✅ — 2026-04-08 22:59
+- **测试结果**：18/18 全部通过 ✅
+  - 方括号：3 tests ✅
+  - 圆括号：2 tests ✅
+  - 花括号：1 test ✅
+  - 反引号：2 tests ✅
+  - 引号：2 tests ✅
+  - 粗体/斜体：4 tests ✅
+  - 无需补全：4 tests ✅
+- **审核结论**：✅ 通过
+  - 核心逻辑独立于 UI，可单元测试
+  - CodeMirror 集成使用 inputHandler，不干扰默认行为
+  - TS 编译零错误，无 lint 警告
+  - * 注意：inputHandler 对组合键（如中文输入法）可能产生意外行为，需要在实际编辑中验证
+- **新增/修改文件**：
+  - `src/lib/autocomplete.ts` — 核心补全逻辑（纯函数）
+  - `src/lib/cmAutocomplete.ts` — CodeMirror 扩展
+  - `src/lib/autocomplete.test.ts` — 18 个测试用例
+  - `src/App.tsx` — 集成 autoCloseBrackets extension
+  - `vitest.config.ts` — 测试框架配置
+  - `package.json` — 添加 vitest + 测试脚本
+- **Commit hash**：`2d09e52`
+- **备注**：TDD Red→Green 完美执行，先有3个失败用例（*处理逻辑），修复后全部通过
+
+---
 ```
 ### FXXX — [功能名] — ✅/❌ — YYYY-MM-DD HH:MM
 - 测试结果：

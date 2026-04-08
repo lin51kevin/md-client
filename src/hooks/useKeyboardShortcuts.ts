@@ -9,10 +9,10 @@ interface ShortcutsParams {
   closeTab: (id: string) => void;
   setViewMode: (mode: ViewMode) => void;
   activeTabIdRef: MutableRefObject<string>;
+  toggleFindReplace?: () => void;
 }
 
 export function useKeyboardShortcuts(params: ShortcutsParams) {
-  // Always keep a fresh ref so the event listener never captures stale closures
   const paramsRef = useRef(params);
   paramsRef.current = params;
 
@@ -20,7 +20,8 @@ export function useKeyboardShortcuts(params: ShortcutsParams) {
     const handler = (e: KeyboardEvent) => {
       const ctrl = e.ctrlKey || e.metaKey;
       if (!ctrl) return;
-      const { createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile, closeTab, setViewMode, activeTabIdRef } = paramsRef.current;
+      const { createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile, closeTab, setViewMode, activeTabIdRef, toggleFindReplace } = paramsRef.current;
+      
       if (e.key === 'n' || e.key === 'N') { e.preventDefault(); createNewTab(); }
       else if (e.key === 'o' || e.key === 'O') { e.preventDefault(); handleOpenFile(); }
       else if (e.shiftKey && (e.key === 's' || e.key === 'S')) { e.preventDefault(); handleSaveAsFile(); }
@@ -29,6 +30,8 @@ export function useKeyboardShortcuts(params: ShortcutsParams) {
       else if (e.key === '1') { e.preventDefault(); setViewMode('edit'); }
       else if (e.key === '2') { e.preventDefault(); setViewMode('split'); }
       else if (e.key === '3') { e.preventDefault(); setViewMode('preview'); }
+      else if (e.key === 'f' || e.key === 'F') { e.preventDefault(); toggleFindReplace?.(); }
+      else if (e.key === 'h' || e.key === 'H') { e.preventDefault(); toggleFindReplace?.(); }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
