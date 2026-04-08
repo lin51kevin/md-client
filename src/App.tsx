@@ -16,6 +16,7 @@ import { useDragDrop } from './hooks/useDragDrop';
 import { useWindowTitle } from './hooks/useWindowTitle';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useCursorPosition } from './hooks/useCursorPosition';
+import { autoCloseBrackets } from './lib/cmAutocomplete';
 
 import { Toolbar } from './components/Toolbar';
 import { TabBar } from './components/TabBar';
@@ -83,6 +84,7 @@ export default function App() {
     markdown({ base: markdownLanguage, codeLanguages: languages }),
     foldGutter(),
     cursorExtension,
+    autoCloseBrackets(),
   ];
   const editorSetup = { lineNumbers: true, foldGutter: true, highlightActiveLine: true, tabSize: 2 };
 

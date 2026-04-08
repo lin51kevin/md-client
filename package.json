@@ -28,7 +28,9 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "changelog": "git-chglog -o CHANGELOG.md",
-    "changelog:latest": "git-chglog $(git describe --tags --abbrev=0).."
+    "changelog:latest": "git-chglog $(git describe --tags --abbrev=0)..",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.1",
@@ -67,11 +69,15 @@
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.1",
     "@tauri-apps/cli": "^2",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.6.0",
+    "jsdom": "^29.0.2",
     "tailwindcss": "^4.2.1",
     "typescript": "~5.8.3",
-    "vite": "^7.0.4"
+    "vite": "^7.0.4",
+    "vitest": "^4.1.3"
   }
 }
