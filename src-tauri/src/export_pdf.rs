@@ -396,19 +396,21 @@ pub fn export_pdf(markdown: &str, output_path: &str) -> Result<(), String> {
             }
             Event::Start(Tag::TableHead) => {
                 in_table_head = true;
+                current_row.clear(); // 开始新的表头行
             }
             Event::End(TagEnd::TableHead) => {
+                // TableHead 内部没有 TableRow 事件，表头单元格直接在 TableHead 下
+                // 所以在 TableHead 结束时保存表头
+                table_header = current_row.clone();
+                current_row.clear();
                 in_table_head = false;
             }
             Event::Start(Tag::TableRow) => {
                 current_row.clear();
             }
             Event::End(TagEnd::TableRow) => {
-                if in_table_head {
-                    table_header = current_row.clone();
-                } else {
-                    table_rows.push(current_row.clone());
-                }
+                // 只有数据行才有 TableRow 事件
+                table_rows.push(current_row.clone());
                 current_row.clear();
             }
             Event::Start(Tag::TableCell) => {

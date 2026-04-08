@@ -28,4 +28,3 @@ pulldown-cmark = { version = "0.12", features = ["html"] }
 docx-rs = "0.4"
 genpdf = "0.2"
 emojis = "0.8.0"
-
