@@ -52,7 +52,6 @@ pub fn export_docx(markdown: &str, output_path: &str) -> Result<(), String> {
     // Each entry is (is_header: bool, cells: Vec<Vec<Run>>).
     // is_header is true for rows inside <TableHead>, false otherwise.
     let mut in_table = false;
-    let mut in_table_head = false;
     let mut table_all_rows: Vec<(bool, Vec<Vec<Run>>)> = Vec::new();
     let mut current_row_cells: Vec<Vec<Run>> = Vec::new();
     let mut current_cell_runs: Vec<Run> = Vec::new();
@@ -359,7 +358,6 @@ pub fn export_docx(markdown: &str, output_path: &str) -> Result<(), String> {
                 }
             }
             Event::Start(Tag::TableHead) => {
-                in_table_head = true;
                 current_row_cells.clear(); // 开始新的表头行
             }
             Event::End(TagEnd::TableHead) => {
@@ -369,7 +367,6 @@ pub fn export_docx(markdown: &str, output_path: &str) -> Result<(), String> {
                 if n > table_col_count { table_col_count = n; }
                 table_all_rows.push((true, current_row_cells.clone())); // is_header = true
                 current_row_cells.clear();
-                in_table_head = false;
             }
             Event::Start(Tag::TableRow) => {
                 current_row_cells.clear();

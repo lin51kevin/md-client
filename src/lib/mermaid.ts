@@ -24,7 +24,7 @@ async function initMermaid(): Promise<typeof import('mermaid')> {
     m.default.initialize({
       startOnLoad: false,
       theme: 'default',
-      securityLevel: 'loose',
+      securityLevel: 'strict',
       fontFamily: 'monospace',
       // SSR/测试环境兼容配置
       suppressErrorRendering: false,

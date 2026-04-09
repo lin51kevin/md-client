@@ -15,8 +15,8 @@ describe('F011 — 主题系统', () => {
   });
 
   describe('THEMES 注册表', () => {
-    it('应包含三种内置主题', () => {
-      expect(Object.keys(THEMES)).toEqual(['light', 'dark', 'sepia']);
+    it('应包含两种内置主题', () => {
+      expect(Object.keys(THEMES)).toEqual(['light', 'dark']);
     });
 
     it('每种主题应包含完整的 CSS 变量集', () => {
@@ -32,7 +32,6 @@ describe('F011 — 主题系统', () => {
     it('dark 主题 isDark 应为 true', () => {
       expect(THEMES.dark.isDark).toBe(true);
       expect(THEMES.light.isDark).toBe(false);
-      expect(THEMES.sepia.isDark).toBe(false);
     });
   });
 
@@ -46,8 +45,8 @@ describe('F011 — 主题系统', () => {
     it('切换主题应覆盖之前的变量', () => {
       applyTheme('light');
       expect(document.documentElement.style.getPropertyValue('--bg-primary')).toBe('#ffffff');
-      applyTheme('sepia');
-      expect(document.documentElement.style.getPropertyValue('--bg-primary')).toBe('#f4ecd8');
+      applyTheme('dark');
+      expect(document.documentElement.style.getPropertyValue('--bg-primary')).toBe('#0d1117');
     });
 
     it('应设置 color-scheme', () => {
@@ -70,8 +69,8 @@ describe('F011 — 主题系统', () => {
 
     it('覆盖保存应以最新值为准', () => {
       saveTheme('light');
-      saveTheme('sepia');
-      expect(getSavedTheme()).toBe('sepia');
+      saveTheme('dark');
+      expect(getSavedTheme()).toBe('dark');
     });
 
     it('非法值不应被接受', () => {

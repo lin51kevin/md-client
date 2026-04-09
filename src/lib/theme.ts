@@ -1,13 +1,12 @@
 /**
  * F011 — 深色模式与主题切换
  *
- * 支持多主题：
+ * 支持两种主题：
  *   - light:    默认亮色（GitHub 风格）
  *   - dark:     暗色（GitHub Dark）
- *   - sepia:    护眼褐色
  */
 
-export type ThemeName = 'light' | 'dark' | 'sepia';
+export type ThemeName = 'light' | 'dark';
 
 /** 主题定义 */
 export interface ThemeConfig {
@@ -55,22 +54,6 @@ export const THEMES: Record<ThemeName, ThemeConfig> = {
       '--border-color': '#30363d',
       '--accent-color': '#58a6ff',
       '--accent-hover': '#79c0ff',
-    },
-  },
-  sepia: {
-    name: 'sepia',
-    label: '📖 护眼',
-    cmTheme: 'light',
-    isDark: false,
-    cssVars: {
-      '--bg-primary': '#f4ecd8',
-      '--bg-secondary': '#efe5c8',
-      '--bg-tertiary': '#e0d5ad',
-      '--text-primary': '#3b3525',
-      '--text-secondary': '#6a5d38',
-      '--border-color': '#c4b998',
-      '--accent-color': '#8b6914',
-      '--accent-hover': '#6a5010',
     },
   },
 };

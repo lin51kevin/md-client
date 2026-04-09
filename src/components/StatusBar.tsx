@@ -9,10 +9,10 @@ interface StatusBarProps {
   wordCount?: number;
   /** F012: 快照列表（有值时显示版本历史入口） */
   snapshots?: import('../lib/version-history').Snapshot[] | null;
-  onSnapshotClick?: () => void;
+  onSnapshotRestore?: (snapshotId: string) => void;
 }
 
-export function StatusBar({ filePath, line, col, wordCount, snapshots, onSnapshotClick }: StatusBarProps) {
+export function StatusBar({ filePath, line, col, wordCount, snapshots, onSnapshotRestore }: StatusBarProps) {
   const [showSnapshots, setShowSnapshots] = useState(false);
 
   const displaySnapshots = showSnapshots ? snapshots : null;
@@ -20,7 +20,7 @@ export function StatusBar({ filePath, line, col, wordCount, snapshots, onSnapsho
   return (
     <div className="relative shrink-0">
       {/* 主状态栏 */}
-      <div className="flex items-center justify-between px-3 py-0.5 bg-slate-200 border-t border-slate-400 text-slate-600 text-xs select-none">
+      <div className="flex items-center justify-between px-3 py-0.5 text-xs select-none" style={{ backgroundColor: 'var(--bg-tertiary)', borderTop: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
         <div className="flex items-center gap-3">
           <span>{filePath ?? '新文件'}</span>
           {wordCount !== undefined && wordCount > 0 && (
@@ -56,7 +56,7 @@ export function StatusBar({ filePath, line, col, wordCount, snapshots, onSnapsho
               <button
                 key={snap.id}
                 onClick={() => {
-                  onSnapshotClick?.();
+                  onSnapshotRestore?.(snap.id);
                   setShowSnapshots(false);
                 }}
                 className="w-full text-left px-2.5 py-1.5 rounded hover:bg-blue-50 text-xs group"

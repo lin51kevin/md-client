@@ -12,6 +12,8 @@ import remarkDirective from 'remark-directive';
 import remarkDirectiveRehype from 'remark-directive-rehype';
 import remarkRehype from 'remark-rehype';
 import rehypeStringify from 'rehype-stringify';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 
 export interface HtmlExportOptions {
   /** 文档 <title>（默认取第一个 h1 或 "Untitled"） */
@@ -99,7 +101,9 @@ export async function markdownToHtml(markdown: string): Promise<string> {
     .use(remarkGfm)
     .use(remarkDirective)
     .use(remarkDirectiveRehype)
+    .use(remarkMath)
     .use(remarkRehype)
+    .use(rehypeKatex)
     .use(rehypeStringify)
     .process(markdown);
 
@@ -137,6 +141,7 @@ export async function generateHtmlDocument(
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${escapeHtml(title)}</title>
 <style>${DEFAULT_CSS}${customCss}</style>

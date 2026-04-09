@@ -17,7 +17,7 @@ body {
 
 /* React Split Pane Styles */
 .gutter {
-  background-color: #f1f5f9;
+  background-color: var(--bg-secondary);
   background-repeat: no-repeat;
   background-position: 50%;
   transition: background-color 0.2s ease;
@@ -29,12 +29,12 @@ body {
 }
 
 .gutter.gutter-horizontal:hover, .gutter.gutter-horizontal:active {
-  background-color: #e2e8f0;
+  background-color: var(--bg-tertiary);
 }
 
 /* Base styles for markdown preview */
 .markdown-preview {
-  color: #333;
+  color: var(--text-primary);
   line-height: 1.6;
 }
 .markdown-preview h1,
@@ -50,16 +50,16 @@ body {
 }
 .markdown-preview h1 {
   font-size: 2em;
-  border-bottom: 1px solid #eaecef;
+  border-bottom: 1px solid var(--border-color);
   padding-bottom: 0.3em;
 }
 .markdown-preview h2 {
   font-size: 1.5em;
-  border-bottom: 1px solid #eaecef;
+  border-bottom: 1px solid var(--border-color);
   padding-bottom: 0.3em;
 }
 .markdown-preview code {
-  background-color: rgba(27, 31, 35, 0.05);
+  background-color: var(--bg-secondary);
   border-radius: 3px;
   font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
   font-size: 85%;
@@ -67,7 +67,7 @@ body {
   padding: 0.2em 0.4em;
 }
 .markdown-preview pre {
-  background-color: #f6f8fa;
+  background-color: var(--bg-secondary);
   border-radius: 6px;
   font-size: 85%;
   line-height: 1.45;
@@ -85,15 +85,15 @@ body {
   word-wrap: normal;
 }
 .markdown-preview a {
-  color: #0366d6;
+  color: var(--accent-color);
   text-decoration: none;
 }
 .markdown-preview a:hover {
   text-decoration: underline;
 }
 .markdown-preview blockquote {
-  border-left: 0.25em solid #dfe2e5;
-  color: #6a737d;
+  border-left: 0.25em solid var(--border-color);
+  color: var(--text-secondary);
   padding: 0 1em;
   margin: 0;
   margin-bottom: 16px;
@@ -111,11 +111,11 @@ body {
 }
 .markdown-preview table th,
 .markdown-preview table td {
-  border: 1px solid #dfe2e5;
+  border: 1px solid var(--border-color);
   padding: 6px 13px;
 }
 .markdown-preview table tr:nth-child(2n) {
-  background-color: #f6f8fa;
+  background-color: var(--bg-secondary);
 }
 .markdown-preview img {
   max-width: 100%;

@@ -15,6 +15,8 @@ export interface Snapshot {
   contentLength: number;
   /** 前50字符预览 */
   preview: string;
+  /** 实际文件内容（用于恢复） */
+  content: string;
 }
 
 /** 默认最大快照数 */
@@ -60,12 +62,9 @@ export function getSnapshots(filePath: string): Snapshot[] {
 export function createSnapshot(filePath: string, content: string, maxSnapshots = MAX_SNAPSHOTS): Snapshot[] {
   const snapshots = getSnapshots(filePath);
 
-  // 去重：避免连续相同内容创建重复快照
-  if (snapshots.length > 0) {
-    const last = snapshots[snapshots.length - 1];
-    if (last.contentLength === content.length && last.preview === content.slice(0, 50)) {
-      return snapshots;
-    }
+  // 去重：内容与上一个快照完全相同时跳过
+  if (snapshots.length > 0 && snapshots[snapshots.length - 1].content === content) {
+    return snapshots;
   }
 
   const snapshot: Snapshot = {
@@ -73,6 +72,7 @@ export function createSnapshot(filePath: string, content: string, maxSnapshots =
     timestamp: new Date().toISOString(),
     contentLength: content.length,
     preview: content.slice(0, 50).replace(/\n/g, '↵'),
+    content,
   };
 
   snapshots.push(snapshot);
@@ -89,6 +89,12 @@ export function createSnapshot(filePath: string, content: string, maxSnapshots =
 /**
  * 删除单个快照
  */
+export function restoreSnapshot(filePath: string, snapshotId: string): string | null {
+  const snapshots = getSnapshots(filePath);
+  const snapshot = snapshots.find(s => s.id === snapshotId);
+  return snapshot?.content ?? null;
+}
+
 export function deleteSnapshot(filePath: string, snapshotId: string): Snapshot[] {
   const snapshots = getSnapshots(filePath);
   const filtered = snapshots.filter(s => s.id !== snapshotId);

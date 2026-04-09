@@ -1,11 +1,12 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import type { Extension } from '@codemirror/state';
 import CodeMirror, { type EditorState, type ViewUpdate } from '@uiw/react-codemirror';
-import { type EditorView } from '@codemirror/view';
+import { EditorView } from '@codemirror/view';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { languages } from '@codemirror/language-data';
 import { foldGutter } from '@codemirror/language';
 import Split from 'react-split';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { invoke } from '@tauri-apps/api/core';
 import './App.css';
 
@@ -19,9 +20,10 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useCursorPosition } from './hooks/useCursorPosition';
 import { useFocusMode } from './hooks/useFocusMode';
 import { extractToc, type TocEntry } from './lib/toc';
-import { applyTheme, getSavedTheme, saveTheme, type ThemeName } from './lib/theme';
-import { getSnapshots, createSnapshot as createVersionSnapshot } from './lib/version-history';
+import { applyTheme, getSavedTheme, saveTheme, THEMES, type ThemeName } from './lib/theme';
+import { getSnapshots, createSnapshot as createVersionSnapshot, restoreSnapshot } from './lib/version-history';
 import { autoCloseBrackets } from './lib/cmAutocomplete';
+import { countWords } from './lib/word-count';
 import { vimKeymap } from './lib/cmVim';
 import { createAutoSave } from './lib/auto-save';
 
@@ -33,6 +35,7 @@ import { DragOverlay } from './components/DragOverlay';
 import { MarkdownPreview } from './components/MarkdownPreview';
 import { FindReplaceBar } from './components/FindReplaceBar';
 import { TocSidebar } from './components/TocSidebar';
+import { useSearchHighlight } from './hooks/useSearchHighlight';
 
 
 export default function App() {
@@ -79,6 +82,7 @@ export default function App() {
 
   const { editorRef, previewRef, handleEditorScroll, handlePreviewScroll } = useScrollSync(viewMode);
   const { cursorPos, cursorExtension } = useCursorPosition();
+  const { searchHighlightExtension, setMatches, clearMatches } = useSearchHighlight();
 
   useDragDrop({ isTauri, setIsDragOver, openFileInTab });
 
@@ -98,7 +102,11 @@ export default function App() {
   useEffect(() => {
     applyTheme(theme);
     saveTheme(theme);
-  }, [theme]);
+    // 同步原生标题栏主题（Windows/macOS）
+    if (isTauri) {
+      getCurrentWindow().setTheme(theme).catch(() => {});
+    }
+  }, [theme, isTauri]);
 
   // F012 — 切换文件时加载对应快照列表
   useEffect(() => {
@@ -111,15 +119,39 @@ export default function App() {
 
   // F010 — TOC 数据 + 跳转处理
   const tocEntries = useMemo(() => extractToc(activeTab.doc), [activeTab.doc]);
+  const wordCount = useMemo(() => countWords(activeTab.doc).words, [activeTab.doc]);
   const handleTocNavigate = useCallback((entry: TocEntry) => {
     setActiveTocId(entry.id);
-    const editorEl = editorRef.current?.querySelector('.cm-editor') as HTMLElement | undefined;
-    if (editorEl) {
-      const lines = activeTab.doc.slice(0, entry.position).split('\n');
-      const targetLine = lines.length - 1;
-      editorEl.dispatchEvent(new CustomEvent('toc-jump', { detail: { line: targetLine } }));
+
+    // Scroll editor to heading line
+    const view = cmViewRef.current;
+    if (view) {
+      const pos = Math.min(entry.position, view.state.doc.length);
+      view.dispatch({
+        selection: { anchor: pos },
+        effects: EditorView.scrollIntoView(pos, { y: 'start', yMargin: 40 }),
+      });
     }
-  }, [activeTab.doc, editorRef]);
+
+    // Scroll preview to heading (use scrollTop to avoid layout shift)
+    const previewEl = previewRef.current;
+    if (previewEl) {
+      // First: try by id (works for plain headings)
+      const heading = previewEl.querySelector(`[id="${CSS.escape(entry.id)}"]`) as HTMLElement | null;
+      if (heading) {
+        const containerRect = previewEl.getBoundingClientRect();
+        const headingRect = heading.getBoundingClientRect();
+        const offset = headingRect.top - containerRect.top + previewEl.scrollTop;
+        previewEl.scrollTo({ top: Math.max(0, offset - 40), behavior: 'smooth' });
+      } else {
+        // Fallback: proportional scroll based on character position
+        const docLen = activeTab.doc.length;
+        const ratio = docLen > 0 ? entry.position / docLen : 0;
+        const maxScroll = previewEl.scrollHeight - previewEl.clientHeight;
+        previewEl.scrollTo({ top: Math.max(0, ratio * maxScroll - 40), behavior: 'smooth' });
+      }
+    }
+  }, [previewRef, activeTab.doc]);
 
   useKeyboardShortcuts({
     createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile,
@@ -130,8 +162,10 @@ export default function App() {
 
   // Per-tab EditorState persistence: preserves cursor position and undo history
   const savedStatesRef = useRef<Map<string, EditorState>>(new Map());
+  const cmViewRef = useRef<EditorView | null>(null);
 
   const handleCreateEditor = useCallback((view: EditorView) => {
+    cmViewRef.current = view;
     const savedState = savedStatesRef.current.get(activeTabId);
     if (savedState) {
       view.setState(savedState);
@@ -148,15 +182,21 @@ export default function App() {
     vimKeymap().then(setVimExtension).catch(console.error);
   }, []);
 
+  // Keep latest save/getActiveTab in refs to avoid stale closures in auto-save
+  const handleSaveFileRef = useRef(handleSaveFile);
+  const getActiveTabRef = useRef(getActiveTab);
+  useEffect(() => { handleSaveFileRef.current = handleSaveFile; }, [handleSaveFile]);
+  useEffect(() => { getActiveTabRef.current = getActiveTab; }, [getActiveTab]);
+
   // Auto-save: debounce 1s after editing stops
   const autoSaveRef = useRef<ReturnType<typeof createAutoSave> | null>(null);
   useEffect(() => {
     autoSaveRef.current = createAutoSave({
       delay: 1000,
       onSave: async () => {
-        const tab = getActiveTab();
+        const tab = getActiveTabRef.current();
         if (tab.filePath) {
-          await handleSaveFile(activeTabId);
+          await handleSaveFileRef.current(activeTabId);
         }
       },
     });
@@ -168,24 +208,32 @@ export default function App() {
     autoSaveRef.current?.schedule(activeTab.doc);
   }, [activeTab.doc, activeTabId]);
 
-  const editorExtensions = [
+  const editorExtensions = useMemo(() => [
     markdown({ base: markdownLanguage, codeLanguages: languages }),
     foldGutter(),
     cursorExtension,
     autoCloseBrackets(),
+    searchHighlightExtension,
     ...(vimExtension ? [vimExtension] : []),
-  ];
-    const editorSetup = { lineNumbers: true, foldGutter: true, highlightActiveLine: true, tabSize: 2 };
+  ], [cursorExtension, vimExtension, searchHighlightExtension]);
+  const editorSetup = { lineNumbers: true, foldGutter: true, highlightActiveLine: true, tabSize: 2 };
 
   // F009 — 根据焦点模式动态调整主题色
-  const editorTheme = focusMode === 'focus' ? 'dark' : 'light';
+  const editorTheme = focusMode === 'focus' ? 'dark' : THEMES[theme].cmTheme;
 
   return (
     <div
       className={`flex flex-col h-screen w-full overflow-hidden ${
-        focusMode === 'focus' ? 'bg-slate-950 text-slate-300' : 'bg-white text-slate-800'
+        focusMode === 'focus' ? 'bg-slate-950 text-slate-300' : ''
       }`}
-      style={{ fontFamily: 'Segoe UI, system-ui, sans-serif' }}
+      data-theme={focusMode !== 'focus' ? theme : undefined}
+      style={{
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        ...(focusMode !== 'focus' && {
+          backgroundColor: 'var(--bg-primary)',
+          color: 'var(--text-primary)',
+        }),
+      }}
     >
       {isDragOver && <DragOverlay />}
 
@@ -196,7 +244,8 @@ export default function App() {
             <FindReplaceBar
               content={activeTab.doc}
               onContentChange={(newContent) => updateActiveDoc(newContent)}
-              onClose={() => setShowFindReplace(false)}
+              onClose={() => { clearMatches(); setShowFindReplace(false); }}
+              onMatchChange={setMatches}
             />
           )}
 
@@ -246,6 +295,7 @@ export default function App() {
       {/* F010 — 大纲侧边栏 + 主内容区 */}
       <div className="flex-1 overflow-hidden flex">
         <TocSidebar
+          key={activeTabId}
           toc={tocEntries}
           onNavigate={handleTocNavigate}
           activeId={activeTocId}
@@ -264,6 +314,7 @@ export default function App() {
             direction="horizontal"
             cursor="col-resize"
             className="flex h-full"
+            style={{ flex: 1 }}
           >
             <div className="h-full overflow-auto" ref={editorRef} onScroll={handleEditorScroll}>
               <div className="min-h-full">
@@ -280,7 +331,7 @@ export default function App() {
                 />
               </div>
             </div>
-            <div className={`h-full overflow-auto border-l ${focusMode === 'focus' ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'}`} ref={previewRef} onScroll={handlePreviewScroll}>
+            <div className={`h-full overflow-auto border-l ${focusMode === 'focus' ? 'border-slate-700 bg-slate-900' : ''}`} style={focusMode !== 'focus' ? { borderColor: 'var(--border-color)', backgroundColor: 'var(--bg-primary)' } : undefined} ref={previewRef} onScroll={handlePreviewScroll}>
               <div className="p-8">
                 <MarkdownPreview content={activeTab.doc} className={`markdown-preview max-w-200 mx-auto min-h-full ${focusMode === 'focus' ? 'markdown-preview-dark' : ''}`} />
               </div>
@@ -304,7 +355,7 @@ export default function App() {
                 />
               </div>
             ) : (
-              <div className={`w-full h-full overflow-auto p-8 ${focusMode === 'focus' ? 'bg-slate-900' : 'bg-white'}`}>
+              <div ref={previewRef} className={`w-full h-full overflow-auto p-8 ${focusMode === 'focus' ? 'bg-slate-900' : ''}`} style={focusMode !== 'focus' ? { backgroundColor: 'var(--bg-primary)' } : undefined}>
                 <MarkdownPreview content={activeTab.doc} className={`markdown-preview w-full ${focusMode === 'focus' ? 'markdown-preview-dark' : ''}`} />
               </div>
             )}
@@ -319,6 +370,12 @@ export default function App() {
           line={cursorPos.line}
           col={cursorPos.col}
           snapshots={snapshots}
+          wordCount={wordCount}
+          onSnapshotRestore={(id) => {
+            if (!activeTab.filePath) return;
+            const restoredContent = restoreSnapshot(activeTab.filePath, id);
+            if (restoredContent !== null) updateActiveDoc(restoredContent);
+          }}
         />
       )}
     </div>

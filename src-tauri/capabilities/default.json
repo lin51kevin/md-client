@@ -8,9 +8,11 @@
   "permissions": [
     "core:default",
     "core:window:allow-set-title",
+    "core:window:allow-set-theme",
     "opener:default",
     "dialog:default",
     "fs:default",
-    "fs:allow-write-file"
+    "fs:allow-write-file",
+    "fs:allow-write-text-file"
   ]
 }

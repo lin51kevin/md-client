@@ -7,56 +7,48 @@
  *   - focus:     专注模式 — 仅保留编辑器，暗化其余 UI，高亮当前行
  *   - fullscreen: 全屏模式 — 隐藏 OS 级装饰，占满整个屏幕
  */
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import type { FocusMode } from '../types';
 
 interface UseFocusModeOptions {
-  /** 模式变更回调（可选，用于通知父组件） */
   onModeChange?: (mode: FocusMode) => void;
 }
 
 export function useFocusMode(options: UseFocusModeOptions = {}) {
   const [focusMode, setFocusMode] = useState<FocusMode>('normal');
 
+  // Keep onModeChange ref fresh to avoid stale-closure issues in effects
+  const onModeChangeRef = useRef(options.onModeChange);
+  useEffect(() => { onModeChangeRef.current = options.onModeChange; });
+
   const handleSetFocusMode = useCallback((mode: FocusMode) => {
     setFocusMode(mode);
-    options.onModeChange?.(mode);
+    onModeChangeRef.current?.(mode);
 
-    // 全屏模式使用 Fullscreen API
     if (mode === 'fullscreen') {
       document.documentElement.requestFullscreen?.().catch(() => {});
     } else {
-      // 从全屏退出时，如果用户按了 ESC 触发的，我们不需要额外处理
-      // 但如果是主动切换到其他模式，需要退出全屏
       if (document.fullscreenElement) {
         document.exitFullscreen?.().catch(() => {});
       }
     }
-  }, [options]);
+  }, []);
 
   // 监听 ESC / F11 退出全屏
   useEffect(() => {
     const handleFullScreenChange = () => {
       if (!document.fullscreenElement && focusMode === 'fullscreen') {
         setFocusMode('normal');
-        options.onModeChange?.('normal');
+        onModeChangeRef.current?.('normal');
       }
     };
 
     document.addEventListener('fullscreenchange', handleFullScreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullScreenChange);
-  }, [focusMode, options]);
+  }, [focusMode]);
 
-  /** 是否应隐藏工具栏和标签栏 */
   const isChromeless = focusMode === 'typewriter' || focusMode === 'focus' || focusMode === 'fullscreen';
-
-  /** 是否应隐藏状态栏 */
   const hideStatusBar = focusMode === 'typewriter' || focusMode === 'fullscreen';
 
-  return {
-    focusMode,
-    setFocusMode: handleSetFocusMode,
-    isChromeless,
-    hideStatusBar,
-  };
+  return { focusMode, setFocusMode: handleSetFocusMode, isChromeless, hideStatusBar };
 }

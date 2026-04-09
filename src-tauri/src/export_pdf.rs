@@ -142,7 +142,6 @@ pub fn export_pdf(markdown: &str, output_path: &str) -> Result<(), String> {
     let mut table_rows: Vec<Vec<String>> = Vec::new();
     let mut current_cell_text = String::new();
     let mut current_row: Vec<String> = Vec::new();
-    let mut in_table_head = false;
 
     fn flush_para(parts: &mut Vec<style::StyledString>) -> elements::Paragraph {
         let mut p = elements::Paragraph::new("");
@@ -395,7 +394,6 @@ pub fn export_pdf(markdown: &str, output_path: &str) -> Result<(), String> {
                 table_rows.clear();
             }
             Event::Start(Tag::TableHead) => {
-                in_table_head = true;
                 current_row.clear(); // 开始新的表头行
             }
             Event::End(TagEnd::TableHead) => {
@@ -403,7 +401,6 @@ pub fn export_pdf(markdown: &str, output_path: &str) -> Result<(), String> {
                 // 所以在 TableHead 结束时保存表头
                 table_header = current_row.clone();
                 current_row.clear();
-                in_table_head = false;
             }
             Event::Start(Tag::TableRow) => {
                 current_row.clear();

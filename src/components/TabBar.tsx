@@ -82,7 +82,7 @@ export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorde
   }, [onReorder]);
 
   return (
-    <div className="shrink-0 flex items-stretch bg-slate-200 border-b border-slate-400" style={{ minHeight: 30 }}>
+    <div className="shrink-0 flex items-stretch" style={{ minHeight: 30, backgroundColor: 'var(--bg-tertiary)', borderBottom: '1px solid var(--border-color)' }}>
       <div
         ref={scrollRef}
         className="flex items-end flex-1 overflow-x-auto tabbar-scroll min-w-0"
@@ -93,11 +93,14 @@ export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorde
             data-tab-id={tab.id}
             onPointerDown={(e) => handlePointerDown(e, tab.id)}
             onContextMenu={(e) => { e.preventDefault(); onActivate(tab.id); onContextMenu(e.clientX, e.clientY, tab.id); }}
+            style={{
+              borderRightColor: 'var(--border-color)',
+              backgroundColor: tab.id === activeTabId ? 'var(--bg-primary)' : 'var(--bg-tertiary)',
+              color: tab.id === activeTabId ? 'var(--text-primary)' : 'var(--text-secondary)',
+              ...(tab.id === activeTabId ? { marginBottom: '-1px', borderTop: '2px solid var(--accent-color)' } : {}),
+            }}
             className={
-              'group relative flex items-center gap-1 pl-3 pr-1.5 py-1 text-xs border-r border-slate-400 cursor-grab whitespace-nowrap select-none ' +
-              (tab.id === activeTabId
-                ? 'bg-white text-slate-800 -mb-px border-t-3 border-t-blue-500 '
-                : 'bg-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-700 ') +
+              'group relative flex items-center gap-1 pl-3 pr-1.5 py-1 text-xs border-r cursor-grab whitespace-nowrap select-none ' +
               (tab.id === dragOverTabId ? 'border-l-2 border-l-blue-500' : '')
             }
           >

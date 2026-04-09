@@ -7,6 +7,7 @@ import remarkMath from 'remark-math';
 import rehypeHighlight from 'rehype-highlight';
 import rehypeRaw from 'rehype-raw';
 import rehypeKatex from 'rehype-katex';
+import rehypeSlug from 'rehype-slug';
 import 'highlight.js/styles/github.css';
 import 'katex/dist/katex.min.css';
 import { rehypeFilterInvalidElements } from '../lib/rehypeFilterInvalidElements';
@@ -14,7 +15,7 @@ import { renderMermaid } from '../lib/mermaid';
 
 // Stable plugin arrays (module-level) to avoid unnecessary ReactMarkdown re-renders
 const REMARK_PLUGINS = [remarkGfm, remarkDirective, remarkDirectiveRehype, remarkMath];
-const REHYPE_PLUGINS = [rehypeHighlight, rehypeRaw, rehypeKatex, rehypeFilterInvalidElements];
+const REHYPE_PLUGINS = [rehypeSlug, rehypeHighlight, rehypeRaw, rehypeKatex, rehypeFilterInvalidElements];
 
 interface MarkdownPreviewProps {
   content: string;
@@ -61,14 +62,6 @@ export function MarkdownPreview({ content, className }: MarkdownPreviewProps) {
 
     return () => clearTimeout(timer);
   }, [content, hasMermaidBlocks]);
-
-  // 无 mermaid 时同步更新，减少一次 unnecessary render
-  useEffect(() => {
-    if (!hasMermaidBlocks) {
-      setRenderedContent(content);
-    }
-  }, [content, hasMermaidBlocks]);
-
   return (
     <div className={className}>
       {mermaidRendering && (
