@@ -19,8 +19,8 @@ interface TocSidebarProps {
   visible?: boolean;
 }
 
-/** 只展示到 h3 */
-const MAX_TOC_LEVEL = 3;
+/** 展示所有级别 H1-H6 */
+const MAX_TOC_LEVEL = 6;
 
 type FlatItem = TocEntry & { indent: number; hasChildren: boolean };
 
@@ -115,8 +115,16 @@ export function TocSidebar({ toc, onNavigate, activeId, visible = true }: TocSid
                 <button
                   onClick={() => onNavigate?.(item)}
                   title={`跳转到: ${item.text}`}
-                  className="flex-1 text-left py-1.5 pr-2 text-xs truncate transition-colors"
-                  style={{ color: isActive ? 'var(--accent-color)' : 'var(--text-secondary)' }}
+                  className="flex-1 text-left py-1.5 pr-2 truncate transition-colors"
+                  style={{
+                    color: isActive ? 'var(--accent-color)' :
+                      item.level === 1 ? 'var(--text-primary)' :
+                      item.level === 2 ? 'var(--text-primary)' :
+                      'var(--text-secondary)',
+                    fontWeight: item.level <= 2 ? (item.level === 1 ? 600 : 500) : (item.level === 3 ? 500 : 400),
+                    fontSize: item.level <= 2 ? undefined : (item.level === 3 || item.level === 4 ? 13 : item.level === 5 ? 12 : 11),
+                    opacity: item.level >= 4 ? (item.level === 4 ? 0.85 : item.level === 5 ? 0.75 : 0.65) : undefined,
+                  }}
                 >
                   {item.text}
                 </button>
