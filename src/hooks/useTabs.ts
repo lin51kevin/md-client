@@ -69,7 +69,7 @@ export function useTabs() {
       const sep = tab.filePath[lastSep];
       const newPath = dir + sep + trimmed;
       try {
-        await invoke('rename_file', { oldPath: tab.filePath, newPath });
+        await invoke('rename_file', { old_path: tab.filePath, new_path: newPath });
         moveSnapshots(tab.filePath, newPath);
         setTabs(prev => prev.map(t =>
           t.id === id ? { ...t, filePath: newPath, displayName: undefined } : t
