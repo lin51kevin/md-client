@@ -1,5 +1,5 @@
 import { useEffect, useRef, MutableRefObject } from 'react';
-import { ViewMode } from '../types';
+import { ViewMode, FocusMode } from '../types';
 
 interface ShortcutsParams {
   createNewTab: () => void;
@@ -10,6 +10,9 @@ interface ShortcutsParams {
   setViewMode: (mode: ViewMode) => void;
   activeTabIdRef: MutableRefObject<string>;
   toggleFindReplace?: () => void;
+  /** F009 — 焦点模式切换 */
+  setFocusMode?: (mode: FocusMode) => void;
+  focusMode?: FocusMode;
 }
 
 export function useKeyboardShortcuts(params: ShortcutsParams) {
@@ -19,8 +22,16 @@ export function useKeyboardShortcuts(params: ShortcutsParams) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const ctrl = e.ctrlKey || e.metaKey;
+      const { createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile, closeTab, setViewMode, activeTabIdRef, toggleFindReplace, setFocusMode, focusMode } = paramsRef.current;
+      
+      // F009 — ESC 退出任何焦点模式（优先处理，无需 Ctrl）
+      if (e.key === 'Escape' && focusMode && focusMode !== 'normal') {
+        e.preventDefault();
+        setFocusMode?.('normal');
+        return;
+      }
+
       if (!ctrl) return;
-      const { createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile, closeTab, setViewMode, activeTabIdRef, toggleFindReplace } = paramsRef.current;
       
       if (e.key === 'n' || e.key === 'N') { e.preventDefault(); createNewTab(); }
       else if (e.key === 'o' || e.key === 'O') { e.preventDefault(); handleOpenFile(); }
@@ -32,6 +43,10 @@ export function useKeyboardShortcuts(params: ShortcutsParams) {
       else if (e.key === '3') { e.preventDefault(); setViewMode('preview'); }
       else if (e.key === 'f' || e.key === 'F') { e.preventDefault(); toggleFindReplace?.(); }
       else if (e.key === 'h' || e.key === 'H') { e.preventDefault(); toggleFindReplace?.(); }
+
+      // F009 — 焦点模式快捷键
+      else if (e.key === '.') { e.preventDefault(); setFocusMode?.(focusMode === 'typewriter' ? 'normal' : 'typewriter'); } // Ctrl+. 打字机模式切换
+      else if (e.key === ',') { e.preventDefault(); setFocusMode?.(focusMode === 'focus' ? 'normal' : 'focus'); } // Ctrl+, 专注模式切换
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
