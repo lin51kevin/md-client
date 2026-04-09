@@ -296,21 +296,17 @@ export default function App() {
   ], [cursorExtension, vimExtension, searchHighlightExtension]);
   const editorSetup = EDITOR_SETUP;
 
-  // F009 - 根据焦点模式动态调整主题色
-  const editorTheme = focusMode === 'focus' ? 'dark' : THEMES[theme].cmTheme;
+  // F009 - 根据焦点模式动态调整主题色 (使用当前主题)
+  const editorTheme = THEMES[theme].cmTheme;
 
   return (
     <div
-      className={`flex flex-col h-screen w-full overflow-hidden ${
-        focusMode === 'focus' ? 'bg-slate-950 text-slate-300' : ''
-      }`}
-      data-theme={focusMode !== 'focus' ? theme : undefined}
+      className="flex flex-col h-screen w-full overflow-hidden"
+      data-theme={theme}
       style={{
         fontFamily: 'Segoe UI, system-ui, sans-serif',
-        ...(focusMode !== 'focus' && {
-          backgroundColor: 'var(--bg-primary)',
-          color: 'var(--text-primary)',
-        }),
+        backgroundColor: 'var(--bg-primary)',
+        color: 'var(--text-primary)',
       }}
     >
       {isDragOver && <DragOverlay />}
@@ -436,10 +432,10 @@ export default function App() {
                 />
               </div>
             </div>
-            <div className={`h-full overflow-auto border-l ${focusMode === 'focus' ? 'border-slate-700 bg-slate-900' : ''}`} style={focusMode !== 'focus' ? { borderColor: 'var(--border-color)', backgroundColor: 'var(--bg-primary)' } : undefined} ref={previewRef} onScroll={handlePreviewScroll}>
+            <div className="h-full overflow-auto border-l" style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--bg-primary)' }} ref={previewRef} onScroll={handlePreviewScroll}>
               <div className="p-8">
                 <Suspense fallback={<div className="p-4 text-sm animate-pulse" style={{ color: 'var(--text-secondary)' }}>正在加载预览引擎...</div>}>
-                  <MarkdownPreview content={activeTab.doc} filePath={activeTab.filePath ?? undefined} onOpenFile={openFileInTab} className={`markdown-preview max-w-full min-h-full ${theme === 'dark' || focusMode === 'focus' ? 'markdown-preview-dark' : ''}`} />
+                  <MarkdownPreview content={activeTab.doc} filePath={activeTab.filePath ?? undefined} onOpenFile={openFileInTab} className={`markdown-preview max-w-full min-h-full ${theme === 'dark' ? 'markdown-preview-dark' : ''}`} />
                 </Suspense>
               </div>
             </div>
@@ -463,10 +459,10 @@ export default function App() {
                 />
               </div>
             ) : (
-              <div ref={previewRef} className={`w-full h-full overflow-auto ${focusMode === 'focus' ? 'bg-slate-900' : ''}`} style={focusMode !== 'focus' ? { backgroundColor: 'var(--bg-primary)' } : undefined}>
+              <div ref={previewRef} className="w-full h-full overflow-auto" style={{ backgroundColor: 'var(--bg-primary)' }}>
                 <div className="p-8">
                   <Suspense fallback={<div className="p-4 text-sm animate-pulse" style={{ color: 'var(--text-secondary)' }}>正在加载预览引擎...</div>}>
-                    <MarkdownPreview content={activeTab.doc} filePath={activeTab.filePath ?? undefined} onOpenFile={openFileInTab} className={`markdown-preview max-w-full min-h-full ${theme === 'dark' || focusMode === 'focus' ? 'markdown-preview-dark' : ''}`} />
+                    <MarkdownPreview content={activeTab.doc} filePath={activeTab.filePath ?? undefined} onOpenFile={openFileInTab} className={`markdown-preview max-w-full min-h-full ${theme === 'dark' ? 'markdown-preview-dark' : ''}`} />
                   </Suspense>
                 </div>
               </div>

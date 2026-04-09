@@ -87,11 +87,10 @@ export function TocSidebar({ toc, onNavigate, activeId, visible = true }: TocSid
             return (
               <div
                 key={item.id + '-' + item.position}
-                className={`flex items-center border-l-2 ${
-                  isActive ? 'border-blue-500' : 'border-transparent'
-                }`}
+                className="flex items-center border-l-2"
                 style={{
                   paddingLeft: `${item.indent}px`,
+                  borderColor: isActive ? 'var(--accent-color)' : 'transparent',
                   backgroundColor: isActive
                     ? 'color-mix(in srgb, var(--accent-color) 12%, transparent)'
                     : undefined,

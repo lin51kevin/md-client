@@ -163,9 +163,18 @@ export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorde
                     onClick={(e) => { e.stopPropagation(); isPinned ? onUnpin?.(tab.id) : onPin?.(tab.id); }}
                     className={`flex items-center justify-center w-4 h-4 rounded shrink-0 transition-opacity ${
                       isPinned
-                        ? 'text-amber-500 opacity-100 hover:text-amber-700'
-                        : 'text-slate-400 opacity-0 group-hover:opacity-70 hover:!opacity-100 hover:text-slate-600'
+                        ? 'opacity-100'
+                        : 'opacity-0 group-hover:opacity-70 hover:!opacity-100'
                     }`}
+                    style={{
+                      color: isPinned ? 'var(--warning-color)' : 'var(--text-tertiary)'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isPinned) e.currentTarget.style.color = 'var(--text-secondary)';
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isPinned) e.currentTarget.style.color = 'var(--text-tertiary)';
+                    }}
                     title={isPinned ? '取消固定' : '固定标签'}
                   >
                     <Pin size={11} strokeWidth={2} />
@@ -181,7 +190,18 @@ export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorde
                   {!isPinned && (
                     <button
                       onClick={(e) => { e.stopPropagation(); onClose(tab.id); }}
-                      className={`ml-1 flex items-center justify-center w-4 h-4 rounded opacity-0 group-hover:opacity-100 transition-opacity ${tab.isDirty ? 'hover:bg-amber-100 text-amber-500 hover:text-amber-700' : 'hover:bg-slate-300 text-slate-400 hover:text-slate-700'}`}
+                      className="ml-1 flex items-center justify-center w-4 h-4 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                      style={{
+                        color: tab.isDirty ? 'var(--warning-color)' : 'var(--text-tertiary)'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = tab.isDirty ? 'var(--warning-bg)' : 'var(--hover-bg)';
+                        e.currentTarget.style.color = tab.isDirty ? 'var(--warning-color)' : 'var(--text-secondary)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = '';
+                        e.currentTarget.style.color = tab.isDirty ? 'var(--warning-color)' : 'var(--text-tertiary)';
+                      }}
                       title={tab.isDirty ? '关闭（有未保存更改）' : '关闭'}
                     >
                       <X size={11} />
@@ -195,17 +215,37 @@ export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorde
         <button
           onClick={onNew}
           title="新建标签页"
-          className="flex self-end items-center justify-center w-6 h-6 text-slate-500 hover:text-slate-700 hover:bg-slate-100 shrink-0 ml-0.5"
+          className="flex self-end items-center justify-center w-6 h-6 shrink-0 ml-0.5"
+          style={{ color: 'var(--text-secondary)' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'var(--text-primary)';
+            e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'var(--text-secondary)';
+            e.currentTarget.style.backgroundColor = '';
+          }}
         >
           <Plus size={14} />
         </button>
       </div>
       {(canScrollLeft || canScrollRight) && (
-        <div className="flex items-center shrink-0 border-l border-slate-400">
+        <div className="flex items-center shrink-0 border-l" style={{ borderColor: 'var(--border-color)' }}>
           <button
             onClick={() => scroll('left')}
             disabled={!canScrollLeft}
-            className="flex self-end items-center justify-center w-6 h-6 text-slate-500 hover:text-slate-700 hover:bg-slate-300 disabled:opacity-30 disabled:cursor-default disabled:hover:bg-transparent"
+            className="flex self-end items-center justify-center w-6 h-6 disabled:opacity-30 disabled:cursor-default"
+            style={{ color: 'var(--text-secondary)' }}
+            onMouseEnter={(e) => {
+              if (!e.currentTarget.disabled) {
+                e.currentTarget.style.color = 'var(--text-primary)';
+                e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--text-secondary)';
+              e.currentTarget.style.backgroundColor = '';
+            }}
             title="向左滚动"
           >
             <ChevronLeft size={14} />
@@ -213,7 +253,18 @@ export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorde
           <button
             onClick={() => scroll('right')}
             disabled={!canScrollRight}
-            className="flex self-end items-center justify-center w-6 h-6 text-slate-500 hover:text-slate-700 hover:bg-slate-300 disabled:opacity-30 disabled:cursor-default disabled:hover:bg-transparent border-l border-slate-400"
+            className="flex self-end items-center justify-center w-6 h-6 disabled:opacity-30 disabled:cursor-default border-l"
+            style={{ color: 'var(--text-secondary)', borderColor: 'var(--border-color)' }}
+            onMouseEnter={(e) => {
+              if (!e.currentTarget.disabled) {
+                e.currentTarget.style.color = 'var(--text-primary)';
+                e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--text-secondary)';
+              e.currentTarget.style.backgroundColor = '';
+            }}
             title="向右滚动"
           >
             <ChevronRight size={14} />

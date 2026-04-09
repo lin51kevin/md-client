@@ -210,7 +210,7 @@ export function MarkdownPreview({
   return (
     <div className={className}>
       {mermaidRendering && (
-        <div className="text-xs text-slate-400 italic px-8 pt-2">
+        <div className="text-xs italic px-8 pt-2" style={{ color: 'var(--text-tertiary)' }}>
           🔄 正在渲染图表…
         </div>
       )}

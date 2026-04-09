@@ -30,15 +30,31 @@ export function TabContextMenu({ x, y, tabId, tabs, onSave, onSaveAs, onClose, o
         style={{ left: x, top: y, minWidth: 180, backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
       >
         <button
-          className="w-full flex items-center justify-between px-4 py-1.5 hover:bg-blue-600 hover:text-white gap-6"
+          className="w-full flex items-center justify-between px-4 py-1.5 gap-6"
           style={{ color: 'var(--text-primary)' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--accent-color)';
+            e.currentTarget.style.color = 'var(--bg-primary)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '';
+            e.currentTarget.style.color = 'var(--text-primary)';
+          }}
           onPointerDown={() => { onSave(tabId); onDismiss(); }}
         >
           <span>保存</span><span className="text-xs opacity-60">Ctrl+S</span>
         </button>
         <button
-          className="w-full flex items-center justify-between px-4 py-1.5 hover:bg-blue-600 hover:text-white gap-6"
+          className="w-full flex items-center justify-between px-4 py-1.5 gap-6"
           style={{ color: 'var(--text-primary)' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--accent-color)';
+            e.currentTarget.style.color = 'var(--bg-primary)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '';
+            e.currentTarget.style.color = 'var(--text-primary)';
+          }}
           onPointerDown={() => { onSaveAs(tabId); onDismiss(); }}
         >
           <span>另存为…</span><span className="text-xs opacity-60">Ctrl+Shift+S</span>
@@ -47,8 +63,16 @@ export function TabContextMenu({ x, y, tabId, tabs, onSave, onSaveAs, onClose, o
         {/* F013: 固定 / 取消固定 */}
         {isPinned ? (
           <button
-            className="w-full flex items-center gap-2 px-4 py-1.5 hover:bg-blue-600 hover:text-white"
+            className="w-full flex items-center gap-2 px-4 py-1.5"
             style={{ color: 'var(--text-primary)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--accent-color)';
+              e.currentTarget.style.color = 'var(--bg-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '';
+              e.currentTarget.style.color = 'var(--text-primary)';
+            }}
             onPointerDown={() => { onUnpin(tabId); onDismiss(); }}
           >
             <PinOff size={13} strokeWidth={1.8} />
@@ -56,8 +80,16 @@ export function TabContextMenu({ x, y, tabId, tabs, onSave, onSaveAs, onClose, o
           </button>
         ) : (
           <button
-            className="w-full flex items-center gap-2 px-4 py-1.5 hover:bg-blue-600 hover:text-white"
+            className="w-full flex items-center gap-2 px-4 py-1.5"
             style={{ color: 'var(--text-primary)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--accent-color)';
+              e.currentTarget.style.color = 'var(--bg-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '';
+              e.currentTarget.style.color = 'var(--text-primary)';
+            }}
             onPointerDown={() => { onPin(tabId); onDismiss(); }}
           >
             <Pin size={13} strokeWidth={1.8} />
@@ -66,8 +98,16 @@ export function TabContextMenu({ x, y, tabId, tabs, onSave, onSaveAs, onClose, o
         )}
         {/* F013: 重命名 */}
         <button
-          className="w-full flex items-center gap-2 px-4 py-1.5 hover:bg-blue-600 hover:text-white"
+          className="w-full flex items-center gap-2 px-4 py-1.5"
           style={{ color: 'var(--text-primary)' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--accent-color)';
+            e.currentTarget.style.color = 'var(--bg-primary)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '';
+            e.currentTarget.style.color = 'var(--text-primary)';
+          }}
           onPointerDown={() => { onRename(tabId); onDismiss(); }}
         >
           <Pencil size={13} strokeWidth={1.8} />
@@ -76,8 +116,20 @@ export function TabContextMenu({ x, y, tabId, tabs, onSave, onSaveAs, onClose, o
         <div className="my-1" style={{ borderTop: '1px solid var(--border-color)' }} />
         {/* F013: 固定标签不可关闭（按钮禁用） */}
         <button
-          className={`w-full flex items-center justify-between px-4 py-1.5 gap-6 ${isPinned ? 'cursor-not-allowed opacity-30' : 'hover:bg-blue-600 hover:text-white'}`}
+          className={`w-full flex items-center justify-between px-4 py-1.5 gap-6 ${isPinned ? 'cursor-not-allowed opacity-30' : ''}`}
           style={isPinned ? undefined : { color: 'var(--text-primary)' }}
+          onMouseEnter={(e) => {
+            if (!isPinned) {
+              e.currentTarget.style.backgroundColor = 'var(--accent-color)';
+              e.currentTarget.style.color = 'var(--bg-primary)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isPinned) {
+              e.currentTarget.style.backgroundColor = '';
+              e.currentTarget.style.color = 'var(--text-primary)';
+            }
+          }}
           onPointerDown={() => { if (!isPinned) { onClose(tabId); onDismiss(); } }}
         >
           <span>关闭</span><span className="text-xs opacity-60">Ctrl+W</span>
