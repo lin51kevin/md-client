@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { message } from '@tauri-apps/plugin-dialog';
 import { Tab } from '../types';
 import { INITIAL_TAB_ID, genTabId, DEFAULT_MARKDOWN } from '../constants';
+import { addRecentFile } from '../lib/recent-files';
 
 export function useTabs() {
   const [tabs, setTabs] = useState<Tab[]>([
@@ -66,6 +67,7 @@ export function useTabs() {
       const newTab: Tab = { id: genTabId(), filePath, doc: content, isDirty: false };
       setTabs(prev => [...prev, newTab]);
       setActiveTabId(newTab.id);
+      addRecentFile(filePath);
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
       await message(`无法读取文件: ${errMsg}`, { title: '打开文件失败', kind: 'error' });
@@ -122,6 +124,7 @@ export function useTabs() {
       setTabs(prev => [...prev, newTab]);
       setActiveTabId(newTab.id);
     }
+    addRecentFile(filePath);
   }, []);
 
   const markSaved = (id: string) => {

@@ -23,6 +23,7 @@ import { useFocusMode } from './hooks/useFocusMode';
 import { extractToc, type TocEntry } from './lib/toc';
 import { applyTheme, getSavedTheme, saveTheme, THEMES, type ThemeName } from './lib/theme';
 import { getSnapshots, createSnapshot as createVersionSnapshot, restoreSnapshot } from './lib/version-history';
+import { getRecentFiles, clearRecentFiles, type RecentFile } from './lib/recent-files';
 import { autoCloseBrackets } from './lib/cmAutocomplete';
 import { countWords } from './lib/word-count';
 import { vimKeymap } from './lib/cmVim';
@@ -89,6 +90,20 @@ export default function App() {
 
   // F013 — Tab 重命名状态
   const [renamingTabId, setRenamingTabId] = useState<string | null>(null);
+
+  // F013 — 最近文件状态
+  const [recentFiles, setRecentFiles] = useState<RecentFile[]>(getRecentFiles());
+
+  // 每次打开文件成功后刷新最近列表（通过 activeTabId 变化感知）
+  const handleOpenRecent = useCallback(async (filePath: string) => {
+    await openFileInTab(filePath);
+    setRecentFiles(getRecentFiles());
+  }, [openFileInTab]);
+
+  const handleClearRecent = useCallback(() => {
+    clearRecentFiles();
+    setRecentFiles([]);
+  }, []);
 
   // F001 — 关闭有未保存内容的标签页时弹出确认
   const handleCloseTab = useCallback(async (id: string) => {
@@ -330,6 +345,9 @@ export default function App() {
               setSpellCheck(next);
               localStorage.setItem('md-client-spellcheck', String(next));
             }}
+            recentFiles={recentFiles}
+            onOpenRecent={handleOpenRecent}
+            onClearRecent={handleClearRecent}
           />
 
           <TabBar

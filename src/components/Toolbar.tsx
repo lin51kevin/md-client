@@ -1,6 +1,8 @@
-import { FolderOpen, Save, SaveAll, FilePlus, PanelLeftClose, PanelRightClose, Columns2, FileText, Printer, FileCode, Type, Monitor, Maximize, Minimize, List, SpellCheck } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { FolderOpen, Save, SaveAll, FilePlus, PanelLeftClose, PanelRightClose, Columns2, FileText, Printer, FileCode, Type, Monitor, Maximize, Minimize, List, SpellCheck, Clock, Trash2 } from 'lucide-react';
 import { ViewMode, FocusMode } from '../types';
 import type { ThemeName } from '../lib/theme';
+import type { RecentFile } from '../lib/recent-files';
 
 interface ToolbarProps {
   viewMode: ViewMode;
@@ -22,9 +24,15 @@ interface ToolbarProps {
   spellCheck?: boolean;
   /** F013: 拼写检查切换回调 */
   onToggleSpellCheck?: () => void;
+  /** F013: 最近文件列表 */
+  recentFiles?: RecentFile[];
+  /** F013: 打开最近文件 */
+  onOpenRecent?: (filePath: string) => void;
+  /** F013: 清空最近文件 */
+  onClearRecent?: () => void;
 }
 
-export function Toolbar({ viewMode, focusMode, showToc, currentTheme, onNewTab, onOpenFile, onSaveFile, onSaveAsFile, onExportDocx, onExportPdf, onExportHtml, onSetViewMode, onFocusModeChange, onToggleToc, onThemeChange, spellCheck, onToggleSpellCheck }: ToolbarProps) {
+export function Toolbar({ viewMode, focusMode, showToc, currentTheme, onNewTab, onOpenFile, onSaveFile, onSaveAsFile, onExportDocx, onExportPdf, onExportHtml, onSetViewMode, onFocusModeChange, onToggleToc, onThemeChange, spellCheck, onToggleSpellCheck, recentFiles, onOpenRecent, onClearRecent }: ToolbarProps) {
   const btnCls = 'flex items-center gap-1.5 px-2.5 py-1 text-xs hover:shadow-sm border border-transparent rounded transition-all';
   const viewBtnCls = (active: boolean) =>
     'flex items-center gap-1.5 px-2.5 py-1 text-xs rounded border transition-all ' +
@@ -38,6 +46,22 @@ export function Toolbar({ viewMode, focusMode, showToc, currentTheme, onNewTab, 
       ? 'bg-blue-50 border-blue-400 text-blue-700'
       : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50');
 
+  // F013: 最近文件下拉菜单状态
+  const [showRecent, setShowRecent] = useState(false);
+  const recentDropRef = useRef<HTMLDivElement>(null);
+
+  // 点击外部关闭下拉菜单
+  useEffect(() => {
+    if (!showRecent) return;
+    const handler = (e: MouseEvent) => {
+      if (recentDropRef.current && !recentDropRef.current.contains(e.target as Node)) {
+        setShowRecent(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showRecent]);
+
   return (
     <div className="shrink-0 flex items-center justify-between px-2 py-1" style={{ backgroundColor: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-color)' }}>
       <div className="flex items-center">
@@ -47,6 +71,51 @@ export function Toolbar({ viewMode, focusMode, showToc, currentTheme, onNewTab, 
         <button onClick={onOpenFile} title="打开文件 (Ctrl+O)" className={btnCls}>
           <FolderOpen size={15} strokeWidth={1.8} /><span>打开</span>
         </button>
+        {/* F013: 最近文件下拉 */}
+        <div className="relative" ref={recentDropRef}>
+          <button
+            onClick={() => setShowRecent(prev => !prev)}
+            title="最近文件"
+            className={btnCls}
+          >
+            <Clock size={15} strokeWidth={1.8} /><span>最近</span>
+          </button>
+          {showRecent && (
+            <div
+              className="absolute left-0 top-full mt-1 z-50 bg-white border border-slate-300 shadow-xl rounded-lg py-1 text-xs"
+              style={{ minWidth: 280, maxHeight: 320, overflowY: 'auto' }}
+            >
+              {recentFiles && recentFiles.length > 0 ? (
+                <>
+                  {[...recentFiles].reverse().map((file) => (
+                    <button
+                      key={file.path}
+                      title={file.path}
+                      className="w-full flex items-center gap-2 px-4 py-1.5 hover:bg-blue-50 text-slate-700 text-left"
+                      onMouseDown={() => { onOpenRecent?.(file.path); setShowRecent(false); }}
+                    >
+                      <FolderOpen size={13} strokeWidth={1.8} className="shrink-0 text-slate-400" />
+                      <span className="truncate font-medium">{file.name}</span>
+                    </button>
+                  ))}
+                  <div className="my-1 border-t border-slate-200" />
+                  <button
+                    className="w-full flex items-center gap-2 px-4 py-1.5 hover:bg-red-50 text-slate-500 hover:text-red-600"
+                    onMouseDown={() => { onClearRecent?.(); setShowRecent(false); }}
+                  >
+                    <Trash2 size={13} strokeWidth={1.8} />
+                    <span>清空记录</span>
+                  </button>
+                </>
+              ) : (
+                <div className="px-4 py-4 text-center text-slate-400">
+                  <Clock size={20} strokeWidth={1} className="mx-auto mb-1" />
+                  <div>暂无最近文件</div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
         <button onClick={onSaveFile} title="保存 (Ctrl+S)" className={btnCls}>
           <Save size={15} strokeWidth={1.8} /><span>保存</span>
         </button>
