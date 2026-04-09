@@ -131,7 +131,7 @@ export function TableEditor({ table, onConfirm, onCancel }: TableEditorProps) {
       <div className="table-editor-modal" ref={modalRef} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="table-editor-header">
-          <span className="table-editor-title">✏️ 编辑表格</span>
+          <span className="table-editor-title">编辑表格</span>
           <button className="table-editor-icon-btn" onClick={onCancel} title="关闭">
             <X size={18} />
           </button>

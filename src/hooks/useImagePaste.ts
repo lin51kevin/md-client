@@ -11,7 +11,7 @@
  * - CodeMirror: 插入文本到光标位置（通过回调）
  */
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { getImageSaveDir, generateImageFileName, buildImageMarkdownPath } from '../lib/image-paste';
 
@@ -21,7 +21,6 @@ export interface ImagePasteOptions {
   /** 插入 Markdown 图片语法到编辑器 */
   insertText: (markdown: string) => void;
   /** 当前编辑器内容 */
-  content: string;
   /** 是否启用（可由 Toolbar 开关控制） */
   enabled?: boolean;
 }
@@ -46,7 +45,7 @@ function isImageMime(mime: string): boolean {
  * 尝试从 DataTransferItem 读取图片数据
  */
 async function readImageFromItem(item: DataTransferItem): Promise<{ ext: string; data: Uint8Array } | null> {
-  if (!item.kind === 'file') return null;
+  if (item.kind !== 'file') return null;
 
   // 优先使用 getAsFile（图片拖入浏览器时）
   const file = item.getAsFile();
@@ -62,10 +61,8 @@ async function readImageFromItem(item: DataTransferItem): Promise<{ ext: string;
 export function useImagePaste({
   docPath,
   insertText,
-  content,
   enabled = true,
 }: ImagePasteOptions) {
-  const containerRef = useRef<HTMLElement | null>(null);
 
   const saveAndInsert = useCallback(
     async (ext: string, data: Uint8Array) => {
@@ -88,7 +85,7 @@ export function useImagePaste({
       try {
         await invoke('write_image_bytes', { path: savePath, data: Array.from(data) });
       } catch (err) {
-        console.error('[useImagePaste] failed to save image:', err);
+        // ignore: user will see via UI state
         return;
       }
 

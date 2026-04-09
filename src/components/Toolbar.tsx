@@ -141,9 +141,6 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentThe
         <button onClick={onSaveAsFile} title="另存为… (Ctrl+Shift+S)" className={btnCls}>
           <SaveAll size={15} strokeWidth={1.8} /><span>另存为</span>
         </button>
-        <button onClick={() => { alert('请直接 Ctrl+V 粘贴图片或拖拽图片到编辑器'); }} title="粘贴图片 (Ctrl+V)" className={btnCls}>
-          <Image size={15} strokeWidth={1.8} /><span>图片</span>
-        </button>
         <div className="w-px h-5 mx-1" style={{ backgroundColor: 'var(--border-color)' }} />
         <button onClick={onExportDocx} title="导出为 Word 文档" className={btnCls}>
           <FileText size={15} strokeWidth={1.8} /><span>导出DOCX</span>

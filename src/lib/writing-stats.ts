@@ -70,7 +70,7 @@ export function estimateReadingTime(text: string): number {
   const words = countWords(text);
   if (words === 0) return 0;
   // 粗略估计：假设 50% 中文（500字/分钟）+ 50% 英文（200词/分钟）
-  const minutes = Math.ceil(words / 300);
+  const minutes = Math.ceil(words / 350);
   return Math.max(1, minutes);
 }
 

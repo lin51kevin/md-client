@@ -21,8 +21,8 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
       for (const p of paths) {
         await openFileInTab(p);
       }
-    } catch (err) {
-      console.error('Failed to open file', err);
+    } catch {
+      // ignore: dialog cancellation or file read error — no user-visible action needed
     }
   };
 

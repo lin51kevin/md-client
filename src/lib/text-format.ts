@@ -93,7 +93,7 @@ export function toggleLinePrefix(
     if (currentLevel >= 6) {
       // h6 → 移除标题前缀
       return {
-        replacement: text.substring(0, lineStart) + lineText.substring(currentPrefix.length),
+        replacement: lineText.substring(currentPrefix.length),
         newCursorOffset: 0,
       };
     }
@@ -101,7 +101,7 @@ export function toggleLinePrefix(
     const nextLevel = currentLevel + 1;
     const nextPrefix = '#'.repeat(nextLevel) + ' ';
     return {
-      replacement: text.substring(0, lineStart) + nextPrefix + lineText.substring(currentPrefix.length),
+      replacement: nextPrefix + lineText.substring(currentPrefix.length),
       newCursorOffset: nextPrefix.length,
     };
   }
@@ -109,7 +109,7 @@ export function toggleLinePrefix(
   // 无前缀 → 添加标题前缀
   const prefixWithSpace = prefix.endsWith(' ') ? prefix : prefix + ' ';
   return {
-    replacement: text.substring(0, lineStart) + prefixWithSpace + lineText,
+    replacement: prefixWithSpace + lineText,
     newCursorOffset: prefixWithSpace.length,
   };
 }

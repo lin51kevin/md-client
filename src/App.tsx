@@ -52,6 +52,8 @@ function saveSpellCheck(value: boolean): void {
 import { Toolbar } from './components/Toolbar';
 import { TabBar } from './components/TabBar';
 import { TabContextMenu } from './components/TabContextMenu';
+import { EditorContextMenu } from './components/EditorContextMenu';
+import { detectContext } from './lib/context-menu';
 import { StatusBar } from './components/StatusBar';
 import { DragOverlay } from './components/DragOverlay';
 const MarkdownPreview = lazy(() =>
@@ -64,6 +66,7 @@ import { CrossFileSearch, type SearchResultItem } from './components/CrossFileSe
 import { useSearchHighlight } from './hooks/useSearchHighlight';
 import { useImagePaste } from './hooks/useImagePaste';
 import { wrapSelection, toggleLinePrefix, insertLink, insertImage, type SelectionInfo, type FormatResult } from './lib/text-format';
+import { parseTable, serializeTable } from './lib/table-parser';
 
 
 export default function App() {
@@ -71,6 +74,9 @@ export default function App() {
   const [showFindReplace, setShowFindReplace] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; tabId: string } | null>(null);
+
+  // F014 — 编辑器右键上下文菜单
+  const [editorCtxMenu, setEditorCtxMenu] = useState<{ x: number; y: number; context: import('./lib/context-menu').ContextInfo } | null>(null);
 
   // F009 - 焦点模式
   const { focusMode, setFocusMode, isChromeless, hideStatusBar } = useFocusMode();
@@ -199,16 +205,10 @@ export default function App() {
         const prefixes: Record<string, string> = {
           heading: '# ', blockquote: '> ', ul: '- ', ol: '1. ' };
         const lineStart = view.state.doc.lineAt(sel.from).from;
-        const result: FormatResult = toggleLinePrefix(docText, lineStart, prefixes[action]);
-        // toggleLinePrefix 返回的是完整文档文本，需要做全文替换
-        // 为避免性能问题，只替换当前行
         const lineEnd = view.state.doc.lineAt(sel.from).to;
-        const newLineContent = result.replacement.substring(
-          lineStart,
-          result.replacement.indexOf('\n', lineStart) === -1 ? result.replacement.length : result.replacement.indexOf('\n', lineStart)
-        );
+        const result: FormatResult = toggleLinePrefix(docText, lineStart, prefixes[action]);
         view.dispatch({
-          changes: { from: lineStart, to: lineEnd, insert: newLineContent },
+          changes: { from: lineStart, to: lineEnd, insert: result.replacement },
           selection: { anchor: lineStart + result.newCursorOffset },
         });
         break;
@@ -254,7 +254,6 @@ export default function App() {
   useImagePaste({
     docPath: activeTab.filePath,
     insertText: insertImageMarkdown,
-    content: activeTab.doc,
     enabled: true,
   });
 
@@ -340,6 +339,211 @@ export default function App() {
       }
     }, 200);
   }, [openFileInTab]);
+
+  // F014 — 编辑器右键菜单事件监听
+  useEffect(() => {
+    const view = cmViewRef.current;
+    if (!view) return;
+    const dom = view.dom;
+    const handleCtxMenu = (e: MouseEvent) => {
+      e.preventDefault();
+      const pos = view.posAtCoords({ x: e.clientX, y: e.clientY });
+      if (!pos) return;
+      const contextInfo = detectContext(activeTab.doc, pos);
+      setEditorCtxMenu({ x: e.clientX, y: e.clientY, context: contextInfo });
+    };
+    dom.addEventListener('contextmenu', handleCtxMenu);
+    return () => dom.removeEventListener('contextmenu', handleCtxMenu);
+  }, [activeTab.doc]);
+
+  // F014 — 编辑器右键菜单操作处理
+  const handleEditorCtxAction = useCallback((action: string) => {
+    const view = cmViewRef.current;
+    if (!view) return;
+
+    switch (action) {
+      case 'cut':
+        document.execCommand('cut');
+        break;
+      case 'copy':
+        document.execCommand('copy');
+        break;
+      case 'paste':
+        navigator.clipboard.readText().then(text => {
+          if (!text) return;
+          const sel = view.state.selection.main;
+          view.dispatch({ changes: { from: sel.from, to: sel.to, insert: text } });
+        });
+        break;
+      case 'selectAll':
+        view.dispatch({ selection: { anchor: 0, head: view.state.doc.length } });
+        break;
+      case 'bold': case 'italic': case 'strikethrough': case 'code':
+      case 'heading': case 'blockquote': case 'ul': case 'ol':
+      case 'link': case 'image':
+        handleFormatAction(action);
+        break;
+      case 'headingPromote': {
+        // Decrease # count (e.g. ## → #)
+        const sel = view.state.selection.main;
+        const line = view.state.doc.lineAt(sel.from);
+        const lineText = line.text.match(/^(#{1,6})/);
+        const level = lineText?.[1]?.length ?? 1;
+        if (level > 1) {
+          view.dispatch({ changes: { from: line.from, to: line.from + level, insert: '#'.repeat(level - 1) + ' ' } });
+        }
+        break;
+      }
+      case 'headingDemote': {
+        const sel = view.state.selection.main;
+        const line = view.state.doc.lineAt(sel.from);
+        const lineText = line.text.match(/^(#{1,6})/);
+        const level = lineText?.[1]?.length ?? 0;
+        if (level >= 1 && level < 6) {
+          view.dispatch({ changes: { from: line.from, to: line.from + level, insert: '#'.repeat(level + 1) + ' ' } });
+        } else if (level === 0 || !lineText) {
+          // No heading → make H2
+          view.dispatch({ changes: { from: line.from, insert: '## ' } });
+        }
+        break;
+      }
+      case 'headingRemove': {
+        const sel = view.state.selection.main;
+        const line = view.state.doc.lineAt(sel.from);
+        const m = line.text.match(/^(#{1,6}\s*)/);
+        if (m) {
+          view.dispatch({ changes: { from: line.from, to: line.from + m[1].length, insert: '' } });
+        }
+        break;
+      }
+      case 'copyCodeBlock': {
+        const doc = view.state.doc.toString();
+        // Find current code block
+        const sel = view.state.selection.main;
+        let start = sel.from; let end = sel.to;
+        while (start > 0 && doc.substring(start - 3, start) !== '```') start--;
+        while (end < doc.length && doc.substring(end, end + 3) !== '```') end++;
+        if (start < end && doc.substring(start, start + 3) === '```' && doc.substring(end, end + 3) === '```') {
+          const codeContent = doc.substring(start + (doc.indexOf('\n', start) + 1), end).trim();
+          navigator.clipboard.writeText(codeContent);
+        } else {
+          document.execCommand('copy');
+        }
+        break;
+      }
+      case 'indent':
+        handleFormatAction('ul'); // reuse list toggle as indent proxy
+        break;
+      case 'outdent':
+        // Remove one level of indentation/list prefix
+        {
+          const sel = view.state.selection.main;
+          const line = view.state.doc.lineAt(sel.from);
+          const lt = line.text;
+          if (/^\s{2}/.test(lt)) {
+            view.dispatch({ changes: { from: line.from, to: line.from + 2, insert: '' } });
+          } else if (/^[-*+] /.test(lt)) {
+            view.dispatch({ changes: { from: line.from, to: line.from + 2, insert: '' } });
+          } else if (/^\d+\. /.test(lt)) {
+            view.dispatch({ changes: { from: line.from, to: lt.indexOf(' ') + 1, insert: '' } });
+          }
+        }
+        break;
+      case 'toggleListType':
+        {
+          const sel = view.state.selection.main;
+          const line = view.state.doc.lineAt(sel.from);
+          const lt = line.text;
+          if (/^[-*+] /.test(lt)) {
+            view.dispatch({ changes: { from: line.from, to: line.from + 2, insert: '1. ' } });
+          } else if (/^\d+\. /.test(lt)) {
+            view.dispatch({ changes: { from: line.from, to: lt.indexOf('.') + 2, insert: '- ' } });
+          }
+        }
+        break;
+      case 'removeBlockquote':
+        handleFormatAction('blockquote'); // toggle removes it
+        break;
+      case 'tableInsertRow': case 'tableDeleteRow':
+      case 'tableInsertCol': case 'tableDeleteCol':
+      case 'alignLeft': case 'alignCenter': case 'alignRight': {
+        const doc = view.state.doc.toString();
+        const sel = view.state.selection.main;
+        const tableData = parseTable(doc, sel.from);
+        if (!tableData) break;
+
+        // Determine data row index: header=line0, separator=line1, data=line2+
+        const textBefore = doc.substring(tableData.rawStart, sel.from);
+        const cursorLineInTable = textBefore.split('\n').length - 1;
+        const rowIdx = Math.max(0, cursorLineInTable - 2);
+
+        // Determine column index from pipe count before cursor
+        const cursorLine = view.state.doc.lineAt(sel.from);
+        const textBeforeCursor = cursorLine.text.substring(0, sel.from - cursorLine.from);
+        const colIdx = Math.max(0, (textBeforeCursor.match(/\|/g) ?? []).length - 1);
+
+        // Immutable copies
+        const headers = [tableData.headers[0]?.map(c => c) ?? []];
+        let rows = tableData.rows.map(r => [...r]);
+        let alignment = [...tableData.alignment];
+        const colCount = headers[0].length;
+
+        switch (action) {
+          case 'tableInsertRow':
+            rows.splice(rowIdx + 1, 0, Array(colCount).fill(''));
+            break;
+          case 'tableDeleteRow':
+            if (rows.length > 1) rows.splice(rowIdx, 1);
+            break;
+          case 'tableInsertCol':
+            headers[0].splice(colIdx + 1, 0, '');
+            rows = rows.map(r => { const nr = [...r]; nr.splice(colIdx + 1, 0, ''); return nr; });
+            alignment.splice(colIdx + 1, 0, 'left' as const);
+            break;
+          case 'tableDeleteCol':
+            if (headers[0].length > 1) {
+              headers[0].splice(colIdx, 1);
+              rows = rows.map(r => { const nr = [...r]; nr.splice(colIdx, 1); return nr; });
+              alignment.splice(colIdx, 1);
+            }
+            break;
+          case 'alignLeft': alignment[colIdx] = 'left'; break;
+          case 'alignCenter': alignment[colIdx] = 'center'; break;
+          case 'alignRight': alignment[colIdx] = 'right'; break;
+        }
+
+        const newTable = serializeTable({ headers, rows, alignment, rawStart: tableData.rawStart, rawEnd: tableData.rawEnd });
+        view.dispatch({ changes: { from: tableData.rawStart, to: tableData.rawEnd - 1, insert: newTable } });
+        break;
+      }
+      case 'copyFormula': {
+        const doc = view.state.doc.toString();
+        const sel = view.state.selection.main;
+        const pos = sel.from;
+        // Try enclosing $$ block first
+        const blockStart = doc.lastIndexOf('$$', pos - 1);
+        const blockEnd = doc.indexOf('$$', pos + 1);
+        if (blockStart !== -1 && blockEnd !== -1 && blockStart !== blockEnd) {
+          navigator.clipboard.writeText(doc.substring(blockStart + 2, blockEnd).trim());
+        } else {
+          // Fallback: inline $ formula on current line
+          const line = view.state.doc.lineAt(pos);
+          const relPos = pos - line.from;
+          for (const m of line.text.matchAll(/\$([^$]+)\$/g)) {
+            if (m.index !== undefined && m.index <= relPos && m.index + m[0].length >= relPos) {
+              navigator.clipboard.writeText(m[1]);
+              break;
+            }
+          }
+        }
+        break;
+      }
+      default:
+        break;
+    }
+    setEditorCtxMenu(null);
+    view.focus();
+  }, [handleFormatAction]);
 
   useKeyboardShortcuts({
     createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile,
@@ -449,6 +653,18 @@ export default function App() {
               onUnpin={(id) => { unpinTab(id); setCtxMenu(null); }}
               tabs={tabs}
               onDismiss={() => setCtxMenu(null)}
+            />
+          )}
+
+          {/* F014 — 编辑器右键上下文菜单 */}
+          {editorCtxMenu && (
+            <EditorContextMenu
+              visible={!!editorCtxMenu}
+              x={editorCtxMenu.x}
+              y={editorCtxMenu.y}
+              context={editorCtxMenu.context}
+              onClose={() => setEditorCtxMenu(null)}
+              onAction={handleEditorCtxAction}
             />
           )}
 

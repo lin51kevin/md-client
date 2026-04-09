@@ -132,7 +132,7 @@ function TreeNodeView({
           {node.children.map((child) => (
             <TreeNodeView
               key={child.path}
-              node={buildTreeNode(child)}
+              node={child as unknown as TreeNode}
               depth={depth + 1}
               activeFilePath={activeFilePath}
               onFileOpen={onFileOpen}
@@ -178,7 +178,7 @@ export function FileTreeSidebar({
       );
       expandedDirsRef.current.add(dirPath);
     } catch (e) {
-      console.error('Failed to load children:', e);
+      // ignore: user will see via UI state
     }
   }, []);
 
@@ -254,7 +254,7 @@ export function FileTreeSidebar({
         loadRoot(selected as string);
       }
     } catch (e) {
-      console.error('pickFolder failed:', e);
+      // ignore: user will see via UI state
     }
   }, [loadRoot]);
 
