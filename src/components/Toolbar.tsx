@@ -1,4 +1,4 @@
-import { FolderOpen, Save, SaveAll, FilePlus, PanelLeftClose, PanelRightClose, Columns2, FileText, Printer, FileCode, Type, Monitor, Maximize, Minimize, List } from 'lucide-react';
+import { FolderOpen, Save, SaveAll, FilePlus, PanelLeftClose, PanelRightClose, Columns2, FileText, Printer, FileCode, Type, Monitor, Maximize, Minimize, List, SpellCheck } from 'lucide-react';
 import { ViewMode, FocusMode } from '../types';
 import type { ThemeName } from '../lib/theme';
 
@@ -18,9 +18,13 @@ interface ToolbarProps {
   onToggleToc?: () => void;
   onThemeChange?: (theme: ThemeName) => void;
   currentTheme?: ThemeName;
+  /** F013: 拼写检查状态 */
+  spellCheck?: boolean;
+  /** F013: 拼写检查切换回调 */
+  onToggleSpellCheck?: () => void;
 }
 
-export function Toolbar({ viewMode, focusMode, showToc, currentTheme, onNewTab, onOpenFile, onSaveFile, onSaveAsFile, onExportDocx, onExportPdf, onExportHtml, onSetViewMode, onFocusModeChange, onToggleToc, onThemeChange }: ToolbarProps) {
+export function Toolbar({ viewMode, focusMode, showToc, currentTheme, onNewTab, onOpenFile, onSaveFile, onSaveAsFile, onExportDocx, onExportPdf, onExportHtml, onSetViewMode, onFocusModeChange, onToggleToc, onThemeChange, spellCheck, onToggleSpellCheck }: ToolbarProps) {
   const btnCls = 'flex items-center gap-1.5 px-2.5 py-1 text-xs hover:shadow-sm border border-transparent rounded transition-all';
   const viewBtnCls = (active: boolean) =>
     'flex items-center gap-1.5 px-2.5 py-1 text-xs rounded border transition-all ' +
@@ -64,6 +68,15 @@ export function Toolbar({ viewMode, focusMode, showToc, currentTheme, onNewTab, 
         {/* F010 — 大纲导航切换 */}
         <button onClick={onToggleToc} title="大纲导航" className={focusBtnCls(!!showToc)}>
           <List size={14} strokeWidth={1.8} />
+        </button>
+
+        {/* F013 — 拼写检查切换 */}
+        <button
+          onClick={onToggleSpellCheck}
+          title={spellCheck ? '关闭拼写检查' : '开启拼写检查'}
+          className={focusBtnCls(!!spellCheck)}
+        >
+          <SpellCheck size={14} strokeWidth={1.8} />
         </button>
 
         {/* F011 — 主题切换（亮/暗 toggle） */}

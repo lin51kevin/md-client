@@ -11,14 +11,31 @@ interface TabBarProps {
   onReorder: (fromId: string, toId: string) => void;
   onContextMenu: (x: number, y: number, tabId: string) => void;
   getTabTitle: (tab: Tab) => string;
+  /** F013: 当前正在重命名的 tab ID */
+  renamingTabId?: string | null;
+  /** F013: 开始重命名 */
+  onStartRename?: (id: string) => void;
+  /** F013: 确认重命名 */
+  onConfirmRename?: (id: string, name: string) => void;
+  /** F013: 取消重命名 */
+  onCancelRename?: () => void;
 }
 
-export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorder, onContextMenu, getTabTitle }: TabBarProps) {
+export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorder, onContextMenu, getTabTitle, renamingTabId, onStartRename, onConfirmRename, onCancelRename }: TabBarProps) {
   const [dragOverTabId, setDragOverTabId] = useState<string | null>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
   const tabDragRef = useRef<{ fromId: string; startX: number; overId: string | null } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  // F013: 重命名输入框 ref，用于自动聚焦
+  const renameInputRef = useRef<HTMLInputElement>(null);
+
+  // F013: 当 renamingTabId 变化时自动聚焦输入框
+  useEffect(() => {
+    if (renamingTabId) {
+      setTimeout(() => renameInputRef.current?.select(), 0);
+    }
+  }, [renamingTabId]);
 
   const updateScrollButtons = useCallback(() => {
     const el = scrollRef.current;
@@ -81,41 +98,79 @@ export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorde
     };
   }, [onReorder]);
 
+  // F013: 处理重命名输入框的键盘事件
+  const handleRenameKeyDown = (e: React.KeyboardEvent, tabId: string, _currentName: string) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const value = (e.target as HTMLInputElement).value.trim();
+      if (value) onConfirmRename?.(tabId, value);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      onCancelRename?.();
+    }
+  };
+
   return (
     <div className="shrink-0 flex items-stretch" style={{ minHeight: 30, backgroundColor: 'var(--bg-tertiary)', borderBottom: '1px solid var(--border-color)' }}>
       <div
         ref={scrollRef}
         className="flex items-end flex-1 overflow-x-auto tabbar-scroll min-w-0"
       >
-        {tabs.map(tab => (
-          <div
-            key={tab.id}
-            data-tab-id={tab.id}
-            onPointerDown={(e) => handlePointerDown(e, tab.id)}
-            onContextMenu={(e) => { e.preventDefault(); onActivate(tab.id); onContextMenu(e.clientX, e.clientY, tab.id); }}
-            style={{
-              borderRightColor: 'var(--border-color)',
-              backgroundColor: tab.id === activeTabId ? 'var(--bg-primary)' : 'var(--bg-tertiary)',
-              color: tab.id === activeTabId ? 'var(--text-primary)' : 'var(--text-secondary)',
-              ...(tab.id === activeTabId ? { marginBottom: '-1px', borderTop: '2px solid var(--accent-color)' } : {}),
-            }}
-            className={
-              'group relative flex items-center gap-1 pl-3 pr-1.5 py-1 text-xs border-r cursor-grab whitespace-nowrap select-none ' +
-              (tab.id === dragOverTabId ? 'border-l-2 border-l-blue-500' : '')
-            }
-          >
-            <span className="max-w-45 truncate" title={tab.filePath ?? 'Untitled.md'}>
-              {getTabTitle(tab)}
-            </span>
-            <button
-              onClick={(e) => { e.stopPropagation(); onClose(tab.id); }}
-              className="ml-1 flex items-center justify-center w-4 h-4 rounded opacity-0 group-hover:opacity-100 hover:bg-slate-300 text-slate-400 hover:text-slate-700 transition-opacity"
-              title="关闭"
+        {tabs.map(tab => {
+          const isRenaming = renamingTabId === tab.id;
+          return (
+            <div
+              key={tab.id}
+              data-tab-id={tab.id}
+              onPointerDown={(e) => !isRenaming && handlePointerDown(e, tab.id)}
+              onContextMenu={(e) => { e.preventDefault(); onActivate(tab.id); onContextMenu(e.clientX, e.clientY, tab.id); }}
+              style={{
+                borderRightColor: 'var(--border-color)',
+                backgroundColor: tab.id === activeTabId ? 'var(--bg-primary)' : 'var(--bg-tertiary)',
+                color: tab.id === activeTabId ? 'var(--text-primary)' : 'var(--text-secondary)',
+                ...(tab.id === activeTabId ? { marginBottom: '-1px', borderTop: '2px solid var(--accent-color)' } : {}),
+              }}
+              className={
+                'group relative flex items-center gap-1 pl-3 pr-1.5 py-1 text-xs border-r cursor-grab whitespace-nowrap select-none ' +
+                (tab.id === dragOverTabId ? 'border-l-2 border-l-blue-500' : '')
+              }
             >
-              <X size={11} />
-            </button>
-          </div>
-        ))}
+              {isRenaming ? (
+                // F013: 重命名输入框（内联替换标题）
+                <input
+                  ref={renameInputRef}
+                  defaultValue={getTabTitle(tab).replace(/ \u25cf$/, '')}
+                  onKeyDown={(e) => handleRenameKeyDown(e, tab.id, getTabTitle(tab))}
+                  onBlur={(e) => {
+                    const value = e.target.value.trim();
+                    if (value) onConfirmRename?.(tab.id, value);
+                    else onCancelRename?.();
+                  }}
+                  className="w-full px-1 py-0 text-xs bg-white border border-blue-400 rounded outline-none"
+                  style={{ maxWidth: 160 }}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              ) : (
+                <>
+                  <span
+                    className="max-w-45 truncate"
+                    title={tab.filePath ?? 'Untitled.md'}
+                    onDoubleClick={() => onStartRename?.(tab.id)}
+                  >
+                    {getTabTitle(tab)}
+                  </span>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onClose(tab.id); }}
+                    className="ml-1 flex items-center justify-center w-4 h-4 rounded opacity-0 group-hover:opacity-100 hover:bg-slate-300 text-slate-400 hover:text-slate-700 transition-opacity"
+                    title="关闭"
+                  >
+                    <X size={11} />
+                  </button>
+                </>
+              )}
+            </div>
+          );
+        })}
         <button
           onClick={onNew}
           title="新建标签页"

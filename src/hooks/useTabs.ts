@@ -24,11 +24,19 @@ export function useTabs() {
   );
 
   const getTabTitle = (tab: Tab): string => {
+    // F013: 自定义显示名优先
+    if (tab.displayName) return tab.isDirty ? tab.displayName + ' \u25cf' : tab.displayName;
     const name = tab.filePath
       ? (tab.filePath.split(/[\\/]/).pop() ?? tab.filePath)
       : 'Untitled.md';
     return tab.isDirty ? name + ' \u25cf' : name;
   };
+
+  /** F013: 重命名 Tab 显示名称 */
+  const renameTab = useCallback((id: string, newName: string) => {
+    if (!newName.trim()) return;
+    setTabs(prev => prev.map(t => t.id === id ? { ...t, displayName: newName.trim() } : t));
+  }, []);
 
   const updateActiveDoc = useCallback((value: string) => {
     setTabs(prev =>
@@ -128,5 +136,6 @@ export function useTabs() {
     tabs, activeTabId, setActiveTabId, activeTabIdRef,
     getActiveTab, getTabTitle, updateActiveDoc, openFileInTab, openFileWithContent,
     createNewTab, closeTab, reorderTabs, markSaved, markSavedAs,
+    renameTab,
   };
 }

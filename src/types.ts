@@ -1,6 +1,8 @@
 export interface Tab {
   id: string;
   filePath: string | null;
+  /** F013: Tab 重命名 — 自定义显示名称（优先于 filePath 推导出名称） */
+  displayName?: string;
   doc: string;
   isDirty: boolean;
 }

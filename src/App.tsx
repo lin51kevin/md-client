@@ -31,6 +31,16 @@ import { createAutoSave } from './lib/auto-save';
 /** Stable config — defined outside component to avoid object churn on every render */
 const EDITOR_SETUP = { lineNumbers: true, foldGutter: true, highlightActiveLine: true, tabSize: 2 };
 
+// F013: 拼写检查状态（默认开启）
+const DEFAULT_SPELL_CHECK = true;
+
+function getSavedSpellCheck(): boolean {
+  try {
+    const saved = localStorage.getItem('md-client-spellcheck');
+    return saved === null ? DEFAULT_SPELL_CHECK : saved === 'true';
+  } catch { return DEFAULT_SPELL_CHECK; }
+}
+
 import { Toolbar } from './components/Toolbar';
 import { TabBar } from './components/TabBar';
 import { TabContextMenu } from './components/TabContextMenu';
@@ -57,6 +67,9 @@ export default function App() {
   const [showToc, setShowToc] = useState(false);
   const [activeTocId, setActiveTocId] = useState<string | null>(null);
 
+  // F013 — 拼写检查
+  const [spellCheck, setSpellCheck] = useState<boolean>(getSavedSpellCheck);
+
   // F011 — 主题系统
   const [theme, setThemeState] = useState<ThemeName>(() => getSavedTheme() || 'light');
 
@@ -71,7 +84,11 @@ export default function App() {
     getActiveTab, getTabTitle, updateActiveDoc,
     openFileInTab, openFileWithContent, createNewTab, closeTab, reorderTabs,
     markSaved, markSavedAs,
+    renameTab,
   } = useTabs();
+
+  // F013 — Tab 重命名状态
+  const [renamingTabId, setRenamingTabId] = useState<string | null>(null);
 
   // F001 — 关闭有未保存内容的标签页时弹出确认
   const handleCloseTab = useCallback(async (id: string) => {
@@ -286,6 +303,7 @@ export default function App() {
               onSave={handleSaveFile}
               onSaveAs={handleSaveAsFile}
               onClose={handleCloseTab}
+              onRename={(id) => { setCtxMenu(null); setRenamingTabId(id); }}
               onDismiss={() => setCtxMenu(null)}
             />
           )}
@@ -306,6 +324,12 @@ export default function App() {
             onToggleToc={() => setShowToc(prev => !prev)}
             currentTheme={theme}
             onThemeChange={setThemeState}
+            spellCheck={spellCheck}
+            onToggleSpellCheck={() => {
+              const next = !spellCheck;
+              setSpellCheck(next);
+              localStorage.setItem('md-client-spellcheck', String(next));
+            }}
           />
 
           <TabBar
@@ -317,6 +341,10 @@ export default function App() {
             onReorder={reorderTabs}
             onContextMenu={(x, y, tabId) => setCtxMenu({ x, y, tabId })}
             getTabTitle={getTabTitle}
+            renamingTabId={renamingTabId}
+            onStartRename={setRenamingTabId}
+            onConfirmRename={(id, name) => { renameTab(id, name); setRenamingTabId(null); }}
+            onCancelRename={() => setRenamingTabId(null)}
           />
         </>
       )}
@@ -357,6 +385,7 @@ export default function App() {
                   onCreateEditor={handleCreateEditor}
                   onUpdate={handleEditorUpdate}
                   basicSetup={editorSetup}
+                  spellCheck={spellCheck}
                 />
               </div>
             </div>
@@ -383,6 +412,7 @@ export default function App() {
                   onCreateEditor={handleCreateEditor}
                   onUpdate={handleEditorUpdate}
                   basicSetup={editorSetup}
+                  spellCheck={spellCheck}
                 />
               </div>
             ) : (
