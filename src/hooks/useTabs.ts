@@ -84,6 +84,8 @@ export function useTabs() {
 
   const closeTab = (id: string) => {
     const current = tabsRef.current;
+    // F013: 固定标签不可关闭
+    if (current.find(t => t.id === id)?.isPinned) return;
     if (current.length === 1) {
       setTabs([{ id: current[0].id, filePath: null, doc: DEFAULT_MARKDOWN, isDirty: false }]);
       return;
@@ -94,6 +96,16 @@ export function useTabs() {
     if (id === activeTabIdRef.current) {
       setActiveTabId(next[Math.min(idx, next.length - 1)].id);
     }
+  };
+
+  /** F013: 固定标签页 */
+  const pinTab = (id: string) => {
+    setTabs(prev => prev.map(t => t.id === id ? { ...t, isPinned: true } : t));
+  };
+
+  /** F013: 取消固定标签页 */
+  const unpinTab = (id: string) => {
+    setTabs(prev => prev.map(t => t.id === id ? { ...t, isPinned: false } : t));
   };
 
   const reorderTabs = (fromId: string, toId: string) => {
@@ -140,5 +152,6 @@ export function useTabs() {
     getActiveTab, getTabTitle, updateActiveDoc, openFileInTab, openFileWithContent,
     createNewTab, closeTab, reorderTabs, markSaved, markSavedAs,
     renameTab,
+    pinTab, unpinTab,
   };
 }

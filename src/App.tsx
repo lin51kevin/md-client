@@ -29,10 +29,10 @@ import { countWords } from './lib/word-count';
 import { vimKeymap } from './lib/cmVim';
 import { createAutoSave } from './lib/auto-save';
 
-/** Stable config — defined outside component to avoid object churn on every render */
+/** Stable config - defined outside component to avoid object churn on every render */
 const EDITOR_SETUP = { lineNumbers: true, foldGutter: true, highlightActiveLine: true, tabSize: 2 };
 
-// F013: 拼写检查状态（默认开启）
+// F013: 拼写检查状态(默认开启)
 const DEFAULT_SPELL_CHECK = true;
 
 function getSavedSpellCheck(): boolean {
@@ -61,20 +61,20 @@ export default function App() {
   const [isDragOver, setIsDragOver] = useState(false);
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; tabId: string } | null>(null);
 
-  // F009 — 焦点模式
+  // F009 - 焦点模式
   const { focusMode, setFocusMode, isChromeless, hideStatusBar } = useFocusMode();
 
-  // F010 — 大纲导航
+  // F010 - 大纲导航
   const [showToc, setShowToc] = useState(false);
   const [activeTocId, setActiveTocId] = useState<string | null>(null);
 
-  // F013 — 拼写检查
+  // F013 - 拼写检查
   const [spellCheck, setSpellCheck] = useState<boolean>(getSavedSpellCheck);
 
-  // F011 — 主题系统
+  // F011 - 主题系统
   const [theme, setThemeState] = useState<ThemeName>(() => getSavedTheme() || 'light');
 
-  // F012 — 版本历史
+  // F012 - 版本历史
   const [snapshots, setSnapshots] = useState<import('./lib/version-history').Snapshot[]>([]);
 
 
@@ -86,15 +86,16 @@ export default function App() {
     openFileInTab, openFileWithContent, createNewTab, closeTab, reorderTabs,
     markSaved, markSavedAs,
     renameTab,
+    pinTab, unpinTab,
   } = useTabs();
 
-  // F013 — Tab 重命名状态
+  // F013 - Tab 重命名状态
   const [renamingTabId, setRenamingTabId] = useState<string | null>(null);
 
-  // F013 — 最近文件状态
+  // F013 - 最近文件状态
   const [recentFiles, setRecentFiles] = useState<RecentFile[]>(getRecentFiles());
 
-  // 每次打开文件成功后刷新最近列表（通过 activeTabId 变化感知）
+  // 每次打开文件成功后刷新最近列表(通过 activeTabId 变化感知)
   const handleOpenRecent = useCallback(async (filePath: string) => {
     await openFileInTab(filePath);
     setRecentFiles(getRecentFiles());
@@ -106,11 +107,13 @@ export default function App() {
   }, []);
 
   // F001 — 关闭有未保存内容的标签页时弹出确认
+  // F013 — 固定标签需先解除固定才能关闭（强制关闭由右键菜单单独处理）
   const handleCloseTab = useCallback(async (id: string) => {
     const tab = tabs.find(t => t.id === id);
+    if (tab?.isPinned) return; // pinned tabs cannot be normally closed
     if (tab?.isDirty) {
       const name = tab.filePath?.split(/[\\/]/).pop() ?? 'Untitled.md';
-      const yes = await confirm(`“${name}” 有未保存的更改，确定要关闭吗？`, { title: '关闭标签页', kind: 'warning' });
+      const yes = await confirm(`"${name}" 有未保存的更改，确定要关闭吗？`, { title: '关闭标签页', kind: 'warning' });
       if (!yes) return;
     }
     closeTab(id);
@@ -120,7 +123,7 @@ export default function App() {
     getActiveTab, tabs, openFileInTab, markSaved, markSavedAs,
   });
 
-  // F012 — 包装保存函数，保存成功后创建快照（仅手动 Ctrl+S 触发）
+  // F012 - 包装保存函数,保存成功后创建快照(仅手动 Ctrl+S 触发)
   const handleSaveFile = useCallback(async (tabId?: string) => {
     await rawHandleSaveFile(tabId);
     const tab = tabId ? tabs.find(t => t.id === tabId) : getActiveTab();
@@ -148,17 +151,17 @@ export default function App() {
   const activeTab = getActiveTab();
   useWindowTitle(activeTab, isTauri);
 
-  // F011 — 主题切换 effect
+  // F011 - 主题切换 effect
   useEffect(() => {
     applyTheme(theme);
     saveTheme(theme);
-    // 同步原生标题栏主题（Windows/macOS）
+    // 同步原生标题栏主题(Windows/macOS)
     if (isTauri) {
       getCurrentWindow().setTheme(theme).catch(() => {});
     }
   }, [theme, isTauri]);
 
-  // F012 — 切换文件时加载对应快照列表
+  // F012 - 切换文件时加载对应快照列表
   useEffect(() => {
     if (activeTab.filePath) {
       setSnapshots(getSnapshots(activeTab.filePath));
@@ -167,13 +170,13 @@ export default function App() {
     }
   }, [activeTab.filePath]);
 
-  // F010 — TOC 数据 + 跳转处理
-  // 防抖 300ms 延迟更新 toc/wordCount，避免每次按键都重算
+  // F010 - TOC 数据 + 跳转处理
+  // 防抖 300ms 延迟更新 toc/wordCount,避免每次按键都重算
   const [debouncedDoc, setDebouncedDoc] = useState(activeTab.doc);
   useEffect(() => {
     const id = setTimeout(() => setDebouncedDoc(activeTab.doc), 300);
     return () => clearTimeout(id);
-  // activeTabId 切换时立即同步，避免旧标签页数据延迟显示
+  // activeTabId 切换时立即同步,避免旧标签页数据延迟显示
   }, [activeTab.doc, activeTabId]);
 
   const tocEntries = useMemo(() => extractToc(debouncedDoc), [debouncedDoc]);
@@ -249,7 +252,7 @@ export default function App() {
   useEffect(() => { getActiveTabRef.current = getActiveTab; }, [getActiveTab]);
 
   // Auto-save: debounce 1s after editing stops
-  // 仅写磁盘，不创建快照（快照只由手动 Ctrl+S 产生）
+  // 仅写磁盘,不创建快照(快照只由手动 Ctrl+S 产生)
   const autoSaveRef = useRef<ReturnType<typeof createAutoSave> | null>(null);
   useEffect(() => {
     autoSaveRef.current = createAutoSave({
@@ -279,7 +282,7 @@ export default function App() {
   ], [cursorExtension, vimExtension, searchHighlightExtension]);
   const editorSetup = EDITOR_SETUP;
 
-  // F009 — 根据焦点模式动态调整主题色
+  // F009 - 根据焦点模式动态调整主题色
   const editorTheme = focusMode === 'focus' ? 'dark' : THEMES[theme].cmTheme;
 
   return (
@@ -298,7 +301,7 @@ export default function App() {
     >
       {isDragOver && <DragOverlay />}
 
-      {/* F009 — 焦点模式下隐藏工具栏/标签栏/搜索栏 */}
+      {/* F009 - 焦点模式下隐藏工具栏/标签栏/搜索栏 */}
       {!isChromeless && (
         <>
           {showFindReplace && (
@@ -319,6 +322,9 @@ export default function App() {
               onSaveAs={handleSaveAsFile}
               onClose={handleCloseTab}
               onRename={(id) => { setCtxMenu(null); setRenamingTabId(id); }}
+              onPin={(id) => { pinTab(id); setCtxMenu(null); }}
+              onUnpin={(id) => { unpinTab(id); setCtxMenu(null); }}
+              tabs={tabs}
               onDismiss={() => setCtxMenu(null)}
             />
           )}
@@ -367,7 +373,7 @@ export default function App() {
         </>
       )}
 
-      {/* F010 — 大纲侧边栏 + 主内容区 */}
+      {/* F010 - 大纲侧边栏 + 主内容区 */}
       <div className="flex-1 overflow-hidden flex">
         <TocSidebar
           key={activeTabId}
@@ -444,7 +450,7 @@ export default function App() {
         )}
       </div>
 
-      {/* F009 — 焦点模式下隐藏状态栏 */}
+      {/* F009 - 焦点模式下隐藏状态栏 */}
       {!hideStatusBar && (
         <StatusBar
           filePath={activeTab.filePath}

@@ -3,6 +3,8 @@ export interface Tab {
   filePath: string | null;
   /** F013: Tab 重命名 — 自定义显示名称（优先于 filePath 推导出名称） */
   displayName?: string;
+  /** F013: 固定标签页（固定标签不可关闭和拖拽排序） */
+  isPinned?: boolean;
   doc: string;
   isDirty: boolean;
 }

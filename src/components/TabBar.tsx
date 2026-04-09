@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { X, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Plus, ChevronLeft, ChevronRight, Pin } from 'lucide-react';
 import { Tab } from '../types';
 
 interface TabBarProps {
@@ -118,11 +118,12 @@ export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorde
       >
         {tabs.map(tab => {
           const isRenaming = renamingTabId === tab.id;
+          const isPinned = !!tab.isPinned;
           return (
             <div
               key={tab.id}
               data-tab-id={tab.id}
-              onPointerDown={(e) => !isRenaming && handlePointerDown(e, tab.id)}
+              onPointerDown={(e) => !isRenaming && !isPinned && handlePointerDown(e, tab.id)}
               onContextMenu={(e) => { e.preventDefault(); onActivate(tab.id); onContextMenu(e.clientX, e.clientY, tab.id); }}
               style={{
                 borderRightColor: 'var(--border-color)',
@@ -131,7 +132,8 @@ export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorde
                 ...(tab.id === activeTabId ? { marginBottom: '-1px', borderTop: '2px solid var(--accent-color)' } : {}),
               }}
               className={
-                'group relative flex items-center gap-1 pl-3 pr-1.5 py-1 text-xs border-r cursor-grab whitespace-nowrap select-none ' +
+                'group relative flex items-center gap-1 pl-3 pr-1.5 py-1 text-xs border-r whitespace-nowrap select-none ' +
+                (!isPinned ? 'cursor-grab ' : 'cursor-default ') +
                 (tab.id === dragOverTabId ? 'border-l-2 border-l-blue-500' : '')
               }
             >
@@ -152,20 +154,25 @@ export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorde
                 />
               ) : (
                 <>
+                  {/* F013: 固定标签显示图钉图标 */}
+                  {isPinned && <Pin size={11} strokeWidth={2} className="shrink-0 text-amber-500" />}
                   <span
                     className="max-w-45 truncate"
                     title={tab.filePath ?? 'Untitled.md'}
-                    onDoubleClick={() => onStartRename?.(tab.id)}
+                    onDoubleClick={() => !isPinned && onStartRename?.(tab.id)}
                   >
                     {getTabTitle(tab)}
                   </span>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onClose(tab.id); }}
-                    className="ml-1 flex items-center justify-center w-4 h-4 rounded opacity-0 group-hover:opacity-100 hover:bg-slate-300 text-slate-400 hover:text-slate-700 transition-opacity"
-                    title="关闭"
-                  >
-                    <X size={11} />
-                  </button>
+                  {/* 非固定标签显示关闭按钮 */}
+                  {!isPinned && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onClose(tab.id); }}
+                      className="ml-1 flex items-center justify-center w-4 h-4 rounded opacity-0 group-hover:opacity-100 hover:bg-slate-300 text-slate-400 hover:text-slate-700 transition-opacity"
+                      title="关闭"
+                    >
+                      <X size={11} />
+                    </button>
+                  )}
                 </>
               )}
             </div>
