@@ -9,6 +9,6 @@ export function useWindowTitle(activeTab: Tab, isTauri: boolean) {
       ? (activeTab.filePath.split(/[\\/]/).pop() ?? activeTab.filePath)
       : 'Untitled.md';
     const prefix = activeTab.isDirty ? '*' : '';
-    getCurrentWindow().setTitle(`${prefix}${name} - md-client`);
+    getCurrentWindow().setTitle(`${prefix}${name} - MarkLite`);
   }, [activeTab.filePath, activeTab.isDirty, activeTab.id, isTauri]);
 }

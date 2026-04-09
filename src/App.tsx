@@ -38,14 +38,14 @@ const DEFAULT_SPELL_CHECK = true;
 
 function getSavedSpellCheck(): boolean {
   try {
-    const saved = localStorage.getItem('md-client-spellcheck');
+    const saved = localStorage.getItem('marklite-spellcheck');
     return saved === null ? DEFAULT_SPELL_CHECK : saved === 'true';
   } catch { return DEFAULT_SPELL_CHECK; }
 }
 
 function saveSpellCheck(value: boolean): void {
   try {
-    localStorage.setItem('md-client-spellcheck', String(value));
+    localStorage.setItem('marklite-spellcheck', String(value));
   } catch { /* ignore quota errors */ }
 }
 
@@ -439,7 +439,7 @@ export default function App() {
             <div className={`h-full overflow-auto border-l ${focusMode === 'focus' ? 'border-slate-700 bg-slate-900' : ''}`} style={focusMode !== 'focus' ? { borderColor: 'var(--border-color)', backgroundColor: 'var(--bg-primary)' } : undefined} ref={previewRef} onScroll={handlePreviewScroll}>
               <div className="p-8">
                 <Suspense fallback={<div className="p-4 text-sm animate-pulse" style={{ color: 'var(--text-secondary)' }}>正在加载预览引擎...</div>}>
-                  <MarkdownPreview content={activeTab.doc} filePath={activeTab.filePath ?? undefined} onOpenFile={openFileInTab} className={`markdown-preview max-w-200 mx-auto min-h-full ${theme === 'dark' || focusMode === 'focus' ? 'markdown-preview-dark' : ''}`} />
+                  <MarkdownPreview content={activeTab.doc} filePath={activeTab.filePath ?? undefined} onOpenFile={openFileInTab} className={`markdown-preview max-w-full min-h-full ${theme === 'dark' || focusMode === 'focus' ? 'markdown-preview-dark' : ''}`} />
                 </Suspense>
               </div>
             </div>
@@ -466,7 +466,7 @@ export default function App() {
               <div ref={previewRef} className={`w-full h-full overflow-auto ${focusMode === 'focus' ? 'bg-slate-900' : ''}`} style={focusMode !== 'focus' ? { backgroundColor: 'var(--bg-primary)' } : undefined}>
                 <div className="p-8">
                   <Suspense fallback={<div className="p-4 text-sm animate-pulse" style={{ color: 'var(--text-secondary)' }}>正在加载预览引擎...</div>}>
-                    <MarkdownPreview content={activeTab.doc} filePath={activeTab.filePath ?? undefined} onOpenFile={openFileInTab} className={`markdown-preview max-w-200 mx-auto min-h-full ${theme === 'dark' || focusMode === 'focus' ? 'markdown-preview-dark' : ''}`} />
+                    <MarkdownPreview content={activeTab.doc} filePath={activeTab.filePath ?? undefined} onOpenFile={openFileInTab} className={`markdown-preview max-w-full min-h-full ${theme === 'dark' || focusMode === 'focus' ? 'markdown-preview-dark' : ''}`} />
                   </Suspense>
                 </div>
               </div>

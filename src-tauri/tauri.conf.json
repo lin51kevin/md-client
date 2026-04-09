@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "md-client",
-  "version": "0.2.0",
-  "identifier": "com.lin51kevin.md-client",
+  "productName": "MarkLite",
+  "version": "0.3.0",
+  "identifier": "com.lin51kevin.marklite",
   "build": {
     "beforeDevCommand": "yarn dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "md-client",
+        "title": "MarkLite",
         "width": 1280,
         "height": 800,
         "maximized": true

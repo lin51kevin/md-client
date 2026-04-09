@@ -1,4 +1,4 @@
-# md-client
+# MarkLite
 
 <p align="center">
   <strong>一款轻量、快速的桌面 Markdown 编辑器</strong><br/>
@@ -7,7 +7,7 @@
 
 <p align="center">
 
-![md-client 界面预览](./docs/screenshot.png)
+![MarkLite 界面预览](./docs/screenshot.png)
 
 </p>
 
@@ -136,7 +136,7 @@ yarn tauri build
 ## Project Structure
 
 ```
-md-client/
+marklite/
 ├── src/                        # React frontend
 │   ├── components/             # UI 组件
 │   │   ├── Toolbar.tsx         # 工具栏（文件操作/导出/视图切换/主题/焦点模式）

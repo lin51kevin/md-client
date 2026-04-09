@@ -95,8 +95,10 @@ export function Toolbar({ viewMode, focusMode, showToc, currentTheme, onNewTab, 
                     <button
                       key={file.path}
                       title={file.path}
-                      className="w-full flex items-center gap-2 px-4 py-1.5 hover:bg-blue-600 hover:text-white text-left"
+                      className="w-full flex items-center gap-2 px-4 py-1.5 text-left transition-colors"
                       style={{ color: 'var(--text-primary)' }}
+                      onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--accent-color)'; e.currentTarget.style.color = '#fff'; }}
+                      onMouseLeave={e => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = 'var(--text-primary)'; }}
                       onMouseDown={() => { onOpenRecent?.(file.path); setShowRecent(false); }}
                     >
                       <FolderOpen size={13} strokeWidth={1.8} className="shrink-0" style={{ color: 'var(--text-secondary)' }} />
@@ -105,8 +107,10 @@ export function Toolbar({ viewMode, focusMode, showToc, currentTheme, onNewTab, 
                   ))}
                   <div className="my-1" style={{ borderTop: '1px solid var(--border-color)' }} />
                   <button
-                    className="w-full flex items-center gap-2 px-4 py-1.5 hover:bg-red-600 hover:text-white"
+                    className="w-full flex items-center gap-2 px-4 py-1.5 transition-colors"
                     style={{ color: 'var(--text-secondary)' }}
+                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = 'var(--text-secondary)'; }}
                     onMouseDown={() => { onClearRecent?.(); setLocalRecentFiles([]); setShowRecent(false); }}
                   >
                     <Trash2 size={13} strokeWidth={1.8} />

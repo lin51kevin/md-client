@@ -1,6 +1,6 @@
-# md-client 用户手册
+# MarkLite 用户手册
 
-> 最后更新：2026-04-09 | 适用版本：0.2.0+
+> 最后更新：2026-04-09 | 适用版本：0.3.0+
 
 ---
 
@@ -102,7 +102,7 @@ yarn tauri build
 - **拖拽**：直接将文件拖入编辑器窗口
 - **命令行**：支持从终端用文件路径参数启动应用：
   ```bash
-  ./md-client ~/Documents/readme.md
+  ./marklite ~/Documents/readme.md
   ```
 
 ### 3.2 保存文件
@@ -318,7 +318,7 @@ yarn tauri build
 
 ## 12. Markdown 语法支持
 
-md-client 完整支持 **GitHub Flavored Markdown (GFM)** 以及多种扩展语法：
+MarkLite 完整支持 **GitHub Flavored Markdown (GFM)** 以及多种扩展语法：
 
 ### 12.1 基础语法
 
@@ -523,4 +523,4 @@ flowchart LR
 
 ---
 
-*本手册由 md-client 团队维护，如有问题请提交 [GitHub Issue](https://github.com/lin51kevin/md-client/issues)。*
+*本手册由 MarkLite 团队维护，如有问题请提交 [GitHub Issue](https://github.com/lin51kevin/md-client/issues)。*

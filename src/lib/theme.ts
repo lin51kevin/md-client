@@ -79,7 +79,7 @@ export function applyTheme(theme: ThemeName): void {
  */
 export function getSavedTheme(): ThemeName | null {
   try {
-    const saved = localStorage.getItem('md-client-theme');
+    const saved = localStorage.getItem('marklite-theme');
     if (saved && saved in THEMES) return saved as ThemeName;
   } catch { /* ignore */ }
   return null;
@@ -89,5 +89,5 @@ export function getSavedTheme(): ThemeName | null {
  * 保存主题偏好到 localStorage
  */
 export function saveTheme(theme: ThemeName): void {
-  try { localStorage.setItem('md-client-theme', theme); } catch { /* ignore */ }
+  try { localStorage.setItem('marklite-theme', theme); } catch { /* ignore */ }
 }

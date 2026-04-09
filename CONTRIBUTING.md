@@ -1,4 +1,4 @@
-# Contributing to md-client
+# Contributing to MarkLite
 
 Thank you for your interest in contributing!
 

@@ -14,7 +14,7 @@ export interface RecentFile {
   openedAt: string;
 }
 
-const STORAGE_KEY = 'md-client-recent-files';
+const STORAGE_KEY = 'marklite-recent-files';
 const MAX_RECENT = 10;
 
 /**

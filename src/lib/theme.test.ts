@@ -11,7 +11,7 @@ describe('F011 — 主题系统', () => {
 
   afterEach(() => {
     document.documentElement.style.cssText = '';
-    localStorage.removeItem('md-client-theme');
+    localStorage.removeItem('marklite-theme');
   });
 
   describe('THEMES 注册表', () => {
@@ -74,7 +74,7 @@ describe('F011 — 主题系统', () => {
     });
 
     it('非法值不应被接受', () => {
-      localStorage.setItem('md-client-theme', 'invalid');
+      localStorage.setItem('marklite-theme', 'invalid');
       expect(getSavedTheme()).toBeNull();
     });
   });

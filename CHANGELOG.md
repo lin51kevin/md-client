@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [v0.3.0] - 2026-04-09
+
+### Changed
+
+- 应用更名为 MarkLite（原 md-client）
+- 版本升至 v0.3.0
+- 更新所有配置文件、文档及 localStorage 键名前缀
+
+
 ## [v0.2.0] - 2026-04-09
 
 
@@ -95,7 +104,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- initial release of md-client v0.1.0 (`474ad7c`)
+- initial release of MarkLite v0.1.0 (`474ad7c`)
 
 
 

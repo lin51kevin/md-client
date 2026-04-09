@@ -1,6 +1,6 @@
 [package]
-name = "md-client"
-version = "0.2.0"
+name = "marklite"
+version = "0.3.0"
 description = "A lightweight Markdown editor built with Tauri, React, and CodeMirror"
 authors = ["lin51kevin"]
 edition = "2021"
