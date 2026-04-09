@@ -32,8 +32,28 @@ export function extractToc(markdown: string): TocEntry[] {
   const lines = markdown.split('\n');
   const slugger = new GithubSlugger();
 
+  let inFencedBlock = false;
+  let fenceMarker = '';
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
+
+    // Detect fenced code block open/close (``` or ~~~, with optional language tag)
+    const fenceMatch = line.match(/^(`{3,}|~{3,})/);
+    if (fenceMatch) {
+      if (!inFencedBlock) {
+        inFencedBlock = true;
+        fenceMarker = fenceMatch[1][0]; // '`' or '~'
+      } else if (line.trimEnd().split('').every((c) => c === fenceMarker)) {
+        // Closing fence must consist only of the same character
+        inFencedBlock = false;
+        fenceMarker = '';
+      }
+      continue;
+    }
+
+    if (inFencedBlock) continue;
+
     const match = matchHeading(line);
     if (match) {
       const position = lines.slice(0, i).reduce((sum, l) => sum + l.length + 1, 0);

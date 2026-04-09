@@ -1,6 +1,5 @@
 import { open, save, message } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
-import { generateHtmlDocument } from '../lib/html-export';
 import { Tab } from '../types';
 
 interface FileOpsParams {
@@ -75,6 +74,7 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
         filters: [{ name: 'HTML Document', extensions: ['html'] }],
       });
       if (savePath) {
+        const { generateHtmlDocument } = await import('../lib/html-export');
         const html = await generateHtmlDocument(tab.doc);
         await invoke('write_file_text', { path: savePath, content: html });
       }

@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo, lazy, Suspense } from 'react';
 import type { Extension } from '@codemirror/state';
 import CodeMirror, { type EditorState, type ViewUpdate } from '@uiw/react-codemirror';
 import { EditorView } from '@codemirror/view';
@@ -36,7 +36,9 @@ import { TabBar } from './components/TabBar';
 import { TabContextMenu } from './components/TabContextMenu';
 import { StatusBar } from './components/StatusBar';
 import { DragOverlay } from './components/DragOverlay';
-import { MarkdownPreview } from './components/MarkdownPreview';
+const MarkdownPreview = lazy(() =>
+  import('./components/MarkdownPreview').then((m) => ({ default: m.MarkdownPreview }))
+);
 import { FindReplaceBar } from './components/FindReplaceBar';
 import { TocSidebar } from './components/TocSidebar';
 import { useSearchHighlight } from './hooks/useSearchHighlight';
@@ -360,7 +362,9 @@ export default function App() {
             </div>
             <div className={`h-full overflow-auto border-l ${focusMode === 'focus' ? 'border-slate-700 bg-slate-900' : ''}`} style={focusMode !== 'focus' ? { borderColor: 'var(--border-color)', backgroundColor: 'var(--bg-primary)' } : undefined} ref={previewRef} onScroll={handlePreviewScroll}>
               <div className="p-8">
-                <MarkdownPreview content={activeTab.doc} filePath={activeTab.filePath ?? undefined} onOpenFile={openFileInTab} className={`markdown-preview max-w-200 mx-auto min-h-full ${theme === 'dark' || focusMode === 'focus' ? 'markdown-preview-dark' : ''}`} />
+                <Suspense fallback={<div className="p-4 text-sm animate-pulse" style={{ color: 'var(--text-secondary)' }}>正在加载预览引擎...</div>}>
+                  <MarkdownPreview content={activeTab.doc} filePath={activeTab.filePath ?? undefined} onOpenFile={openFileInTab} className={`markdown-preview max-w-200 mx-auto min-h-full ${theme === 'dark' || focusMode === 'focus' ? 'markdown-preview-dark' : ''}`} />
+                </Suspense>
               </div>
             </div>
           </Split>
@@ -383,7 +387,9 @@ export default function App() {
               </div>
             ) : (
               <div ref={previewRef} className={`w-full h-full overflow-auto p-8 ${focusMode === 'focus' ? 'bg-slate-900' : ''}`} style={focusMode !== 'focus' ? { backgroundColor: 'var(--bg-primary)' } : undefined}>
-                <MarkdownPreview content={activeTab.doc} filePath={activeTab.filePath ?? undefined} onOpenFile={openFileInTab} className={`markdown-preview w-full ${theme === 'dark' || focusMode === 'focus' ? 'markdown-preview-dark' : ''}`} />
+                <Suspense fallback={<div className="p-4 text-sm animate-pulse" style={{ color: 'var(--text-secondary)' }}>正在加载预览引擎...</div>}>
+                  <MarkdownPreview content={activeTab.doc} filePath={activeTab.filePath ?? undefined} onOpenFile={openFileInTab} className={`markdown-preview w-full ${theme === 'dark' || focusMode === 'focus' ? 'markdown-preview-dark' : ''}`} />
+                </Suspense>
               </div>
             )}
           </div>

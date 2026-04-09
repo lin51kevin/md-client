@@ -47,6 +47,35 @@ describe('F010 — 大纲导航 (TOC)', () => {
       expect(toc[0].text).toBe('带井号的标题');
     });
 
+    it('应忽略围栏代码块内的 # 标记', () => {
+      const md = `# 真实标题
+
+\`\`\`markdown
+# 这是代码块内的标题
+## 也不应该出现
+\`\`\`
+
+## 真实二级标题
+`;
+      const toc = extractToc(md);
+      expect(toc).toHaveLength(2);
+      expect(toc[0].text).toBe('真实标题');
+      expect(toc[1].text).toBe('真实二级标题');
+    });
+
+    it('应支持 ~~~ 风格的代码块过滤', () => {
+      const md = `# 正常标题
+
+~~~
+# 不解析
+~~~
+
+## 另一个正常标题
+`;
+      const toc = extractToc(md);
+      expect(toc).toHaveLength(2);
+    });
+
     it('应处理多行混合内容', () => {
       const md = `# Introduction
 
