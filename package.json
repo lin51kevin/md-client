@@ -70,6 +70,7 @@
     "rehype-stringify": "^10.0.1",
     "remark-directive": "^4.0.0",
     "remark-directive-rehype": "^1.0.0",
+    "remark-frontmatter": "^5.0.0",
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
     "unist-util-visit": "^5.1.0"
