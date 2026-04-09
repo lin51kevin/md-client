@@ -121,3 +121,65 @@ body {
   max-width: 100%;
   box-sizing: content-box;
 }
+
+/* F008 — Mermaid 图表样式 */
+.markdown-preview .mermaid {
+  display: flex;
+  justify-content: center;
+  margin: 16px 0;
+}
+.markdown-preview .mermaid svg {
+  max-width: 100%;
+  height: auto;
+}
+.markdown-preview .mermaid-error {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 16px 0;
+  color: #dc2626;
+  font-size: 0.9em;
+  font-family: ui-monospace, monospace;
+}
+
+/* F007 — KaTeX 公式样式微调 */
+.markdown-preview .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 8px 0;
+}
+.markdown-preview .katex {
+  font-size: 1.05em;
+}
+
+/* F009 — 深色预览（专注模式） */
+.markdown-preview-dark {
+  color: #d4d4d8;
+}
+.markdown-preview-dark h1,
+.markdown-preview-dark h2,
+.markdown-preview-dark h3,
+.markdown-preview-dark h4,
+.markdown-preview-dark h5,
+.markdown-preview-dark h6 {
+  color: #e4e4e7;
+  border-bottom-color: #3f3f46;
+}
+.markdown-preview-dark code {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+.markdown-preview-dark pre {
+  background-color: #18181b;
+}
+.markdown-preview-dark blockquote {
+  border-left-color: #52525b;
+  color: #a1a1aa;
+}
+.markdown-preview-dark table th,
+.markdown-preview-dark table td {
+  border-color: #3f3f46;
+}
+.markdown-preview-dark table tr:nth-child(2n) {
+  background-color: #1c1c22;
+}
