@@ -113,7 +113,11 @@ export default function App() {
     if (tab?.isPinned) return; // pinned tabs cannot be normally closed
     if (tab?.isDirty) {
       const name = tab.filePath?.split(/[\\/]/).pop() ?? 'Untitled.md';
-      const yes = await confirm(`"${name}" 有未保存的更改，确定要关闭吗？`, { title: '关闭标签页', kind: 'warning' });
+      const path = tab.filePath ?? '(未保存)';
+      const yes = await confirm(
+        `"${name}" 有未保存的更改，关闭后将丢失这些更改。\n\n路径: ${path}`,
+        { title: '关闭标签页', kind: 'warning' }
+      );
       if (!yes) return;
     }
     closeTab(id);
@@ -454,6 +458,7 @@ export default function App() {
       {!hideStatusBar && (
         <StatusBar
           filePath={activeTab.filePath}
+          isDirty={activeTab.isDirty}
           line={cursorPos.line}
           col={cursorPos.col}
           snapshots={snapshots}

@@ -167,8 +167,8 @@ export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorde
                   {!isPinned && (
                     <button
                       onClick={(e) => { e.stopPropagation(); onClose(tab.id); }}
-                      className="ml-1 flex items-center justify-center w-4 h-4 rounded opacity-0 group-hover:opacity-100 hover:bg-slate-300 text-slate-400 hover:text-slate-700 transition-opacity"
-                      title="关闭"
+                      className={`ml-1 flex items-center justify-center w-4 h-4 rounded opacity-0 group-hover:opacity-100 transition-opacity ${tab.isDirty ? 'hover:bg-amber-100 text-amber-500 hover:text-amber-700' : 'hover:bg-slate-300 text-slate-400 hover:text-slate-700'}`}
+                      title={tab.isDirty ? '关闭（有未保存更改）' : '关闭'}
                     >
                       <X size={11} />
                     </button>

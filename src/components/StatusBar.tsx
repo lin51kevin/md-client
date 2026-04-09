@@ -3,6 +3,7 @@ import { History, X } from 'lucide-react';
 
 interface StatusBarProps {
   filePath: string | null;
+  isDirty?: boolean;
   line: number;
   col: number;
   /** F012: 字数统计 */
@@ -12,7 +13,7 @@ interface StatusBarProps {
   onSnapshotRestore?: (snapshotId: string) => void;
 }
 
-export function StatusBar({ filePath, line, col, wordCount, snapshots, onSnapshotRestore }: StatusBarProps) {
+export function StatusBar({ filePath, isDirty, line, col, wordCount, snapshots, onSnapshotRestore }: StatusBarProps) {
   const [showSnapshots, setShowSnapshots] = useState(false);
 
   const displaySnapshots = showSnapshots ? snapshots : null;
@@ -22,7 +23,10 @@ export function StatusBar({ filePath, line, col, wordCount, snapshots, onSnapsho
       {/* 主状态栏 */}
       <div className="flex items-center justify-between px-3 py-0.5 text-xs select-none" style={{ backgroundColor: 'var(--bg-tertiary)', borderTop: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
         <div className="flex items-center gap-3">
-          <span>{filePath ?? '新文件'}</span>
+          <span className="flex items-center gap-1.5">
+            {isDirty && <span className="text-amber-500 font-bold" title="有未保存的更改">●</span>}
+            <span>{filePath ?? '新文件'}</span>
+          </span>
           {wordCount !== undefined && wordCount > 0 && (
             <span className="tabular-nums">{wordCount} 字</span>
           )}
