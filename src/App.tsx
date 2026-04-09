@@ -61,6 +61,7 @@ export default function App() {
   // F012 — 版本历史
   const [snapshots, setSnapshots] = useState<import('./lib/version-history').Snapshot[]>([]);
 
+
   const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
   const {
@@ -85,7 +86,7 @@ export default function App() {
     getActiveTab, tabs, openFileInTab, markSaved, markSavedAs,
   });
 
-  // F012 — 包装保存函数，保存成功后创建快照
+  // F012 — 包装保存函数，保存成功后创建快照（仅手动 Ctrl+S 触发）
   const handleSaveFile = useCallback(async (tabId?: string) => {
     await rawHandleSaveFile(tabId);
     const tab = tabId ? tabs.find(t => t.id === tabId) : getActiveTab();
@@ -207,11 +208,14 @@ export default function App() {
 
   // Keep latest save/getActiveTab in refs to avoid stale closures in auto-save
   const handleSaveFileRef = useRef(handleSaveFile);
+  const rawHandleSaveFileRef = useRef(rawHandleSaveFile);
   const getActiveTabRef = useRef(getActiveTab);
   useEffect(() => { handleSaveFileRef.current = handleSaveFile; }, [handleSaveFile]);
+  useEffect(() => { rawHandleSaveFileRef.current = rawHandleSaveFile; }, [rawHandleSaveFile]);
   useEffect(() => { getActiveTabRef.current = getActiveTab; }, [getActiveTab]);
 
   // Auto-save: debounce 1s after editing stops
+  // 仅写磁盘，不创建快照（快照只由手动 Ctrl+S 产生）
   const autoSaveRef = useRef<ReturnType<typeof createAutoSave> | null>(null);
   useEffect(() => {
     autoSaveRef.current = createAutoSave({
@@ -219,7 +223,7 @@ export default function App() {
       onSave: async () => {
         const tab = getActiveTabRef.current();
         if (tab.filePath) {
-          await handleSaveFileRef.current(activeTabId);
+          await rawHandleSaveFileRef.current(activeTabId);
         }
       },
     });
@@ -397,7 +401,9 @@ export default function App() {
           onSnapshotRestore={(id) => {
             if (!activeTab.filePath) return;
             const restoredContent = restoreSnapshot(activeTab.filePath, id);
-            if (restoredContent !== null) updateActiveDoc(restoredContent);
+            if (restoredContent !== null) {
+              updateActiveDoc(restoredContent);
+            }
           }}
         />
       )}

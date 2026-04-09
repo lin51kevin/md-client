@@ -24,42 +24,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-### F012
-
-- 版本历史（本地快照） (`bf84239`)
-
-
-
-### F011
-
-- 深色模式 + 主题切换 (`8df9ebe`)
-
-
-
-### F010
-
-- 大纲导航侧边栏 (`ab5dee9`)
-
-
-
-### F009
-
-- 打字机/专注/全屏模式 (`9f079cc`)
-
-
-
-### F008
-
-- Mermaid 图表渲染 (`91b763e`)
-
-
-
-### F007
-
-- LaTeX 数学公式渲染 (remark-math + rehype-katex) (`d2d1b6f`)
-
-
-
 ### Added
 
 - add auto-close brackets for Markdown editing (`2d09e52`)
@@ -68,8 +32,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - add auto-save with debounce (1s delay) (`730b888`)
 - add auto-save, HTML export, and word count (`8ce5020`)
 - add HTML export functionality (`dc7af6e`)
-- LaTeX 数学公式渲染 (remark-math + rehype-katex) (`a2ed864`)
-
+- LaTeX 数学公式渲染 (remark-math + rehype-katex) (`a2ed864`, `d2d1b6f`)
+- Mermaid 图表渲染 (`91b763e`)
+- 打字机/专注/全屏模式 (`9f079cc`)
+- 大纲导航侧边栏 (`ab5dee9`)
+- 深色模式 + 主题切换 (`8df9ebe`)
+- 版本历史（本地快照） (`bf84239`)
 
 
 ### Changed

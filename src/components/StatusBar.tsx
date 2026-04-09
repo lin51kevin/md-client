@@ -32,7 +32,9 @@ export function StatusBar({ filePath, line, col, wordCount, snapshots, onSnapsho
             <button
               onClick={() => setShowSnapshots(prev => !prev)}
               title={`版本历史 (${snapshots.length} 个快照)`}
-              className="flex items-center gap-1 hover:text-slate-800 transition-colors"
+              className="flex items-center gap-1 transition-colors"
+              onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
+              onMouseLeave={e => (e.currentTarget.style.color = '')}
             >
               <History size={12} strokeWidth={1.8} />
               <span>{snapshots.length}</span>
@@ -44,10 +46,10 @@ export function StatusBar({ filePath, line, col, wordCount, snapshots, onSnapsho
 
       {/* F012 — 版本历史弹出面板 */}
       {displaySnapshots && displaySnapshots.length > 0 && (
-        <div className="absolute bottom-full right-2 mb-1 w-80 bg-white border border-slate-300 rounded-lg shadow-xl z-50 max-h-60 overflow-hidden flex flex-col">
-          <div className="shrink-0 flex items-center justify-between px-3 py-1.5 bg-slate-100 border-b border-slate-200">
-            <span className="text-xs font-medium text-slate-600">📋 版本历史</span>
-            <button onClick={() => setShowSnapshots(false)} className="text-slate-400 hover:text-slate-600">
+        <div className="absolute bottom-full right-2 mb-1 w-80 rounded-lg shadow-xl z-50 max-h-60 overflow-hidden flex flex-col" style={{ backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-color)' }}>
+          <div className="shrink-0 flex items-center justify-between px-3 py-1.5" style={{ backgroundColor: 'var(--bg-tertiary)', borderBottom: '1px solid var(--border-color)' }}>
+            <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>📋 版本历史</span>
+            <button onClick={() => setShowSnapshots(false)} style={{ color: 'var(--text-secondary)' }}>
               <X size={14} />
             </button>
           </div>
@@ -59,13 +61,16 @@ export function StatusBar({ filePath, line, col, wordCount, snapshots, onSnapsho
                   onSnapshotRestore?.(snap.id);
                   setShowSnapshots(false);
                 }}
-                className="w-full text-left px-2.5 py-1.5 rounded hover:bg-blue-50 text-xs group"
+                className="w-full text-left px-2.5 py-1.5 rounded text-xs group"
+                style={{ color: 'var(--text-primary)' }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-secondary)')}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = '')}
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-slate-700">{formatTime(snap.timestamp)}</span>
-                  <span className="tabular-nums text-slate-400">{snap.contentLength} 字符</span>
+                  <span className="font-medium">{formatTime(snap.timestamp)}</span>
+                  <span className="tabular-nums" style={{ color: 'var(--text-secondary)' }}>{snap.contentLength} 字符</span>
                 </div>
-                <span className="text-slate-400 truncate block mt-0.5" title={snap.preview}>
+                <span className="truncate block mt-0.5" style={{ color: 'var(--text-secondary)' }} title={snap.preview}>
                   {snap.preview || '(空文件)'}
                 </span>
               </button>
