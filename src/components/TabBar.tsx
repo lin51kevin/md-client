@@ -19,9 +19,13 @@ interface TabBarProps {
   onConfirmRename?: (id: string, name: string) => void;
   /** F013: 取消重命名 */
   onCancelRename?: () => void;
+  /** F013: 固定标签 */
+  onPin?: (id: string) => void;
+  /** F013: 取消固定 */
+  onUnpin?: (id: string) => void;
 }
 
-export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorder, onContextMenu, getTabTitle, renamingTabId, onStartRename, onConfirmRename, onCancelRename }: TabBarProps) {
+export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorder, onContextMenu, getTabTitle, renamingTabId, onStartRename, onConfirmRename, onCancelRename, onPin, onUnpin }: TabBarProps) {
   const [dragOverTabId, setDragOverTabId] = useState<string | null>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -148,14 +152,24 @@ export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorde
                     if (value) onConfirmRename?.(tab.id, value);
                     else onCancelRename?.();
                   }}
-                  className="w-full px-1 py-0 text-xs bg-white border border-blue-400 rounded outline-none"
-                  style={{ maxWidth: 160 }}
+                  className="w-full px-1 py-0 text-xs rounded outline-none"
+                  style={{ maxWidth: 160, backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--accent-color)' }}
                   onClick={(e) => e.stopPropagation()}
                 />
               ) : (
                 <>
-                  {/* F013: 固定标签显示图钉图标 */}
-                  {isPinned && <Pin size={11} strokeWidth={2} className="shrink-0 text-amber-500" />}
+                  {/* F013: 图钉按钮 — 固定时显示高亮，未固定时 hover 显示灰色图钉 */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); isPinned ? onUnpin?.(tab.id) : onPin?.(tab.id); }}
+                    className={`flex items-center justify-center w-4 h-4 rounded shrink-0 transition-opacity ${
+                      isPinned
+                        ? 'text-amber-500 opacity-100 hover:text-amber-700'
+                        : 'text-slate-400 opacity-0 group-hover:opacity-70 hover:!opacity-100 hover:text-slate-600'
+                    }`}
+                    title={isPinned ? '取消固定' : '固定标签'}
+                  >
+                    <Pin size={11} strokeWidth={2} />
+                  </button>
                   <span
                     className="max-w-45 truncate"
                     title={tab.filePath ?? 'Untitled.md'}

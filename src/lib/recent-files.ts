@@ -56,3 +56,14 @@ export function clearRecentFiles(): void {
     localStorage.removeItem(STORAGE_KEY);
   } catch { /* ignore */ }
 }
+
+/**
+ * 移除单条最近文件记录
+ */
+export function removeRecentFile(filePath: string): RecentFile[] {
+  const updated = getRecentFiles().filter(f => f.path !== filePath);
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  } catch { /* ignore quota errors */ }
+  return updated;
+}

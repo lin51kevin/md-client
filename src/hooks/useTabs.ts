@@ -3,7 +3,8 @@ import { invoke } from '@tauri-apps/api/core';
 import { message } from '@tauri-apps/plugin-dialog';
 import { Tab } from '../types';
 import { INITIAL_TAB_ID, genTabId, DEFAULT_MARKDOWN } from '../constants';
-import { addRecentFile } from '../lib/recent-files';
+import { addRecentFile, removeRecentFile } from '../lib/recent-files';
+import { moveSnapshots } from '../lib/version-history';
 
 export function useTabs() {
   const [tabs, setTabs] = useState<Tab[]>([
@@ -33,10 +34,64 @@ export function useTabs() {
     return tab.isDirty ? name + ' \u25cf' : name;
   };
 
-  /** F013: 重命名 Tab 显示名称 */
-  const renameTab = useCallback((id: string, newName: string) => {
-    if (!newName.trim()) return;
-    setTabs(prev => prev.map(t => t.id === id ? { ...t, displayName: newName.trim() } : t));
+  /** F013: 重命名 Tab — 有文件时重命名磁盘文件并更新 filePath，无文件时仅改显示名。返回 true 表示操作成功 */
+  const renameTab = useCallback(async (id: string, newName: string): Promise<boolean> => {
+    const trimmed = newName.trim();
+    if (!trimmed) return false;
+
+    // ── 文件名合法性校验 ──────────────────────────────────────────
+    if (/[/\\]/.test(trimmed)) {
+      await message('文件名不能包含 / 或 \\ 字符。', { title: '重命名', kind: 'warning' });
+      return false;
+    }
+    if (/[<>:"|?*\x00-\x1f]/.test(trimmed)) {
+      await message('文件名包含非法字符（< > : " | ? * 或控制字符）。', { title: '重命名', kind: 'warning' });
+      return false;
+    }
+    if (/^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\.|$)/i.test(trimmed)) {
+      await message(`"${trimmed}" 是系统保留文件名，请换一个名称。`, { title: '重命名', kind: 'warning' });
+      return false;
+    }
+    if (/[. ]$/.test(trimmed)) {
+      await message('文件名不能以句点或空格结尾。', { title: '重命名', kind: 'warning' });
+      return false;
+    }
+    if (new TextEncoder().encode(trimmed).length > 255) {
+      await message('文件名过长，请缩短后重试。', { title: '重命名', kind: 'warning' });
+      return false;
+    }
+    // ─────────────────────────────────────────────────────────────
+
+    const tab = tabsRef.current.find(t => t.id === id);
+    if (tab?.filePath) {
+      const lastSep = Math.max(tab.filePath.lastIndexOf('/'), tab.filePath.lastIndexOf('\\'));
+      const dir = tab.filePath.substring(0, lastSep);
+      const sep = tab.filePath[lastSep];
+      const newPath = dir + sep + trimmed;
+      try {
+        await invoke('rename_file', { oldPath: tab.filePath, newPath });
+        moveSnapshots(tab.filePath, newPath);
+        setTabs(prev => prev.map(t =>
+          t.id === id ? { ...t, filePath: newPath, displayName: undefined } : t
+        ));
+        removeRecentFile(tab.filePath);
+        addRecentFile(newPath);
+        return true;
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        if (errMsg.startsWith('FILE_EXISTS:')) {
+          const conflictName = errMsg.slice('FILE_EXISTS:'.length);
+          await message(`"${conflictName}" 已存在，请换一个文件名。`, { title: '重命名', kind: 'warning' });
+        } else {
+          await message(`重命名失败: ${errMsg}`, { title: '重命名', kind: 'error' });
+        }
+        return false;
+      }
+    } else {
+      // 未保存文件，只改显示名
+      setTabs(prev => prev.map(t => t.id === id ? { ...t, displayName: trimmed } : t));
+      return true;
+    }
   }, []);
 
   const updateActiveDoc = useCallback((value: string) => {
@@ -113,6 +168,8 @@ export function useTabs() {
       const fromIdx = prev.findIndex(t => t.id === fromId);
       const toIdx = prev.findIndex(t => t.id === toId);
       if (fromIdx < 0 || toIdx < 0) return prev;
+      // Prevent dragging a non-pinned tab in front of a pinned tab
+      if (!prev[fromIdx].isPinned && prev[toIdx].isPinned) return prev;
       const next = [...prev];
       const [moved] = next.splice(fromIdx, 1);
       next.splice(toIdx, 0, moved);

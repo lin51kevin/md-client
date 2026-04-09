@@ -42,6 +42,12 @@ function getSavedSpellCheck(): boolean {
   } catch { return DEFAULT_SPELL_CHECK; }
 }
 
+function saveSpellCheck(value: boolean): void {
+  try {
+    localStorage.setItem('md-client-spellcheck', String(value));
+  } catch { /* ignore quota errors */ }
+}
+
 import { Toolbar } from './components/Toolbar';
 import { TabBar } from './components/TabBar';
 import { TabContextMenu } from './components/TabContextMenu';
@@ -353,7 +359,7 @@ export default function App() {
             onToggleSpellCheck={() => {
               const next = !spellCheck;
               setSpellCheck(next);
-              localStorage.setItem('md-client-spellcheck', String(next));
+              saveSpellCheck(next);
             }}
             recentFiles={recentFiles}
             onOpenRecent={handleOpenRecent}
@@ -371,8 +377,10 @@ export default function App() {
             getTabTitle={getTabTitle}
             renamingTabId={renamingTabId}
             onStartRename={setRenamingTabId}
-            onConfirmRename={(id, name) => { renameTab(id, name); setRenamingTabId(null); }}
+            onConfirmRename={async (id, name) => { const ok = await renameTab(id, name); if (ok) setRenamingTabId(null); }}
             onCancelRename={() => setRenamingTabId(null)}
+            onPin={pinTab}
+            onUnpin={unpinTab}
           />
         </>
       )}

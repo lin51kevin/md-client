@@ -66,13 +66,24 @@ fn write_file_text(path: String, content: String) -> Result<(), String> {
     std::fs::write(&path, content.as_bytes()).map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+fn rename_file(old_path: String, new_path: String) -> Result<(), String> {
+    let new = std::path::Path::new(&new_path);
+    // Reject if target already exists (std::fs::rename is atomic-replace on Unix
+    // but errors on Windows — enforce consistent cross-platform behaviour)
+    if new.exists() {
+        return Err(format!("FILE_EXISTS:{}", new.file_name().unwrap_or_default().to_string_lossy()));
+    }
+    std::fs::rename(&old_path, &new_path).map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet, get_open_file, export_document, read_file_text, read_file_bytes, write_file_text])
+        .invoke_handler(tauri::generate_handler![greet, get_open_file, export_document, read_file_text, read_file_bytes, write_file_text, rename_file])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

@@ -112,6 +112,18 @@ export function clearSnapshots(filePath: string): void {
 }
 
 /**
+ * 将旧路径的快照迁移到新路径（重命名后调用）
+ */
+export function moveSnapshots(oldPath: string, newPath: string): void {
+  try {
+    const snapshots = getSnapshots(oldPath);
+    if (snapshots.length === 0) return;
+    persistSnapshots(newPath, snapshots);
+    localStorage.removeItem(storageKey(oldPath));
+  } catch { /* ignore */ }
+}
+
+/**
  * 格式化时间戳为可读字符串
  */
 export function formatSnapshotTime(isoString: string): string {

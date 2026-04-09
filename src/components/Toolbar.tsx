@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { FolderOpen, Save, SaveAll, FilePlus, PanelLeftClose, PanelRightClose, Columns2, FileText, Printer, FileCode, Type, Monitor, Maximize, Minimize, List, SpellCheck, Clock, Trash2 } from 'lucide-react';
 import { ViewMode, FocusMode } from '../types';
 import type { ThemeName } from '../lib/theme';
-import type { RecentFile } from '../lib/recent-files';
+import { getRecentFiles, type RecentFile } from '../lib/recent-files';
 
 interface ToolbarProps {
   viewMode: ViewMode;
@@ -48,6 +48,7 @@ export function Toolbar({ viewMode, focusMode, showToc, currentTheme, onNewTab, 
 
   // F013: 最近文件下拉菜单状态
   const [showRecent, setShowRecent] = useState(false);
+  const [localRecentFiles, setLocalRecentFiles] = useState<RecentFile[]>(recentFiles ?? []);
   const recentDropRef = useRef<HTMLDivElement>(null);
 
   // 点击外部关闭下拉菜单
@@ -74,7 +75,10 @@ export function Toolbar({ viewMode, focusMode, showToc, currentTheme, onNewTab, 
         {/* F013: 最近文件下拉 */}
         <div className="relative" ref={recentDropRef}>
           <button
-            onClick={() => setShowRecent(prev => !prev)}
+            onClick={() => {
+              setLocalRecentFiles(getRecentFiles());
+              setShowRecent(prev => !prev);
+            }}
             title="最近文件"
             className={btnCls}
           >
@@ -82,33 +86,35 @@ export function Toolbar({ viewMode, focusMode, showToc, currentTheme, onNewTab, 
           </button>
           {showRecent && (
             <div
-              className="absolute left-0 top-full mt-1 z-50 bg-white border border-slate-300 shadow-xl rounded-lg py-1 text-xs"
-              style={{ minWidth: 280, maxHeight: 320, overflowY: 'auto' }}
+              className="absolute left-0 top-full mt-1 z-50 shadow-xl rounded-lg py-1 text-xs"
+              style={{ minWidth: 280, maxHeight: 320, overflowY: 'auto', backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
             >
-              {recentFiles && recentFiles.length > 0 ? (
+              {localRecentFiles && localRecentFiles.length > 0 ? (
                 <>
-                  {[...recentFiles].reverse().map((file) => (
+                  {localRecentFiles.map((file) => (
                     <button
                       key={file.path}
                       title={file.path}
-                      className="w-full flex items-center gap-2 px-4 py-1.5 hover:bg-blue-50 text-slate-700 text-left"
+                      className="w-full flex items-center gap-2 px-4 py-1.5 hover:bg-blue-600 hover:text-white text-left"
+                      style={{ color: 'var(--text-primary)' }}
                       onMouseDown={() => { onOpenRecent?.(file.path); setShowRecent(false); }}
                     >
-                      <FolderOpen size={13} strokeWidth={1.8} className="shrink-0 text-slate-400" />
+                      <FolderOpen size={13} strokeWidth={1.8} className="shrink-0" style={{ color: 'var(--text-secondary)' }} />
                       <span className="truncate font-medium">{file.name}</span>
                     </button>
                   ))}
-                  <div className="my-1 border-t border-slate-200" />
+                  <div className="my-1" style={{ borderTop: '1px solid var(--border-color)' }} />
                   <button
-                    className="w-full flex items-center gap-2 px-4 py-1.5 hover:bg-red-50 text-slate-500 hover:text-red-600"
-                    onMouseDown={() => { onClearRecent?.(); setShowRecent(false); }}
+                    className="w-full flex items-center gap-2 px-4 py-1.5 hover:bg-red-600 hover:text-white"
+                    style={{ color: 'var(--text-secondary)' }}
+                    onMouseDown={() => { onClearRecent?.(); setLocalRecentFiles([]); setShowRecent(false); }}
                   >
                     <Trash2 size={13} strokeWidth={1.8} />
                     <span>清空记录</span>
                   </button>
                 </>
               ) : (
-                <div className="px-4 py-4 text-center text-slate-400">
+                <div className="px-4 py-4 text-center" style={{ color: 'var(--text-secondary)' }}>
                   <Clock size={20} strokeWidth={1} className="mx-auto mb-1" />
                   <div>暂无最近文件</div>
                 </div>
