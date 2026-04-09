@@ -4,6 +4,8 @@ import remarkGfm from "remark-gfm";
 import remarkDirective from "remark-directive";
 import remarkDirectiveRehype from "remark-directive-rehype";
 import remarkMath from "remark-math";
+import remarkFootnotes from "remark-footnotes";
+import remarkFrontmatter from "remark-frontmatter";
 import rehypeHighlight from "rehype-highlight";
 import rehypeRaw from "rehype-raw";
 import rehypeKatex from "rehype-katex";
@@ -14,6 +16,7 @@ import { openPath, openUrl } from "@tauri-apps/plugin-opener";
 import { rehypeFilterInvalidElements } from "../lib/rehypeFilterInvalidElements";
 import { renderMermaid } from "../lib/mermaid";
 import { parseTable, type TableData } from "../lib/table-parser";
+import { extractFrontmatter, buildFrontmatterHtml } from "../lib/markdown-extensions";
 import { TableEditor } from "./TableEditor";
 import { Pencil } from "lucide-react";
 
@@ -23,6 +26,10 @@ const REMARK_PLUGINS = [
   remarkDirective,
   remarkDirectiveRehype,
   remarkMath,
+  // ts-expect-error: remark-footnotes bundles duplicate vfile types (known issue)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  remarkFootnotes as any,
+  remarkFrontmatter,
 ];
 const REHYPE_PLUGINS = [
   rehypeSlug,
@@ -124,6 +131,30 @@ export function MarkdownPreview({
   const [mermaidRendering, setMermaidRendering] = useState(false);
   const [editingTable, setEditingTable] = useState<TableData | null>(null);
 
+  // 预解析文档中所有表格，按序号索引
+  const allTables = useMemo<TableData[]>(() => {
+    const tables: TableData[] = [];
+    let searchFrom = 0;
+    while (true) {
+      const idx = content.indexOf('|', searchFrom);
+      if (idx < 0) break;
+      const parsed = parseTable(content, idx);
+      if (parsed) {
+        tables.push(parsed);
+        searchFrom = parsed.rawEnd;
+      } else {
+        searchFrom = idx + 1;
+      }
+    }
+    return tables;
+  }, [content]);
+
+  // Frontmatter 元数据面板（仅在检测到 frontmatter 时显示）
+  const frontmatterHtml = useMemo(() => {
+    const fm = extractFrontmatter(content);
+    return buildFrontmatterHtml(fm);
+  }, [content]);
+
   const customComponents = useMemo(() => {
     const components: Record<string, unknown> = {};
 
@@ -184,33 +215,32 @@ export function MarkdownPreview({
 
     // ── Table editing (with edit button overlay) ─────────────────────────────
     if (onContentChange) {
+      let tableIndexCounter = 0;
       components.table = ({
         children,
         ...props
-      }: React.ComponentPropsWithoutRef<"table">) => (
-        <div className="table-preview-wrapper">
-          <button
-            className="table-edit-btn"
-            onClick={() => {
-              // Find the nearest table in source by scanning for | pattern
-              // We use a simple heuristic: find the first table near the rendered position
-              const tableIdx = content.indexOf('|');
-              if (tableIdx >= 0) {
-                const parsed = parseTable(content, tableIdx);
+      }: React.ComponentPropsWithoutRef<"table">) => {
+        const currentIdx = tableIndexCounter++;
+        return (
+          <div className="table-preview-wrapper" data-table-index={currentIdx}>
+            <button
+              className="table-edit-btn"
+              onClick={() => {
+                const parsed = allTables[currentIdx];
                 if (parsed) setEditingTable(parsed);
-              }
-            }}
-            title="可视化编辑表格"
-          >
-            <Pencil size={14} /> 编辑表格
-          </button>
-          <table {...props}>{children}</table>
-        </div>
-      );
+              }}
+              title="可视化编辑表格"
+            >
+              <Pencil size={14} /> 编辑表格
+            </button>
+            <table {...props}>{children}</table>
+          </div>
+        );
+      };
     }
 
     return components;
-  }, [filePath, onOpenFile, onContentChange, content]);
+  }, [filePath, onOpenFile, onContentChange, content, allTables]);
 
   // Memo: 检测内容是否包含 mermaid 块，避免不必要的异步渲染
   const hasMermaidBlocks = useMemo(
@@ -253,6 +283,12 @@ export function MarkdownPreview({
 
   return (
     <div className={className}>
+      {frontmatterHtml && (
+        <div
+          className="frontmatter-panel"
+          dangerouslySetInnerHTML={{ __html: frontmatterHtml }}
+        />
+      )}
       {mermaidRendering && (
         <div className="text-xs italic px-8 pt-2" style={{ color: 'var(--text-tertiary)' }}>
           🔄 正在渲染图表…
