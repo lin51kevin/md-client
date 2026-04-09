@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkDirective from "remark-directive";
@@ -13,6 +13,9 @@ import { invoke } from "@tauri-apps/api/core";
 import { openPath, openUrl } from "@tauri-apps/plugin-opener";
 import { rehypeFilterInvalidElements } from "../lib/rehypeFilterInvalidElements";
 import { renderMermaid } from "../lib/mermaid";
+import { parseTable, type TableData } from "../lib/table-parser";
+import { TableEditor } from "./TableEditor";
+import { Pencil } from "lucide-react";
 
 // Stable plugin arrays (module-level) to avoid unnecessary ReactMarkdown re-renders
 const REMARK_PLUGINS = [
@@ -48,6 +51,8 @@ interface MarkdownPreviewProps {
   filePath?: string;
   /** Called when the user clicks a relative link to a Markdown file */
   onOpenFile?: (absPath: string) => void;
+  /** Called when table editing is confirmed — receives updated full content */
+  onContentChange?: (newContent: string) => void;
 }
 
 /**
@@ -113,9 +118,11 @@ export function MarkdownPreview({
   className,
   filePath,
   onOpenFile,
+  onContentChange,
 }: MarkdownPreviewProps) {
   const [renderedContent, setRenderedContent] = useState(content);
   const [mermaidRendering, setMermaidRendering] = useState(false);
+  const [editingTable, setEditingTable] = useState<TableData | null>(null);
 
   const customComponents = useMemo(() => {
     const components: Record<string, unknown> = {};
@@ -175,8 +182,35 @@ export function MarkdownPreview({
       );
     };
 
+    // ── Table editing (with edit button overlay) ─────────────────────────────
+    if (onContentChange) {
+      components.table = ({
+        children,
+        ...props
+      }: React.ComponentPropsWithoutRef<"table">) => (
+        <div className="table-preview-wrapper">
+          <button
+            className="table-edit-btn"
+            onClick={() => {
+              // Find the nearest table in source by scanning for | pattern
+              // We use a simple heuristic: find the first table near the rendered position
+              const tableIdx = content.indexOf('|');
+              if (tableIdx >= 0) {
+                const parsed = parseTable(content, tableIdx);
+                if (parsed) setEditingTable(parsed);
+              }
+            }}
+            title="可视化编辑表格"
+          >
+            <Pencil size={14} /> 编辑表格
+          </button>
+          <table {...props}>{children}</table>
+        </div>
+      );
+    }
+
     return components;
-  }, [filePath, onOpenFile]);
+  }, [filePath, onOpenFile, onContentChange, content]);
 
   // Memo: 检测内容是否包含 mermaid 块，避免不必要的异步渲染
   const hasMermaidBlocks = useMemo(
@@ -207,6 +241,16 @@ export function MarkdownPreview({
 
     return () => clearTimeout(timer);
   }, [content, hasMermaidBlocks]);
+  const handleTableConfirm = useCallback((newTableMd: string) => {
+    if (!editingTable || !onContentChange) return;
+    const newContent =
+      content.slice(0, editingTable.rawStart) +
+      newTableMd +
+      content.slice(editingTable.rawEnd);
+    onContentChange(newContent);
+    setEditingTable(null);
+  }, [editingTable, content, onContentChange]);
+
   return (
     <div className={className}>
       {mermaidRendering && (
@@ -221,6 +265,13 @@ export function MarkdownPreview({
       >
         {renderedContent}
       </ReactMarkdown>
+      {editingTable && (
+        <TableEditor
+          table={editingTable}
+          onConfirm={handleTableConfirm}
+          onCancel={() => setEditingTable(null)}
+        />
+      )}
     </div>
   );
 }
