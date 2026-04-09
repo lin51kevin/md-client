@@ -6,6 +6,82 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [v0.2.0] - 2026-04-09
+
+
+### Fixed
+
+- 文件路径访问与相对路径支持的完整实现 (`0f8c7aa`)
+- 修复多个UI交互和主题问题 (`d4d6d84`)
+
+
+
+### Docs
+
+- 重命名用户手册为英文文件名 (`12b905a`)
+- 更新 README 添加截图展示和用户手册链接 (`29a7c98`)
+- 更新 TDD_TRACKER 至 v0.2.0 (第二梯队全部完成) (`6e1835f`)
+
+
+
+### F012
+
+- 版本历史（本地快照） (`bf84239`)
+
+
+
+### F011
+
+- 深色模式 + 主题切换 (`8df9ebe`)
+
+
+
+### F010
+
+- 大纲导航侧边栏 (`ab5dee9`)
+
+
+
+### F009
+
+- 打字机/专注/全屏模式 (`9f079cc`)
+
+
+
+### F008
+
+- Mermaid 图表渲染 (`91b763e`)
+
+
+
+### F007
+
+- LaTeX 数学公式渲染 (remark-math + rehype-katex) (`d2d1b6f`)
+
+
+
+### Added
+
+- add auto-close brackets for Markdown editing (`2d09e52`)
+- add find and replace with regex support (`d3e9dc7`)
+- add Vim key binding support (`4f8025b`)
+- add auto-save with debounce (1s delay) (`730b888`)
+- add auto-save, HTML export, and word count (`8ce5020`)
+- add HTML export functionality (`dc7af6e`)
+- LaTeX 数学公式渲染 (remark-math + rehype-katex) (`a2ed864`)
+
+
+
+### Changed
+
+- add git-chglog configuration and documentation (`a13ac82`)
+
+
+
+
+
+
+
 ## [v0.1.1] - 2026-04-08
 
 
