@@ -62,6 +62,8 @@ import { TocSidebar } from './components/TocSidebar';
 import { FileTreeSidebar } from './components/FileTreeSidebar';
 import { CrossFileSearch, type SearchResultItem } from './components/CrossFileSearch';
 import { useSearchHighlight } from './hooks/useSearchHighlight';
+import { useImagePaste } from './hooks/useImagePaste';
+import { wrapSelection, toggleLinePrefix, insertLink, insertImage, type SelectionInfo, type FormatResult } from './lib/text-format';
 
 
 export default function App() {
@@ -161,6 +163,82 @@ export default function App() {
 
   useDragDrop({ isTauri, setIsDragOver, openFileInTab });
 
+  // F014 — 图片粘贴/拖拽插入
+  const insertImageMarkdown = useCallback((markdown: string) => {
+    const view = cmViewRef.current;
+    if (!view) return;
+    const pos = view.state.selection.main.head;
+    view.dispatch({
+      changes: { from: pos, insert: markdown },
+      selection: { anchor: pos + markdown.length },
+    });
+    view.focus();
+  }, []);
+
+  // F014 — 工具栏格式化操作处理器
+  const handleFormatAction = useCallback((action: string) => {
+    const view = cmViewRef.current;
+    if (!view) return;
+
+    const sel = view.state.selection.main;
+    const docText = view.state.doc.toString();
+
+    switch (action) {
+      case 'bold': case 'italic': case 'strikethrough': case 'code': {
+        const wrappers: Record<string, string> = {
+          bold: '**', italic: '*', strikethrough: '~~', code: '`' };
+        const selInfo: SelectionInfo = { text: docText, start: sel.from, end: sel.to };
+        const result: FormatResult = wrapSelection(selInfo, wrappers[action]);
+        view.dispatch({
+          changes: { from: sel.from, to: sel.to, insert: result.replacement },
+          selection: { anchor: sel.from + result.newCursorOffset },
+        });
+        break;
+      }
+      case 'heading': case 'blockquote': case 'ul': case 'ol': {
+        const prefixes: Record<string, string> = {
+          heading: '# ', blockquote: '> ', ul: '- ', ol: '1. ' };
+        const lineStart = view.state.doc.lineAt(sel.from).from;
+        const result: FormatResult = toggleLinePrefix(docText, lineStart, prefixes[action]);
+        // toggleLinePrefix 返回的是完整文档文本，需要做全文替换
+        // 为避免性能问题，只替换当前行
+        const lineEnd = view.state.doc.lineAt(sel.from).to;
+        const newLineContent = result.replacement.substring(
+          lineStart,
+          result.replacement.indexOf('\n', lineStart) === -1 ? result.replacement.length : result.replacement.indexOf('\n', lineStart)
+        );
+        view.dispatch({
+          changes: { from: lineStart, to: lineEnd, insert: newLineContent },
+          selection: { anchor: lineStart + result.newCursorOffset },
+        });
+        break;
+      }
+      case 'link': {
+        const url = window.prompt('请输入链接地址：');
+        if (url === null) return; // 用户取消
+        const selInfo: SelectionInfo = { text: docText, start: sel.from, end: sel.to };
+        const result: FormatResult = insertLink(selInfo, url);
+        view.dispatch({
+          changes: { from: sel.from, to: sel.to, insert: result.replacement },
+          selection: { anchor: sel.from + result.newCursorOffset },
+        });
+        break;
+      }
+      case 'image': {
+        const src = window.prompt('请输入图片地址或路径：');
+        if (src === null) return; // 用户取消
+        const selInfo: SelectionInfo = { text: docText, start: sel.from, end: sel.to };
+        const result: FormatResult = insertImage(selInfo, src);
+        view.dispatch({
+          changes: { from: sel.from, to: sel.to, insert: result.replacement },
+          selection: { anchor: sel.from + result.newCursorOffset },
+        });
+        break;
+      }
+    }
+    view.focus();
+  }, []);
+
   // Open file passed via CLI argument (e.g. double-clicked from file explorer)
   useEffect(() => {
     if (!isTauri) return;
@@ -172,6 +250,13 @@ export default function App() {
 
   const activeTab = getActiveTab();
   useWindowTitle(activeTab, isTauri);
+
+  useImagePaste({
+    docPath: activeTab.filePath,
+    insertText: insertImageMarkdown,
+    content: activeTab.doc,
+    enabled: true,
+  });
 
   // F011 - 主题切换 effect
   useEffect(() => {
@@ -396,6 +481,7 @@ export default function App() {
             onClearRecent={handleClearRecent}
             onToggleCrossFileSearch={() => setShowCrossFileSearch(prev => !prev)}
             showCrossFileSearch={showCrossFileSearch}
+            onFormatAction={handleFormatAction}
           />
 
           <TabBar

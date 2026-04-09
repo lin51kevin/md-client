@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { FolderOpen, Save, SaveAll, FilePlus, PanelLeftClose, PanelRightClose, Columns2, FileText, Printer, FileCode, Type, Monitor, Maximize, Minimize, List, SpellCheck, Clock, Trash2, FolderTree, Search } from 'lucide-react';
+import { FolderOpen, Save, SaveAll, FilePlus, PanelLeftClose, PanelRightClose, Columns2, FileText, Printer, FileCode, Type, Monitor, Maximize, Minimize, List, SpellCheck, Clock, Trash2, FolderTree, Search, Image, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link } from 'lucide-react';
 import { ViewMode, FocusMode } from '../types';
 import type { ThemeName } from '../lib/theme';
 import { getRecentFiles, type RecentFile } from '../lib/recent-files';
@@ -31,6 +31,8 @@ interface ToolbarProps {
   /** 跨文件搜索按钮回调 */
   onToggleCrossFileSearch?: () => void;
   showCrossFileSearch?: boolean;
+  /** F014: 格式化操作回调 */
+  onFormatAction?: (action: string) => void;
   /** F013: 最近文件列表 */
   recentFiles?: RecentFile[];
   /** F013: 打开最近文件 */
@@ -39,7 +41,7 @@ interface ToolbarProps {
   onClearRecent?: () => void;
 }
 
-export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentTheme, onNewTab, onOpenFile, onSaveFile, onSaveAsFile, onExportDocx, onExportPdf, onExportHtml, onSetViewMode, onFocusModeChange, onToggleToc, onThemeChange, spellCheck, onToggleSpellCheck, recentFiles, onOpenRecent, onClearRecent, onToggleFileTree, onToggleCrossFileSearch, showCrossFileSearch }: ToolbarProps) {
+export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentTheme, onNewTab, onOpenFile, onSaveFile, onSaveAsFile, onExportDocx, onExportPdf, onExportHtml, onSetViewMode, onFocusModeChange, onToggleToc, onThemeChange, spellCheck, onToggleSpellCheck, recentFiles, onOpenRecent, onClearRecent, onToggleFileTree, onToggleCrossFileSearch, showCrossFileSearch, onFormatAction }: ToolbarProps) {
   const btnCls = 'flex items-center gap-1.5 px-2.5 py-1 text-xs hover:shadow-sm border border-transparent rounded transition-all';
   const viewBtnCls = (active: boolean) =>
     'flex items-center gap-1.5 px-2.5 py-1 text-xs rounded border transition-all ' +
@@ -139,6 +141,9 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentThe
         <button onClick={onSaveAsFile} title="另存为… (Ctrl+Shift+S)" className={btnCls}>
           <SaveAll size={15} strokeWidth={1.8} /><span>另存为</span>
         </button>
+        <button onClick={() => { alert('请直接 Ctrl+V 粘贴图片或拖拽图片到编辑器'); }} title="粘贴图片 (Ctrl+V)" className={btnCls}>
+          <Image size={15} strokeWidth={1.8} /><span>图片</span>
+        </button>
         <div className="w-px h-5 mx-1" style={{ backgroundColor: 'var(--border-color)' }} />
         <button onClick={onExportDocx} title="导出为 Word 文档" className={btnCls}>
           <FileText size={15} strokeWidth={1.8} /><span>导出DOCX</span>
@@ -148,6 +153,40 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentThe
         </button>
         <button onClick={onExportHtml} title="导出为 HTML" className={btnCls}>
           <FileCode size={15} strokeWidth={1.8} /><span>导出HTML</span>
+        </button>
+        <div className="w-px h-5 mx-1" style={{ backgroundColor: 'var(--border-color)' }} />
+        {/* F014 — 格式化工具栏 */}
+        <button onClick={() => onFormatAction?.('bold')} title="加粗 (Ctrl+B)" className={btnCls}>
+          <Bold size={14} strokeWidth={2} />
+        </button>
+        <button onClick={() => onFormatAction?.('italic')} title="斜体 (Ctrl+I)" className={btnCls}>
+          <Italic size={14} strokeWidth={2} />
+        </button>
+        <button onClick={() => onFormatAction?.('strikethrough')} title="删除线" className={btnCls}>
+          <Strikethrough size={14} strokeWidth={2} />
+        </button>
+        <button onClick={() => onFormatAction?.('code')} title="行内代码 (Ctrl+`)" className={btnCls}>
+          <Code size={14} strokeWidth={2} />
+        </button>
+        <div className="w-px h-5 mx-0.5" style={{ backgroundColor: 'var(--border-color)' }} />
+        <button onClick={() => onFormatAction?.('heading')} title="标题" className={btnCls}>
+          <Heading size={14} strokeWidth={2} />
+        </button>
+        <button onClick={() => onFormatAction?.('blockquote')} title="引用" className={btnCls}>
+          <Quote size={14} strokeWidth={2} />
+        </button>
+        <button onClick={() => onFormatAction?.('ul')} title="无序列表" className={btnCls}>
+          <List size={14} strokeWidth={2} />
+        </button>
+        <button onClick={() => onFormatAction?.('ol')} title="有序列表" className={btnCls}>
+          <ListOrdered size={14} strokeWidth={2} />
+        </button>
+        <div className="w-px h-5 mx-0.5" style={{ backgroundColor: 'var(--border-color)' }} />
+        <button onClick={() => onFormatAction?.('link')} title="插入链接" className={btnCls}>
+          <Link size={14} strokeWidth={2} />
+        </button>
+        <button onClick={() => onFormatAction?.('image')} title="插入图片" className={btnCls}>
+          <Image size={14} strokeWidth={2} />
         </button>
       </div>
       <div className="flex items-center gap-0.5">
