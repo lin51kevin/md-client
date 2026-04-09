@@ -2192,6 +2192,7 @@ dependencies = [
  "emojis",
  "genpdf",
  "pulldown-cmark",
+ "regex",
  "serde",
  "serde_json",
  "tauri",

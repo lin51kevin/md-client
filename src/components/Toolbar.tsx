@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { FolderOpen, Save, SaveAll, FilePlus, PanelLeftClose, PanelRightClose, Columns2, FileText, Printer, FileCode, Type, Monitor, Maximize, Minimize, List, SpellCheck, Clock, Trash2 } from 'lucide-react';
+import { FolderOpen, Save, SaveAll, FilePlus, PanelLeftClose, PanelRightClose, Columns2, FileText, Printer, FileCode, Type, Monitor, Maximize, Minimize, List, SpellCheck, Clock, Trash2, FolderTree, Search } from 'lucide-react';
 import { ViewMode, FocusMode } from '../types';
 import type { ThemeName } from '../lib/theme';
 import { getRecentFiles, type RecentFile } from '../lib/recent-files';
@@ -24,6 +24,13 @@ interface ToolbarProps {
   spellCheck?: boolean;
   /** F013: 拼写检查切换回调 */
   onToggleSpellCheck?: () => void;
+  /** F014: 文件树显示状态 */
+  showFileTree?: boolean;
+  /** F014: 文件树切换回调 */
+  onToggleFileTree?: () => void;
+  /** 跨文件搜索按钮回调 */
+  onToggleCrossFileSearch?: () => void;
+  showCrossFileSearch?: boolean;
   /** F013: 最近文件列表 */
   recentFiles?: RecentFile[];
   /** F013: 打开最近文件 */
@@ -32,7 +39,7 @@ interface ToolbarProps {
   onClearRecent?: () => void;
 }
 
-export function Toolbar({ viewMode, focusMode, showToc, currentTheme, onNewTab, onOpenFile, onSaveFile, onSaveAsFile, onExportDocx, onExportPdf, onExportHtml, onSetViewMode, onFocusModeChange, onToggleToc, onThemeChange, spellCheck, onToggleSpellCheck, recentFiles, onOpenRecent, onClearRecent }: ToolbarProps) {
+export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentTheme, onNewTab, onOpenFile, onSaveFile, onSaveAsFile, onExportDocx, onExportPdf, onExportHtml, onSetViewMode, onFocusModeChange, onToggleToc, onThemeChange, spellCheck, onToggleSpellCheck, recentFiles, onOpenRecent, onClearRecent, onToggleFileTree, onToggleCrossFileSearch, showCrossFileSearch }: ToolbarProps) {
   const btnCls = 'flex items-center gap-1.5 px-2.5 py-1 text-xs hover:shadow-sm border border-transparent rounded transition-all';
   const viewBtnCls = (active: boolean) =>
     'flex items-center gap-1.5 px-2.5 py-1 text-xs rounded border transition-all ' +
@@ -144,6 +151,58 @@ export function Toolbar({ viewMode, focusMode, showToc, currentTheme, onNewTab, 
         </button>
       </div>
       <div className="flex items-center gap-0.5">
+        {/* F014 — 文件树切换 */}
+        <button
+          onClick={onToggleFileTree}
+          title="文件树"
+          className={focusBtnCls(!!showFileTree)}
+          style={{
+            backgroundColor: showFileTree ? 'var(--accent-bg)' : 'transparent',
+            borderColor: showFileTree ? 'var(--accent-color)' : 'transparent',
+            color: showFileTree ? 'var(--accent-color)' : 'var(--text-secondary)'
+          }}
+          onMouseEnter={(e) => {
+            if (!showFileTree) {
+              e.currentTarget.style.color = 'var(--text-primary)';
+              e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!showFileTree) {
+              e.currentTarget.style.color = 'var(--text-secondary)';
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }
+          }}
+        >
+          <FolderTree size={14} strokeWidth={1.8} />
+        </button>
+
+        {/* 跨文件搜索 */}
+        <button
+          onClick={onToggleCrossFileSearch}
+          title="跨文件搜索"
+          className={focusBtnCls(!!showCrossFileSearch)}
+          style={{
+            backgroundColor: showCrossFileSearch ? 'var(--accent-bg)' : 'transparent',
+            borderColor: showCrossFileSearch ? 'var(--accent-color)' : 'transparent',
+            color: showCrossFileSearch ? 'var(--accent-color)' : 'var(--text-secondary)'
+          }}
+          onMouseEnter={(e) => {
+            if (!showCrossFileSearch) {
+              e.currentTarget.style.color = 'var(--text-primary)';
+              e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!showCrossFileSearch) {
+              e.currentTarget.style.color = 'var(--text-secondary)';
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }
+          }}
+        >
+          <Search size={14} strokeWidth={1.8} />
+        </button>
+
         {/* F010 — 大纲导航切换 */}
         <button
           onClick={onToggleToc}

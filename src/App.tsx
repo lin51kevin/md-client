@@ -59,6 +59,8 @@ const MarkdownPreview = lazy(() =>
 );
 import { FindReplaceBar } from './components/FindReplaceBar';
 import { TocSidebar } from './components/TocSidebar';
+import { FileTreeSidebar } from './components/FileTreeSidebar';
+import { CrossFileSearch, type SearchResultItem } from './components/CrossFileSearch';
 import { useSearchHighlight } from './hooks/useSearchHighlight';
 
 
@@ -74,6 +76,12 @@ export default function App() {
   // F010 - 大纲导航
   const [showToc, setShowToc] = useState(false);
   const [activeTocId, setActiveTocId] = useState<string | null>(null);
+
+  // F014 - 文件树侧边栏
+  const [showFileTree, setShowFileTree] = useState(false);
+
+  // 跨文件搜索面板
+  const [showCrossFileSearch, setShowCrossFileSearch] = useState(false);
 
   // F013 - 拼写检查
   const [spellCheck, setSpellCheck] = useState<boolean>(getSavedSpellCheck);
@@ -228,6 +236,26 @@ export default function App() {
     }
   }, [previewRef, activeTab.doc]);
 
+  // 跨文件搜索结果点击 → 打开文件并跳转行
+  const handleSearchResultClick = useCallback(async (result: SearchResultItem) => {
+    await openFileInTab(result.file_path);
+    // After file opens, scroll to line
+    // Use setTimeout to let CM initialize
+    setTimeout(() => {
+      const view = cmViewRef.current;
+      if (view) {
+        // Find the line position in the doc
+        const lineNum = Math.max(0, (result.line_number as number) - 1);
+        const lineInfo = view.state.doc.line(lineNum + 1);
+        view.dispatch({
+          selection: { anchor: lineInfo.from },
+          effects: EditorView.scrollIntoView(result.match_start > 0 ? lineInfo.from + result.match_start : lineInfo.from, { y: 'start', yMargin: 40 }),
+        });
+        view.focus();
+      }
+    }, 200);
+  }, [openFileInTab]);
+
   useKeyboardShortcuts({
     createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile,
     closeTab: handleCloseTab, setViewMode, activeTabIdRef,
@@ -343,6 +371,8 @@ export default function App() {
             viewMode={viewMode}
             focusMode={focusMode}
             showToc={showToc}
+            showFileTree={showFileTree}
+            onToggleFileTree={() => setShowFileTree(prev => !prev)}
             onNewTab={createNewTab}
             onOpenFile={handleOpenFile}
             onSaveFile={() => handleSaveFile()}
@@ -364,6 +394,8 @@ export default function App() {
             recentFiles={recentFiles}
             onOpenRecent={handleOpenRecent}
             onClearRecent={handleClearRecent}
+            onToggleCrossFileSearch={() => setShowCrossFileSearch(prev => !prev)}
+            showCrossFileSearch={showCrossFileSearch}
           />
 
           <TabBar
@@ -385,8 +417,13 @@ export default function App() {
         </>
       )}
 
-      {/* F010 - 大纲侧边栏 + 主内容区 */}
+      {/* F014 - 文件树侧边栏 + F010 - 大纲侧边栏 + 主内容区 */}
       <div className="flex-1 overflow-hidden flex">
+        <FileTreeSidebar
+          visible={showFileTree}
+          onFileOpen={(path) => openFileInTab(path)}
+          activeFilePath={activeTab.filePath ?? null}
+        />
         <TocSidebar
           key={activeTabId}
           toc={tocEntries}
@@ -435,7 +472,7 @@ export default function App() {
             <div className="h-full overflow-auto border-l" style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--bg-primary)' }} ref={previewRef} onScroll={handlePreviewScroll}>
               <div className="p-8">
                 <Suspense fallback={<div className="p-4 text-sm animate-pulse" style={{ color: 'var(--text-secondary)' }}>正在加载预览引擎...</div>}>
-                  <MarkdownPreview content={activeTab.doc} filePath={activeTab.filePath ?? undefined} onOpenFile={openFileInTab} className={`markdown-preview max-w-full min-h-full ${theme === 'dark' ? 'markdown-preview-dark' : ''}`} />
+                  <MarkdownPreview content={activeTab.doc} filePath={activeTab.filePath ?? undefined} onOpenFile={openFileInTab} onContentChange={updateActiveDoc} className={`markdown-preview max-w-full min-h-full ${theme === 'dark' ? 'markdown-preview-dark' : ''}`} />
                 </Suspense>
               </div>
             </div>
@@ -462,7 +499,7 @@ export default function App() {
               <div ref={previewRef} className="w-full h-full overflow-auto" style={{ backgroundColor: 'var(--bg-primary)' }}>
                 <div className="p-8">
                   <Suspense fallback={<div className="p-4 text-sm animate-pulse" style={{ color: 'var(--text-secondary)' }}>正在加载预览引擎...</div>}>
-                    <MarkdownPreview content={activeTab.doc} filePath={activeTab.filePath ?? undefined} onOpenFile={openFileInTab} className={`markdown-preview max-w-full min-h-full ${theme === 'dark' ? 'markdown-preview-dark' : ''}`} />
+                    <MarkdownPreview content={activeTab.doc} filePath={activeTab.filePath ?? undefined} onOpenFile={openFileInTab} onContentChange={updateActiveDoc} className={`markdown-preview max-w-full min-h-full ${theme === 'dark' ? 'markdown-preview-dark' : ''}`} />
                   </Suspense>
                 </div>
               </div>
@@ -489,6 +526,14 @@ export default function App() {
           }}
         />
       )}
+
+      {/* 跨文件搜索面板 */}
+      <CrossFileSearch
+        visible={showCrossFileSearch}
+        searchDir={activeTab.filePath ? activeTab.filePath.replace(/[/\\][^/\\]+$/, '') : null}
+        onClose={() => setShowCrossFileSearch(false)}
+        onResultClick={handleSearchResultClick}
+      />
     </div>
   );
 }
