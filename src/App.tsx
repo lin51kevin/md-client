@@ -28,6 +28,7 @@ import { autoCloseBrackets } from './lib/cmAutocomplete';
 import { countWords } from './lib/word-count';
 import { vimKeymap } from './lib/cmVim';
 import { createAutoSave } from './lib/auto-save';
+import { getSavedSplitSizes, saveSplitSizes } from './lib/split-preference';
 
 /** Stable config - defined outside component to avoid object churn on every render */
 const EDITOR_SETUP = { lineNumbers: true, foldGutter: true, highlightActiveLine: true, tabSize: 2 };
@@ -98,8 +99,11 @@ export default function App() {
   // F013 - Tab 重命名状态
   const [renamingTabId, setRenamingTabId] = useState<string | null>(null);
 
-  // F013 - 最近文件状态
+  // F013 — 最近文件状态
   const [recentFiles, setRecentFiles] = useState<RecentFile[]>(getRecentFiles());
+
+  // F013 — 分栏比例记忆
+  const [splitSizes, setSplitSizes] = useState<[number, number]>(() => getSavedSplitSizes());
 
   // 每次打开文件成功后刷新最近列表(通过 activeTabId 变化感知)
   const handleOpenRecent = useCallback(async (filePath: string) => {
@@ -112,8 +116,8 @@ export default function App() {
     setRecentFiles([]);
   }, []);
 
-  // F001 — 关闭有未保存内容的标签页时弹出确认
-  // F013 — 固定标签需先解除固定才能关闭（强制关闭由右键菜单单独处理）
+  // F001 - 关闭有未保存内容的标签页时弹出确认
+  // F013 - 固定标签需先解除固定才能关闭(强制关闭由右键菜单单独处理)
   const handleCloseTab = useCallback(async (id: string) => {
     const tab = tabs.find(t => t.id === id);
     if (tab?.isPinned) return; // pinned tabs cannot be normally closed
@@ -121,7 +125,7 @@ export default function App() {
       const name = tab.filePath?.split(/[\\/]/).pop() ?? 'Untitled.md';
       const path = tab.filePath ?? '(未保存)';
       const yes = await confirm(
-        `"${name}" 有未保存的更改，关闭后将丢失这些更改。\n\n路径: ${path}`,
+        `"${name}" 有未保存的更改,关闭后将丢失这些更改。\n\n路径: ${path}`,
         { title: '关闭标签页', kind: 'warning' }
       );
       if (!yes) return;
@@ -397,7 +401,14 @@ export default function App() {
 
         {viewMode === 'split' ? (
           <Split
-            sizes={[50, 50]}
+            sizes={splitSizes}
+            onDragEnd={(sizes) => {
+              const [a, b] = sizes as [number, number];
+              if (Math.abs(a + b - 100) < 0.5) {
+                setSplitSizes([a, b]);
+                saveSplitSizes([a, b]);
+              }
+            }}
             minSize={250}
             expandToMin={false}
             gutterSize={5}
@@ -452,10 +463,12 @@ export default function App() {
                 />
               </div>
             ) : (
-              <div ref={previewRef} className={`w-full h-full overflow-auto p-8 ${focusMode === 'focus' ? 'bg-slate-900' : ''}`} style={focusMode !== 'focus' ? { backgroundColor: 'var(--bg-primary)' } : undefined}>
-                <Suspense fallback={<div className="p-4 text-sm animate-pulse" style={{ color: 'var(--text-secondary)' }}>正在加载预览引擎...</div>}>
-                  <MarkdownPreview content={activeTab.doc} filePath={activeTab.filePath ?? undefined} onOpenFile={openFileInTab} className={`markdown-preview w-full ${theme === 'dark' || focusMode === 'focus' ? 'markdown-preview-dark' : ''}`} />
-                </Suspense>
+              <div ref={previewRef} className={`w-full h-full overflow-auto ${focusMode === 'focus' ? 'bg-slate-900' : ''}`} style={focusMode !== 'focus' ? { backgroundColor: 'var(--bg-primary)' } : undefined}>
+                <div className="p-8">
+                  <Suspense fallback={<div className="p-4 text-sm animate-pulse" style={{ color: 'var(--text-secondary)' }}>正在加载预览引擎...</div>}>
+                    <MarkdownPreview content={activeTab.doc} filePath={activeTab.filePath ?? undefined} onOpenFile={openFileInTab} className={`markdown-preview max-w-200 mx-auto min-h-full ${theme === 'dark' || focusMode === 'focus' ? 'markdown-preview-dark' : ''}`} />
+                  </Suspense>
+                </div>
               </div>
             )}
           </div>
