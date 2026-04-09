@@ -8,6 +8,7 @@ import { foldGutter } from '@codemirror/language';
 import Split from 'react-split';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { invoke } from '@tauri-apps/api/core';
+import { confirm } from '@tauri-apps/plugin-dialog';
 import './App.css';
 
 import { ViewMode } from './types';
@@ -26,6 +27,9 @@ import { autoCloseBrackets } from './lib/cmAutocomplete';
 import { countWords } from './lib/word-count';
 import { vimKeymap } from './lib/cmVim';
 import { createAutoSave } from './lib/auto-save';
+
+/** Stable config — defined outside component to avoid object churn on every render */
+const EDITOR_SETUP = { lineNumbers: true, foldGutter: true, highlightActiveLine: true, tabSize: 2 };
 
 import { Toolbar } from './components/Toolbar';
 import { TabBar } from './components/TabBar';
@@ -65,6 +69,17 @@ export default function App() {
     openFileInTab, openFileWithContent, createNewTab, closeTab, reorderTabs,
     markSaved, markSavedAs,
   } = useTabs();
+
+  // F001 — 关闭有未保存内容的标签页时弹出确认
+  const handleCloseTab = useCallback(async (id: string) => {
+    const tab = tabs.find(t => t.id === id);
+    if (tab?.isDirty) {
+      const name = tab.filePath?.split(/[\\/]/).pop() ?? 'Untitled.md';
+      const yes = await confirm(`“${name}” 有未保存的更改，确定要关闭吗？`, { title: '关闭标签页', kind: 'warning' });
+      if (!yes) return;
+    }
+    closeTab(id);
+  }, [tabs, closeTab]);
 
   const { handleOpenFile, handleSaveFile: rawHandleSaveFile, handleSaveAsFile, handleExportDocx, handleExportPdf, handleExportHtml } = useFileOps({
     getActiveTab, tabs, openFileInTab, markSaved, markSavedAs,
@@ -118,8 +133,16 @@ export default function App() {
   }, [activeTab.filePath]);
 
   // F010 — TOC 数据 + 跳转处理
-  const tocEntries = useMemo(() => extractToc(activeTab.doc), [activeTab.doc]);
-  const wordCount = useMemo(() => countWords(activeTab.doc).words, [activeTab.doc]);
+  // 防抖 300ms 延迟更新 toc/wordCount，避免每次按键都重算
+  const [debouncedDoc, setDebouncedDoc] = useState(activeTab.doc);
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedDoc(activeTab.doc), 300);
+    return () => clearTimeout(id);
+  // activeTabId 切换时立即同步，避免旧标签页数据延迟显示
+  }, [activeTab.doc, activeTabId]);
+
+  const tocEntries = useMemo(() => extractToc(debouncedDoc), [debouncedDoc]);
+  const wordCount = useMemo(() => countWords(debouncedDoc).words, [debouncedDoc]);
   const handleTocNavigate = useCallback((entry: TocEntry) => {
     setActiveTocId(entry.id);
 
@@ -155,7 +178,7 @@ export default function App() {
 
   useKeyboardShortcuts({
     createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile,
-    closeTab, setViewMode, activeTabIdRef,
+    closeTab: handleCloseTab, setViewMode, activeTabIdRef,
     toggleFindReplace: () => setShowFindReplace(prev => !prev),
     focusMode, setFocusMode,
   });
@@ -216,7 +239,7 @@ export default function App() {
     searchHighlightExtension,
     ...(vimExtension ? [vimExtension] : []),
   ], [cursorExtension, vimExtension, searchHighlightExtension]);
-  const editorSetup = { lineNumbers: true, foldGutter: true, highlightActiveLine: true, tabSize: 2 };
+  const editorSetup = EDITOR_SETUP;
 
   // F009 — 根据焦点模式动态调整主题色
   const editorTheme = focusMode === 'focus' ? 'dark' : THEMES[theme].cmTheme;
@@ -256,7 +279,7 @@ export default function App() {
               tabId={ctxMenu.tabId}
               onSave={handleSaveFile}
               onSaveAs={handleSaveAsFile}
-              onClose={closeTab}
+              onClose={handleCloseTab}
               onDismiss={() => setCtxMenu(null)}
             />
           )}
@@ -283,7 +306,7 @@ export default function App() {
             tabs={tabs}
             activeTabId={activeTabId}
             onActivate={setActiveTabId}
-            onClose={closeTab}
+            onClose={handleCloseTab}
             onNew={createNewTab}
             onReorder={reorderTabs}
             onContextMenu={(x, y, tabId) => setCtxMenu({ x, y, tabId })}
@@ -333,7 +356,7 @@ export default function App() {
             </div>
             <div className={`h-full overflow-auto border-l ${focusMode === 'focus' ? 'border-slate-700 bg-slate-900' : ''}`} style={focusMode !== 'focus' ? { borderColor: 'var(--border-color)', backgroundColor: 'var(--bg-primary)' } : undefined} ref={previewRef} onScroll={handlePreviewScroll}>
               <div className="p-8">
-                <MarkdownPreview content={activeTab.doc} className={`markdown-preview max-w-200 mx-auto min-h-full ${focusMode === 'focus' ? 'markdown-preview-dark' : ''}`} />
+                <MarkdownPreview content={activeTab.doc} filePath={activeTab.filePath ?? undefined} onOpenFile={openFileInTab} className={`markdown-preview max-w-200 mx-auto min-h-full ${theme === 'dark' || focusMode === 'focus' ? 'markdown-preview-dark' : ''}`} />
               </div>
             </div>
           </Split>
@@ -356,7 +379,7 @@ export default function App() {
               </div>
             ) : (
               <div ref={previewRef} className={`w-full h-full overflow-auto p-8 ${focusMode === 'focus' ? 'bg-slate-900' : ''}`} style={focusMode !== 'focus' ? { backgroundColor: 'var(--bg-primary)' } : undefined}>
-                <MarkdownPreview content={activeTab.doc} className={`markdown-preview w-full ${focusMode === 'focus' ? 'markdown-preview-dark' : ''}`} />
+                <MarkdownPreview content={activeTab.doc} filePath={activeTab.filePath ?? undefined} onOpenFile={openFileInTab} className={`markdown-preview w-full ${theme === 'dark' || focusMode === 'focus' ? 'markdown-preview-dark' : ''}`} />
               </div>
             )}
           </div>

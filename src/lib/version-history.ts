@@ -135,9 +135,19 @@ export function formatSnapshotTime(isoString: string): string {
 
 /**
  * 持久化快照列表到 localStorage
+ * 若遇配额不足，依次丢弃最旧的快照直到写入成功。
  */
 function persistSnapshots(filePath: string, snapshots: Snapshot[]): void {
-  try {
-    localStorage.setItem(storageKey(filePath), JSON.stringify(snapshots));
-  } catch { /* ignore quota errors */ }
+  let toSave = snapshots;
+  while (toSave.length > 0) {
+    try {
+      localStorage.setItem(storageKey(filePath), JSON.stringify(toSave));
+      return;
+    } catch {
+      // QuotaExceededError — drop oldest snapshot and retry
+      toSave = toSave.slice(1);
+    }
+  }
+  // Nothing could fit — clear the key entirely
+  try { localStorage.removeItem(storageKey(filePath)); } catch { /* ignore */ }
 }

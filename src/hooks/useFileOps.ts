@@ -1,5 +1,4 @@
 import { open, save, message } from '@tauri-apps/plugin-dialog';
-import { writeTextFile } from '@tauri-apps/plugin-fs';
 import { invoke } from '@tauri-apps/api/core';
 import { generateHtmlDocument } from '../lib/html-export';
 import { Tab } from '../types';
@@ -36,11 +35,12 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
         filters: [{ name: 'Markdown', extensions: ['md'] }],
       });
       if (savePath) {
-        await writeTextFile(savePath, tab.doc);
+        await invoke('write_file_text', { path: savePath, content: tab.doc });
         markSavedAs(tab.id, savePath);
       }
     } catch (err) {
-      console.error('Failed to save as file', err);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      await message(errMsg, { title: '另存为失败', kind: 'error' });
     }
   };
 
@@ -49,13 +49,14 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
     if (!tab) return;
     try {
       if (tab.filePath) {
-        await writeTextFile(tab.filePath, tab.doc);
+        await invoke('write_file_text', { path: tab.filePath, content: tab.doc });
         markSaved(tab.id);
       } else {
         await handleSaveAsFile(tab.id);
       }
     } catch (err) {
-      console.error('Failed to save file', err);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      await message(errMsg, { title: '保存失败', kind: 'error' });
     }
   };
 
@@ -75,7 +76,7 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
       });
       if (savePath) {
         const html = await generateHtmlDocument(tab.doc);
-        await writeTextFile(savePath, html);
+        await invoke('write_file_text', { path: savePath, content: html });
       }
       return;
     }

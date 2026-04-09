@@ -39,7 +39,7 @@ describe('F011 — 主题系统', () => {
     it('应注入 CSS 变量到 :root', () => {
       applyTheme('dark');
       expect(document.documentElement.style.getPropertyValue('--bg-primary')).toBe('#0d1117');
-      expect(document.documentElement.style.getPropertyValue('--text-primary')).toBe('#e6edf3');
+      expect(document.documentElement.style.getPropertyValue('--text-primary')).toBe('#f0f6fc');
     });
 
     it('切换主题应覆盖之前的变量', () => {

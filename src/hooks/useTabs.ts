@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { readTextFile } from '@tauri-apps/plugin-fs';
+import { invoke } from '@tauri-apps/api/core';
+import { message } from '@tauri-apps/plugin-dialog';
 import { Tab } from '../types';
 import { INITIAL_TAB_ID, genTabId, DEFAULT_MARKDOWN } from '../constants';
 
@@ -17,7 +18,10 @@ export function useTabs() {
   useEffect(() => { activeTabIdRef.current = activeTabId; }, [activeTabId]);
   useEffect(() => { tabsRef.current = tabs; }, [tabs]);
 
-  const getActiveTab = (): Tab => tabs.find(t => t.id === activeTabId) ?? tabs[0];
+  const getActiveTab = useCallback((): Tab =>
+    tabs.find(t => t.id === activeTabId) ?? tabs[0],
+    [tabs, activeTabId]
+  );
 
   const getTabTitle = (tab: Tab): string => {
     const name = tab.filePath
@@ -26,11 +30,11 @@ export function useTabs() {
     return tab.isDirty ? name + ' \u25cf' : name;
   };
 
-  const updateActiveDoc = (value: string) => {
+  const updateActiveDoc = useCallback((value: string) => {
     setTabs(prev =>
       prev.map(t => t.id === activeTabId ? { ...t, doc: value, isDirty: true } : t)
     );
-  };
+  }, [activeTabId]);
 
   const openFileInTab = useCallback(async (filePath: string) => {
     const existing = tabsRef.current.find(t => t.filePath === filePath);
@@ -44,7 +48,7 @@ export function useTabs() {
     openingPaths.current.add(filePath);
 
     try {
-      const content = await readTextFile(filePath);
+      const content = await invoke<string>('read_file_text', { path: filePath });
       // Re-check after async operation to handle concurrent calls with the same file
       const duplicate = tabsRef.current.find(t => t.filePath === filePath);
       if (duplicate) {
@@ -55,7 +59,8 @@ export function useTabs() {
       setTabs(prev => [...prev, newTab]);
       setActiveTabId(newTab.id);
     } catch (err) {
-      console.error('Failed to read file', err);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      await message(`无法读取文件: ${errMsg}`, { title: '打开文件失败', kind: 'error' });
     } finally {
       openingPaths.current.delete(filePath);
     }

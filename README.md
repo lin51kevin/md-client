@@ -6,13 +6,15 @@
 </p>
 
 <p align="center">
-  <img src="./docs/screenshot.png" alt="md-client 界面预览" width="100%">
+
+![md-client 界面预览](./docs/screenshot.png)
+
 </p>
 
 <p align="center">
-  <a href="./docs/USER_GUIDE.md">��� 中文用户手册</a> •
-  <a href="#-features">功能特性</a> •
-  <a href="#getting-started">快速开始</a> •
+  <a href="./docs/USER_GUIDE.md">中文用户手册</a> &nbsp;|&nbsp;
+  <a href="#✨-features">功能特性</a> &nbsp;|&nbsp;
+  <a href="#getting-started">快速开始</a> &nbsp;|&nbsp;
   <a href="#tech-stack">技术栈</a>
 </p>
 
