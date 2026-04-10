@@ -371,12 +371,13 @@ export function FileTreeSidebar({
     if (renamingRef.current) return;
     renamingRef.current = true;
 
-    // 找到原始文件的目录和扩展名
-    const originalName = renamingPath.split('/').pop() || renamingPath.split('\\').pop() || '';
+    // 找到原始文件的目录和扩展名（兼容 Windows 反斜杠和 Unix 正斜杠）
+    const lastSepIdx = Math.max(renamingPath.lastIndexOf('/'), renamingPath.lastIndexOf('\\'));
+    const originalName = lastSepIdx >= 0 ? renamingPath.slice(lastSepIdx + 1) : renamingPath;
+    const dirPart = lastSepIdx >= 0 ? renamingPath.slice(0, lastSepIdx + 1) : '';
     const dotIndex = originalName.lastIndexOf('.');
     const ext = dotIndex > 0 ? originalName.slice(dotIndex) : '.md';
     const newName = renameValue.trim() + ext;
-    const dirPart = renamingPath.substring(0, renamingPath.length - originalName.length);
     const newPath = dirPart + newName;
 
     if (newPath === renamingPath) {

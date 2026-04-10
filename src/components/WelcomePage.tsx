@@ -1,7 +1,8 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { FilePlus, FolderOpen, FileText, Clock, Keyboard, X } from 'lucide-react';
 import { useI18n } from '../i18n';
 import type { RecentFile } from '../lib/recent-files';
+import logoUrl from '../../src-tauri/icons/128x128.png';
 
 const MAX_VISIBLE_RECENT = 5;
 
@@ -96,6 +97,16 @@ export function EmptyEditorState({ onShowWelcome }: EmptyEditorStateProps) {
       className="flex-1 flex flex-col items-center justify-center"
       style={{ backgroundColor: 'var(--bg-primary)' }}
     >
+      {/* App logo — sized ~like VS Code's watermark */}
+      <img
+        src={logoUrl}
+        alt="MarkLite"
+        width={160}
+        height={160}
+        className="mb-8 select-none"
+        style={{ opacity: 0.18 }}
+        draggable={false}
+      />
       <div className="w-72 space-y-3">
         {EMPTY_SHORTCUTS.map((sc) => (
           <div key={sc.key} className="flex items-center justify-between">
@@ -138,8 +149,9 @@ export function EmptyEditorState({ onShowWelcome }: EmptyEditorStateProps) {
 
 export function WelcomePage({ recentFiles, onNew, onOpenFile, onOpenRecent, onOpenSample, onDismiss }: WelcomePageProps) {
   const { t } = useI18n();
-  const visibleRecent = recentFiles.slice(0, MAX_VISIBLE_RECENT);
-  const hasMore = recentFiles.length > MAX_VISIBLE_RECENT;
+  const [showAll, setShowAll] = useState(false);
+  const visibleRecent = showAll ? recentFiles : recentFiles.slice(0, MAX_VISIBLE_RECENT);
+  const hasMore = !showAll && recentFiles.length > MAX_VISIBLE_RECENT;
 
   return (
     <div
@@ -251,6 +263,7 @@ export function WelcomePage({ recentFiles, onNew, onOpenFile, onOpenRecent, onOp
                     {hasMore && (
                       <li>
                         <button
+                          onClick={() => setShowAll(true)}
                           className="text-xs px-2 py-1.5"
                           style={{ color: 'var(--accent-color)' }}
                           onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}

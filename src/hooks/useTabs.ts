@@ -125,9 +125,17 @@ export function useTabs() {
         setActiveTabId(duplicate.id);
         return;
       }
-      const newTab: Tab = { id: genTabId(), filePath, doc: content, isDirty: false };
-      setTabs(prev => [...prev, newTab]);
-      setActiveTabId(newTab.id);
+      // Replace the pristine backing tab (no file, not dirty, no custom name) instead of stacking
+      const cur = tabsRef.current;
+      const isPristineBacking = cur.length === 1 && !cur[0].filePath && !cur[0].isDirty && !cur[0].displayName;
+      if (isPristineBacking) {
+        setTabs([{ id: cur[0].id, filePath, doc: content, isDirty: false }]);
+        setActiveTabId(cur[0].id);
+      } else {
+        const newTab: Tab = { id: genTabId(), filePath, doc: content, isDirty: false };
+        setTabs(prev => [...prev, newTab]);
+        setActiveTabId(newTab.id);
+      }
       addRecentFile(filePath);
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);

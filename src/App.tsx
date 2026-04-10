@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect, useMemo, lazy, Suspense } from 'react';
+import { useState, useRef, useCallback, useEffect, useLayoutEffect, useMemo, lazy, Suspense } from 'react';
 import type { Extension } from '@codemirror/state';
 import CodeMirror, { type EditorState, type ViewUpdate } from '@uiw/react-codemirror';
 import { EditorView } from '@codemirror/view';
@@ -88,7 +88,6 @@ import { parseTable, serializeTable, type TableData } from './lib/table-parser';
 import { TableEditor } from './components/TableEditor';
 import { InputDialog, type InputDialogConfig } from './components/InputDialog';
 import { WelcomePage, EmptyEditorState } from './components/WelcomePage';
-import { DEFAULT_MARKDOWN } from './constants';
 
 
 export default function App() {
@@ -154,9 +153,18 @@ export default function App() {
     getActiveTab, getTabTitle, updateActiveDoc, updateTabDoc,
     openFileInTab, openFileWithContent, createNewTab, closeTab, reorderTabs,
     markSaved, markSavedAs,
-    renameTab,
+    renameTab, setTabDisplayName,
     pinTab, unpinTab,
   } = useTabs();
+
+  // True when only the initial backing tab exists untouched — welcome/empty state
+  const isPristine = tabs.length === 1 && !tabs[0].filePath && !tabs[0].isDirty && !tabs[0].displayName;
+
+  // Opens the DEFAULT_MARKDOWN content as an editable "sample.md" tab
+  const handleOpenSample = useCallback(() => {
+    setTabDisplayName(tabs[0].id, 'sample.md');
+    handleDismissWelcome();
+  }, [tabs, setTabDisplayName, handleDismissWelcome]);
 
   // F013 - Tab 重命名状态
   const [renamingTabId, setRenamingTabId] = useState<string | null>(null);
@@ -263,11 +271,14 @@ export default function App() {
     enabled: true,
   });
 
-  // F011 - 主题切换 effect
-  useEffect(() => {
+  // F011 - 主题切换: useLayoutEffect 在浏览器绘制前同步应用 CSS 变量，避免主题切换/模式切换时的短暂色彩不一致
+  useLayoutEffect(() => {
     applyTheme(theme);
     saveTheme(theme);
-    // 同步原生标题栏主题(Windows/macOS)
+  }, [theme]);
+
+  // 同步原生标题栏主题(Windows/macOS) — 异步操作，保持 useEffect
+  useEffect(() => {
     if (isTauri) {
       getCurrentWindow().setTheme(theme).catch(() => {});
     }
@@ -808,6 +819,9 @@ export default function App() {
             onFormatAction={handleFormatAction}
             onImageLocal={() => handleFormatAction('image-local')}
             onOpenSettings={() => setShowSettings(true)}
+            tabs={tabs}
+            activeTabId={activeTabId}
+            onActivateTab={setActiveTabId}
           />
 
           <SettingsModal
@@ -828,7 +842,7 @@ export default function App() {
           />
 
           <TabBar
-            tabs={tabs}
+            tabs={isPristine ? [] : tabs}
             activeTabId={activeTabId}
             onActivate={setActiveTabId}
             onClose={handleCloseTab}
@@ -842,6 +856,8 @@ export default function App() {
             onCancelRename={() => setRenamingTabId(null)}
             onPin={pinTab}
             onUnpin={unpinTab}
+            showWelcomeTab={isPristine && !welcomeDismissed}
+            onCloseWelcomeTab={handleDismissWelcome}
           />
         </>
       )}
@@ -861,7 +877,7 @@ export default function App() {
           visible={showToc}
         />
 
-        {tabs.length === 1 && !tabs[0].isDirty && tabs[0].doc === DEFAULT_MARKDOWN ? (
+        {isPristine ? (
           welcomeDismissed ? (
             <EmptyEditorState onShowWelcome={handleShowWelcome} />
           ) : (
@@ -870,6 +886,7 @@ export default function App() {
               onNew={createNewTab}
               onOpenFile={handleOpenFile}
               onOpenRecent={handleOpenRecent}
+              onOpenSample={handleOpenSample}
               onDismiss={handleDismissWelcome}
             />
           )

@@ -1,5 +1,5 @@
 
-import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, List, SpellCheck, FolderTree, Search, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, Settings, FilePlus, FolderOpen as FolderOpenIcon, Save, SaveAll } from 'lucide-react';
+import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, List, SpellCheck, FolderTree, Search, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, Settings, FilePlus, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ViewMode, FocusMode } from '../types';
 
 import { FileMenuDropdown } from './FileMenuDropdown';
@@ -47,10 +47,22 @@ interface ToolbarProps {
   onOpenRecent?: (filePath: string) => void;
   /** F013: 清空最近文件 */
   onClearRecent?: () => void;
+  /** Tab navigation: list of open tabs */
+  tabs?: import('../types').Tab[];
+  /** Tab navigation: current active tab id */
+  activeTabId?: string;
+  /** Tab navigation: activate a tab by id */
+  onActivateTab?: (id: string) => void;
 }
 
-export function Toolbar({ viewMode, focusMode, showToc, showFileTree, onNewTab, onOpenFile, onSaveFile, onSaveAsFile, onExportDocx, onExportPdf, onExportHtml, onExportPng, onSetViewMode, onFocusModeChange, onToggleToc, spellCheck, onToggleSpellCheck, onToggleFileTree, onToggleSearch, showSearch, onFormatAction, recentFiles, onOpenRecent, onClearRecent, vimMode, onToggleVimMode, onImageLocal, onOpenSettings }: ToolbarProps & { onImageLocal?: () => void }) {
+export function Toolbar({ viewMode, focusMode, showToc, showFileTree, onNewTab, onOpenFile, onSaveFile, onSaveAsFile, onExportDocx, onExportPdf, onExportHtml, onExportPng, onSetViewMode, onFocusModeChange, onToggleToc, spellCheck, onToggleSpellCheck, onToggleFileTree, onToggleSearch, showSearch, onFormatAction, recentFiles, onOpenRecent, onClearRecent, vimMode, onToggleVimMode, onImageLocal, onOpenSettings, tabs, activeTabId, onActivateTab }: ToolbarProps & { onImageLocal?: () => void }) {
   const { t } = useI18n();
+
+  // Compute prev/next tab ids for navigation arrows
+  const tabList = tabs ?? [];
+  const activeIdx = tabList.findIndex(tab => tab.id === activeTabId);
+  const prevTabId = activeIdx > 0 ? tabList[activeIdx - 1].id : null;
+  const nextTabId = activeIdx >= 0 && activeIdx < tabList.length - 1 ? tabList[activeIdx + 1].id : null;
   const btnCls = 'flex items-center gap-1.5 px-2.5 py-1 text-xs hover:shadow-sm border border-transparent rounded transition-all';
   const viewBtnCls = (active: boolean) =>
     'flex items-center gap-1.5 px-2.5 py-1 text-xs rounded border transition-all ' +
@@ -65,7 +77,7 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, onNewTab, 
       : 'border-transparent');
 
   return (
-    <div className="shrink-0 flex items-center justify-between px-2 py-1" style={{ backgroundColor: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-color)' }}>
+    <div className="relative shrink-0 flex items-center justify-between px-2 py-1" style={{ backgroundColor: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-color)' }}>
       <div className="flex items-center">
         {/* 文件菜单下拉 (方案A) */}
         <FileMenuDropdown
@@ -134,6 +146,35 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, onNewTab, 
           <Link2 size={14} strokeWidth={2} />
         </button>
       </div>
+
+      {/* ── Centered tab navigation (VS Code title-bar style) ── */}
+      {tabList.length > 1 && (
+        <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-0.5 pointer-events-none select-none">
+          <button
+            disabled={!prevTabId}
+            onClick={() => prevTabId && onActivateTab?.(prevTabId)}
+            title={t('toolbar.prevTab')}
+            className="pointer-events-auto flex items-center justify-center w-6 h-6 rounded disabled:opacity-25 disabled:cursor-default"
+            style={{ color: 'var(--text-secondary)' }}
+            onMouseEnter={(e) => { if (prevTabId) { e.currentTarget.style.backgroundColor = 'var(--hover-bg)'; e.currentTarget.style.color = 'var(--text-primary)'; } }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+          >
+            <ChevronLeft size={16} strokeWidth={1.8} />
+          </button>
+          <button
+            disabled={!nextTabId}
+            onClick={() => nextTabId && onActivateTab?.(nextTabId)}
+            title={t('toolbar.nextTab')}
+            className="pointer-events-auto flex items-center justify-center w-6 h-6 rounded disabled:opacity-25 disabled:cursor-default"
+            style={{ color: 'var(--text-secondary)' }}
+            onMouseEnter={(e) => { if (nextTabId) { e.currentTarget.style.backgroundColor = 'var(--hover-bg)'; e.currentTarget.style.color = 'var(--text-primary)'; } }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+          >
+            <ChevronRight size={16} strokeWidth={1.8} />
+          </button>
+        </div>
+      )}
+
       <div className="flex items-center gap-0.5">
         {/* F014 — 文件树切换 */}
         <button

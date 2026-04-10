@@ -72,6 +72,8 @@ export const zhCN = {
   'toolbar.editOnly': '仅编辑 (Ctrl+1)',
   'toolbar.split': '分栏视图 (Ctrl+2)',
   'toolbar.previewOnly': '仅预览 (Ctrl+3)',
+  'toolbar.prevTab': '上一个标签页',
+  'toolbar.nextTab': '下一个标签页',
   'toolbar.edit': '编辑',
   'toolbar.splitLabel': '分栏',
   'toolbar.preview': '预览',
