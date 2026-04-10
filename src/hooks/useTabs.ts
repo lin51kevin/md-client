@@ -30,7 +30,7 @@ export function useTabs() {
     if (tab.displayName) return tab.isDirty ? tab.displayName + ' \u25cf' : tab.displayName;
     const name = tab.filePath
       ? (tab.filePath.split(/[\\/]/).pop() ?? tab.filePath)
-      : 'Untitled.md';
+      : 'sample.md';
     return tab.isDirty ? name + ' \u25cf' : name;
   };
 
@@ -138,7 +138,14 @@ export function useTabs() {
   }, []);
 
   const createNewTab = () => {
-    const newTab: Tab = { id: genTabId(), filePath: null, doc: '', isDirty: false };
+    const usedNames = new Set(tabsRef.current.map(t => getTabTitle(t).replace(/ \u25cf$/, '')));
+    let name = 'sample.md';
+    if (usedNames.has(name)) {
+      let i = 1;
+      while (usedNames.has(`sample${i}.md`)) i++;
+      name = `sample${i}.md`;
+    }
+    const newTab: Tab = { id: genTabId(), filePath: null, doc: '', isDirty: false, displayName: name };
     setTabs(prev => [...prev, newTab]);
     setActiveTabId(newTab.id);
   };
