@@ -138,12 +138,20 @@ export function useTabs() {
   }, []);
 
   const createNewTab = () => {
+    // 首次启动（无标签）→ sample.md 带引导内容
+    if (tabsRef.current.length === 0) {
+      const newTab: Tab = { id: genTabId(), filePath: null, doc: DEFAULT_MARKDOWN, isDirty: false };
+      setTabs([newTab]);
+      setActiveTabId(newTab.id);
+      return;
+    }
+    // 用户新建 → untitled + 序号，空内容
     const usedNames = new Set(tabsRef.current.map(t => getTabTitle(t).replace(/ \u25cf$/, '')));
-    let name = 'sample.md';
+    let name = 'untitled.md';
     if (usedNames.has(name)) {
       let i = 1;
-      while (usedNames.has(`sample${i}.md`)) i++;
-      name = `sample${i}.md`;
+      while (usedNames.has(`untitled${i}.md`)) i++;
+      name = `untitled${i}.md`;
     }
     const newTab: Tab = { id: genTabId(), filePath: null, doc: '', isDirty: false, displayName: name };
     setTabs(prev => [...prev, newTab]);
