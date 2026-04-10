@@ -87,6 +87,7 @@ import { parseTable, serializeTable, type TableData } from './lib/table-parser';
 import { TableEditor } from './components/TableEditor';
 import { InputDialog, type InputDialogConfig } from './components/InputDialog';
 import { WelcomePage } from './components/WelcomePage';
+import { DEFAULT_MARKDOWN } from './constants';
 
 
 export default function App() {
@@ -838,7 +839,7 @@ export default function App() {
           visible={showToc}
         />
 
-        {tabs.length === 0 ? (
+        {tabs.length === 1 && !tabs[0].isDirty && tabs[0].doc === DEFAULT_MARKDOWN ? (
           <WelcomePage
             recentFiles={recentFiles}
             onNew={createNewTab}
