@@ -232,4 +232,8 @@ export const en: Record<TranslationKey, string> = {
   'welcome.shortcut.edit': 'Edit Mode',
   'welcome.shortcut.split': 'Split Mode',
   'welcome.shortcut.preview': 'Preview Mode',
+  'welcome.start': 'Start',
+  'welcome.moreFiles': 'More...',
+  'welcome.dismiss': 'Close Welcome',
+  'welcome.showWelcome': 'Show Welcome',
 };

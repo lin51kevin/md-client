@@ -1,13 +1,14 @@
 /**
- * WelcomePage 单元测试
+ * WelcomePage + EmptyEditorState unit tests
  *
- * 测试欢迎页渲染、最近文件列表、快速操作按钮、快捷键速览。
+ * Tests welcome page rendering, recent files list, quick-action links,
+ * keyboard shortcuts panel, dismiss behaviour, and the empty-editor overlay.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
 
-import { WelcomePage } from '../../components/WelcomePage';
+import { WelcomePage, EmptyEditorState } from '../../components/WelcomePage';
 import type { RecentFile } from '../../lib/recent-files';
 
 const MOCK_RECENT_FILES: RecentFile[] = [
@@ -20,12 +21,13 @@ describe('WelcomePage', () => {
   const onNew = vi.fn();
   const onOpenFile = vi.fn();
   const onOpenRecent = vi.fn();
+  const onDismiss = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('renders welcome title and subtitle', () => {
+  it('renders app title', () => {
     render(
       <WelcomePage
         recentFiles={MOCK_RECENT_FILES}
@@ -34,7 +36,6 @@ describe('WelcomePage', () => {
         onOpenRecent={onOpenRecent}
       />
     );
-    // Should show app name or welcome text
     expect(screen.getByText('MarkLite')).toBeTruthy();
   });
 
@@ -78,7 +79,7 @@ describe('WelcomePage', () => {
     expect(onOpenRecent).toHaveBeenCalledWith('/docs/notes.md');
   });
 
-  it('calls onNew when clicking new button', () => {
+  it('calls onNew when clicking the new-file action', () => {
     render(
       <WelcomePage
         recentFiles={MOCK_RECENT_FILES}
@@ -87,13 +88,11 @@ describe('WelcomePage', () => {
         onOpenRecent={onOpenRecent}
       />
     );
-    // Use getAllByText and pick the first one (button) since "新建" also appears in shortcuts label
-    const newBtns = screen.getAllByText('新建');
-    fireEvent.click(newBtns[0]);
+    fireEvent.click(screen.getByText('新建'));
     expect(onNew).toHaveBeenCalledOnce();
   });
 
-  it('calls onOpenFile when clicking open button', () => {
+  it('calls onOpenFile when clicking the open-file action', () => {
     render(
       <WelcomePage
         recentFiles={MOCK_RECENT_FILES}
@@ -102,8 +101,8 @@ describe('WelcomePage', () => {
         onOpenRecent={onOpenRecent}
       />
     );
-    const openBtns = screen.getAllByText('打开文件');
-    fireEvent.click(openBtns[0]);
+    // "打开文件" appears in start section; pick the first match
+    fireEvent.click(screen.getAllByText('打开文件')[0]);
     expect(onOpenFile).toHaveBeenCalledOnce();
   });
 
@@ -119,5 +118,55 @@ describe('WelcomePage', () => {
     expect(screen.getByText('Ctrl+N')).toBeTruthy();
     expect(screen.getByText('Ctrl+O')).toBeTruthy();
     expect(screen.getByText('Ctrl+S')).toBeTruthy();
+  });
+
+  it('renders dismiss button when onDismiss is provided', () => {
+    render(
+      <WelcomePage
+        recentFiles={[]}
+        onNew={onNew}
+        onOpenFile={onOpenFile}
+        onOpenRecent={onOpenRecent}
+        onDismiss={onDismiss}
+      />
+    );
+    // The dismiss button has title="关闭欢迎页"
+    const btn = screen.getByTitle('关闭欢迎页');
+    fireEvent.click(btn);
+    expect(onDismiss).toHaveBeenCalledOnce();
+  });
+
+  it('does not render dismiss button when onDismiss is omitted', () => {
+    render(
+      <WelcomePage
+        recentFiles={[]}
+        onNew={onNew}
+        onOpenFile={onOpenFile}
+        onOpenRecent={onOpenRecent}
+      />
+    );
+    expect(screen.queryByTitle('关闭欢迎页')).toBeNull();
+  });
+});
+
+describe('EmptyEditorState', () => {
+  it('renders keyboard shortcut hints', () => {
+    render(<EmptyEditorState />);
+    expect(screen.getByText('Ctrl+N')).toBeTruthy();
+    expect(screen.getByText('Ctrl+O')).toBeTruthy();
+    expect(screen.getByText('Ctrl+S')).toBeTruthy();
+  });
+
+  it('renders show-welcome link when onShowWelcome is provided', () => {
+    const onShowWelcome = vi.fn();
+    render(<EmptyEditorState onShowWelcome={onShowWelcome} />);
+    const link = screen.getByText('重新显示欢迎页');
+    fireEvent.click(link);
+    expect(onShowWelcome).toHaveBeenCalledOnce();
+  });
+
+  it('does not render show-welcome link when omitted', () => {
+    render(<EmptyEditorState />);
+    expect(screen.queryByText('重新显示欢迎页')).toBeNull();
   });
 });

@@ -209,13 +209,17 @@ export function FileTreeSidebar({
   onFileOpen,
   activeFilePath,
 }: FileTreeSidebarProps) {
-  const [rootPath, setRootPath] = useState<string>('');
+  const [rootPath, setRootPath] = useState<string>(() => {
+    try { return localStorage.getItem('marklite-filetree-root') || ''; }
+    catch { return ''; }
+  });
   const [rootName, setRootName] = useState<string>(''); // 显示用短名
   const [rootEntries, setRootEntries] = useState<TreeNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const expandedDirsRef = useRef<Set<string>>(new Set());
+  const initializedRef = useRef(false);
 
   // --- CRUD 状态 ---
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; node: TreeNode } | null>(null);
@@ -296,6 +300,7 @@ export function FileTreeSidebar({
       setRootEntries(entries.map(buildTreeNode));
       setRootPath(target);
       setRootName(displayName(target));
+      try { localStorage.setItem('marklite-filetree-root', target); } catch { /* ignore */ }
     } catch (e) {
       setError(String(e));
     } finally {
@@ -416,39 +421,49 @@ export function FileTreeSidebar({
     }
   }, [loadRoot]);
 
-  // 初始化：使用递归读取加载默认根目录
+  // 初始化：使用递归读取加载默认根目录（仅首次或 rootPath 为空时执行）
   useEffect(() => {
+    // 已初始化过且有保存的 rootPath，不再重新加载
+    if (initializedRef.current && rootPath) {
+      setLoading(false);
+      return;
+    }
+
     async function init() {
       try {
-        // 尝试获取用户 home 目录
-        const homePath: string | null = await invoke('list_directory', { path: '.' })
-          .then(() => '.')
+        // 如果有持久化的 rootPath 且不是默认值，直接用它加载
+        const savedPath = rootPath || '.';
+        const homePath: string | null = await invoke('list_directory', { path: savedPath })
+          .then(() => savedPath)
           .catch(() => null);
 
         if (homePath !== null) {
-          // 用递归方式初始加载，带 2 层深度
-          const rootEntry: DirEntry = await invoke('read_dir_recursive', { path: '.', depth: 2 });
-          setRootPath('.');
-          setRootName(displayName('.'));
+          const rootEntry: DirEntry = await invoke('read_dir_recursive', { path: savedPath, depth: 2 });
+          setRootPath(savedPath);
+          setRootName(displayName(savedPath));
           setRootEntries((rootEntry.children || []).map(buildTreeNode));
+          try { localStorage.setItem('marklite-filetree-root', savedPath); } catch { /* ignore */ }
         } else {
           setError('无法访问当前目录');
         }
       } catch (e) {
         // fallback：尝试单层
         try {
-          const entries: DirEntry[] = await invoke('list_directory', { path: '.' });
-          setRootPath('.');
-          setRootName(displayName('.'));
+          const entries: DirEntry[] = await invoke('list_directory', { path: rootPath || '.' });
+          const p = rootPath || '.';
+          setRootPath(p);
+          setRootName(displayName(p));
           setRootEntries(entries.map(buildTreeNode));
         } catch (e2) {
           setError(String(e2));
         }
       } finally {
         setLoading(false);
+        initializedRef.current = true;
       }
     }
     if (visible) init();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
   // 搜索过滤后的文件列表
