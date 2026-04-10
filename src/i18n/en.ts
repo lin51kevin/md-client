@@ -85,6 +85,25 @@ export const en: Record<TranslationKey, string> = {
   'table.empty': 'No rows yet — click "Add Row" above',
   'table.align': 'Alignment: {align}',
 
+
+  // ── Search Panel ─────────────────────────────────────────────────────────
+  'search.find': 'Find',
+  'search.currentFile': 'Current File',
+  'search.findPlaceholder': 'Find (Enter to search)',
+  'search.replace': 'Replace',
+  'search.replacePlaceholder': 'Replace with',
+  'search.caseSensitive': 'Case Sensitive',
+  'search.regex': 'Regex',
+  'search.enterHint': 'Type a keyword and press Enter to search',
+  'search.noResults': 'No results found',
+  'search.noDir': 'No search directory. Please open or save a file first.',
+  'search.matchCount': '{count} matches found',
+  'search.replaceAll': 'Replace All',
+  'search.wholeWord': 'Whole Word',
+  'search.replaced': '{count} replaced',
+  'search.crossFile': 'Cross-file',
+  'search.filesModified': ', across {count} files',
+
   // ── Mermaid ───────────────────────────────────────────────────────────────
   'mermaid.rendering': '🔄 Rendering diagram…',
 

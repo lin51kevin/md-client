@@ -220,7 +220,7 @@ export function FileMenuDropdown({
     },
     {
       id: 'open',
-      
+      icon: <FileText size={13} strokeWidth={1.8} />,
       label: t('file.open'),
       shortcut: 'Ctrl+O',
       action: onOpenFile,

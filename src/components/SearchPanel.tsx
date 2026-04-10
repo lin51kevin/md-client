@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { useI18n } from '../i18n';
 import { Search, X, CaseSensitive, Regex, Loader2, FileText } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import { searchAll, replaceAll } from '../lib/search';
@@ -82,6 +83,7 @@ export function SearchPanel({
   visible, content, currentFilePath, onContentChange, onMatchChange,
   searchDir, onResultClick, onClose, openTabs, currentTabId, onAnyTabContentChange,
 }: SearchPanelProps) {
+  const { t } = useI18n();
   const [query, setQuery] = useState('');
   const [replacement, setReplacement] = useState('');
   const [caseSensitive, setCaseSensitive] = useState(false);
@@ -222,7 +224,7 @@ export function SearchPanel({
         await invoke('write_file_text', { path: r.file_path, content: newContent });
         setSearchResults(prev => prev.filter((_, i) => i !== selectedIdx));
         setSelectedIdx(null);
-        setReplaceStatus('已替换 1 处');
+        setReplaceStatus(t('search.replaced', { count: 1 }));
       } catch (e) {
         setError(String(e));
       }
@@ -236,7 +238,7 @@ export function SearchPanel({
     if (!crossFile) {
       if (searchResults.length === 0) return;
       onContentChange(replaceAll(content, query, replacement, opts));
-      setReplaceStatus(`已替换 ${searchResults.length} 处`);
+      setReplaceStatus(t('search.replaced', { count: searchResults.length }));
     } else {
       setLoading(true);
       setError(null);
@@ -272,8 +274,8 @@ export function SearchPanel({
           filesModified = res.files_modified.length;
         }
         totalReplaced += diskReplaced;
-        const fileNote = filesModified > 0 ? ('，涉及 ' + filesModified + ' 个文件') : '';
-        setReplaceStatus('已替换 ' + totalReplaced + ' 处' + fileNote);
+        const fileNote = filesModified > 0 ? t('search.filesModified', { count: filesModified }) : '';
+        setReplaceStatus(t('search.replaced', { count: totalReplaced }) + fileNote);
         await doSearchAll();
       } catch (e) {
         setError(String(e));
@@ -337,8 +339,8 @@ export function SearchPanel({
         borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', flexShrink: 0,
       }}>
         <Search size={14} strokeWidth={1.8} style={{ color: 'var(--accent-color)', flexShrink: 0 }} />
-        <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>搜索与替换</span>
-        <button onClick={onClose} title="关闭 (Esc)"
+        <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>{t('toolbar.search')}</span>
+        <button onClick={onClose} title={`${t('common.close')} (Esc)`}
           style={{ color: 'var(--text-secondary)', flexShrink: 0, padding: 3 }}>
           <X size={15} strokeWidth={1.8} />
         </button>
@@ -376,7 +378,7 @@ export function SearchPanel({
           </div>
           {crossFile && (
             <button onClick={doSearchAll} disabled={!query.trim() || loading}
-              title="搜索 (Enter)"
+              title={`${t('search.find')} (Enter)`}
               style={{ padding: 4, color: 'var(--text-secondary)', opacity: (!query.trim() || loading) ? 0.3 : 1 }}>
               {loading ? <Loader2 size={14} strokeWidth={1.8} className="spin-icon" /> : <Search size={14} strokeWidth={1.8} />}
             </button>
@@ -396,10 +398,10 @@ export function SearchPanel({
             spellCheck={false}
             style={inputStyle}
           />
-          <button onClick={handleReplaceSingle} disabled={singleReplaceDisabled} title="替换选中项"
-            style={btnStyle(singleReplaceDisabled)}>替换</button>
-          <button onClick={handleReplaceAll} disabled={allReplaceDisabled} title="全部替换"
-            style={btnStyle(allReplaceDisabled)}>全部替换</button>
+          <button onClick={handleReplaceSingle} disabled={singleReplaceDisabled} title={t('search.replace')}
+            style={btnStyle(singleReplaceDisabled)}>{t('search.replace')}</button>
+          <button onClick={handleReplaceAll} disabled={allReplaceDisabled} title={t('search.replaceAll')}
+            style={btnStyle(allReplaceDisabled)}>{t('search.replaceAll')}</button>
         </div>
 
         {/* Options */}
@@ -408,24 +410,24 @@ export function SearchPanel({
             <input type="checkbox" checked={caseSensitive} onChange={() => setCaseSensitive(v => !v)}
               style={{ accentColor: 'var(--accent-color)', width: 11, height: 11 }} />
             <CaseSensitive size={12} strokeWidth={1.8} />
-            <span>区分大小写</span>
+            <span>{t('search.caseSensitive')}</span>
           </label>
           <label style={chkStyle(wholeWord)}>
             <input type="checkbox" checked={wholeWord} onChange={() => setWholeWord(v => !v)}
               style={{ accentColor: 'var(--accent-color)', width: 11, height: 11 }} />
             <span style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 600 }}>W</span>
-            <span>全字匹配</span>
+            <span>{t('search.wholeWord')}</span>
           </label>
           <label style={chkStyle(useRegex)}>
             <input type="checkbox" checked={useRegex} onChange={() => setUseRegex(v => !v)}
               style={{ accentColor: 'var(--accent-color)', width: 11, height: 11 }} />
             <Regex size={12} strokeWidth={1.8} />
-            <span>正则</span>
+            <span>{t('search.regex')}</span>
           </label>
           <label style={{ ...chkStyle(crossFile), marginLeft: 'auto' }}>
             <input type="checkbox" checked={crossFile} onChange={() => setCrossFile(v => !v)}
               style={{ accentColor: 'var(--accent-color)', width: 11, height: 11 }} />
-            <span style={{ color: crossFile ? 'var(--accent-color)' : 'var(--text-secondary)' }}>跨文件</span>
+            <span style={{ color: crossFile ? 'var(--accent-color)' : 'var(--text-secondary)' }}>{t('search.crossFile')}</span>
           </label>
         </div>
       </div>
@@ -440,7 +442,7 @@ export function SearchPanel({
           padding: '5px 12px', fontSize: 11, flexShrink: 0,
           color: 'var(--text-secondary)', borderBottom: '1px solid var(--border-color)',
         }}>
-          找到 {searchResults.length} 条匹配{crossFile && searchResults.length >= 200 ? '（已限制 200 条）' : ''}
+          {t('search.matchCount', { count: searchResults.length })}{crossFile && searchResults.length >= 200 ? '（已限制 200 条）' : ''}
           {!crossFile && ' · 点击定位，替换框操作后再选择'}
         </div>
       )}
@@ -448,12 +450,12 @@ export function SearchPanel({
         {!query.trim() && !loading && (
           <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-secondary)', fontSize: 13 }}>
             <Search size={28} strokeWidth={1} style={{ opacity: 0.3, display: 'block', margin: '0 auto 8px' }} />
-            <p>输入关键词并回车搜索</p>
+            <p>{t('search.enterHint')}</p>
           </div>
         )}
         {query.trim() && !loading && !hasResults && !error && (
           <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-secondary)', fontSize: 13 }}>
-            <p>未找到匹配结果</p>
+            <p>{t('search.noResults')}</p>
           </div>
         )}
         {searchResults.map((r, i) => {
