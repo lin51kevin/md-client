@@ -101,8 +101,8 @@ export function SearchPanel({
     if (visible) setTimeout(() => queryInputRef.current?.focus(), 50);
   }, [visible]);
 
-  // ── Current-file live search ───────────────────────────────────────────────
-  useEffect(() => {
+  // ── Current-file search (Enter triggered) ──────────────────────────────────
+  const doCurrentFileSearch = useCallback(() => {
     if (crossFile) return;
     if (!query.trim()) {
       setSearchResults([]);
@@ -118,7 +118,6 @@ export function SearchPanel({
     setError(null);
     setReplaceStatus(null);
     onMatchChangeRef.current?.(rawMatches, rawMatches.length > 0 ? 0 : -1);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [crossFile, query, content, currentFilePath, caseSensitive, wholeWord, useRegex]);
 
   // Clear on switch to cross-file
@@ -237,8 +236,11 @@ export function SearchPanel({
   // ── Keyboard ───────────────────────────────────────────────────────────────
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Escape') { onClose(); }
-    else if (e.key === 'Enter' && crossFile) { e.preventDefault(); doSearchAll(); }
-  }, [onClose, crossFile, doSearchAll]);
+    else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (crossFile) { doSearchAll(); } else { doCurrentFileSearch(); }
+    }
+  }, [onClose, crossFile, doSearchAll, doCurrentFileSearch]);
 
   const renderHighlight = (line: string, start: number, end: number): React.ReactNode => (
     <>{line.slice(0, start)}<mark className="search-highlight">{line.slice(start, end)}</mark>{line.slice(end)}</>
@@ -273,7 +275,7 @@ export function SearchPanel({
 
   return (
     <div style={{
-      position: 'fixed', top: 0, right: 0, width: 400, height: '100vh',
+      position: 'fixed', top: 44, bottom: 26, right: 0, width: 420,
       backgroundColor: 'var(--bg-primary)', borderLeft: '1px solid var(--border-color)',
       zIndex: 1000, display: 'flex', flexDirection: 'column',
       boxShadow: '-4px 0 24px rgba(0,0,0,0.12)', animation: 'slideInRight 0.2s ease-out',
@@ -308,7 +310,7 @@ export function SearchPanel({
               value={query}
               onChange={e => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={crossFile ? '查找（回车搜索）…' : '查找（实时）…'}
+              placeholder={'查找（回车搜索）…'}
               spellCheck={false}
               style={{ ...inputStyle, paddingLeft: 24, paddingRight: query ? 22 : 8 }}
             />
@@ -335,7 +337,10 @@ export function SearchPanel({
           <input
             value={replacement}
             onChange={e => setReplacement(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Escape') onClose(); }}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') onClose();
+              else if (e.key === 'Enter') handleReplaceSingle();
+            }}
             placeholder="替换为…"
             spellCheck={false}
             style={inputStyle}
@@ -392,7 +397,7 @@ export function SearchPanel({
         {!query.trim() && !loading && (
           <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-secondary)', fontSize: 13 }}>
             <Search size={28} strokeWidth={1} style={{ opacity: 0.3, display: 'block', margin: '0 auto 8px' }} />
-            <p>{crossFile ? '输入关键词并回车搜索' : '在当前文件中实时查找与替换'}</p>
+            <p>输入关键词并回车搜索</p>
           </div>
         )}
         {query.trim() && !loading && !hasResults && !error && (

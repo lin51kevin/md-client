@@ -414,12 +414,12 @@ body {
   position: relative;
   display: inline-block;
   max-width: 100%;
-  overflow-x: auto;
+  overflow: visible;
 }
 
 .table-edit-btn {
   position: absolute;
-  top: -32px;
+  top: 4px;
   right: 4px;
   display: none;
   align-items: center;
