@@ -159,10 +159,14 @@ function TreeNodeView({
             value={renameValue}
             onChange={(e) => onRenameValueChange(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') onRenameConfirm();
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                onRenameConfirm();
+              }
               if (e.key === 'Escape') onRenameCancel();
             }}
             onClick={(e) => e.stopPropagation()}
+            onBlur={onRenameConfirm}
           />
         ) : (
           <button
@@ -377,11 +381,13 @@ export function FileTreeSidebar({
 
     try {
       await invoke('rename_file', { oldPath: renamingPath, newPath });
+    } catch (e) {
+      console.error('重命名失败:', e);
+      // 即使失败也要退出重命名模式，避免卡在输入框
+    } finally {
       setRenamingPath(null);
       setRenameValue('');
       await loadRoot();
-    } catch (e) {
-      console.error('重命名失败:', e);
     }
   }, [renamingPath, renameValue, loadRoot]);
 
