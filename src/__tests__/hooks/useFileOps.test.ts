@@ -347,7 +347,7 @@ describe('useFileOps', () => {
       });
       expect(invoke).toHaveBeenCalledWith('export_document', {
         markdown: '# Content 1',
-        output_path: '/export.docx',
+        outputPath: '/export.docx',
         format: 'docx',
       });
     });
@@ -370,7 +370,7 @@ describe('useFileOps', () => {
       });
       expect(invoke).toHaveBeenCalledWith('export_document', {
         markdown: '# Content 1',
-        output_path: '/export.pdf',
+        outputPath: '/export.pdf',
         format: 'pdf',
       });
     });
