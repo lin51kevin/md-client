@@ -226,9 +226,9 @@ export const zhCN = {
   'welcome.shortcut.open': '打开文件',
   'welcome.shortcut.save': '保存文件',
   'welcome.shortcut.find': '查找替换',
-  'welcome.shortcut.preview': '预览模式',
   'welcome.shortcut.edit': '编辑模式',
   'welcome.shortcut.split': '分栏模式',
+  'welcome.shortcut.preview': '预览模式',
 } as const;
 
 export type TranslationKey = keyof typeof zhCN;

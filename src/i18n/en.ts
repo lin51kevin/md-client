@@ -229,7 +229,7 @@ export const en: Record<TranslationKey, string> = {
   'welcome.shortcut.open': 'Open File',
   'welcome.shortcut.save': 'Save File',
   'welcome.shortcut.find': 'Find & Replace',
-  'welcome.shortcut.preview': 'Preview Mode',
   'welcome.shortcut.edit': 'Edit Mode',
   'welcome.shortcut.split': 'Split Mode',
+  'welcome.shortcut.preview': 'Preview Mode',
 };

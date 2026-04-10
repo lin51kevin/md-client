@@ -15,9 +15,9 @@ const SHORTCUTS = [
   { key: 'Ctrl+O', i18nKey: 'welcome.shortcut.open' as const },
   { key: 'Ctrl+S', i18nKey: 'welcome.shortcut.save' as const },
   { key: 'Ctrl+F', i18nKey: 'welcome.shortcut.find' as const },
-  { key: 'Ctrl+Shift+V', i18nKey: 'welcome.shortcut.preview' as const },
-  { key: 'Ctrl+Shift+E', i18nKey: 'welcome.shortcut.edit' as const },
-  { key: 'Ctrl+Shift+S', i18nKey: 'welcome.shortcut.split' as const },
+  { key: 'Ctrl+1', i18nKey: 'welcome.shortcut.edit' as const },
+  { key: 'Ctrl+2', i18nKey: 'welcome.shortcut.split' as const },
+  { key: 'Ctrl+3', i18nKey: 'welcome.shortcut.preview' as const },
 ] as const;
 
 export function WelcomePage({ recentFiles, onNew, onOpenFile, onOpenRecent }: WelcomePageProps) {
