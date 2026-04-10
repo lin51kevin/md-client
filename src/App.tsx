@@ -86,6 +86,7 @@ import { useFormatActions } from './hooks/useFormatActions';
 import { parseTable, serializeTable, type TableData } from './lib/table-parser';
 import { TableEditor } from './components/TableEditor';
 import { InputDialog, type InputDialogConfig } from './components/InputDialog';
+import { WelcomePage } from './components/WelcomePage';
 
 
 export default function App() {
@@ -835,7 +836,14 @@ export default function App() {
           visible={showToc}
         />
 
-        {viewMode === 'split' ? (
+        {tabs.length === 0 ? (
+          <WelcomePage
+            recentFiles={recentFiles}
+            onNew={createNewTab}
+            onOpenFile={handleOpenFile}
+            onOpenRecent={handleOpenRecent}
+          />
+        ) : viewMode === 'split' ? (
           <Split
             sizes={splitSizes}
             onDragEnd={(sizes) => {
