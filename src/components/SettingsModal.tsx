@@ -1,10 +1,16 @@
-import { useState, useEffect, useCallback } from 'react';
-import { X, Settings, Palette, Type, FolderOpen, Keyboard } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { X, Settings, Palette, Type, FolderOpen, Keyboard, RotateCcw } from 'lucide-react';
 import { useI18n, type Locale } from '../i18n';
 import type { TranslationKey } from '../i18n/zh-CN';
 import type { ThemeName } from '../lib/theme';
 import { THEMES } from '../lib/theme';
 import { getImageSaveDir, setImageSaveDir } from '../lib/image-paste';
+import {
+  DEFAULT_SHORTCUTS,
+  getCustomShortcuts,
+  setCustomShortcuts,
+  formatKeyEvent,
+} from '../lib/shortcuts-config';
 
 interface SettingsModalProps {
   visible: boolean;
@@ -231,13 +237,7 @@ export function SettingsModal({
                 <p className="text-xs mb-3" style={{ color: 'var(--text-secondary)' }}>
                   {t('settings.shortcuts.description')}
                 </p>
-                {SHORTCUT_LIST.map((sc) => (
-                  <ShortcutRow
-                    key={sc.labelKey}
-                    action={t(sc.labelKey as TranslationKey)}
-                    keys={sc.keys}
-                  />
-                ))}
+                <EditableShortcuts />
               </div>
             )}
           </div>
@@ -318,23 +318,92 @@ const SHORTCUT_LIST: ShortcutDef[] = [
   { labelKey: 'settings.shortcuts.focusMode', keys: 'Ctrl+,' },
 ];
 
-function ShortcutRow({ action, keys }: { action: string; keys: string }) {
+/** 可编辑快捷键列表组件 */
+function EditableShortcuts() {
+  const { t } = useI18n();
+  const [custom, setCustom] = useState<Record<string, string>>(() => getCustomShortcuts());
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [tempKeys, setTempKeys] = useState<string>('');
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // 监听键盘事件捕获新快捷键
+  useEffect(() => {
+    if (!editingId) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.key === 'Escape') {
+        setEditingId(null); setTempKeys('');
+        return;
+      }
+      const formatted = formatKeyEvent(e);
+      if (formatted) {
+        setTempKeys(formatted);
+        // 松开按键后保存
+        setEditingId(null);
+        const newCustom = { ...custom, [editingId]: formatted };
+        setCustom(newCustom);
+        setCustomShortcuts(newCustom);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
+  }, [editingId, custom]);
+
+  const resetToDefault = useCallback((id: string) => {
+    const newCustom = { ...custom };
+    delete newCustom[id];
+    setCustom(newCustom);
+    setCustomShortcuts(newCustom);
+  }, [custom]);
+
   return (
-    <div
-      className="flex items-center justify-between px-3 py-2 rounded text-xs"
-      style={{ backgroundColor: 'var(--bg-secondary)' }}
-    >
-      <span style={{ color: 'var(--text-primary)' }}>{action}</span>
-      <kbd
-        className="px-2 py-0.5 rounded font-mono text-[10px]"
-        style={{
-          backgroundColor: 'var(--bg-tertiary)',
-          border: '1px solid var(--border-color)',
-          color: 'var(--text-secondary)',
-        }}
-      >
-        {keys}
-      </kbd>
+    <div ref={containerRef} className="space-y-1">
+      {DEFAULT_SHORTCUTS.map((sc) => {
+        const currentKeys = custom[sc.id] || sc.defaultKeys;
+        const isEditing = editingId === sc.id;
+        const isCustom = !!custom[sc.id];
+
+        return (
+          <div
+            key={sc.id}
+            className="flex items-center justify-between px-3 py-2 rounded text-xs group"
+            style={{
+              backgroundColor: isEditing ? 'var(--accent-bg)' : 'var(--bg-secondary)',
+              border: isEditing ? '1px solid var(--accent-color)' : 'none',
+            }}
+          >
+            <span style={{ color: 'var(--text-primary)' }}>{t(sc.labelKey as TranslationKey)}</span>
+            <div className="flex items-center gap-2">
+              <kbd
+                onClick={() => !isEditing && setEditingId(sc.id)}
+                className="px-2 py-0.5 rounded font-mono text-[10px] cursor-pointer transition-colors hover:opacity-80"
+                style={{
+                  backgroundColor: isEditing ? 'var(--accent-color)' : 'var(--bg-tertiary)',
+                  border: '1px solid var(--border-color)',
+                  color: isEditing ? '#fff' : 'var(--text-secondary)',
+                }}
+              >
+                {isEditing && tempKeys ? tempKeys : currentKeys}
+              </kbd>
+              {isCustom && (
+                <button
+                  onClick={() => resetToDefault(sc.id)}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-red-500/20"
+                  title="恢复默认"
+                >
+                  <RotateCcw size={10} style={{ color: 'var(--text-secondary)' }} />
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })}
+      {editingId && (
+        <p className="text-[10px] mt-2 text-center" style={{ color: 'var(--text-secondary)' }}>
+          按下新的快捷键组合，或 ESC 取消
+        </p>
+      )}
     </div>
   );
 }
