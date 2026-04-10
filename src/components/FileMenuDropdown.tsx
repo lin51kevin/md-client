@@ -110,6 +110,20 @@ export function FileMenuDropdown({
   const arrowStyle: React.CSSProperties = { marginLeft: 'auto', opacity: 0.5 };
 
   const renderItem = (item: MenuItem, isSub: boolean = false) => {
+    // Handle separator
+    if (item.id.startsWith('sep')) {
+      return (
+        <div
+          key={item.id}
+          style={{
+            height: 1,
+            margin: '4px 8px',
+            backgroundColor: separatorColor,
+          }}
+        />
+      );
+    }
+
     const isActive = submenu === item.id;
     return (
       <div key={item.id} style={{ position: 'relative' }}>
@@ -172,6 +186,7 @@ export function FileMenuDropdown({
           label: f.name,
           action: () => { onOpenRecent?.(f.path); },
         })),
+        { id: 'sep-recent', icon: null, label: '' } as unknown as MenuItem,
         {
           id: 'clear-recent',
           icon: <Trash2 size={13} strokeWidth={1.8} />,

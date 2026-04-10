@@ -47,12 +47,55 @@ export function detectContext(doc: string, cursorPos: number): ContextInfo {
 
   const lineText = doc.substring(lineStart, lineEnd).trimStart();
 
+  // 先检查光标是否在代码块（``` 围栏）或数学公式块（$$ 围栏）内部
+  const enclosingBlock = detectEnclosingBlock(doc, lineStart);
+  if (enclosingBlock) {
+    return { type: enclosingBlock, lineStart, lineText, headingLevel: 0 };
+  }
+
   const type = detectContextType(lineText, 0);
   const headingLevel = type === 'heading'
     ? (lineText.match(/^(#{1,6})/)?.[1]?.length ?? 0)
     : 0;
 
   return { type, lineStart, lineText, headingLevel };
+}
+
+/**
+ * 扫描文档中 ``` 和 $$ 围栏，判断光标是否在其内部。
+ * 返回 'code' | 'math' | null。
+ */
+function detectEnclosingBlock(doc: string, lineStart: number): 'code' | 'math' | null {
+  // 逐行扫描在光标之前的所有围栏标记
+  let inCode = false;
+  let inMath = false;
+  let i = 0;
+
+  while (i < doc.length && i <= lineStart) {
+    // 找到当前行的起始
+    const nextNewline = doc.indexOf('\n', i);
+    const eol = nextNewline === -1 ? doc.length : nextNewline;
+    const line = doc.substring(i, eol).trimStart();
+
+    if (i === lineStart) {
+      // 当前行 — 如果正在围栏内部则返回对应类型
+      // 排除围栏行本身（``` 或 $$），让 detectContextType 处理
+      if (inCode && !(/^`{3}/.test(line))) return 'code';
+      if (inMath && line !== '$$') return 'math';
+      return null;
+    }
+
+    // 判断围栏开关
+    if (!inMath && /^`{3}/.test(line)) {
+      inCode = !inCode;
+    } else if (!inCode && line === '$$') {
+      inMath = !inMath;
+    }
+
+    i = eol + 1;
+  }
+
+  return null;
 }
 
 /**

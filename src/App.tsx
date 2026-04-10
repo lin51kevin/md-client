@@ -346,38 +346,9 @@ export default function App() {
     }, isCurrentFile ? 0 : 200);
   }, [openFileInTab, activeTab.filePath, activeTabId, setActiveTabId]);
 
-  // F014 — 编辑器右键菜单事件监听
-  // 使用 ref 保存 cleanup 函数，确保每次都能正确清理
-  const ctxMenuCleanupRef = useRef<(() => void) | null>(null);
-
-  useEffect(() => {
-    // 清理之前的监听器
-    ctxMenuCleanupRef.current?.();
-
-    const view = cmViewRef.current;
-    if (!view) {
-      ctxMenuCleanupRef.current = null;
-      return;
-    }
-
-    const dom = view.dom;
-    const handleCtxMenu = (e: MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation(); // 阻止事件冒泡到父元素
-      const pos = view.posAtCoords({ x: e.clientX, y: e.clientY });
-      if (!pos) return;
-      const contextInfo = detectContext(activeTab.doc, pos);
-      setEditorCtxMenu({ x: e.clientX, y: e.clientY, context: contextInfo });
-    };
-
-    dom.addEventListener('contextmenu', handleCtxMenu, { capture: true }); // 使用 capture 阶段
-    ctxMenuCleanupRef.current = () => {
-      dom.removeEventListener('contextmenu', handleCtxMenu, { capture: true });
-      ctxMenuCleanupRef.current = null;
-    };
-
-    return ctxMenuCleanupRef.current;
-  }, [activeTab.doc, activeTabId]); // 添加 activeTabId 依赖
+  // F014 — 编辑器右键菜单: 使用 ref 保存最新文档内容供 handleCreateEditor 中的监听器读取
+  const docRef = useRef(activeTab.doc);
+  useEffect(() => { docRef.current = activeTab.doc; }, [activeTab.doc]);
 
   // F014 — 编辑器右键菜单操作处理
   const handleEditorCtxAction = useCallback((action: string) => {
@@ -602,10 +573,28 @@ export default function App() {
       view.setState(savedState);
     }
 
+    // F014 — 编辑器右键上下文菜单（在 onCreateEditor 中绑定,确保 view 已就绪）
+    const handleCtxMenu = (e: MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      // precise: false — 返回最近位置而非精确字符命中,确保点击空白区域也能弹出菜单
+      const pos = view.posAtCoords({ x: e.clientX, y: e.clientY }, false);
+      if (pos == null) return; // 不能用 !pos, 因为 pos === 0 时为有效值
+      // 将光标移到右键点击位置，使后续菜单操作（表格编辑等）能定位到正确位置
+      // 如果右键在已有选区内则保留选区（以便 cut/copy 正常工作）
+      const sel = view.state.selection.main;
+      if (pos < sel.from || pos > sel.to) {
+        view.dispatch({ selection: { anchor: pos } });
+      }
+      const contextInfo = detectContext(docRef.current, pos);
+      setEditorCtxMenu({ x: e.clientX, y: e.clientY, context: contextInfo });
+    };
+    view.dom.addEventListener('contextmenu', handleCtxMenu, { capture: true });
+
     // F014 — 双击表格时打开表格编辑器
     const handleDblClick = (e: MouseEvent) => {
-      const pos = view.posAtCoords({ x: e.clientX, y: e.clientY });
-      if (!pos) return;
+      const pos = view.posAtCoords({ x: e.clientX, y: e.clientY }, false);
+      if (pos == null) return;
       const doc = view.state.doc.toString();
       const tableData = parseTable(doc, pos);
       if (tableData) {
@@ -714,6 +703,27 @@ export default function App() {
         />
       )}
 
+      {/* F014 — 编辑器右键上下文菜单（独立于焦点模式,始终可用） */}
+      {editorCtxMenu && (
+        <EditorContextMenu
+          visible={!!editorCtxMenu}
+          x={editorCtxMenu.x}
+          y={editorCtxMenu.y}
+          context={editorCtxMenu.context}
+          onClose={() => setEditorCtxMenu(null)}
+          onAction={handleEditorCtxAction}
+        />
+      )}
+
+      {/* F014 — 表格编辑器（独立于焦点模式,始终可用） */}
+      {editingTable && (
+        <TableEditor
+          table={editingTable}
+          onConfirm={handleTableConfirm}
+          onCancel={() => setEditingTable(null)}
+        />
+      )}
+
       {/* F009 - 焦点模式下隐藏工具栏/标签栏/搜索栏 */}
       {!isChromeless && (
         <>
@@ -730,27 +740,6 @@ export default function App() {
               onUnpin={(id) => { unpinTab(id); setCtxMenu(null); }}
               tabs={tabs}
               onDismiss={() => setCtxMenu(null)}
-            />
-          )}
-
-          {/* F014 — 编辑器右键上下文菜单 */}
-          {editorCtxMenu && (
-            <EditorContextMenu
-              visible={!!editorCtxMenu}
-              x={editorCtxMenu.x}
-              y={editorCtxMenu.y}
-              context={editorCtxMenu.context}
-              onClose={() => setEditorCtxMenu(null)}
-              onAction={handleEditorCtxAction}
-            />
-          )}
-
-          {/* F014 — 表格编辑器 */}
-          {editingTable && (
-            <TableEditor
-              table={editingTable}
-              onConfirm={handleTableConfirm}
-              onCancel={() => setEditingTable(null)}
             />
           )}
 

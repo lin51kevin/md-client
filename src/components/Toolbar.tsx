@@ -145,32 +145,6 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentThe
           <FolderTree size={14} strokeWidth={1.8} />
         </button>
 
-        {/* 搜索与替换 */}
-        <button
-          onClick={onToggleSearch}
-          title={t('toolbar.search')}
-          className={focusBtnCls(!!showSearch)}
-          style={{
-            backgroundColor: showSearch ? 'var(--accent-bg)' : 'transparent',
-            borderColor: showSearch ? 'var(--accent-color)' : 'transparent',
-            color: showSearch ? 'var(--accent-color)' : 'var(--text-secondary)'
-          }}
-          onMouseEnter={(e) => {
-            if (!showSearch) {
-              e.currentTarget.style.color = 'var(--text-primary)';
-              e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!showSearch) {
-              e.currentTarget.style.color = 'var(--text-secondary)';
-              e.currentTarget.style.backgroundColor = 'transparent';
-            }
-          }}
-        >
-          <Search size={14} strokeWidth={1.8} />
-        </button>
-
         {/* F010 — 大纲导航切换 */}
         <button
           onClick={onToggleToc}
@@ -249,45 +223,31 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentThe
           <Terminal size={14} strokeWidth={1.8} />
         </button>
 
-        {/* Language switcher */}
+        {/* 搜索与替换 */}
         <button
-          onClick={() => setLocale(locale === 'zh-CN' ? 'en' : 'zh-CN')}
-          title={locale === 'zh-CN' ? t('app.langSwitchToEn') : t('app.langSwitchToZh')}
-          className={focusBtnCls(false)}
-          style={{ color: 'var(--text-secondary)', borderColor: 'transparent' }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = 'var(--text-primary)';
-            e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = 'var(--text-secondary)';
-            e.currentTarget.style.backgroundColor = '';
-          }}
-        >
-          <Languages size={14} strokeWidth={1.8} />
-        </button>
-
-        {/* F011 — 主题切换（亮/暗 toggle） */}
-        <button
-          onClick={() => onThemeChange?.(currentTheme === 'dark' ? 'light' : 'dark')}
-          title={currentTheme === 'dark' ? t('toolbar.themeLight') : t('toolbar.themeDark')}
-          className={focusBtnCls(false)}
+          onClick={onToggleSearch}
+          title={t('toolbar.search')}
+          className={focusBtnCls(!!showSearch)}
           style={{
-            color: 'var(--text-secondary)',
-            borderColor: 'transparent'
+            backgroundColor: showSearch ? 'var(--accent-bg)' : 'transparent',
+            borderColor: showSearch ? 'var(--accent-color)' : 'transparent',
+            color: showSearch ? 'var(--accent-color)' : 'var(--text-secondary)'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.color = 'var(--text-primary)';
-            e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
+            if (!showSearch) {
+              e.currentTarget.style.color = 'var(--text-primary)';
+              e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
+            }
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.color = 'var(--text-secondary)';
-            e.currentTarget.style.backgroundColor = '';
+            if (!showSearch) {
+              e.currentTarget.style.color = 'var(--text-secondary)';
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }
           }}
         >
-          {currentTheme === 'dark' ? '☀️' : '🌙'}
+          <Search size={14} strokeWidth={1.8} />
         </button>
-
         <div className="w-px h-5 mx-0.5" style={{ backgroundColor: 'var(--border-color)' }} />
         {/* F009 — 焦点模式切换 */}
         <button
@@ -387,7 +347,7 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentThe
             }
           }}
         >
-          <PanelRightClose size={15} strokeWidth={1.8} /><span>{t('toolbar.edit')}</span>
+          <PanelRightClose size={15} strokeWidth={1.8} />
         </button>
         <button
           onClick={() => onSetViewMode('split')}
@@ -413,7 +373,7 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentThe
             }
           }}
         >
-          <Columns2 size={15} strokeWidth={1.8} /><span>{t('toolbar.splitLabel')}</span>
+          <Columns2 size={15} strokeWidth={1.8} />
         </button>
         <button
           onClick={() => onSetViewMode('preview')}
@@ -439,7 +399,45 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentThe
             }
           }}
         >
-          <PanelLeftClose size={15} strokeWidth={1.8} /><span>{t('toolbar.preview')}</span>
+          <PanelLeftClose size={15} strokeWidth={1.8} />
+        </button>
+        <div className="w-px h-5 mx-1" style={{ backgroundColor: 'var(--border-color)' }} />
+        {/* F011 — 主题切换（亮/暗 toggle） */}
+        <button
+          onClick={() => onThemeChange?.(currentTheme === 'dark' ? 'light' : 'dark')}
+          title={currentTheme === 'dark' ? t('toolbar.themeLight') : t('toolbar.themeDark')}
+          className={focusBtnCls(false)}
+          style={{
+            color: 'var(--text-secondary)',
+            borderColor: 'transparent'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'var(--text-primary)';
+            e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'var(--text-secondary)';
+            e.currentTarget.style.backgroundColor = '';
+          }}
+        >
+          {currentTheme === 'dark' ? '☀️' : '🌙'}
+        </button>
+        {/* Language switcher */}
+        <button
+          onClick={() => setLocale(locale === 'zh-CN' ? 'en' : 'zh-CN')}
+          title={locale === 'zh-CN' ? t('app.langSwitchToEn') : t('app.langSwitchToZh')}
+          className={focusBtnCls(false)}
+          style={{ color: 'var(--text-secondary)', borderColor: 'transparent' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'var(--text-primary)';
+            e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'var(--text-secondary)';
+            e.currentTarget.style.backgroundColor = '';
+          }}
+        >
+          <Languages size={14} strokeWidth={1.8} />
         </button>
       </div>
     </div>

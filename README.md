@@ -28,12 +28,12 @@
 - **Syntax Highlighting** — CodeMirror 6 驱动的代码高亮，支持 Markdown / JavaScript / Python / CSS / HTML 等语言
 - **Auto-Save** — 智能防抖自动保存（1 秒延迟），内容无变化时跳过写入
 - **Auto Brackets** — 自动补全括号、引号等成对符号
-- **Vim Mode** — 可选 Vim 键盘模式（异步加载）
+- **Vim Mode** — 可选 Vim 键盘模式，工具栏 Terminal 图标一键切换，默认关闭
 - **Line Numbers & Fold Gutter** — 行号显示与代码折叠
 - **Cursor Position** — 实时显示光标行列位置
 - **📸 Image Paste** — 从剪贴板粘贴图片或拖拽图片，自动保存到本地并插入 Markdown 链接
 - **✏️ Toolbar Formatting** — 加粗、斜体、删除线、代码、标题、引用、列表、链接等一键格式化按钮
-- **📋 Right-Click Context Menu** — 编辑器内右键菜单，支持上下文感知的操作（20+个菜单项）
+- **📋 Right-Click Context Menu** — 编辑器内右键菜单，支持上下文感知的操作（20+个菜单项），可在表格内直接编辑
 - **🎯 Writing Statistics** — 实时字数、字符数、句子数、阅读时间统计
 
 ### 🎨 视图与主题
@@ -68,7 +68,7 @@
 - **Custom Directives** — remark-directive 自定义容器支持
 - **Footnotes** — 脚注定义 `[^1]` 与引用，预览自动渲染为链接
 - **YAML Frontmatter** — 文档元数据支持，预览显示为表格
-- **Table Editor** — 可视化编辑表格（添加/删除行列、调整对齐）
+- **Table Editor** — 可视化编辑表格（双击或右键菜单打开，支持添加/删除行列、调整对齐）
 
 ### 💾 文件操作
 - **Open / Save / Save As** — 原生文件对话框，支持 `.md` / `.markdown` / `.txt`

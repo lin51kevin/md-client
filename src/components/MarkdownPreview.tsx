@@ -17,9 +17,7 @@ import { rehypeFilterInvalidElements } from "../lib/rehypeFilterInvalidElements"
 import { initMermaid } from "../lib/mermaid";
 import { parseTable, type TableData } from "../lib/table-parser";
 import { extractFrontmatter, buildFrontmatterHtml } from "../lib/markdown-extensions";
-import { Pencil } from "lucide-react";
 import { TableEditor } from "./TableEditor";
-import { useI18n } from '../i18n';
 
 // Stable plugin arrays (module-level) to avoid unnecessary ReactMarkdown re-renders
 const REMARK_PLUGINS = [
@@ -195,7 +193,6 @@ export const MarkdownPreview = memo(function MarkdownPreview({
   onOpenFile,
   onContentChange,
 }: MarkdownPreviewProps) {
-  const { t } = useI18n();
   const [editingTable, setEditingTable] = useState<TableData | null>(null);
   /** Resets to 0 before each ReactMarkdown render pass to keep table indices aligned */
   const tableCounterRef = useRef(0);
@@ -281,31 +278,6 @@ export const MarkdownPreview = memo(function MarkdownPreview({
         </a>
       );
     };
-
-    // ── Table editing (with edit button overlay) ─────────────────────────────
-    if (onContentChange) {
-      components.table = ({
-        children,
-        ...props
-      }: React.ComponentPropsWithoutRef<"table">) => {
-        const currentIdx = tableCounterRef.current++;
-        return (
-          <div className="table-preview-wrapper" data-table-index={currentIdx}>
-            <button
-              className="table-edit-btn"
-              onClick={() => {
-                const parsed = allTables[currentIdx];
-                if (parsed) setEditingTable(parsed);
-              }}
-              title={t('table.edit')}
-            >
-              <Pencil size={14} /> {t('table.edit')}
-            </button>
-            <table {...props}>{children}</table>
-          </div>
-        );
-      };
-    }
 
     // ── Mermaid code blocks ───────────────────────────────────────────────────
     components.code = ({
