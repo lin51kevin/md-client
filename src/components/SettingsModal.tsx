@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { X, Settings, Palette, Type, FolderOpen } from 'lucide-react';
+import { X, Settings, Palette, Type, FolderOpen, Keyboard } from 'lucide-react';
 import { useI18n, type Locale } from '../i18n';
 import type { TranslationKey } from '../i18n/zh-CN';
 import type { ThemeName } from '../lib/theme';
@@ -16,13 +16,14 @@ interface SettingsModalProps {
   onVimModeChange: (enabled: boolean) => void;
 }
 
-type TabId = 'general' | 'editor' | 'appearance' | 'files';
+type TabId = 'general' | 'editor' | 'appearance' | 'files' | 'shortcuts';
 
 const TABS: { id: TabId; icon: React.ReactNode; labelKey: string }[] = [
   { id: 'general', icon: <Settings size={14} />, labelKey: 'settings.tabs.general' },
   { id: 'editor', icon: <Type size={14} />, labelKey: 'settings.tabs.editor' },
   { id: 'appearance', icon: <Palette size={14} />, labelKey: 'settings.tabs.appearance' },
   { id: 'files', icon: <FolderOpen size={14} />, labelKey: 'settings.tabs.files' },
+  { id: 'shortcuts', icon: <Keyboard size={14} />, labelKey: 'settings.tabs.shortcuts' },
 ];
 
 export function SettingsModal({
@@ -222,6 +223,21 @@ export function SettingsModal({
                 </SettingItem>
               </div>
             )}
+
+            {activeTab === 'shortcuts' && (
+              <div className="space-y-2">
+                <p className="text-xs mb-3" style={{ color: 'var(--text-secondary)' }}>
+                  {t('settings.shortcuts.description')}
+                </p>
+                {SHORTCUT_LIST.map((sc) => (
+                  <ShortcutRow
+                    key={sc.labelKey}
+                    action={t(sc.labelKey as TranslationKey)}
+                    keys={sc.keys}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -277,5 +293,46 @@ function ToggleSwitch({
         }}
       />
     </button>
+  );
+}
+
+/** Keyboard shortcut definition */
+interface ShortcutDef {
+  labelKey: string;
+  keys: string;
+}
+
+const SHORTCUT_LIST: ShortcutDef[] = [
+  { labelKey: 'settings.shortcuts.newTab', keys: 'Ctrl+N' },
+  { labelKey: 'settings.shortcuts.openFile', keys: 'Ctrl+O' },
+  { labelKey: 'settings.shortcuts.saveFile', keys: 'Ctrl+S' },
+  { labelKey: 'settings.shortcuts.saveAsFile', keys: 'Ctrl+Shift+S' },
+  { labelKey: 'settings.shortcuts.closeTab', keys: 'Ctrl+W' },
+  { labelKey: 'settings.shortcuts.findReplace', keys: 'Ctrl+F / Ctrl+H' },
+  { labelKey: 'settings.shortcuts.editMode', keys: 'Ctrl+1' },
+  { labelKey: 'settings.shortcuts.splitMode', keys: 'Ctrl+2' },
+  { labelKey: 'settings.shortcuts.previewMode', keys: 'Ctrl+3' },
+  { labelKey: 'settings.shortcuts.typewriterMode', keys: 'Ctrl+.' },
+  { labelKey: 'settings.shortcuts.focusMode', keys: 'Ctrl+,' },
+];
+
+function ShortcutRow({ action, keys }: { action: string; keys: string }) {
+  return (
+    <div
+      className="flex items-center justify-between px-3 py-2 rounded text-xs"
+      style={{ backgroundColor: 'var(--bg-secondary)' }}
+    >
+      <span style={{ color: 'var(--text-primary)' }}>{action}</span>
+      <kbd
+        className="px-2 py-0.5 rounded font-mono text-[10px]"
+        style={{
+          backgroundColor: 'var(--bg-tertiary)',
+          border: '1px solid var(--border-color)',
+          color: 'var(--text-secondary)',
+        }}
+      >
+        {keys}
+      </kbd>
+    </div>
   );
 }

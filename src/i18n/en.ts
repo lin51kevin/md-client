@@ -8,6 +8,7 @@ export const en: Record<TranslationKey, string> = {
   'settings.tabs.editor': 'Editor',
   'settings.tabs.appearance': 'Appearance',
   'settings.tabs.files': 'Files',
+  'settings.tabs.shortcuts': 'Shortcuts',
   'settings.general.language': 'Language',
   'settings.general.languageDesc': 'Select the interface display language',
   'settings.editor.spellCheck': 'Spell Check',
@@ -22,6 +23,19 @@ export const en: Record<TranslationKey, string> = {
   'settings.files.imageDirDesc': 'Folder path for pasted or dragged images (empty = same as document)',
   'settings.files.imageDirPlaceholder': 'Leave empty for document directory',
   'settings.files.browse': 'Browse',
+  'settings.shortcuts.title': 'Keyboard Shortcuts',
+  'settings.shortcuts.description': 'View and customize editor keyboard shortcuts',
+  'settings.shortcuts.newTab': 'New Tab',
+  'settings.shortcuts.openFile': 'Open File',
+  'settings.shortcuts.saveFile': 'Save File',
+  'settings.shortcuts.saveAsFile': 'Save As',
+  'settings.shortcuts.closeTab': 'Close Tab',
+  'settings.shortcuts.findReplace': 'Find & Replace',
+  'settings.shortcuts.editMode': 'Edit Only Mode',
+  'settings.shortcuts.splitMode': 'Split View Mode',
+  'settings.shortcuts.previewMode': 'Preview Only Mode',
+  'settings.shortcuts.typewriterMode': 'Typewriter Mode',
+  'settings.shortcuts.focusMode': 'Focus Mode',
 
   'common.confirm': 'OK',
   'common.cancel': 'Cancel',
@@ -199,4 +213,20 @@ export const en: Record<TranslationKey, string> = {
 
   // ── Drag Overlay ──────────────────────────────────────────────────────────
   'drag.dropToOpen': 'Drop to open file',
+
+  // ── Welcome Page ────────────────────────────────────────────────────────
+  'welcome.title': 'Welcome to MarkLite',
+  'welcome.subtitle': 'A lightweight Markdown editor',
+  'welcome.newFile': 'New',
+  'welcome.openFile': 'Open File',
+  'welcome.recentFiles': 'Recent Files',
+  'welcome.noRecentFiles': 'No recent files',
+  'welcome.shortcuts': 'Keyboard Shortcuts',
+  'welcome.shortcut.new': 'New File',
+  'welcome.shortcut.open': 'Open File',
+  'welcome.shortcut.save': 'Save File',
+  'welcome.shortcut.find': 'Find & Replace',
+  'welcome.shortcut.preview': 'Preview Mode',
+  'welcome.shortcut.edit': 'Edit Mode',
+  'welcome.shortcut.split': 'Split Mode',
 };

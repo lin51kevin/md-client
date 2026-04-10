@@ -6,6 +6,7 @@ export const zhCN = {
   'settings.tabs.editor': '编辑器',
   'settings.tabs.appearance': '外观',
   'settings.tabs.files': '文件',
+  'settings.tabs.shortcuts': '快捷键',
   'settings.general.language': '语言',
   'settings.general.languageDesc': '选择界面显示语言',
   'settings.editor.spellCheck': '拼写检查',
@@ -20,6 +21,19 @@ export const zhCN = {
   'settings.files.imageDirDesc': '粘贴或拖拽图片时，保存到的文件夹路径（空值表示跟随文档目录）',
   'settings.files.imageDirPlaceholder': '留空则保存在文档同级目录',
   'settings.files.browse': '浏览',
+  'settings.shortcuts.title': '快捷键设置',
+  'settings.shortcuts.description': '查看和自定义编辑器快捷键',
+  'settings.shortcuts.newTab': '新建标签页',
+  'settings.shortcuts.openFile': '打开文件',
+  'settings.shortcuts.saveFile': '保存文件',
+  'settings.shortcuts.saveAsFile': '另存为',
+  'settings.shortcuts.closeTab': '关闭标签页',
+  'settings.shortcuts.findReplace': '查找与替换',
+  'settings.shortcuts.editMode': '仅编辑模式',
+  'settings.shortcuts.splitMode': '分栏模式',
+  'settings.shortcuts.previewMode': '仅预览模式',
+  'settings.shortcuts.typewriterMode': '打字机模式',
+  'settings.shortcuts.focusMode': '专注模式',
 
   'common.confirm': '确定',
   'common.cancel': '取消',
@@ -196,6 +210,22 @@ export const zhCN = {
 
   // ── Drag Overlay ──────────────────────────────────────────────────────────
   'drag.dropToOpen': '释放以打开文件',
+
+  // ── Welcome Page ────────────────────────────────────────────────────────
+  'welcome.title': '欢迎使用 MarkLite',
+  'welcome.subtitle': '简洁高效的 Markdown 编辑器',
+  'welcome.newFile': '新建',
+  'welcome.openFile': '打开文件',
+  'welcome.recentFiles': '最近文件',
+  'welcome.noRecentFiles': '暂无最近打开的文件',
+  'welcome.shortcuts': '快捷键速览',
+  'welcome.shortcut.new': '新建文件',
+  'welcome.shortcut.open': '打开文件',
+  'welcome.shortcut.save': '保存文件',
+  'welcome.shortcut.find': '查找替换',
+  'welcome.shortcut.preview': '预览模式',
+  'welcome.shortcut.edit': '编辑模式',
+  'welcome.shortcut.split': '分栏模式',
 } as const;
 
 export type TranslationKey = keyof typeof zhCN;
