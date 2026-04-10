@@ -237,6 +237,45 @@ export const zhCN = {
   'welcome.showWelcome': '重新显示欢迎页',
   'welcome.tab': 'Welcome',
   'welcome.sample': '示例 · Sample',
+
+  // ── File Tree Sidebar ─────────────────────────────────────────────────────
+  'fileTree.files': '文件',
+  'fileTree.newFile': '新建文件',
+  'fileTree.parentDir': '上级目录',
+  'fileTree.pickFolder': '选择文件夹',
+  'fileTree.refresh': '刷新',
+  'fileTree.searchPlaceholder': '搜索文件...',
+  'fileTree.noMatch': '无匹配结果',
+  'fileTree.empty': '此目录为空',
+  'fileTree.emptyHint': '或没有支持的文件类型',
+  'fileTree.cannotAccessDir': '无法访问当前目录',
+  'fileTree.createFailed': '创建文件失败:',
+  'fileTree.deleteFailed': '删除文件失败:',
+  'fileTree.renameFailed': '重命名失败:',
+  'fileTree.scrollLeft': '向左滚动',
+  'fileTree.scrollRight': '向右滚动',
+
+  // ── Tab Rename Validation ────────────────────────────────────────────────
+  'rename.title': '重命名',
+  'rename.hasSlash': '文件名不能包含 / 或 \\ 字符。',
+  'rename.illegalChars': '文件名包含非法字符（< > : " | ? * 或控制字符）。',
+  'rename.reserved': '"{name}" 是系统保留文件名，请换一个名称。',
+  'rename.trailingDotSpace': '文件名不能以句点或空格结尾。',
+  'rename.tooLong': '文件名过长，请缩短后重试。',
+  'rename.alreadyExists': '"{name}" 已存在，请换一个文件名。',
+  'rename.failed': '重命名失败: {error}',
+  'rename.openFileFailed': '打开文件失败',
+  'rename.cannotRead': '无法读取文件: {error}',
+
+  // ── File Ops ─────────────────────────────────────────────────────────
+  'fileOps.saveAsFailed': '另存为失败',
+  'fileOps.saveFailed': '保存失败',
+  'fileOps.emptyDocExport': '文档内容为空，无法导出。',
+  'fileOps.hint': '提示',
+  'fileOps.noPreviewArea': '未找到预览区域，无法导出PNG。',
+  'fileOps.error': '错误',
+  'fileOps.exportFailed': '导出 {format} 失败',
+  'fileOps.exportPngFailed': '导出 PNG 失败',
 } as const;
 
 export type TranslationKey = keyof typeof zhCN;

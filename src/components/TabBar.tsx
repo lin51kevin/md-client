@@ -205,7 +205,7 @@ export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorde
                     className={`flex items-center justify-center w-4 h-4 rounded shrink-0 transition-opacity ${
                       isPinned
                         ? 'opacity-100'
-                        : 'opacity-0 group-hover:opacity-70 hover:!opacity-100'
+                        : 'opacity-0 group-hover:opacity-70 hover:opacity-100!'
                     }`}
                     style={{
                       color: isPinned ? 'var(--warning-color)' : 'var(--text-tertiary)'

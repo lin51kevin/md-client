@@ -50,8 +50,20 @@ const MIME_MAP: Record<string, string> = {
 
 const MD_EXTENSIONS = new Set(["md", "markdown", "txt"]);
 
-/** Module-level cache to avoid re-loading the same image on every re-render */
+/** Module-level LRU cache for loaded images. Evicts oldest entries beyond MAX_IMAGE_CACHE. */
+const MAX_IMAGE_CACHE = 100;
 const imageCache = new Map<string, string>();
+
+function imageCacheSet(key: string, value: string): void {
+  // Delete-then-set keeps insertion order for LRU
+  if (imageCache.has(key)) imageCache.delete(key);
+  imageCache.set(key, value);
+  // Evict oldest entries when cache is full
+  if (imageCache.size > MAX_IMAGE_CACHE) {
+    const oldest = imageCache.keys().next().value;
+    if (oldest !== undefined) imageCache.delete(oldest);
+  }
+}
 
 interface MarkdownPreviewProps {
   content: string;
@@ -127,11 +139,11 @@ function LocalImage({
           binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
         }
         const dataUrl = `data:${mime};base64,${btoa(binary)}`;
-        imageCache.set(absPath, dataUrl);
+        imageCacheSet(absPath, dataUrl);
         setDataSrc(dataUrl);
       })
       .catch(() => {
-        imageCache.set(absPath, "");
+        imageCacheSet(absPath, "");
         setDataSrc(""); // '' → browser broken-image placeholder
       });
   }, [docFilePath, src]);

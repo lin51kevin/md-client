@@ -8,6 +8,45 @@ use export_pdf::export_pdf;
 use export_docx::export_docx;
 use base64::Engine as _;
 
+/// Validate that a user-supplied path does not escape into sensitive system directories.
+/// This is a defence-in-depth measure for a desktop app that wraps raw std::fs operations.
+/// Rejects:
+///   - Paths containing `..` segments (directory traversal)
+///   - Known OS system directories (Windows: System32, etc.; Unix: /etc, /usr, etc.)
+///   - Empty paths
+fn validate_user_path(path: &str) -> Result<(), String> {
+    if path.is_empty() {
+        return Err("路径不能为空".to_string());
+    }
+
+    // Reject path traversal via ".." anywhere in the path
+    let normalized = path.replace('\\', "/");
+    for segment in normalized.split('/') {
+        if segment == ".." {
+            return Err("路径不允许包含 '..'".to_string());
+        }
+    }
+
+    // Reject known sensitive system directories
+    let lower = normalized.to_lowercase();
+    let blocked_prefixes: &[&str] = &[
+        // Windows
+        "c:/windows", "c:/program files", "c:/program files (x86)",
+        "c:/programdata", "c:/$recycle.bin",
+        // Unix/macOS
+        "/etc", "/usr", "/bin", "/sbin", "/boot", "/lib", "/lib64",
+        "/proc", "/sys", "/dev", "/var/run", "/var/log",
+    ];
+
+    for prefix in blocked_prefixes {
+        if lower.starts_with(prefix) {
+            return Err(format!("不允许访问系统目录: {}", prefix));
+        }
+    }
+
+    Ok(())
+}
+
 /// Pre-rendered image blob passed from the JS side.
 /// The `data` field is a base64-encoded PNG.  `width` and `height` are the
 /// pixel dimensions of the PNG at the render scale used by the frontend.
@@ -53,6 +92,7 @@ async fn export_document(
     format: String,
     pre_rendered_images: Option<std::collections::HashMap<String, ExportImage>>,
 ) -> Result<(), String> {
+    validate_user_path(&output_path)?;
     // Decode base64 → raw PNG bytes + dimensions
     let images: std::collections::HashMap<String, (Vec<u8>, u32, u32)> =
         pre_rendered_images
@@ -73,21 +113,24 @@ async fn export_document(
     }
 }
 
-/// Read any file as UTF-8 text — bypasses plugin-fs scope restrictions.
+/// Read any file as UTF-8 text.
 #[tauri::command]
 fn read_file_text(path: String) -> Result<String, String> {
+    validate_user_path(&path)?;
     std::fs::read_to_string(&path).map_err(|e| e.to_string())
 }
 
-/// Read any file as raw bytes — bypasses plugin-fs scope restrictions.
+/// Read any file as raw bytes.
 #[tauri::command]
 fn read_file_bytes(path: String) -> Result<Vec<u8>, String> {
+    validate_user_path(&path)?;
     std::fs::read(&path).map_err(|e| e.to_string())
 }
 
-/// Write text content to any file path — bypasses plugin-fs scope restrictions.
+/// Write text content to a file path.
 #[tauri::command]
 fn write_file_text(path: String, content: String) -> Result<(), String> {
+    validate_user_path(&path)?;
     // Create parent directories if they don't exist
     if let Some(parent) = std::path::Path::new(&path).parent() {
         std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
@@ -110,6 +153,7 @@ struct DirEntry {
 /// directories and supported text files (.md, .markdown, .txt).
 #[tauri::command]
 fn list_directory(path: String) -> Result<Vec<DirEntry>, String> {
+    validate_user_path(&path)?;
     let dir = std::path::Path::new(&path);
     if !dir.exists() {
         return Err(format!("目录不存在: {}", path));
@@ -162,6 +206,7 @@ fn list_directory(path: String) -> Result<Vec<DirEntry>, String> {
 /// Recursively list directory up to `depth` levels.
 #[tauri::command]
 fn read_dir_recursive(path: String, depth: Option<u32>) -> Result<DirEntry, String> {
+    validate_user_path(&path)?;
     fn read_recursive(dir_path: &std::path::Path, current_depth: u32, max_depth: u32) -> Result<DirEntry, String> {
         let name = dir_path.file_name()
             .and_then(|n| n.to_str())
@@ -236,6 +281,7 @@ fn search_files(
     case_sensitive: bool,
     use_regex: bool,
 ) -> Result<Vec<SearchResult>, String> {
+    validate_user_path(&directory)?;
     if query.is_empty() {
         return Ok(Vec::new());
     }
@@ -366,6 +412,7 @@ fn replace_in_files(
     case_sensitive: bool,
     use_regex: bool,
 ) -> Result<ReplaceInFilesResult, String> {
+    validate_user_path(&directory)?;
     if query.is_empty() {
         return Ok(ReplaceInFilesResult { replaced_count: 0, files_modified: vec![] });
     }
@@ -437,25 +484,57 @@ fn replace_in_files(
             let new = if case_sensitive {
                 content.replace(needle, &replacement)
             } else {
-                let qlen = query.len();
+                // Case-insensitive plain text replacement — use char-boundary-safe scanning.
+                // to_lowercase() can change byte lengths (e.g. 'İ' → 'i\u{307}'), so we
+                // cannot assume byte offsets in `content` correspond 1:1 with `lower`.
+                // Instead, find matches in the lowered string with str::find and track
+                // original-content offsets by preserving char boundary alignment.
                 let lower = content.to_lowercase();
-                let pat = pattern_lower.as_bytes();
-                let bytes = content.as_bytes();
-                let lower_bytes = lower.as_bytes();
+                let needle = &pattern_lower;
                 let mut result = String::with_capacity(content.len());
-                let mut last = 0usize;
-                let mut i = 0usize;
-                while i + qlen <= bytes.len() {
-                    if &lower_bytes[i..i + qlen] == pat {
-                        result.push_str(&content[last..i]);
+                let mut lower_start = 0usize;
+                let mut orig_start = 0usize;
+
+                // Build a mapping: for each byte offset in `lower`, find the
+                // corresponding byte offset in `content` by walking chars in parallel.
+                let orig_chars: Vec<(usize, char)> = content.char_indices().collect();
+                let lower_chars: Vec<(usize, char)> = lower.char_indices().collect();
+                // Map from char index → (orig_byte_offset, lower_byte_offset)
+                // Both strings have the same number of chars.
+                let char_count = orig_chars.len();
+
+                // Find matches in the lowered string
+                let mut char_idx = 0usize;
+                loop {
+                    if let Some(match_pos) = lower[lower_start..].find(needle.as_str()) {
+                        let lower_match = lower_start + match_pos;
+                        let lower_match_end = lower_match + needle.len();
+
+                        // Find char index for lower_match and lower_match_end
+                        while char_idx < char_count && lower_chars[char_idx].0 < lower_match {
+                            char_idx += 1;
+                        }
+                        let orig_match = orig_chars[char_idx].0;
+
+                        let mut end_char_idx = char_idx;
+                        while end_char_idx < char_count && lower_chars[end_char_idx].0 < lower_match_end {
+                            end_char_idx += 1;
+                        }
+                        let orig_match_end = if end_char_idx < char_count {
+                            orig_chars[end_char_idx].0
+                        } else {
+                            content.len()
+                        };
+
+                        result.push_str(&content[orig_start..orig_match]);
                         result.push_str(&replacement);
-                        last = i + qlen;
-                        i = last;
+                        orig_start = orig_match_end;
+                        lower_start = lower_match_end;
                     } else {
-                        i += 1;
+                        break;
                     }
                 }
-                result.push_str(&content[last..]);
+                result.push_str(&content[orig_start..]);
                 result
             };
             (new, count)
@@ -470,9 +549,10 @@ fn replace_in_files(
     Ok(ReplaceInFilesResult { replaced_count, files_modified })
 }
 
-/// Write raw bytes (e.g. image data) to any file path — bypasses plugin-fs scope restrictions.
+/// Write raw bytes (e.g. image data) to a file path.
 #[tauri::command]
 fn write_image_bytes(path: String, data: Vec<u8>) -> Result<(), String> {
+    validate_user_path(&path)?;
     if let Some(parent) = std::path::Path::new(&path).parent() {
         std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
@@ -482,6 +562,7 @@ fn write_image_bytes(path: String, data: Vec<u8>) -> Result<(), String> {
 /// Create a new file (and parent directories if needed).
 #[tauri::command]
 fn create_file(path: String) -> Result<(), String> {
+    validate_user_path(&path)?;
     let p = std::path::Path::new(&path);
     if p.exists() {
         return Err(format!("文件已存在: {}", path));
@@ -495,6 +576,7 @@ fn create_file(path: String) -> Result<(), String> {
 /// Delete a file or empty directory.
 #[tauri::command]
 fn delete_file(path: String) -> Result<(), String> {
+    validate_user_path(&path)?;
     let p = std::path::Path::new(&path);
     if !p.exists() {
         return Err(format!("文件不存在: {}", path));
@@ -509,6 +591,8 @@ fn delete_file(path: String) -> Result<(), String> {
 
 #[tauri::command]
 fn rename_file(old_path: String, new_path: String) -> Result<(), String> {
+    validate_user_path(&old_path)?;
+    validate_user_path(&new_path)?;
     let new = std::path::Path::new(&new_path);
     // Reject if target already exists (std::fs::rename is atomic-replace on Unix
     // but errors on Windows — enforce consistent cross-platform behaviour)

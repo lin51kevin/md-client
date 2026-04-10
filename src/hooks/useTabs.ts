@@ -5,8 +5,13 @@ import { Tab } from '../types';
 import { INITIAL_TAB_ID, genTabId, DEFAULT_MARKDOWN } from '../constants';
 import { addRecentFile, removeRecentFile } from '../lib/recent-files';
 import { moveSnapshots } from '../lib/version-history';
+import type { TranslationKey } from '../i18n/zh-CN';
 
-export function useTabs() {
+type TFn = (key: TranslationKey, params?: Record<string, string | number>) => string;
+
+export function useTabs(t?: TFn) {
+  // Fallback: if no t() provided, use identity (raw key)
+  const tr = t ?? ((k: string) => k);
   const [tabs, setTabs] = useState<Tab[]>([
     { id: INITIAL_TAB_ID, filePath: null, doc: DEFAULT_MARKDOWN, isDirty: false },
   ]);
@@ -41,23 +46,23 @@ export function useTabs() {
 
     // ── 文件名合法性校验 ──────────────────────────────────────────
     if (/[/\\]/.test(trimmed)) {
-      await message('文件名不能包含 / 或 \\ 字符。', { title: '重命名', kind: 'warning' });
+      await message(tr('rename.hasSlash'), { title: tr('rename.title'), kind: 'warning' });
       return false;
     }
     if (/[<>:"|?*\x00-\x1f]/.test(trimmed)) {
-      await message('文件名包含非法字符（< > : " | ? * 或控制字符）。', { title: '重命名', kind: 'warning' });
+      await message(tr('rename.illegalChars'), { title: tr('rename.title'), kind: 'warning' });
       return false;
     }
-    if (/^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\.|$)/i.test(trimmed)) {
-      await message(`"${trimmed}" 是系统保留文件名，请换一个名称。`, { title: '重命名', kind: 'warning' });
+    if (/^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\.||$)/i.test(trimmed)) {
+      await message(tr('rename.reserved', { name: trimmed }), { title: tr('rename.title'), kind: 'warning' });
       return false;
     }
     if (/[. ]$/.test(trimmed)) {
-      await message('文件名不能以句点或空格结尾。', { title: '重命名', kind: 'warning' });
+      await message(tr('rename.trailingDotSpace'), { title: tr('rename.title'), kind: 'warning' });
       return false;
     }
     if (new TextEncoder().encode(trimmed).length > 255) {
-      await message('文件名过长，请缩短后重试。', { title: '重命名', kind: 'warning' });
+      await message(tr('rename.tooLong'), { title: tr('rename.title'), kind: 'warning' });
       return false;
     }
     // ─────────────────────────────────────────────────────────────
@@ -81,9 +86,9 @@ export function useTabs() {
         const errMsg = err instanceof Error ? err.message : String(err);
         if (errMsg.startsWith('FILE_EXISTS:')) {
           const conflictName = errMsg.slice('FILE_EXISTS:'.length);
-          await message(`"${conflictName}" 已存在，请换一个文件名。`, { title: '重命名', kind: 'warning' });
+          await message(tr('rename.alreadyExists', { name: conflictName }), { title: tr('rename.title'), kind: 'warning' });
         } else {
-          await message(`重命名失败: ${errMsg}`, { title: '重命名', kind: 'error' });
+          await message(tr('rename.failed', { error: errMsg }), { title: tr('rename.title'), kind: 'error' });
         }
         return false;
       }
@@ -139,7 +144,7 @@ export function useTabs() {
       addRecentFile(filePath);
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      await message(`无法读取文件: ${errMsg}`, { title: '打开文件失败', kind: 'error' });
+      await message(tr('rename.cannotRead', { error: errMsg }), { title: tr('rename.openFileFailed'), kind: 'error' });
     } finally {
       openingPaths.current.delete(filePath);
     }

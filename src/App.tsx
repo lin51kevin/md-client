@@ -155,7 +155,7 @@ export default function App() {
     markSaved, markSavedAs,
     renameTab, setTabDisplayName,
     pinTab, unpinTab,
-  } = useTabs();
+  } = useTabs(t);
 
   // True when only the initial backing tab exists untouched — welcome/empty state
   const isPristine = tabs.length === 1 && !tabs[0].filePath && !tabs[0].isDirty && !tabs[0].displayName;
@@ -204,7 +204,7 @@ export default function App() {
   }, [tabs, closeTab]);
 
   const { handleOpenFile, handleSaveFile: rawHandleSaveFile, handleSaveAsFile, handleExportDocx, handleExportPdf, handleExportHtml, handleExportPng } = useFileOps({
-    getActiveTab, tabs, openFileInTab, markSaved, markSavedAs,
+    getActiveTab, tabs, openFileInTab, markSaved, markSavedAs, t,
   });
 
   // F012 - 包装保存函数,保存成功后创建快照(仅手动 Ctrl+S 触发)
@@ -278,9 +278,11 @@ export default function App() {
   }, [theme]);
 
   // 同步原生标题栏主题(Windows/macOS) — 异步操作，保持 useEffect
+  // Tauri setTheme only accepts 'light' | 'dark' | null; map non-standard themes
   useEffect(() => {
     if (isTauri) {
-      getCurrentWindow().setTheme(theme).catch(() => {});
+      const nativeTheme = THEMES[theme].isDark ? 'dark' as const : 'light' as const;
+      getCurrentWindow().setTheme(nativeTheme).catch(() => {});
     }
   }, [theme, isTauri]);
 
@@ -617,16 +619,20 @@ export default function App() {
         view.dispatch({ selection: saved.state.selection });
       }
     }
+  }, [activeTabId, theme]);
 
-    // F014 — 编辑器右键上下文菜单（在 onCreateEditor 中绑定,确保 view 已就绪）
+  // F014 — Attach contextmenu + dblclick listeners, with proper cleanup to prevent memory leaks.
+  // Runs whenever cmViewRef.current changes (via activeTabId, which causes CodeMirror remount).
+  useEffect(() => {
+    const view = cmViewRef.current;
+    if (!view) return;
+
+    // F014 — 编辑器右键上下文菜单
     const handleCtxMenu = (e: MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      // precise: false — 返回最近位置而非精确字符命中,确保点击空白区域也能弹出菜单
       const pos = view.posAtCoords({ x: e.clientX, y: e.clientY }, false);
-      if (pos == null) return; // 不能用 !pos, 因为 pos === 0 时为有效值
-      // 将光标移到右键点击位置，使后续菜单操作（表格编辑等）能定位到正确位置
-      // 如果右键在已有选区内则保留选区（以便 cut/copy 正常工作）
+      if (pos == null) return;
       const sel = view.state.selection.main;
       if (pos < sel.from || pos > sel.to) {
         view.dispatch({ selection: { anchor: pos } });
@@ -634,7 +640,6 @@ export default function App() {
       const contextInfo = detectContext(docRef.current, pos);
       setEditorCtxMenu({ x: e.clientX, y: e.clientY, context: contextInfo });
     };
-    view.dom.addEventListener('contextmenu', handleCtxMenu, { capture: true });
 
     // F014 — 双击表格时打开表格编辑器
     const handleDblClick = (e: MouseEvent) => {
@@ -647,8 +652,15 @@ export default function App() {
         setEditingTable(tableData);
       }
     };
+
+    view.dom.addEventListener('contextmenu', handleCtxMenu, { capture: true });
     view.dom.addEventListener('dblclick', handleDblClick, { capture: true });
-  }, [activeTabId, theme]);
+
+    return () => {
+      view.dom.removeEventListener('contextmenu', handleCtxMenu, { capture: true });
+      view.dom.removeEventListener('dblclick', handleDblClick, { capture: true });
+    };
+  }, [activeTabId]);
 
   // F014 — 表格编辑确认处理
   const handleTableConfirm = useCallback((newTableMarkdown: string) => {
@@ -717,12 +729,12 @@ export default function App() {
   const editorSetup = EDITOR_SETUP;
 
   // F011 - 解析 CodeMirror 主题（内置字符串或自定义 Extension）
-  const editorTheme: string | Extension[] = (() => {
+  const editorTheme = useMemo((): 'light' | 'dark' | Extension => {
     const cm = THEMES[theme].cmTheme;
-    if (cm === 'sepia') return sepiaCmTheme;
-    if (cm === 'high-contrast') return highContrastCmTheme;
+    if (cm === 'sepia') return sepiaCmTheme as unknown as Extension;
+    if (cm === 'high-contrast') return highContrastCmTheme as unknown as Extension;
     return cm; // 'light' | 'dark'
-  })();
+  }, [theme]);
 
   return (
     <I18nContext.Provider value={i18n}>

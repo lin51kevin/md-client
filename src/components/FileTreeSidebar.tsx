@@ -200,6 +200,13 @@ function TreeNodeView({
               onFileOpen={onFileOpen}
               onToggleDir={onToggleDir}
               onLoadChildren={onLoadChildren}
+              onContextMenu={onContextMenu}
+              renamingPath={renamingPath}
+              renameValue={renameValue}
+              onRenameValueChange={onRenameValueChange}
+              onRenameConfirm={onRenameConfirm}
+              onRenameCancel={onRenameCancel}
+              onStartRename={onStartRename}
             />
           ))}
         </div>
@@ -355,7 +362,6 @@ export function FileTreeSidebar({
     // 去掉扩展名用于编辑（保留扩展名）
     const dotIndex = node.name.lastIndexOf('.');
     const baseName = dotIndex > 0 ? node.name.slice(0, dotIndex) : node.name;
-    const ext = dotIndex > 0 ? node.name.slice(dotIndex) : '';
     setRenamingPath(node.path);
     setRenameValue(baseName); // 只编辑文件名部分，不包含扩展名
     setContextMenu(null);
@@ -413,12 +419,6 @@ export function FileTreeSidebar({
     window.addEventListener('click', closeMenu);
     return () => window.removeEventListener('click', closeMenu);
   }, []);
-
-  /** 重命名输入框键盘事件 */
-  const handleRenameKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleConfirmRename();
-    if (e.key === 'Escape') { setRenamingPath(null); setRenameValue(''); }
-  }, [handleConfirmRename]);
 
   /** 使用 Tauri 对话框选择新根目录 */
   const pickFolder = useCallback(async () => {
@@ -504,7 +504,7 @@ export function FileTreeSidebar({
       >
         <FolderTree size={14} style={{ color: 'var(--text-secondary)' }} />
         <span
-          className="text-xs font-medium truncate max-w-[100px]"
+          className="text-xs font-medium truncate max-w-25"
           style={{ color: 'var(--text-primary)' }}
           title={rootPath}
         >
@@ -554,7 +554,7 @@ export function FileTreeSidebar({
           borderBottom: '1px solid var(--border-color)',
         }}
       >
-        <Search size={12} style={{ color: 'var(--text-secondary)', shrink: 0 }} />
+        <Search size={12} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />
         <input
           type="text"
           placeholder="搜索文件..."
@@ -626,7 +626,7 @@ export function FileTreeSidebar({
       {contextMenu && (
         <div
           ref={menuRef}
-          className="fixed z-50 rounded shadow-lg py-1 min-w-[120px]"
+          className="fixed z-50 rounded shadow-lg py-1 min-w-30"
           style={{
             left: contextMenu.x,
             top: contextMenu.y,

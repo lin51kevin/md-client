@@ -240,4 +240,43 @@ export const en: Record<TranslationKey, string> = {
   'welcome.showWelcome': 'Show Welcome',
   'welcome.tab': 'Welcome',
   'welcome.sample': '示例 · Sample',
+
+  // ── File Tree Sidebar ─────────────────────────────────────────────────────
+  'fileTree.files': 'Files',
+  'fileTree.newFile': 'New File',
+  'fileTree.parentDir': 'Parent Directory',
+  'fileTree.pickFolder': 'Open Folder',
+  'fileTree.refresh': 'Refresh',
+  'fileTree.searchPlaceholder': 'Search files...',
+  'fileTree.noMatch': 'No matches',
+  'fileTree.empty': 'This directory is empty',
+  'fileTree.emptyHint': 'or has no supported file types',
+  'fileTree.cannotAccessDir': 'Cannot access current directory',
+  'fileTree.createFailed': 'Failed to create file:',
+  'fileTree.deleteFailed': 'Failed to delete file:',
+  'fileTree.renameFailed': 'Rename failed:',
+  'fileTree.scrollLeft': 'Scroll left',
+  'fileTree.scrollRight': 'Scroll right',
+
+  // ── Tab Rename Validation ────────────────────────────────────────────────
+  'rename.title': 'Rename',
+  'rename.hasSlash': 'File name cannot contain / or \\ characters.',
+  'rename.illegalChars': 'File name contains illegal characters (< > : " | ? * or control chars).',
+  'rename.reserved': '"{name}" is a reserved system name. Please choose another.',
+  'rename.trailingDotSpace': 'File name cannot end with a period or space.',
+  'rename.tooLong': 'File name is too long. Please shorten it.',
+  'rename.alreadyExists': '"{name}" already exists. Please choose a different name.',
+  'rename.failed': 'Rename failed: {error}',
+  'rename.openFileFailed': 'Failed to open file',
+  'rename.cannotRead': 'Cannot read file: {error}',
+
+  // ── File Ops ─────────────────────────────────────────────────────────
+  'fileOps.saveAsFailed': 'Save As Failed',
+  'fileOps.saveFailed': 'Save Failed',
+  'fileOps.emptyDocExport': 'Document is empty and cannot be exported.',
+  'fileOps.hint': 'Notice',
+  'fileOps.noPreviewArea': 'Preview area not found. Cannot export PNG.',
+  'fileOps.error': 'Error',
+  'fileOps.exportFailed': 'Export {format} Failed',
+  'fileOps.exportPngFailed': 'Export PNG Failed',
 };

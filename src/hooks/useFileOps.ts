@@ -1,6 +1,9 @@
 import { open, save, message } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
 import { Tab } from '../types';
+import type { TranslationKey } from '../i18n/zh-CN';
+
+type TFn = (key: TranslationKey, params?: Record<string, string | number>) => string;
 
 interface FileOpsParams {
   getActiveTab: () => Tab;
@@ -8,9 +11,11 @@ interface FileOpsParams {
   openFileInTab: (path: string) => Promise<void>;
   markSaved: (id: string) => void;
   markSavedAs: (id: string, filePath: string) => void;
+  t?: TFn;
 }
 
-export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markSavedAs }: FileOpsParams) {
+export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markSavedAs, t }: FileOpsParams) {
+  const tr = t ?? ((k: string) => k);
   const handleOpenFile = async () => {
     try {
       const selected = await open({
@@ -39,7 +44,7 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      await message(errMsg, { title: '另存为失败', kind: 'error' });
+      await message(errMsg, { title: tr('fileOps.saveAsFailed'), kind: 'error' });
     }
   };
 
@@ -55,7 +60,7 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      await message(errMsg, { title: '保存失败', kind: 'error' });
+      await message(errMsg, { title: tr('fileOps.saveFailed'), kind: 'error' });
     }
   };
 
@@ -64,7 +69,7 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
     if (!tab) return;
     
     if (!tab.doc.trim()) {
-      await message('文档内容为空，无法导出。', { title: '提示', kind: 'warning' });
+      await message(tr('fileOps.emptyDocExport'), { title: tr('fileOps.hint'), kind: 'warning' });
       return;
     }
 
@@ -93,7 +98,7 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      await message(errMsg, { title: `导出 ${format.toUpperCase()} 失败`, kind: 'error' });
+      await message(errMsg, { title: tr('fileOps.exportFailed', { format: format.toUpperCase() }), kind: 'error' });
     }
   };
 
@@ -103,11 +108,11 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
     const tab = getActiveTab();
     if (!tab) return;
     if (!tab.doc.trim()) {
-      await message('文档内容为空，无法导出。', { title: '提示', kind: 'warning' });
+      await message(tr('fileOps.emptyDocExport'), { title: tr('fileOps.hint'), kind: 'warning' });
       return;
     }
     if (!previewEl) {
-      await message('未找到预览区域，无法导出PNG。', { title: '错误', kind: 'error' });
+      await message(tr('fileOps.noPreviewArea'), { title: tr('fileOps.error'), kind: 'error' });
       return;
     }
     try {
@@ -129,7 +134,7 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      await message(errMsg, { title: '导出 PNG 失败', kind: 'error' });
+      await message(errMsg, { title: tr('fileOps.exportPngFailed'), kind: 'error' });
     }
   };
 
