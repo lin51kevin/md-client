@@ -108,7 +108,6 @@ graph LR
 ### 🎨 主题切换
 - ☀️ 亮色主题（GitHub Light）
 - 🌙 暗色主题（GitHub Dark）
-- 🔄 自动切换（跟随系统）
 
 ---
 

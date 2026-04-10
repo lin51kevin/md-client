@@ -255,9 +255,9 @@ export const MarkdownPreview = memo(function MarkdownPreview({
     return components;
   }, [filePath, onOpenFile, onContentChange, allTables]);
 
-  // Memo: 检测内容是否包含 mermaid 块，避免不必要的异步渲染
+  // Memo: 检测内容是否包含 mermaid 块，避免不必要的异步渲染（兼容 LF/CRLF）
   const hasMermaidBlocks = useMemo(
-    () => /```mermaid\n([\s\S]*?)```/.test(content),
+    () => /```mermaid\r?\n([\s\S]*?)```/.test(content),
     [content],
   );
 

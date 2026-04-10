@@ -37,6 +37,13 @@ describe('F008 — Mermaid 图表渲染', () => {
       expect(result.length).toBeGreaterThan(0);
     });
 
+    it('应支持 CRLF (\\r\\n) 换行符（Windows 兼容性）', async () => {
+      const md = `\`\`\`mermaid\r\ngraph LR\r\n    A-->B\r\n\`\`\``;
+      const result = await renderMermaid(md);
+      expect(mockRender).toHaveBeenCalled();
+      expect(result).toContain('<svg');
+    });
+
     it('多个代码块应分别处理', async () => {
       const md = `\`\`\`mermaid\ngraph LR\n    A-->B\n\`\`\`\n\nSome text\n\n\`\`\`mermaid\npie\n    title Test\n    "A" : 1\n\`\`\``;
       const result = await renderMermaid(md);

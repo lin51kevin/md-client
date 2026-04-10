@@ -45,8 +45,8 @@ export async function renderMermaid(text: string): Promise<string> {
 
   const { default: mermaid } = await initMermaid();
 
-  // 匹配 ```mermaid ... ``` 代码块（非贪婪，支持多行）
-  const mermaidRe = /```mermaid\n([\s\S]*?)```/g;
+  // 匹配 ```mermaid ... ``` 代码块（非贪婪，支持多行，兼容 LF/CRLF）
+  const mermaidRe = /```mermaid\r?\n([\s\S]*?)```/g;
 
   let idCounter = 0;
   const results = await Promise.all(
