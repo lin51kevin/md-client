@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { X, Settings, Palette, Type, FolderOpen, Keyboard } from 'lucide-react';
 import { useI18n, type Locale } from '../i18n';
 import type { TranslationKey } from '../i18n/zh-CN';
-import type { ThemeName, PreviewThemeName } from '../lib/theme';
-import { PREVIEW_THEMES } from '../lib/theme';
+import type { ThemeName } from '../lib/theme';
+import { THEMES } from '../lib/theme';
 import { getImageSaveDir, setImageSaveDir } from '../lib/image-paste';
 
 interface SettingsModalProps {
@@ -15,8 +15,6 @@ interface SettingsModalProps {
   onSpellCheckChange: (enabled: boolean) => void;
   vimMode: boolean;
   onVimModeChange: (enabled: boolean) => void;
-  previewTheme: PreviewThemeName;
-  onPreviewThemeChange: (theme: PreviewThemeName) => void;
 }
 
 type TabId = 'general' | 'editor' | 'appearance' | 'files' | 'shortcuts';
@@ -38,8 +36,6 @@ export function SettingsModal({
   onSpellCheckChange,
   vimMode,
   onVimModeChange,
-  previewTheme,
-  onPreviewThemeChange,
 }: SettingsModalProps) {
   const { t, locale, setLocale } = useI18n();
   const [activeTab, setActiveTab] = useState<TabId>('general');
@@ -200,27 +196,8 @@ export function SettingsModal({
                       color: 'var(--text-primary)',
                     }}
                   >
-                    <option value="light">{t('settings.appearance.themeLight')}</option>
-                    <option value="dark">{t('settings.appearance.themeDark')}</option>
-                  </select>
-                </SettingItem>
-
-                <SettingItem
-                  label={t('settings.appearance.previewTheme')}
-                  description={t('settings.appearance.previewThemeDesc')}
-                >
-                  <select
-                    value={previewTheme}
-                    onChange={(e) => onPreviewThemeChange(e.target.value as PreviewThemeName)}
-                    className="text-xs px-2 py-1 rounded outline-none"
-                    style={{
-                      backgroundColor: 'var(--bg-secondary)',
-                      border: '1px solid var(--border-color)',
-                      color: 'var(--text-primary)',
-                    }}
-                  >
-                    {Object.entries(PREVIEW_THEMES).map(([key, cfg]) => (
-                      <option key={key} value={key}>{locale === 'zh-CN' ? cfg.labelZh : cfg.labelEn}</option>
+                    {(Object.entries(THEMES) as [ThemeName, import('../lib/theme').ThemeConfig][]).map(([key, cfg]) => (
+                      <option key={key} value={key}>{cfg.label}</option>
                     ))}
                   </select>
                 </SettingItem>

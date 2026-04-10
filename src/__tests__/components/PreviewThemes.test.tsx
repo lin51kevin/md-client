@@ -2,12 +2,12 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { SettingsModal } from '../../components/SettingsModal';
 import {
-  PREVIEW_THEMES,
-  getSavedPreviewTheme,
-  savePreviewTheme,
-  getPreviewClass,
+  THEMES,
+  getSavedTheme,
+  saveTheme,
+  applyTheme,
 } from '../../lib/theme';
-import type { PreviewThemeName, ThemeName } from '../../lib/theme';
+import type { ThemeName } from '../../lib/theme';
 
 // Mock localStorage
 const store: Record<string, string> = {};
@@ -19,64 +19,97 @@ const mockLocalStorage = {
 };
 vi.stubGlobal('localStorage', mockLocalStorage);
 
-describe('Preview Theme Feature', () => {
+// Mock document.documentElement.style for applyTheme
+const cssVarMap: Record<string, string> = {};
+vi.stubGlobal('document', {
+  ...globalThis.document,
+  documentElement: {
+    style: {
+      setProperty: (name: string, value: string) => { cssVarMap[name] = value; },
+      removeProperty: (name: string) => { delete cssVarMap[name]; },
+      colorScheme: '',
+    },
+  },
+});
+
+describe('Unified Theme System', () => {
   beforeEach(() => {
     Object.keys(store).forEach(k => delete (store as any)[k]);
+    Object.keys(cssVarMap).forEach(k => delete cssVarMap[k]);
   });
 
-  it('should have 4 preview themes defined in PREVIEW_THEMES', () => {
-    const themes = Object.keys(PREVIEW_THEMES);
-    expect(themes).toContain('default');
+  it('should have 4 unified themes defined in THEMES', () => {
+    const themes = Object.keys(THEMES);
+    expect(themes).toContain('light');
     expect(themes).toContain('dark');
     expect(themes).toContain('sepia');
-    expect(themes).toContain('highContrast');
+    expect(themes).toContain('high-contrast');
     expect(themes.length).toBe(4);
   });
 
-  it('each preview theme should have labelZh, labelEn, and cssClass', () => {
-    for (const [name, cfg] of Object.entries(PREVIEW_THEMES)) {
-      expect(cfg).toHaveProperty('labelZh');
+  it('each theme should have required properties', () => {
+    for (const [name, cfg] of Object.entries(THEMES)) {
+      expect(cfg).toHaveProperty('label');
       expect(cfg).toHaveProperty('labelEn');
-      expect(cfg).toHaveProperty('cssClass');
-      expect(typeof cfg.labelZh).toBe('string');
-      expect(typeof cfg.labelEn).toBe('string');
-      expect(typeof cfg.cssClass).toBe('string');
+      expect(cfg).toHaveProperty('cmTheme');
+      expect(cfg).toHaveProperty('previewClass');
+      expect(cfg).toHaveProperty('cssVars');
+      expect(cfg).toHaveProperty('isDark');
+      expect(typeof cfg.label).toBe('string');
+      expect(typeof cfg.previewClass).toBe('string');
+      expect(['light', 'dark']).toContain(cfg.cmTheme);
     }
   });
 
-  it('getSavedPreviewTheme returns default when nothing saved', () => {
-    const result = getSavedPreviewTheme();
-    expect(result).toBe('default');
+  it('getSavedTheme returns null when nothing saved', () => {
+    const result = getSavedTheme();
+    expect(result).toBeNull();
   });
 
-  it('savePreviewTheme persists to localStorage', () => {
-    savePreviewTheme('sepia');
-    expect(store['marklite-preview-theme']).toBe('sepia');
+  it('saveTheme persists to localStorage', () => {
+    saveTheme('sepia' as ThemeName);
+    expect(store['marklite-theme']).toBe('sepia');
   });
 
-  it('getSavedPreviewTheme reads back saved value', () => {
-    store['marklite-preview-theme'] = 'highContrast';
-    // Re-import won't re-evaluate, so we test the function logic is sound
-    expect(store['marklite-preview-theme']).toBe('highContrast');
+  it('getSavedTheme reads back saved value', () => {
+    store['marklite-theme'] = 'high-contrast';
+    const result = getSavedTheme();
+    expect(result).toBe('high-contrast');
   });
 
-  it('getPreviewClass returns correct CSS class for each theme', () => {
-    const cases: [PreviewThemeName, ThemeName, string][] = [
-      ['default', 'light', ''],
-      ['default', 'dark', 'markdown-preview-dark'],
-      ['dark', 'light', 'markdown-preview-dark'],
-      ['dark', 'dark', 'markdown-preview-dark'],
-      ['sepia', 'light', 'markdown-preview-sepia'],
-      ['sepia', 'dark', 'markdown-preview-sepia'],
-      ['highContrast', 'light', 'markdown-preview-high-contrast'],
-      ['highContrast', 'dark', 'markdown-preview-high-contrast'],
-    ];
-    for (const [pt, at, expected] of cases) {
-      expect(getPreviewClass(pt, at), `getPreviewClass(${pt}, ${at})`).toBe(expected);
-    }
+  it('applyTheme sets CSS variables on root element', () => {
+    applyTheme('dark');
+    expect(cssVarMap['--bg-primary']).toBe('#0d1117');
+    expect(cssVarMap['--text-primary']).toBe('#f0f6fc');
   });
 
-  it('SettingsModal renders preview theme selector in appearance tab', () => {
+  it('applyTheme sets color-scheme for dark theme', () => {
+    applyTheme('dark');
+    expect((document.documentElement as any).style.colorScheme).toBe('dark');
+  });
+
+  it('applyTheme sets color-scheme for light theme', () => {
+    applyTheme('light');
+    expect((document.documentElement as any).style.colorScheme).toBe('light');
+  });
+
+  it('sepia theme has correct previewClass', () => {
+    expect(THEMES.sepia.previewClass).toBe('markdown-preview-sepia');
+  });
+
+  it('high-contrast theme has correct previewClass', () => {
+    expect(THEMES['high-contrast'].previewClass).toBe('markdown-preview-high-contrast');
+  });
+
+  it('dark theme has markdown-preview-dark previewClass', () => {
+    expect(THEMES.dark.previewClass).toBe('markdown-preview-dark');
+  });
+
+  it('light theme has empty previewClass', () => {
+    expect(THEMES.light.previewClass).toBe('');
+  });
+
+  it('SettingsModal renders unified theme selector with 4 options in appearance tab', () => {
     render(
       <SettingsModal
         visible
@@ -87,8 +120,6 @@ describe('Preview Theme Feature', () => {
         onSpellCheckChange={() => {}}
         vimMode={false}
         onVimModeChange={() => {}}
-        previewTheme="default"
-        onPreviewThemeChange={() => {}}
       />
     );
 
@@ -96,10 +127,41 @@ describe('Preview Theme Feature', () => {
     const appearanceTab = screen.getByText(/Appearance|外观/);
     fireEvent.click(appearanceTab);
 
-    // Should show preview theme option — check for the select element or its label
-    const select = screen.getAllByRole('combobox').find(
-      s => s.querySelector('option[value="sepia"]') || s.querySelector('option[value="highContrast"]')
+    // Should show theme select with all 4 options
+    const selects = screen.getAllByRole('combobox');
+    const themeSelect = selects.find(s =>
+      s.querySelector('option[value="light"]') &&
+      s.querySelector('option[value="dark"]') &&
+      s.querySelector('option[value="sepia"]') &&
+      s.querySelector('option[value="high-contrast"]')
     );
-    expect(select).toBeDefined();
+    expect(themeSelect).toBeDefined();
+  });
+
+  it('SettingsModal does NOT have separate preview theme selector', () => {
+    render(
+      <SettingsModal
+        visible
+        onClose={() => {}}
+        currentTheme="light"
+        onThemeChange={() => {}}
+        spellCheck={false}
+        onSpellCheckChange={() => {}}
+        vimMode={false}
+        onVimModeChange={() => {}}
+      />
+    );
+
+    // Click appearance tab
+    const appearanceTab = screen.getByText(/Appearance|外观/);
+    fireEvent.click(appearanceTab);
+
+    // Should only have ONE select (unified theme), not two
+    const selects = screen.getAllByRole('combobox');
+    // Only the theme select, no preview theme select
+    expect(selects.length).toBe(1);
+
+    // No "预览主题" or "Preview Theme" label text
+    expect(screen.queryTextContent(/预览主题|Preview Theme/i)).toBeNull();
   });
 });
