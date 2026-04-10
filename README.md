@@ -31,6 +31,10 @@
 - **Vim Mode** — 可选 Vim 键盘模式（异步加载）
 - **Line Numbers & Fold Gutter** — 行号显示与代码折叠
 - **Cursor Position** — 实时显示光标行列位置
+- **📸 Image Paste** — 从剪贴板粘贴图片或拖拽图片，自动保存到本地并插入 Markdown 链接
+- **✏️ Toolbar Formatting** — 加粗、斜体、删除线、代码、标题、引用、列表、链接等一键格式化按钮
+- **📋 Right-Click Context Menu** — 编辑器内右键菜单，支持上下文感知的操作（20+个菜单项）
+- **🎯 Writing Statistics** — 实时字数、字符数、句子数、阅读时间统计
 
 ### 🎨 视图与主题
 - **Three View Modes** — 仅编辑 / 分栏（默认）/ 仅预览，快捷键一键切换
@@ -47,7 +51,9 @@
   - 正则表达式搜索 (`.*`)
   - 逐个/全部替换
   - 编辑器内高亮定位匹配项
-- **Table of Contents (TOC)** — 左侧大纲侧边栏，自动提取 H1-H3 标题，支持折叠/展开子节点，点击跳转
+- **Table of Contents (TOC)** — 左侧大纲侧边栏，自动提取 H1-H6 标题，支持折叠/展开子节点，点击跳转
+- **Cross-File Search** — 在整个文件夹中搜索，支持大小写敏感和正则表达式
+- **File Tree Sidebar** — 打开文件夹后，左侧显示文件树，支持双击打开、快捷菜单等
 
 ### 📤 导出格式
 - **DOCX** — 导出为 Word 文档（通过 Rust 后端渲染）
@@ -55,11 +61,14 @@
 - **HTML** — 导出为独立 HTML 文件（前端生成，含完整样式）
 
 ### 📐 富文本预览 (GFM+)
-- **GFM Support** — 表格、任务列表、删除线、自动链接等
+- **GFM Support** — 表格、任务列表、删除线、自动链接、脚注等
 - **Math / LaTeX** — KaTeX 数学公式渲染（行内 `$...$` 与块级 `$$...$$`）
 - **Mermaid Diagrams** — 流程图、时序图、饼图等图表渲染为 SVG
 - **Code Highlighting** — highlight.js 驱动的代码块语法高亮
 - **Custom Directives** — remark-directive 自定义容器支持
+- **Footnotes** — 脚注定义 `[^1]` 与引用，预览自动渲染为链接
+- **YAML Frontmatter** — 文档元数据支持，预览显示为表格
+- **Table Editor** — 可视化编辑表格（添加/删除行列、调整对齐）
 
 ### 💾 文件操作
 - **Open / Save / Save As** — 原生文件对话框，支持 `.md` / `.markdown` / `.txt`
