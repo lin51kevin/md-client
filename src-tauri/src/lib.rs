@@ -322,6 +322,125 @@ fn search_files(
     Ok(results)
 }
 
+#[derive(serde::Serialize)]
+struct ReplaceInFilesResult {
+    replaced_count: u32,
+    files_modified: Vec<String>,
+}
+
+/// Replace text across all .md/.markdown/.txt files in a directory (recursive).
+#[tauri::command]
+fn replace_in_files(
+    directory: String,
+    query: String,
+    replacement: String,
+    case_sensitive: bool,
+    use_regex: bool,
+) -> Result<ReplaceInFilesResult, String> {
+    if query.is_empty() {
+        return Ok(ReplaceInFilesResult { replaced_count: 0, files_modified: vec![] });
+    }
+
+    fn is_text_file(path: &std::path::Path) -> bool {
+        path.extension()
+            .and_then(|e| e.to_str())
+            .map(|s| matches!(s.to_lowercase().as_str(), "md" | "markdown" | "txt"))
+            .unwrap_or(false)
+    }
+
+    fn collect_files(dir: &std::path::Path) -> Vec<std::path::PathBuf> {
+        let mut files = Vec::new();
+        if let Ok(entries) = std::fs::read_dir(dir) {
+            for entry in entries.flatten() {
+                let p = entry.path();
+                if p.file_name()
+                    .and_then(|n| n.to_str())
+                    .map(|s| s.starts_with('.'))
+                    .unwrap_or(false)
+                {
+                    continue;
+                }
+                if p.is_dir() {
+                    files.extend(collect_files(&p));
+                } else if p.is_file() && is_text_file(&p) {
+                    files.push(p);
+                }
+            }
+        }
+        files
+    }
+
+    let dir_path = std::path::Path::new(&directory);
+    if !dir_path.exists() || !dir_path.is_dir() {
+        return Err(format!("目录不存在或不是目录: {}", directory));
+    }
+
+    let re: Option<regex::Regex> = if use_regex {
+        Some(
+            regex::RegexBuilder::new(&query)
+                .case_insensitive(!case_sensitive)
+                .build()
+                .map_err(|e| format!("正则表达式错误: {}", e))?,
+        )
+    } else {
+        None
+    };
+
+    let pattern_lower = query.to_lowercase();
+    let mut replaced_count = 0u32;
+    let mut files_modified = Vec::new();
+
+    for filepath in collect_files(dir_path) {
+        let content = match std::fs::read_to_string(&filepath) {
+            Ok(c) => c,
+            Err(_) => continue,
+        };
+
+        let (new_content, count) = if let Some(ref r) = re {
+            let count = r.find_iter(&content).count() as u32;
+            if count == 0 { continue; }
+            (r.replace_all(&content, replacement.as_str()).to_string(), count)
+        } else {
+            let needle = if case_sensitive { query.as_str() } else { pattern_lower.as_str() };
+            let haystack = if case_sensitive { content.clone() } else { content.to_lowercase() };
+            let count = haystack.matches(needle).count() as u32;
+            if count == 0 { continue; }
+            let new = if case_sensitive {
+                content.replace(needle, &replacement)
+            } else {
+                let qlen = query.len();
+                let lower = content.to_lowercase();
+                let pat = pattern_lower.as_bytes();
+                let bytes = content.as_bytes();
+                let lower_bytes = lower.as_bytes();
+                let mut result = String::with_capacity(content.len());
+                let mut last = 0usize;
+                let mut i = 0usize;
+                while i + qlen <= bytes.len() {
+                    if &lower_bytes[i..i + qlen] == pat {
+                        result.push_str(&content[last..i]);
+                        result.push_str(&replacement);
+                        last = i + qlen;
+                        i = last;
+                    } else {
+                        i += 1;
+                    }
+                }
+                result.push_str(&content[last..]);
+                result
+            };
+            (new, count)
+        };
+
+        std::fs::write(&filepath, new_content.as_bytes())
+            .map_err(|e| format!("写入文件失败 {}: {}", filepath.display(), e))?;
+        replaced_count += count;
+        files_modified.push(filepath.to_string_lossy().to_string());
+    }
+
+    Ok(ReplaceInFilesResult { replaced_count, files_modified })
+}
+
 /// Write raw bytes (e.g. image data) to any file path — bypasses plugin-fs scope restrictions.
 #[tauri::command]
 fn write_image_bytes(path: String, data: Vec<u8>) -> Result<(), String> {
@@ -348,7 +467,7 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet, get_open_file, export_document, read_file_text, read_file_bytes, write_file_text, write_image_bytes, rename_file, list_directory, read_dir_recursive, search_files])
+        .invoke_handler(tauri::generate_handler![greet, get_open_file, export_document, read_file_text, read_file_bytes, write_file_text, write_image_bytes, rename_file, list_directory, read_dir_recursive, search_files, replace_in_files])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

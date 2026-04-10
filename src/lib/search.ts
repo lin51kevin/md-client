@@ -16,16 +16,13 @@ export interface SearchResult {
 export function searchAll(
   text: string,
   query: string,
-  options?: { caseSensitive?: boolean; regex?: boolean },
+  options?: { caseSensitive?: boolean; regex?: boolean; wholeWord?: boolean },
 ): SearchResult[] {
   if (!query) return [];
 
-  const { caseSensitive = false, regex = false } = options ?? {};
-  const flags = caseSensitive ? 'g' : 'gi';
-  
   let regexp: RegExp;
   try {
-    regexp = regex ? new RegExp(query, flags) : new RegExp(escapeRegex(query), flags);
+    regexp = buildRegexp(query, options ?? {});
   } catch {
     return [];
   }
@@ -56,6 +53,18 @@ function escapeRegex(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+/** 根据选项构建正则 */
+function buildRegexp(
+  query: string,
+  options: { caseSensitive?: boolean; regex?: boolean; wholeWord?: boolean },
+): RegExp {
+  const { caseSensitive = false, regex = false, wholeWord = false } = options;
+  const flags = caseSensitive ? 'g' : 'gi';
+  let pattern = regex ? query : escapeRegex(query);
+  if (wholeWord) pattern = `\\b(?:${pattern})\\b`;
+  return new RegExp(pattern, flags);
+}
+
 /**
  * 执行替换操作（全部替换）
  */
@@ -63,16 +72,11 @@ export function replaceAll(
   text: string,
   query: string,
   replacement: string,
-  options?: { caseSensitive?: boolean; regex?: boolean },
+  options?: { caseSensitive?: boolean; regex?: boolean; wholeWord?: boolean },
 ): string {
   if (!query) return text;
-
-  const { caseSensitive = false, regex = false } = options ?? {};
-  const flags = caseSensitive ? 'g' : 'gi';
-  
   try {
-    const regexp = regex ? new RegExp(query, flags) : new RegExp(escapeRegex(query), flags);
-    return text.replace(regexp, replacement);
+    return text.replace(buildRegexp(query, options ?? {}), replacement);
   } catch {
     return text;
   }
@@ -86,7 +90,7 @@ export function replaceNext(
   query: string,
   replacement: string,
   fromPos: number = 0,
-  options?: { caseSensitive?: boolean; regex?: boolean },
+  options?: { caseSensitive?: boolean; regex?: boolean; wholeWord?: boolean },
 ): { newText: string; replacedFrom: number; replacedTo: number } | null {
   const results = searchAll(text, query, options);
   const next = results.find(r => r.from >= fromPos) ?? results[0];

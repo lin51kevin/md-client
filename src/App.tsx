@@ -59,10 +59,9 @@ import { DragOverlay } from './components/DragOverlay';
 const MarkdownPreview = lazy(() =>
   import('./components/MarkdownPreview').then((m) => ({ default: m.MarkdownPreview }))
 );
-import { FindReplaceBar } from './components/FindReplaceBar';
+import { SearchPanel, type SearchResultItem } from './components/SearchPanel';
 import { TocSidebar } from './components/TocSidebar';
 import { FileTreeSidebar } from './components/FileTreeSidebar';
-import { CrossFileSearch, type SearchResultItem } from './components/CrossFileSearch';
 import { useSearchHighlight } from './hooks/useSearchHighlight';
 import { useImagePaste } from './hooks/useImagePaste';
 import { wrapSelection, toggleLinePrefix, insertLink, insertImage, type SelectionInfo, type FormatResult } from './lib/text-format';
@@ -71,7 +70,7 @@ import { parseTable, serializeTable } from './lib/table-parser';
 
 export default function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('split');
-  const [showFindReplace, setShowFindReplace] = useState(false);
+  const [showSearchPanel, setShowSearchPanel] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; tabId: string } | null>(null);
 
@@ -87,9 +86,6 @@ export default function App() {
 
   // F014 - 文件树侧边栏
   const [showFileTree, setShowFileTree] = useState(false);
-
-  // 跨文件搜索面板
-  const [showCrossFileSearch, setShowCrossFileSearch] = useState(false);
 
   // F013 - 拼写检查
   const [spellCheck, setSpellCheck] = useState<boolean>(getSavedSpellCheck);
@@ -320,25 +316,48 @@ export default function App() {
     }
   }, [previewRef, activeTab.doc]);
 
-  // 跨文件搜索结果点击 → 打开文件并跳转行
+  // 搜索结果点击 → 如果是当前文件直接定位，否则打开对应标签页再定位
   const handleSearchResultClick = useCallback(async (result: SearchResultItem) => {
-    await openFileInTab(result.file_path);
-    // After file opens, scroll to line
-    // Use setTimeout to let CM initialize
+    // Untitled in-memory tab identified by tab_id
+    if (result.tab_id) {
+      const isSameTab = result.tab_id === activeTabId;
+      if (!isSameTab) setActiveTabId(result.tab_id);
+      setTimeout(() => {
+        const view = cmViewRef.current;
+        if (view) {
+          const lineNum = Math.max(0, result.line_number - 1);
+          const lineInfo = view.state.doc.line(lineNum + 1);
+          const anchor = lineInfo.from + result.match_start;
+          const head = lineInfo.from + result.match_end;
+          view.dispatch({
+            selection: { anchor, head },
+            effects: EditorView.scrollIntoView(anchor, { y: 'center', yMargin: 40 }),
+          });
+          view.focus();
+        }
+      }, isSameTab ? 0 : 200);
+      return;
+    }
+    // 当前文件搜索时 file_path 为空字符串（未保存）或与当前路径相同，均视为当前文件
+    const isCurrentFile = !result.file_path || result.file_path === activeTab.filePath;
+    if (!isCurrentFile) {
+      await openFileInTab(result.file_path);
+    }
     setTimeout(() => {
       const view = cmViewRef.current;
       if (view) {
-        // Find the line position in the doc
-        const lineNum = Math.max(0, (result.line_number as number) - 1);
+        const lineNum = Math.max(0, result.line_number - 1);
         const lineInfo = view.state.doc.line(lineNum + 1);
+        const anchor = lineInfo.from + result.match_start;
+        const head = lineInfo.from + result.match_end;
         view.dispatch({
-          selection: { anchor: lineInfo.from },
-          effects: EditorView.scrollIntoView(result.match_start > 0 ? lineInfo.from + result.match_start : lineInfo.from, { y: 'start', yMargin: 40 }),
+          selection: { anchor, head },
+          effects: EditorView.scrollIntoView(anchor, { y: 'center', yMargin: 40 }),
         });
         view.focus();
       }
-    }, 200);
-  }, [openFileInTab]);
+    }, isCurrentFile ? 0 : 200);
+  }, [openFileInTab, activeTab.filePath, activeTabId, setActiveTabId]);
 
   // F014 — 编辑器右键菜单事件监听
   useEffect(() => {
@@ -548,7 +567,7 @@ export default function App() {
   useKeyboardShortcuts({
     createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile,
     closeTab: handleCloseTab, setViewMode, activeTabIdRef,
-    toggleFindReplace: () => setShowFindReplace(prev => !prev),
+    toggleFindReplace: () => { setShowSearchPanel(prev => !prev); },
     focusMode, setFocusMode,
   });
 
@@ -631,15 +650,6 @@ export default function App() {
       {/* F009 - 焦点模式下隐藏工具栏/标签栏/搜索栏 */}
       {!isChromeless && (
         <>
-          {showFindReplace && (
-            <FindReplaceBar
-              content={activeTab.doc}
-              onContentChange={(newContent) => updateActiveDoc(newContent)}
-              onClose={() => { clearMatches(); setShowFindReplace(false); }}
-              onMatchChange={setMatches}
-            />
-          )}
-
           {ctxMenu && (
             <TabContextMenu
               x={ctxMenu.x}
@@ -695,8 +705,8 @@ export default function App() {
             recentFiles={recentFiles}
             onOpenRecent={handleOpenRecent}
             onClearRecent={handleClearRecent}
-            onToggleCrossFileSearch={() => setShowCrossFileSearch(prev => !prev)}
-            showCrossFileSearch={showCrossFileSearch}
+            onToggleSearch={() => setShowSearchPanel(prev => !prev)}
+            showSearch={showSearchPanel}
             onFormatAction={handleFormatAction}
           />
 
@@ -829,12 +839,20 @@ export default function App() {
         />
       )}
 
-      {/* 跨文件搜索面板 */}
-      <CrossFileSearch
-        visible={showCrossFileSearch}
-        searchDir={activeTab.filePath ? activeTab.filePath.replace(/[/\\][^/\\]+$/, '') : null}
-        onClose={() => setShowCrossFileSearch(false)}
+      <SearchPanel
+        visible={showSearchPanel}
+        content={activeTab.doc}
+        currentFilePath={activeTab.filePath ?? null}
+        onContentChange={(newContent) => updateActiveDoc(newContent)}
+        onMatchChange={setMatches}
+        searchDir={(() => {
+          if (activeTab.filePath) return activeTab.filePath.replace(/[/\\][^/\\]+$/, '');
+          const fallback = tabs.find(t => t.filePath)?.filePath;
+          return fallback ? fallback.replace(/[/\\][^/\\]+$/, '') : null;
+        })()}
         onResultClick={handleSearchResultClick}
+        onClose={() => { clearMatches(); setShowSearchPanel(false); }}
+        openTabs={tabs}
       />
     </div>
   );

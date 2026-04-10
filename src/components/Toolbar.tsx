@@ -28,9 +28,9 @@ interface ToolbarProps {
   showFileTree?: boolean;
   /** F014: 文件树切换回调 */
   onToggleFileTree?: () => void;
-  /** 跨文件搜索按钮回调 */
-  onToggleCrossFileSearch?: () => void;
-  showCrossFileSearch?: boolean;
+  /** 搜索与替换面板按鈕回调 */
+  onToggleSearch?: () => void;
+  showSearch?: boolean;
   /** F014: 格式化操作回调 */
   onFormatAction?: (action: string) => void;
   /** F013: 最近文件列表 */
@@ -41,7 +41,7 @@ interface ToolbarProps {
   onClearRecent?: () => void;
 }
 
-export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentTheme, onNewTab, onOpenFile, onSaveFile, onSaveAsFile, onExportDocx, onExportPdf, onExportHtml, onSetViewMode, onFocusModeChange, onToggleToc, onThemeChange, spellCheck, onToggleSpellCheck, recentFiles, onOpenRecent, onClearRecent, onToggleFileTree, onToggleCrossFileSearch, showCrossFileSearch, onFormatAction }: ToolbarProps) {
+export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentTheme, onNewTab, onOpenFile, onSaveFile, onSaveAsFile, onExportDocx, onExportPdf, onExportHtml, onSetViewMode, onFocusModeChange, onToggleToc, onThemeChange, spellCheck, onToggleSpellCheck, recentFiles, onOpenRecent, onClearRecent, onToggleFileTree, onToggleSearch, showSearch, onFormatAction }: ToolbarProps) {
   const btnCls = 'flex items-center gap-1.5 px-2.5 py-1 text-xs hover:shadow-sm border border-transparent rounded transition-all';
   const viewBtnCls = (active: boolean) =>
     'flex items-center gap-1.5 px-2.5 py-1 text-xs rounded border transition-all ' +
@@ -213,24 +213,24 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentThe
           <FolderTree size={14} strokeWidth={1.8} />
         </button>
 
-        {/* 跨文件搜索 */}
+        {/* 搜索与替换 */}
         <button
-          onClick={onToggleCrossFileSearch}
-          title="跨文件搜索"
-          className={focusBtnCls(!!showCrossFileSearch)}
+          onClick={onToggleSearch}
+          title="搜索与替换"
+          className={focusBtnCls(!!showSearch)}
           style={{
-            backgroundColor: showCrossFileSearch ? 'var(--accent-bg)' : 'transparent',
-            borderColor: showCrossFileSearch ? 'var(--accent-color)' : 'transparent',
-            color: showCrossFileSearch ? 'var(--accent-color)' : 'var(--text-secondary)'
+            backgroundColor: showSearch ? 'var(--accent-bg)' : 'transparent',
+            borderColor: showSearch ? 'var(--accent-color)' : 'transparent',
+            color: showSearch ? 'var(--accent-color)' : 'var(--text-secondary)'
           }}
           onMouseEnter={(e) => {
-            if (!showCrossFileSearch) {
+            if (!showSearch) {
               e.currentTarget.style.color = 'var(--text-primary)';
               e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
             }
           }}
           onMouseLeave={(e) => {
-            if (!showCrossFileSearch) {
+            if (!showSearch) {
               e.currentTarget.style.color = 'var(--text-secondary)';
               e.currentTarget.style.backgroundColor = 'transparent';
             }
