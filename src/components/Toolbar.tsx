@@ -16,6 +16,7 @@ interface ToolbarProps {
   onExportDocx: () => void;
   onExportPdf: () => void;
   onExportHtml: () => void;
+  onExportPng?: () => void;
   onSetViewMode: (mode: ViewMode) => void;
   onFocusModeChange?: (mode: FocusMode) => void;
   onToggleToc?: () => void;
@@ -48,7 +49,7 @@ interface ToolbarProps {
   onClearRecent?: () => void;
 }
 
-export function Toolbar({ viewMode, focusMode, showToc, showFileTree, onNewTab, onOpenFile, onSaveFile, onSaveAsFile, onExportDocx, onExportPdf, onExportHtml, onSetViewMode, onFocusModeChange, onToggleToc, spellCheck, onToggleSpellCheck, onToggleFileTree, onToggleSearch, showSearch, onFormatAction, recentFiles, onOpenRecent, onClearRecent, vimMode, onToggleVimMode, onImageLocal, onOpenSettings }: ToolbarProps & { onImageLocal?: () => void }) {
+export function Toolbar({ viewMode, focusMode, showToc, showFileTree, onNewTab, onOpenFile, onSaveFile, onSaveAsFile, onExportDocx, onExportPdf, onExportHtml, onExportPng, onSetViewMode, onFocusModeChange, onToggleToc, spellCheck, onToggleSpellCheck, onToggleFileTree, onToggleSearch, showSearch, onFormatAction, recentFiles, onOpenRecent, onClearRecent, vimMode, onToggleVimMode, onImageLocal, onOpenSettings }: ToolbarProps & { onImageLocal?: () => void }) {
   const { t } = useI18n();
   const btnCls = 'flex items-center gap-1.5 px-2.5 py-1 text-xs hover:shadow-sm border border-transparent rounded transition-all';
   const viewBtnCls = (active: boolean) =>
@@ -75,6 +76,7 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, onNewTab, 
           onExportDocx={onExportDocx}
           onExportPdf={onExportPdf}
           onExportHtml={onExportHtml}
+          onExportPng={onExportPng}
           recentFiles={recentFiles}
           onOpenRecent={onOpenRecent}
           onClearRecent={onClearRecent}

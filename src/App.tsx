@@ -22,7 +22,7 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useCursorPosition } from './hooks/useCursorPosition';
 import { useFocusMode } from './hooks/useFocusMode';
 import { extractToc, type TocEntry } from './lib/toc';
-import { applyTheme, getSavedTheme, saveTheme, THEMES, type ThemeName } from './lib/theme';
+import { applyTheme, getSavedTheme, saveTheme, THEMES, type ThemeName, type PreviewThemeName, getSavedPreviewTheme, savePreviewTheme, getPreviewClass } from './lib/theme';
 import { getSnapshots, createSnapshot as createVersionSnapshot, restoreSnapshot } from './lib/version-history';
 import { getRecentFiles, clearRecentFiles, type RecentFile } from './lib/recent-files';
 import { autoCloseBrackets } from './lib/cmAutocomplete';
@@ -124,6 +124,9 @@ export default function App() {
   // F011 - 主题系统
   const [theme, setThemeState] = useState<ThemeName>(() => getSavedTheme() || 'light');
 
+  // F015 - 预览主题
+  const [previewTheme, setPreviewTheme] = useState<PreviewThemeName>(getSavedPreviewTheme);
+
   // F012 - 版本历史
   const [snapshots, setSnapshots] = useState<import('./lib/version-history').Snapshot[]>([]);
 
@@ -176,7 +179,7 @@ export default function App() {
     closeTab(id);
   }, [tabs, closeTab]);
 
-  const { handleOpenFile, handleSaveFile: rawHandleSaveFile, handleSaveAsFile, handleExportDocx, handleExportPdf, handleExportHtml } = useFileOps({
+  const { handleOpenFile, handleSaveFile: rawHandleSaveFile, handleSaveAsFile, handleExportDocx, handleExportPdf, handleExportHtml, handleExportPng } = useFileOps({
     getActiveTab, tabs, openFileInTab, markSaved, markSavedAs,
   });
 
@@ -760,6 +763,7 @@ export default function App() {
             onExportDocx={handleExportDocx}
             onExportPdf={handleExportPdf}
             onExportHtml={handleExportHtml}
+            onExportPng={() => handleExportPng(previewRef.current)}
             onSetViewMode={setViewMode}
             onFocusModeChange={setFocusMode}
             onToggleToc={() => setShowToc(prev => !prev)}
@@ -799,6 +803,11 @@ export default function App() {
             onVimModeChange={(enabled) => {
               setVimMode(enabled);
               saveVimMode(enabled);
+            }}
+            previewTheme={previewTheme}
+            onPreviewThemeChange={(pt: PreviewThemeName) => {
+              setPreviewTheme(pt);
+              savePreviewTheme(pt);
             }}
           />
 
@@ -883,7 +892,7 @@ export default function App() {
             <div className="h-full overflow-auto border-l" style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--bg-primary)' }} ref={previewRef} onScroll={handlePreviewScroll}>
               <div className="p-8">
                 <Suspense fallback={<div className="p-4 text-sm animate-pulse" style={{ color: 'var(--text-secondary)' }}>正在加载预览引擎...</div>}>
-                  <MarkdownPreview content={debouncedDoc} filePath={activeTab.filePath ?? undefined} onOpenFile={openFileInTab} onContentChange={updateActiveDoc} className={`markdown-preview max-w-full min-h-full ${theme === 'dark' ? 'markdown-preview-dark' : ''}`} />
+                  <MarkdownPreview content={debouncedDoc} filePath={activeTab.filePath ?? undefined} onOpenFile={openFileInTab} onContentChange={updateActiveDoc} className={`markdown-preview max-w-full min-h-full ${getPreviewClass(previewTheme, theme)}`} />
                 </Suspense>
               </div>
             </div>
@@ -910,7 +919,7 @@ export default function App() {
               <div ref={previewRef} className="w-full h-full overflow-auto" style={{ backgroundColor: 'var(--bg-primary)' }}>
                 <div className="p-8">
                   <Suspense fallback={<div className="p-4 text-sm animate-pulse" style={{ color: 'var(--text-secondary)' }}>正在加载预览引擎...</div>}>
-                    <MarkdownPreview content={debouncedDoc} filePath={activeTab.filePath ?? undefined} onOpenFile={openFileInTab} onContentChange={updateActiveDoc} className={`markdown-preview max-w-full min-h-full ${theme === 'dark' ? 'markdown-preview-dark' : ''}`} />
+                    <MarkdownPreview content={debouncedDoc} filePath={activeTab.filePath ?? undefined} onOpenFile={openFileInTab} onContentChange={updateActiveDoc} className={`markdown-preview max-w-full min-h-full ${getPreviewClass(previewTheme, theme)}`} />
                   </Suspense>
                 </div>
               </div>

@@ -270,6 +270,107 @@ body {
   background-color: #ffeef0;
 }
 
+/* F015 — 护眼主题（浅绿背景） */
+.markdown-preview-sepia {
+  color: #2b4a2b;
+  background-color: #f0f7ee;
+  padding: 8px 16px;
+  border-radius: 6px;
+}
+.markdown-preview-sepia h1,
+.markdown-preview-sepia h2,
+.markdown-preview-sepia h3,
+.markdown-preview-sepia h4,
+.markdown-preview-sepia h5,
+.markdown-preview-sepia h6 {
+  color: #1a3a1a;
+  border-bottom-color: #c8dcc8;
+}
+.markdown-preview-sepia code {
+  background-color: #e0ece0;
+}
+.markdown-preview-sepia pre {
+  background-color: #dce8dc;
+  border: 1px solid #c8dcc8;
+}
+.markdown-preview-sepia blockquote {
+  border-left-color: #7baa6e;
+  color: #3d603d;
+}
+.markdown-preview-sepia a {
+  color: #2d7a3a;
+}
+.markdown-preview-sepia table th,
+.markdown-preview-sepia table td {
+  border-color: #c8dcc8;
+}
+.markdown-preview-sepia table tr:nth-child(2n) {
+  background-color: #e5f0e3;
+}
+/* Sepia syntax highlighting override */
+.markdown-preview-sepia .hljs { color: #2b4a2b; }
+.markdown-preview-sepia .hljs-keyword, .markdown-preview-sepia .hljs-type { color: #8b0000; }
+.markdown-preview-sepia .hljs-string { color: #006400; }
+.markdown-preview-sepia .hljs-comment { color: #5a7a5a; }
+.markdown-preview-sepia .hljs-title.function_ { color: #1a5276; }
+
+/* F016 — 高对比主题 */
+.markdown-preview-high-contrast {
+  color: #000;
+  background-color: #fff;
+}
+.markdown-preview-high-contrast h1,
+.markdown-preview-high-contrast h2,
+.markdown-preview-high-contrast h3,
+.markdown-preview-high-contrast h4,
+.markdown-preview-high-contrast h5,
+.markdown-preview-high-contrast h6 {
+  color: #000;
+  border-bottom-color: #000;
+  font-weight: 700;
+}
+.markdown-preview-high-contrast code {
+  background-color: #eee;
+  border: 1px solid #ccc;
+  color: #000;
+  font-weight: 500;
+}
+.markdown-preview-high-contrast pre {
+  background-color: #111;
+  border: 2px solid #000;
+  color: #fff;
+}
+.markdown-preview-high-contrast pre code {
+  background-color: transparent;
+  border: none;
+  color: #fff;
+}
+.markdown-preview-high-contrast blockquote {
+  border-left: 4px solid #000;
+  color: #222;
+  font-weight: 500;
+}
+.markdown-preview-high-contrast a {
+  color: #00f;
+  text-decoration: underline;
+}
+.markdown-preview-high-contrast a:hover {
+  color: #b00;
+}
+.markdown-preview-high-contrast table th,
+.markdown-preview-high-contrast table td {
+  border-color: #333;
+}
+.markdown-preview-high-contrast table th {
+  background-color: #ddd;
+  font-weight: 700;
+}
+.markdown-preview-high-contrast table tr:nth-child(2n) {
+  background-color: #f9f9f9;
+}
+/* High contrast syntax */
+.markdown-preview-high-contrast .hljs { color: #000; }
+
 /* Syntax Highlighting — Dark Theme (Override) */
 .markdown-preview-dark .hljs {
   color: #c9d1d9;

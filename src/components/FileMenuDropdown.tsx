@@ -11,6 +11,7 @@ export interface FileMenuDropdownProps {
   onExportDocx: () => void;
   onExportPdf: () => void;
   onExportHtml: () => void;
+  onExportPng?: () => void;
   recentFiles?: RecentFile[];
   onOpenRecent?: (path: string) => void;
   onClearRecent?: () => void;
@@ -34,6 +35,7 @@ export function FileMenuDropdown({
   onExportDocx,
   onExportPdf,
   onExportHtml,
+  onExportPng,
   recentFiles,
   onOpenRecent,
   onClearRecent,
@@ -223,6 +225,12 @@ export function FileMenuDropdown({
       label: t('file.exportHtml'),
       action: onExportHtml,
     },
+    ...(onExportPng ? [{
+      id: 'export-png',
+      icon: <Download size={13} strokeWidth={1.8} />,
+      label: t('file.exportPng'),
+      action: onExportPng,
+    }] : []),
   ];
 
   const menuItems: MenuItem[] = [

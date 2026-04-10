@@ -99,7 +99,41 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
 
   const handleExportDocx = () => handleExport('docx');
   const handleExportPdf = () => handleExport('pdf');
+  const handleExportPng = async (previewEl: HTMLElement | null) => {
+    const tab = getActiveTab();
+    if (!tab) return;
+    if (!tab.doc.trim()) {
+      await message('文档内容为空，无法导出。', { title: '提示', kind: 'warning' });
+      return;
+    }
+    if (!previewEl) {
+      await message('未找到预览区域，无法导出PNG。', { title: '错误', kind: 'error' });
+      return;
+    }
+    try {
+      const { default: html2canvas } = await import('html2canvas');
+      const canvas = await html2canvas(previewEl, {
+        backgroundColor: getComputedStyle(previewEl).backgroundColor || '#ffffff',
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+      const savePath = await save({
+        filters: [{ name: 'PNG Image', extensions: ['png'] }],
+      });
+      if (savePath) {
+        const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob((b) => b ? resolve(b) : reject(new Error('toBlob returned null')), 'image/png'));
+        const buffer = await blob.arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        await invoke('write_image_bytes', { path: savePath, data: Array.from(bytes) });
+      }
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      await message(errMsg, { title: '导出 PNG 失败', kind: 'error' });
+    }
+  };
+
   const handleExportHtml = () => handleExport('html');
 
-  return { handleOpenFile, handleSaveFile, handleSaveAsFile, handleExportDocx, handleExportPdf, handleExportHtml };
+  return { handleOpenFile, handleSaveFile, handleSaveAsFile, handleExportDocx, handleExportPdf, handleExportHtml, handleExportPng };
 }

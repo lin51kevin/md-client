@@ -8,6 +8,39 @@
 
 export type ThemeName = 'light' | 'dark';
 
+/** 预览区域主题名称 */
+export type PreviewThemeName = 'default' | 'dark' | 'sepia' | 'highContrast';
+
+/** 预览主题注册表 */
+export const PREVIEW_THEMES: Record<PreviewThemeName, { labelZh: string; labelEn: string; cssClass: string }> = {
+  default: { labelZh: '默认', labelEn: 'Default', cssClass: '' },
+  dark: { labelZh: '暗黑', labelEn: 'Dark', cssClass: 'markdown-preview-dark' },
+  sepia: { labelZh: '护眼（浅绿）', labelEn: 'Eye Care (Green)', cssClass: 'markdown-preview-sepia' },
+  highContrast: { labelZh: '高对比', labelEn: 'High Contrast', cssClass: 'markdown-preview-high-contrast' },
+};
+
+const PREVIEW_THEME_KEY = 'marklite-preview-theme';
+
+export function getSavedPreviewTheme(): PreviewThemeName {
+  try {
+    const saved = localStorage.getItem(PREVIEW_THEME_KEY);
+    if (saved && saved in PREVIEW_THEMES) return saved as PreviewThemeName;
+  } catch { /* ignore */ }
+  return 'default';
+}
+
+export function savePreviewTheme(theme: PreviewThemeName): void {
+  try { localStorage.setItem(PREVIEW_THEME_KEY, theme); } catch { /* ignore */ }
+}
+
+/** Get CSS class for preview theme (falls back to app dark mode when preview is 'default') */
+export function getPreviewClass(previewTheme: PreviewThemeName, appTheme: ThemeName): string {
+  if (previewTheme === 'default') {
+    return appTheme === 'dark' ? 'markdown-preview-dark' : '';
+  }
+  return PREVIEW_THEMES[previewTheme]?.cssClass ?? '';
+}
+
 /** 主题定义 */
 export interface ThemeConfig {
   /** 名称 */
