@@ -1,37 +1,127 @@
 export const INITIAL_TAB_ID = '1';
 export const genTabId = () => crypto.randomUUID();
 
-export const DEFAULT_MARKDOWN = `
-# Welcome to Markdown Editor 🚀
+export const DEFAULT_MARKDOWN = `# 欢迎使用 MarkLite 🚀
 
-This is a real-time Markdown editor built with Tauri, React, and Tailwind CSS.
-
-## Features Supported:
-- Live Preview
-- Fast performant saving (via Rust backend)
-- **Bold**, *Italics*, \`Inline Code\`
-- GFM (Github Flavored Markdown)
-
-### Tables
-
-:::details{summary="Code Blocks"}
-\`\`\`js
-function sayHello() {
-  console.log("Hello Tauri!");
-}
-sayHello();
-\`\`\`
-:::
-:::
-
-:::details{summary="Tables"}
-### Tables
-| Syntax | Description |
-| --- | --- |
-| Header | Title |
-| Paragraph | Text |
-:::
+> 一款轻量、快速的现代化 Markdown 编辑器  
+> 基于 **Tauri 2** + **React 19** + **CodeMirror 6** 构建
 
 ---
-Enjoy editing!
+
+## ✨ 核心特性
+
+### 📝 实时编辑
+- 🔄 **实时预览** — 分栏同步预览，边写边看
+- 📑 **多标签页** — 同时编辑多个文档
+- 💾 **自动保存** — 智能防抖，1秒后自动保存
+- ⚡ **极速响应** — Rust 后端驱动的文件操作
+
+### 🎨 强大的 Markdown 支持
+
+#### 基础语法
+**加粗文本**、*斜体文本*、~~删除线~~、\`行内代码\`
+
+#### 代码块（支持语法高亮）
+\`\`\`javascript
+function greet() {
+  console.log("Hello, MarkLite! 👋");
+}
+greet();
+\`\`\`
+
+#### 数学公式（LaTeX / KaTeX）
+行内公式：$E = mc^2$
+
+块级公式：
+$$
+\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}
+$$
+
+#### Mermaid 流程图
+\`\`\`mermaid
+graph LR
+    A[开始] --> B{是否喜欢}
+    B -->|是| C[继续使用]
+    B -->|否| D[提交反馈]
+    C --> E[分享给朋友]
+\`\`\`
+
+#### GFM 表格
+| 功能 | 快捷键 | 说明 |
+|------|--------|------|
+| 新建 | \`Ctrl+N\` | 创建新标签页 |
+| 保存 | \`Ctrl+S\` | 保存当前文档 |
+| 查找 | \`Ctrl+F\` | 打开搜索栏 |
+
+#### 任务列表
+- [x] 支持标准 Markdown
+- [x] 支持 GFM 扩展语法  
+- [x] LaTeX 数学公式
+- [x] Mermaid 图表渲染
+- [ ] 更多功能开发中...
+
+---
+
+## ⌨️ 快捷键速查
+
+### 文件操作
+- \`Ctrl+N\` — 新建标签页
+- \`Ctrl+O\` — 打开文件
+- \`Ctrl+S\` / \`Ctrl+Shift+S\` — 保存 / 另存为
+- \`Ctrl+W\` — 关闭标签页
+
+### 视图模式
+- \`Ctrl+1\` — 仅编辑
+- \`Ctrl+2\` — 分栏预览（默认）
+- \`Ctrl+3\` — 仅预览
+
+### 专注模式
+- \`Ctrl+.\` — 打字机模式（当前行居中）
+- \`Ctrl+,\` — 专注模式（暗化 UI）
+- \`ESC\` — 退出焦点模式
+
+### 搜索导航
+- \`Ctrl+F\` — 查找
+- \`Ctrl+H\` — 查找并替换
+
+---
+
+## 🎯 高级功能
+
+### 📋 右键菜单
+在编辑器内右键打开上下文菜单，快速访问格式化、插入等功能。
+
+### 📸 图片粘贴
+- 直接 \`Ctrl+V\` 粘贴剪贴板图片
+- 拖拽图片到编辑器
+- 自动保存到本地并插入 Markdown 链接
+
+### 📚 版本快照
+每次保存自动创建版本快照（最多 20 个），状态栏点击即可恢复历史版本。
+
+### 📤 导出格式
+支持导出为：
+- 📄 **DOCX** — Word 文档
+- 📑 **PDF** — PDF 文件
+- 🌐 **HTML** — 独立网页
+
+### 🎨 主题切换
+- ☀️ 亮色主题（GitHub Light）
+- 🌙 暗色主题（GitHub Dark）
+- 🔄 自动切换（跟随系统）
+
+---
+
+## 💡 小技巧
+
+1. **Vim 模式** — 在设置中启用 Vim 键盘映射
+2. **TOC 侧边栏** — 自动生成文档大纲，快速导航
+3. **文件树** — 打开文件夹浏览整个项目
+4. **写作统计** — 实时显示字数、字符数、阅读时间
+
+---
+
+🎉 **开始你的 Markdown 创作之旅吧！**
+
+有问题或建议？欢迎访问 [GitHub 仓库](https://github.com/lin51kevin/md-client)
 `;
