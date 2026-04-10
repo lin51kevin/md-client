@@ -100,6 +100,12 @@ export function useTabs() {
     );
   }, [activeTabId]);
 
+  const updateTabDoc = useCallback((tabId: string, value: string) => {
+    setTabs(prev =>
+      prev.map(t => t.id === tabId ? { ...t, doc: value, isDirty: true } : t)
+    );
+  }, []);
+
   const openFileInTab = useCallback(async (filePath: string) => {
     const existing = tabsRef.current.find(t => t.filePath === filePath);
     if (existing) {
@@ -206,7 +212,7 @@ export function useTabs() {
 
   return {
     tabs, activeTabId, setActiveTabId, activeTabIdRef,
-    getActiveTab, getTabTitle, updateActiveDoc, openFileInTab, openFileWithContent,
+    getActiveTab, getTabTitle, updateActiveDoc, updateTabDoc, openFileInTab, openFileWithContent,
     createNewTab, closeTab, reorderTabs, markSaved, markSavedAs,
     renameTab,
     pinTab, unpinTab,

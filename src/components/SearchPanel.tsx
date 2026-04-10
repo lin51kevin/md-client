@@ -25,6 +25,10 @@ interface SearchPanelProps {
   searchDir: string | null;
   onResultClick: (result: SearchResultItem) => void;
   onClose: () => void;
+  /** ID of the currently active tab */
+  currentTabId: string;
+  /** Update any tab doc by ID */
+  onAnyTabContentChange: (tabId: string, content: string) => void;
   /** All open tabs — used to include untitled in-memory files in cross-file search */
   openTabs: { id: string; filePath: string | null; doc: string; displayName?: string }[];
 }
@@ -76,7 +80,7 @@ function toSearchResultItems(
 
 export function SearchPanel({
   visible, content, currentFilePath, onContentChange, onMatchChange,
-  searchDir, onResultClick, onClose, openTabs,
+  searchDir, onResultClick, onClose, openTabs, currentTabId, onAnyTabContentChange,
 }: SearchPanelProps) {
   const [query, setQuery] = useState('');
   const [replacement, setReplacement] = useState('');
@@ -175,13 +179,32 @@ export function SearchPanel({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, searchDir, caseSensitive, wholeWord, useRegex, openTabs]);
 
-  // ── Replace selected ───────────────────────────────────────────────────────
+  // ── Replace selected ───────────────────────────────────────────
   const handleReplaceSingle = useCallback(async () => {
     if (selectedIdx === null || selectedIdx >= searchResults.length) return;
     const r = searchResults[selectedIdx];
 
-    if (!crossFile || r.file_path === currentFilePath) {
-      // In-memory: compute absolute position from line number
+    // Untitled in-memory tab (identified by tab_id)
+    if (r.tab_id) {
+      const tab = openTabs.find(t => t.id === r.tab_id);
+      if (tab == null) return;
+      const lineStart = lineStartOffset(tab.doc, r.line_number);
+      const absFrom = lineStart + r.match_start;
+      const absTo = lineStart + r.match_end;
+      const newContent = tab.doc.slice(0, absFrom) + replacement + tab.doc.slice(absTo);
+      if (r.tab_id === currentTabId) {
+        onContentChange(newContent);
+      } else {
+        onAnyTabContentChange(r.tab_id, newContent);
+      }
+      setSearchResults(prev => prev.filter((_, i) => i !== selectedIdx));
+      setSelectedIdx(null);
+      setReplaceStatus('已替换 1 处');
+      return;
+    }
+
+    if (r.file_path === currentFilePath || (crossFile === false && r.file_path === "")) {
+      // Current file in-memory replace
       const lineStart = lineStartOffset(content, r.line_number);
       const absFrom = lineStart + r.match_start;
       const absTo = lineStart + r.match_end;
@@ -189,9 +212,9 @@ export function SearchPanel({
       setSearchResults(prev => prev.filter((_, i) => i !== selectedIdx));
       setSelectedIdx(null);
     } else {
-      // Cross-file: read → replace → write
+      // Cross-file disk replace
       try {
-        const fileContent: string = await invoke('read_file_text', { path: r.file_path });
+        const fileContent = await invoke<string>('read_file_text', { path: r.file_path });
         const lineStart = lineStartOffset(fileContent, r.line_number);
         const absFrom = lineStart + r.match_start;
         const absTo = lineStart + r.match_end;
@@ -200,13 +223,14 @@ export function SearchPanel({
         setSearchResults(prev => prev.filter((_, i) => i !== selectedIdx));
         setSelectedIdx(null);
         setReplaceStatus('已替换 1 处');
-      } catch (e: unknown) {
+      } catch (e) {
         setError(String(e));
       }
     }
-  }, [selectedIdx, searchResults, crossFile, currentFilePath, content, replacement, onContentChange]);
+  }, [selectedIdx, searchResults, crossFile, currentFilePath, content, replacement,
+      onContentChange, openTabs, currentTabId, onAnyTabContentChange]);
 
-  // ── Replace all ────────────────────────────────────────────────────────────
+    // ── Replace all ────────────────────────────────────────────────────────────
   const handleReplaceAll = useCallback(async () => {
     if (!query.trim()) return;
     if (!crossFile) {
@@ -214,17 +238,44 @@ export function SearchPanel({
       onContentChange(replaceAll(content, query, replacement, opts));
       setReplaceStatus(`已替换 ${searchResults.length} 处`);
     } else {
-      if (!searchDir) return;
       setLoading(true);
       setError(null);
       setReplaceStatus(null);
       try {
-        const res: { replaced_count: number; files_modified: string[] } = await invoke('replace_in_files', {
-          directory: searchDir, query: query.trim(), replacement, caseSensitive, useRegex,
-        });
-        setReplaceStatus(`已替换 ${res.replaced_count} 处，涉及 ${res.files_modified.length} 个文件`);
+        let totalReplaced = 0;
+
+        // Replace in untitled in-memory tabs
+        const tabIdCounts = new Map();
+        for (const r of searchResults) {
+          if (r.tab_id) tabIdCounts.set(r.tab_id, (tabIdCounts.get(r.tab_id) || 0) + 1);
+        }
+        for (const [tabId, count] of tabIdCounts) {
+          const tab = openTabs.find(t => t.id === tabId);
+          if (tab == null) continue;
+          const newDoc = replaceAll(tab.doc, query, replacement, opts);
+          if (tabId === currentTabId) {
+            onContentChange(newDoc);
+          } else {
+            onAnyTabContentChange(tabId, newDoc);
+          }
+          totalReplaced += count;
+        }
+
+        // Replace in disk files
+        let diskReplaced = 0;
+        let filesModified = 0;
+        if (searchDir) {
+          const res = await invoke<{ replaced_count: number; files_modified: string[] }>('replace_in_files', {
+            directory: searchDir, query: query.trim(), replacement, caseSensitive, useRegex,
+          });
+          diskReplaced = res.replaced_count;
+          filesModified = res.files_modified.length;
+        }
+        totalReplaced += diskReplaced;
+        const fileNote = filesModified > 0 ? ('，涉及 ' + filesModified + ' 个文件') : '';
+        setReplaceStatus('已替换 ' + totalReplaced + ' 处' + fileNote);
         await doSearchAll();
-      } catch (e: unknown) {
+      } catch (e) {
         setError(String(e));
       } finally {
         setLoading(false);

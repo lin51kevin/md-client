@@ -69,6 +69,7 @@ export function FileMenuDropdown({
   }, [open]);
 
   const handleClose = useCallback(() => {
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
     closeTimerRef.current = setTimeout(() => {
       setOpen(false);
       setSubmenu(null);

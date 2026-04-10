@@ -101,7 +101,7 @@ export default function App() {
 
   const {
     tabs, activeTabId, setActiveTabId, activeTabIdRef,
-    getActiveTab, getTabTitle, updateActiveDoc,
+    getActiveTab, getTabTitle, updateActiveDoc, updateTabDoc,
     openFileInTab, openFileWithContent, createNewTab, closeTab, reorderTabs,
     markSaved, markSavedAs,
     renameTab,
@@ -957,6 +957,8 @@ export default function App() {
         onResultClick={handleSearchResultClick}
         onClose={() => { clearMatches(); setShowSearchPanel(false); }}
         openTabs={tabs}
+        currentTabId={activeTabId}
+        onAnyTabContentChange={updateTabDoc}
       />
     </div>
   );
