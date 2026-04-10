@@ -189,24 +189,86 @@ export default function App() {
       case 'bold': case 'italic': case 'strikethrough': case 'code': {
         const wrappers: Record<string, string> = {
           bold: '**', italic: '*', strikethrough: '~~', code: '`' };
-        const selInfo: SelectionInfo = { text: docText, start: sel.from, end: sel.to };
-        const result: FormatResult = wrapSelection(selInfo, wrappers[action]);
-        view.dispatch({
-          changes: { from: sel.from, to: sel.to, insert: result.replacement },
-          selection: { anchor: sel.from + result.newCursorOffset },
-        });
+        const wrapper = wrappers[action];
+        const selectedText = docText.substring(sel.from, sel.to);
+        const isMultiLine = selectedText.includes('\n');
+
+        if (!isMultiLine) {
+          // 单行：走原有逻辑
+          const selInfo: SelectionInfo = { text: docText, start: sel.from, end: sel.to };
+          const result: FormatResult = wrapSelection(selInfo, wrapper);
+          view.dispatch({
+            changes: { from: sel.from, to: sel.to, insert: result.replacement },
+            selection: { anchor: sel.from + result.newCursorOffset },
+          });
+        } else {
+          // 多行：对每一行分别包装
+          const lines = selectedText.split('\n');
+          const wrappedLines = lines.map(line => {
+            if (line.length === 0) return line; // 空行不包装
+            // 检测 toggle：已被同符号包裹则去除
+            if (line.startsWith(wrapper) && line.endsWith(wrapper) && line.length > wrapper.length * 2) {
+              return line.slice(wrapper.length, line.length - wrapper.length);
+            }
+            return wrapper + line + wrapper;
+          });
+          view.dispatch({
+            changes: { from: sel.from, to: sel.to, insert: wrappedLines.join('\n') },
+            selection: { anchor: sel.from + wrappedLines[0].length > 0 ? wrapper.length : 0 },
+          });
+        }
         break;
       }
       case 'heading': case 'blockquote': case 'ul': case 'ol': {
         const prefixes: Record<string, string> = {
           heading: '# ', blockquote: '> ', ul: '- ', ol: '1. ' };
-        const lineStart = view.state.doc.lineAt(sel.from).from;
-        const lineEnd = view.state.doc.lineAt(sel.from).to;
-        const result: FormatResult = toggleLinePrefix(docText, lineStart, prefixes[action]);
-        view.dispatch({
-          changes: { from: lineStart, to: lineEnd, insert: result.replacement },
-          selection: { anchor: lineStart + result.newCursorOffset },
-        });
+        const prefix = prefixes[action];
+
+        // 检测是否多行选区
+        const startLine = view.state.doc.lineAt(sel.from);
+        const endLine = view.state.doc.lineAt(sel.to);
+        const isMultiLineSelection = startLine.number !== endLine.number;
+
+        if (!isMultiLineSelection || action === 'heading') {
+          // 单行或标题：只处理光标所在行（标题不支持多行）
+          const lineStart = startLine.from;
+          const lineEnd = startLine.to;
+          const result: FormatResult = toggleLinePrefix(docText, lineStart, prefix);
+          view.dispatch({
+            changes: { from: lineStart, to: lineEnd, insert: result.replacement },
+            selection: { anchor: lineStart + result.newCursorOffset },
+          });
+        } else {
+          // 多行：对选区内的每一行添加前缀（从后往前处理，避免位置偏移）
+          const changes: { from: number; to: number; insert: string }[] = [];
+          let cursorPos = sel.from; // 光标放到第一行开头
+
+          for (let lineNum = endLine.number; lineNum >= startLine.number; lineNum--) {
+            const line = view.state.doc.line(lineNum);
+            const lineText = docText.substring(line.from, line.to);
+
+            // 检查该行是否已有前缀，有则跳过（toggle 语义）
+            const hasPrefix = action === 'ol'
+              ? /^\d+\. /.test(lineText)
+              : lineText.startsWith(prefix);
+
+            if (hasPrefix) {
+              // 已有前缀 → 移除
+              const removeLen = action === 'ol'
+                ? lineText.match(/^\d+\. /)?.[0].length ?? prefix.length
+                : prefix.length;
+              changes.push({ from: line.from, to: line.from + removeLen, insert: '' });
+            } else {
+              // 无前缀 → 添加（有序列表需要计算正确序号）
+              const insertPrefix = action === 'ol'
+                ? `${lineNum - startLine.number + 1}. `
+                : prefix;
+              changes.push({ from: line.from, to: line.from, insert: insertPrefix });
+            }
+          }
+
+          view.dispatch({ changes, selection: { anchor: cursorPos } });
+        }
         break;
       }
       case 'link': {
@@ -221,19 +283,65 @@ export default function App() {
         break;
       }
       case 'image': {
-        const src = window.prompt('请输入图片地址或路径：');
-        if (src === null) return; // 用户取消
-        const selInfo: SelectionInfo = { text: docText, start: sel.from, end: sel.to };
-        const result: FormatResult = insertImage(selInfo, src);
-        view.dispatch({
-          changes: { from: sel.from, to: sel.to, insert: result.replacement },
-          selection: { anchor: sel.from + result.newCursorOffset },
-        });
+        (async () => {
+          let mdSyntax: string | null = null;
+          try {
+            // 优先使用 Tauri 文件对话框选择本地图片
+            const { open } = await import('@tauri-apps/plugin-dialog');
+            const filePath = await open({
+              filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'] }],
+              multiple: false,
+              directory: false,
+            }) as string | null;
+            if (!filePath) return;
+
+            // 读取选中文件为 ArrayBuffer
+            const resp = await fetch(`asset://localhost/${encodeURIComponent(filePath)}`);
+            const buffer = await resp.arrayBuffer();
+            const data = Array.from(new Uint8Array(buffer));
+
+            // 确定保存路径和文件名
+            const ext = filePath.split('.').pop()?.toLowerCase() || 'png';
+            const timestamp = Date.now();
+            const fileName = `img-${timestamp}.${ext}`;
+            const docPath = getActiveTab().filePath;
+            const saveDir = docPath ? `${docPath.replace(/[/\\][^/\\]+$/, '')}/assets/images` : './assets/images';
+            const savePath = `${saveDir}/${fileName}`;
+
+            // 调用 Rust 命令保存图片
+            await invoke('write_image_bytes', { path: savePath, data });
+
+            // 构建相对路径 Markdown
+            mdSyntax = `![](assets/images/${fileName})`;
+          } catch {
+            // Tauri 对话框不可用（非 Tauri 环境）→ 回退到 prompt
+            const src = window.prompt('请输入图片地址或 URL：');
+            if (src === null) return;
+            if (src === '') {
+              view.dispatch({ changes: { from: sel.from, to: sel.from, insert: '![]()' } });
+              return;
+            }
+            const selInfo: SelectionInfo = { text: docText, start: sel.from, end: sel.to };
+            const result: FormatResult = insertImage(selInfo, src);
+            view.dispatch({
+              changes: { from: sel.from, to: sel.to, insert: result.replacement },
+              selection: { anchor: sel.from + result.newCursorOffset },
+            });
+            return;
+          }
+
+          if (mdSyntax) {
+            view.dispatch({
+              changes: { from: sel.from, to: sel.to, insert: mdSyntax },
+              selection: { anchor: sel.from + mdSyntax.length },
+            });
+          }
+        })();
         break;
       }
     }
     view.focus();
-  }, []);
+  }, [getActiveTab]);
 
   // Open file passed via CLI argument (e.g. double-clicked from file explorer)
   useEffect(() => {
