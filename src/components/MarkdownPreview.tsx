@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef, memo } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef, useId, memo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkDirective from "remark-directive";
@@ -14,7 +14,7 @@ import "katex/dist/katex.min.css";
 import { invoke } from "@tauri-apps/api/core";
 import { openPath, openUrl } from "@tauri-apps/plugin-opener";
 import { rehypeFilterInvalidElements } from "../lib/rehypeFilterInvalidElements";
-import { renderMermaid } from "../lib/mermaid";
+import { initMermaid } from "../lib/mermaid";
 import { parseTable, type TableData } from "../lib/table-parser";
 import { extractFrontmatter, buildFrontmatterHtml } from "../lib/markdown-extensions";
 import { Pencil } from "lucide-react";
@@ -128,10 +128,50 @@ function LocalImage({
 }
 
 /**
+ * Renders a mermaid code block directly to SVG via mermaid.render().
+ * Uses dangerouslySetInnerHTML to avoid the markdown parser mangling SVG CSS.
+ */
+function MermaidBlock({ code }: { code: string }) {
+  const divRef = useRef<HTMLDivElement>(null);
+  const rawId = useId();
+  const id = `mermaid-${rawId.replace(/:/g, '')}`;
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setError(null);
+    initMermaid().then(({ default: mermaid }) => {
+      return mermaid.render(id, code);
+    }).then(({ svg }) => {
+      if (!cancelled && divRef.current) {
+        divRef.current.innerHTML = svg;
+      }
+    }).catch((err) => {
+      if (!cancelled) {
+        setError(err instanceof Error ? err.message : String(err));
+      }
+    });
+    return () => { cancelled = true; };
+  }, [code, id]);
+
+  if (error) {
+    return (
+      <div
+        className="mermaid-error"
+        style={{ color: 'red', padding: '8px', border: '1px solid red', borderRadius: '4px' }}
+      >
+        ⚠️ Mermaid render error: {error}
+      </div>
+    );
+  }
+  return <div ref={divRef} className="mermaid-diagram" />;
+}
+
+/**
  * F008 + F007: Markdown 预览组件
  *
  * 渲染管线：
- *   1. 检测 mermaid 代码块 → renderMermaid() 异步渲染为 SVG（防抖 200ms）
+ *   1. mermaid 代码块 → MermaidBlock 组件（直接设置 innerHTML，跳过 markdown 解析器）
  *   2. 其余内容经 react-markdown 管线（GFM + Math + 高亮）
  */
 export const MarkdownPreview = memo(function MarkdownPreview({
@@ -142,8 +182,6 @@ export const MarkdownPreview = memo(function MarkdownPreview({
   onContentChange,
 }: MarkdownPreviewProps) {
   const { t } = useI18n();
-  const [renderedContent, setRenderedContent] = useState(content);
-  const [mermaidRendering, setMermaidRendering] = useState(false);
   const [editingTable, setEditingTable] = useState<TableData | null>(null);
   /** Resets to 0 before each ReactMarkdown render pass to keep table indices aligned */
   const tableCounterRef = useRef(0);
@@ -255,38 +293,21 @@ export const MarkdownPreview = memo(function MarkdownPreview({
       };
     }
 
+    // ── Mermaid code blocks ───────────────────────────────────────────────────
+    components.code = ({
+      className,
+      children,
+      ...props
+    }: React.ComponentPropsWithoutRef<"code">) => {
+      if (/language-mermaid/.test(className ?? '')) {
+        return <MermaidBlock code={String(children).trim()} />;
+      }
+      return <code className={className} {...props}>{children}</code>;
+    };
+
     return components;
   }, [filePath, onOpenFile, onContentChange, allTables]);
 
-  // Memo: 检测内容是否包含 mermaid 块，避免不必要的异步渲染（兼容 LF/CRLF）
-  const hasMermaidBlocks = useMemo(
-    () => /```mermaid\r?\n([\s\S]*?)```/.test(content),
-    [content],
-  );
-
-  // 异步渲染 Mermaid 图表（debounce via content change）
-  useEffect(() => {
-    if (!hasMermaidBlocks) {
-      setRenderedContent(content);
-      return;
-    }
-
-    // 短暂延迟避免编辑时频繁渲染
-    setMermaidRendering(true);
-    const timer = setTimeout(async () => {
-      try {
-        const result = await renderMermaid(content);
-        setRenderedContent(result);
-      } catch {
-        // Mermaid render failed — fall back to raw content
-        setRenderedContent(content);
-      } finally {
-        setMermaidRendering(false);
-      }
-    }, 200);
-
-    return () => clearTimeout(timer);
-  }, [content, hasMermaidBlocks]);
   const handleTableConfirm = useCallback((newTableMd: string) => {
     if (!editingTable || !onContentChange) return;
     const newContent =
@@ -307,17 +328,12 @@ export const MarkdownPreview = memo(function MarkdownPreview({
           dangerouslySetInnerHTML={{ __html: frontmatterHtml }}
         />
       )}
-      {mermaidRendering && (
-        <div className="text-xs italic px-8 pt-2" style={{ color: 'var(--text-tertiary)' }}>
-          {t('mermaid.rendering')}
-        </div>
-      )}
       <ReactMarkdown
         remarkPlugins={REMARK_PLUGINS}
         rehypePlugins={REHYPE_PLUGINS}
         components={customComponents}
       >
-        {renderedContent}
+        {content}
       </ReactMarkdown>
       {editingTable && (
         <TableEditor

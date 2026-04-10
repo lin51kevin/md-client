@@ -19,7 +19,7 @@ export function resetMermaidInit(): void {
 /**
  * 初始化 Mermaid（只执行一次）
  */
-async function initMermaid(): Promise<typeof import('mermaid')> {
+export async function initMermaid(): Promise<typeof import('mermaid')> {
   const m = await import('mermaid');
   if (!mermaidInitialized) {
     // 在非浏览器环境下使用 SVG 字符串输出

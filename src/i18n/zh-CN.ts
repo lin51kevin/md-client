@@ -83,6 +83,19 @@ export const zhCN = {
   'table.empty': '暂无数据行，点击上方"添加行"按钮添加',
   'table.align': '对齐: {align}',
 
+  // ── Search Panel ─────────────────────────────────────────────────────────
+  'search.find': '查找',
+  'search.findPlaceholder': '查找（回车搜索）…',
+  'search.replace': '替换',
+  'search.replacePlaceholder': '替换为…',
+  'search.caseSensitive': '大小写敏感',
+  'search.regex': '正则表达式',
+  'search.enterHint': '输入关键词并回车搜索',
+  'search.noResults': '未找到匹配结果',
+  'search.noDir': '未找到搜索目录，请先打开或保存一个文件',
+  'search.matchCount': '找到 {count} 条匹配',
+  'search.replaced': '已替换 {count} 处',
+
   // ── Mermaid ───────────────────────────────────────────────────────────────
   'mermaid.rendering': '🔄 正在渲染图表…',
 
