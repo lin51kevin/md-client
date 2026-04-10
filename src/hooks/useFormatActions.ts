@@ -12,12 +12,16 @@ import {
   type FormatResult,
 } from '../lib/text-format';
 
+import type { InputDialogConfig } from '../components/InputDialog';
+
 interface UseFormatActionsParams {
   cmViewRef: MutableRefObject<EditorView | null>;
   getActiveTab: () => Tab;
+  /** Promise-based user-input callback replacing window.prompt */
+  promptUser: (config: InputDialogConfig) => Promise<string | null>;
 }
 
-export function useFormatActions({ cmViewRef, getActiveTab }: UseFormatActionsParams) {
+export function useFormatActions({ cmViewRef, getActiveTab, promptUser }: UseFormatActionsParams) {
   const handleFormatAction = useCallback((action: string) => {
     const view = cmViewRef.current;
     if (!view) return;
@@ -112,14 +116,21 @@ export function useFormatActions({ cmViewRef, getActiveTab }: UseFormatActionsPa
         break;
       }
       case 'link': {
-        const url = window.prompt('请输入链接地址：');
-        if (url === null) return; // 用户取消
-        const selInfo: SelectionInfo = { text: docText, start: sel.from, end: sel.to };
-        const result: FormatResult = insertLink(selInfo, url);
-        view.dispatch({
-          changes: { from: sel.from, to: sel.to, insert: result.replacement },
-          selection: { anchor: sel.from + result.newCursorOffset },
-        });
+        (async () => {
+          const url = await promptUser({
+            title: '插入链接',
+            description: '请输入目标网址，应用于已选中文字或指定链接文字',
+            placeholder: 'https://example.com',
+          });
+          if (url === null) return;
+          const selInfo: SelectionInfo = { text: docText, start: sel.from, end: sel.to };
+          const result: FormatResult = insertLink(selInfo, url);
+          view.dispatch({
+            changes: { from: sel.from, to: sel.to, insert: result.replacement },
+            selection: { anchor: sel.from + result.newCursorOffset },
+          });
+          view.focus();
+        })();
         break;
       }
       case 'image':
@@ -134,18 +145,18 @@ export function useFormatActions({ cmViewRef, getActiveTab }: UseFormatActionsPa
             }) as string | null;
             if (!filePath) return;
 
-            const resp = await fetch(`asset://localhost/${encodeURIComponent(filePath)}`);
-            const buffer = await resp.arrayBuffer();
-            const data = Array.from(new Uint8Array(buffer));
+            // 使用 invoke 读取字节，避免 asset:// 协议的 CSP 限制
+            const bytes = await invoke<number[]>('read_file_bytes', { path: filePath });
+            const data = new Uint8Array(bytes);
 
             const ext = filePath.split('.').pop()?.toLowerCase() || 'png';
             const timestamp = Date.now();
             const fileName = `img-${timestamp}.${ext}`;
             const docPath = getActiveTab().filePath;
-            const saveDir = docPath ? `${docPath.replace(/[/\\][^/\\]+$/, '')}/assets/images` : './assets/images';
+            const saveDir = docPath ? `${docPath.replace(/[\/\\][^\/\\]+$/, '')}/assets/images` : './assets/images';
             const savePath = `${saveDir}/${fileName}`;
 
-            await invoke('write_image_bytes', { path: savePath, data });
+            await invoke('write_image_bytes', { path: savePath, data: Array.from(data) });
 
             const mdSyntax = `![](assets/images/${fileName})`;
             view.dispatch({
@@ -153,25 +164,32 @@ export function useFormatActions({ cmViewRef, getActiveTab }: UseFormatActionsPa
               selection: { anchor: sel.from + mdSyntax.length },
             });
           } catch {
-            // 非 Tauri 环境 → 提示用户使用图片链接功能
             window.alert('本地图片选择需要 Tauri 环境，请使用「插入图片链接」功能。');
           }
         })();
         break;
       }
       case 'image-link': {
-        const src = window.prompt('请输入图片链接：');
-        if (src === null) return;
-        if (src === '') {
-          view.dispatch({ changes: { from: sel.from, to: sel.from, insert: '![]()' } });
-          return;
-        }
-        const selInfo: SelectionInfo = { text: docText, start: sel.from, end: sel.to };
-        const result: FormatResult = insertImage(selInfo, src);
-        view.dispatch({
-          changes: { from: sel.from, to: sel.to, insert: result.replacement },
-          selection: { anchor: sel.from + result.newCursorOffset },
-        });
+        (async () => {
+          const src = await promptUser({
+            title: '插入图片',
+            description: '请输入图片 URL 地址，应用于已选中文字作为替代文字',
+            placeholder: 'https://example.com/image.png',
+          });
+          if (src === null) return;
+          if (src === '') {
+            view.dispatch({ changes: { from: sel.from, to: sel.from, insert: '![]()' } });
+            view.focus();
+            return;
+          }
+          const selInfo: SelectionInfo = { text: docText, start: sel.from, end: sel.to };
+          const result: FormatResult = insertImage(selInfo, src);
+          view.dispatch({
+            changes: { from: sel.from, to: sel.to, insert: result.replacement },
+            selection: { anchor: sel.from + result.newCursorOffset },
+          });
+          view.focus();
+        })();
         break;
       }
     }

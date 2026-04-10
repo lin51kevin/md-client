@@ -11,6 +11,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { confirm } from '@tauri-apps/plugin-dialog';
 import './App.css';
 
+import { I18nContext, useI18nProvider } from './i18n';
 import { ViewMode } from './types';
 import { useTabs } from './hooks/useTabs';
 import { useFileOps } from './hooks/useFileOps';
@@ -66,9 +67,13 @@ import { useSearchHighlight } from './hooks/useSearchHighlight';
 import { useImagePaste } from './hooks/useImagePaste';
 import { useFormatActions } from './hooks/useFormatActions';
 import { parseTable, serializeTable } from './lib/table-parser';
+import { InputDialog, type InputDialogConfig } from './components/InputDialog';
 
 
 export default function App() {
+  const i18n = useI18nProvider();
+
+
   const [viewMode, setViewMode] = useState<ViewMode>('split');
   const [showSearchPanel, setShowSearchPanel] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -169,7 +174,19 @@ export default function App() {
   const cmViewRef = useRef<EditorView | null>(null);
 
   // F014 — 工具栏格式化操作处理器
-  const { handleFormatAction } = useFormatActions({ cmViewRef, getActiveTab });
+  // InputDialog 状态：替代 window.prompt
+  const [inputDialogState, setInputDialogState] = useState<{
+    config: InputDialogConfig;
+    resolve: (value: string | null) => void;
+  } | null>(null);
+
+  const promptUser = useCallback((config: InputDialogConfig): Promise<string | null> => {
+    return new Promise((resolve) => {
+      setInputDialogState({ config, resolve });
+    });
+  }, []);
+
+  const { handleFormatAction } = useFormatActions({ cmViewRef, getActiveTab, promptUser });
 
   // F014 — 图片粘贴/拖拽插入
   const insertImageMarkdown = useCallback((markdown: string) => {
@@ -591,6 +608,7 @@ export default function App() {
   const editorTheme = THEMES[theme].cmTheme;
 
   return (
+    <I18nContext.Provider value={i18n}>
     <div
       className="flex flex-col h-screen w-full overflow-hidden"
       data-theme={theme}
@@ -601,6 +619,22 @@ export default function App() {
       }}
     >
       {isDragOver && <DragOverlay />}
+
+      {/* InputDialog — replaces window.prompt for link/image insertion */}
+      {inputDialogState && (
+        <InputDialog
+          visible={true}
+          {...inputDialogState.config}
+          onConfirm={(value) => {
+            inputDialogState.resolve(value);
+            setInputDialogState(null);
+          }}
+          onCancel={() => {
+            inputDialogState.resolve(null);
+            setInputDialogState(null);
+          }}
+        />
+      )}
 
       {/* F009 - 焦点模式下隐藏工具栏/标签栏/搜索栏 */}
       {!isChromeless && (
@@ -813,5 +847,6 @@ export default function App() {
         onAnyTabContentChange={updateTabDoc}
       />
     </div>
+    </I18nContext.Provider>
   );
 }

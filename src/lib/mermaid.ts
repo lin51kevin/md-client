@@ -6,6 +6,8 @@
  */
 
 let mermaidInitialized = false;
+/** Module-level counter ensures globally unique DOM IDs across repeated renderMermaid calls */
+let mermaidIdCounter = 0;
 
 /**
  * 重置 Mermaid 初始化状态（仅供测试使用）
@@ -24,9 +26,8 @@ async function initMermaid(): Promise<typeof import('mermaid')> {
     m.default.initialize({
       startOnLoad: false,
       theme: 'default',
-      securityLevel: 'strict',
+      securityLevel: 'loose',
       fontFamily: 'monospace',
-      // SSR/测试环境兼容配置
       suppressErrorRendering: false,
     });
     mermaidInitialized = true;
@@ -48,11 +49,12 @@ export async function renderMermaid(text: string): Promise<string> {
   // 匹配 ```mermaid ... ``` 代码块（非贪婪，支持多行，兼容 LF/CRLF）
   const mermaidRe = /```mermaid\r?\n([\s\S]*?)```/g;
 
-  let idCounter = 0;
+  let idCounter = mermaidIdCounter;
   const results = await Promise.all(
     [...text.matchAll(mermaidRe)].map(async (match) => {
       const code = match[1].trim();
       const id = `mermaid-${idCounter++}`;
+      mermaidIdCounter = idCounter;
       try {
         const { svg } = await mermaid.render(id, code);
         return { fullMatch: match[0], replacement: svg };

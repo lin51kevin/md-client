@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, memo } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef, memo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkDirective from "remark-directive";
@@ -17,8 +17,9 @@ import { rehypeFilterInvalidElements } from "../lib/rehypeFilterInvalidElements"
 import { renderMermaid } from "../lib/mermaid";
 import { parseTable, type TableData } from "../lib/table-parser";
 import { extractFrontmatter, buildFrontmatterHtml } from "../lib/markdown-extensions";
-import { TableEditor } from "./TableEditor";
 import { Pencil } from "lucide-react";
+import { TableEditor } from "./TableEditor";
+import { useI18n } from '../i18n';
 
 // Stable plugin arrays (module-level) to avoid unnecessary ReactMarkdown re-renders
 const REMARK_PLUGINS = [
@@ -140,9 +141,12 @@ export const MarkdownPreview = memo(function MarkdownPreview({
   onOpenFile,
   onContentChange,
 }: MarkdownPreviewProps) {
+  const { t } = useI18n();
   const [renderedContent, setRenderedContent] = useState(content);
   const [mermaidRendering, setMermaidRendering] = useState(false);
   const [editingTable, setEditingTable] = useState<TableData | null>(null);
+  /** Resets to 0 before each ReactMarkdown render pass to keep table indices aligned */
+  const tableCounterRef = useRef(0);
 
   // 预解析文档中所有表格，按序号索引
   const allTables = useMemo<TableData[]>(() => {
@@ -228,12 +232,11 @@ export const MarkdownPreview = memo(function MarkdownPreview({
 
     // ── Table editing (with edit button overlay) ─────────────────────────────
     if (onContentChange) {
-      let tableIndexCounter = 0;
       components.table = ({
         children,
         ...props
       }: React.ComponentPropsWithoutRef<"table">) => {
-        const currentIdx = tableIndexCounter++;
+        const currentIdx = tableCounterRef.current++;
         return (
           <div className="table-preview-wrapper" data-table-index={currentIdx}>
             <button
@@ -242,9 +245,9 @@ export const MarkdownPreview = memo(function MarkdownPreview({
                 const parsed = allTables[currentIdx];
                 if (parsed) setEditingTable(parsed);
               }}
-              title="可视化编辑表格"
+              title={t('table.edit')}
             >
-              <Pencil size={14} /> 编辑表格
+              <Pencil size={14} /> {t('table.edit')}
             </button>
             <table {...props}>{children}</table>
           </div>
@@ -296,6 +299,8 @@ export const MarkdownPreview = memo(function MarkdownPreview({
 
   return (
     <div className={className}>
+      {/* Reset table index counter before each ReactMarkdown render pass */}
+      {(tableCounterRef.current = 0) === 0 && null}
       {frontmatterHtml && (
         <div
           className="frontmatter-panel"
@@ -304,7 +309,7 @@ export const MarkdownPreview = memo(function MarkdownPreview({
       )}
       {mermaidRendering && (
         <div className="text-xs italic px-8 pt-2" style={{ color: 'var(--text-tertiary)' }}>
-          🔄 正在渲染图表…
+          {t('mermaid.rendering')}
         </div>
       )}
       <ReactMarkdown

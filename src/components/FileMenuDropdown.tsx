@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { FilePlus, Clock, Save, SaveAll, FileText, Printer, FileCode, Trash2, ChevronRight } from 'lucide-react';
+import { FilePlus, Clock, Save, SaveAll, FileText, Printer, FileCode, Trash2, ChevronRight, Download } from 'lucide-react';
 import type { RecentFile } from '../lib/recent-files';
+import { useI18n } from '../i18n';
 
 export interface FileMenuDropdownProps {
   onNewTab: () => void;
@@ -37,6 +38,7 @@ export function FileMenuDropdown({
   onOpenRecent,
   onClearRecent,
 }: FileMenuDropdownProps) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [submenu, setSubmenu] = useState<string | null>(null);
   const dropRef = useRef<HTMLDivElement>(null);
@@ -173,7 +175,7 @@ export function FileMenuDropdown({
         {
           id: 'clear-recent',
           icon: <Trash2 size={13} strokeWidth={1.8} />,
-          label: '清空记录',
+          label: t('file.clearRecent'),
           action: () => { onClearRecent?.(); setSubmenu(null); },
           danger: true,
         } as MenuItem,
@@ -182,7 +184,7 @@ export function FileMenuDropdown({
         {
           id: 'no-recent',
           icon: <Clock size={13} strokeWidth={1.8} />,
-          label: '暂无最近文件',
+          label: t('file.noRecent'),
           action: undefined,
         } as MenuItem,
       ];
@@ -191,65 +193,64 @@ export function FileMenuDropdown({
     {
       id: 'export-docx',
       icon: <FileText size={13} strokeWidth={1.8} />,
-      label: 'Word 文档 (.docx)',
+      label: t('file.exportDocx'),
       action: onExportDocx,
     },
     {
       id: 'export-pdf',
       icon: <Printer size={13} strokeWidth={1.8} />,
-      label: 'PDF 文档 (.pdf)',
+      label: t('file.exportPdf'),
       action: onExportPdf,
     },
     {
       id: 'export-html',
       icon: <FileCode size={13} strokeWidth={1.8} />,
-      label: 'HTML 网页 (.html)',
+      label: t('file.exportHtml'),
       action: onExportHtml,
     },
   ];
 
   const menuItems: MenuItem[] = [
-    // 文件操作区
     {
       id: 'new',
       icon: <FilePlus size={13} strokeWidth={1.8} />,
-      label: '新建文件',
+      label: t('file.new'),
       shortcut: 'Ctrl+N',
       action: onNewTab,
     },
     {
       id: 'open',
       
-      label: '打开文件…',
+      label: t('file.open'),
       shortcut: 'Ctrl+O',
       action: onOpenFile,
     },
     {
       id: 'recent',
       icon: <Clock size={13} strokeWidth={1.8} />,
-      label: '打开最近文件',
+      label: t('file.openRecent'),
       submenu: recentItems,
     },
     { id: 'sep1', icon: null, label: '' } as unknown as MenuItem,
     {
       id: 'save',
       icon: <Save size={13} strokeWidth={1.8} />,
-      label: '保存',
+      label: t('file.save'),
       shortcut: 'Ctrl+S',
       action: onSaveFile,
     },
     {
       id: 'saveas',
       icon: <SaveAll size={13} strokeWidth={1.8} />,
-      label: '另存为…',
+      label: t('file.saveAs'),
       shortcut: 'Ctrl+Shift+S',
       action: onSaveAsFile,
     },
     { id: 'sep2', icon: null, label: '' } as unknown as MenuItem,
     {
       id: 'export',
-      icon: <FileText size={13} strokeWidth={1.8} />,
-      label: '导出',
+      icon: <Download size={13} strokeWidth={1.8} />,
+      label: t('file.export'),
       submenu: exportItems,
     },
   ];
@@ -261,7 +262,7 @@ export function FileMenuDropdown({
       {/* 触发按钮 */}
       <button
         onClick={() => setOpen((v) => !v)}
-        title="文件菜单"
+        title={t('toolbar.fileMenu')}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -271,8 +272,9 @@ export function FileMenuDropdown({
           border: 'none',
           borderRadius: 4,
           cursor: 'pointer',
-          backgroundColor: open ? 'var(--accent-color)' : 'transparent',
-          color: open ? 'var(--bg-primary)' : 'var(--text-secondary)',
+          backgroundColor: open ? 'var(--accent-bg)' : 'transparent',
+          borderColor: open ? 'var(--accent-color)' : 'transparent',
+          color: open ? 'var(--accent-color)' : 'var(--text-secondary)',
           transition: 'all 0.1s',
         }}
         onMouseEnter={(e) => {
@@ -289,7 +291,7 @@ export function FileMenuDropdown({
         }}
       >
         <FileText size={14} strokeWidth={1.8} />
-        <span>文件</span>
+        <span>{t('toolbar.fileMenu')}</span>
       </button>
 
       {/* 下拉面板 */}

@@ -1,0 +1,94 @@
+export const zhCN = {
+  // ── Common ────────────────────────────────────────────────────────────────
+  'common.confirm': '确定',
+  'common.cancel': '取消',
+  'common.close': '关闭',
+  'common.save': '保存',
+  'common.delete': '删除',
+  'common.rename': '重命名',
+
+  // ── Toolbar ───────────────────────────────────────────────────────────────
+  'toolbar.fileMenu': '文件',
+  'toolbar.bold': '加粗 (Ctrl+B)',
+  'toolbar.italic': '斜体 (Ctrl+I)',
+  'toolbar.strikethrough': '删除线',
+  'toolbar.code': '行内代码 (Ctrl+`)',
+  'toolbar.heading': '标题',
+  'toolbar.blockquote': '引用',
+  'toolbar.ul': '无序列表',
+  'toolbar.ol': '有序列表',
+  'toolbar.link': '插入链接',
+  'toolbar.imageLocal': '打开本地图片',
+  'toolbar.imageLink': '插入图片链接',
+  'toolbar.fileTree': '文件树',
+  'toolbar.search': '搜索与替换',
+  'toolbar.toc': '大纲导航',
+  'toolbar.spellCheckOn': '开启拼写检查',
+  'toolbar.spellCheckOff': '关闭拼写检查',
+  'toolbar.themeDark': '切换到暗色主题',
+  'toolbar.themeLight': '切换到亮色主题',
+  'toolbar.typewriter': '打字机模式 (当前行居中)',
+  'toolbar.focus': '专注模式',
+  'toolbar.fullscreen': '全屏模式',
+  'toolbar.editOnly': '仅编辑 (Ctrl+1)',
+  'toolbar.split': '分栏视图 (Ctrl+2)',
+  'toolbar.previewOnly': '仅预览 (Ctrl+3)',
+  'toolbar.edit': '编辑',
+  'toolbar.splitLabel': '分栏',
+  'toolbar.preview': '预览',
+
+  // ── File Menu ─────────────────────────────────────────────────────────────
+  'file.new': '新建文件',
+  'file.open': '打开文件…',
+  'file.openRecent': '打开最近文件',
+  'file.save': '保存',
+  'file.saveAs': '另存为…',
+  'file.export': '导出',
+  'file.exportDocx': 'Word 文档 (.docx)',
+  'file.exportPdf': 'PDF 文档 (.pdf)',
+  'file.exportHtml': 'HTML 网页 (.html)',
+  'file.noRecent': '暂无最近文件',
+  'file.clearRecent': '清空记录',
+
+  // ── Tab Bar ───────────────────────────────────────────────────────────────
+  'tab.newTab': '新建标签页',
+  'tab.pin': '固定标签',
+  'tab.unpin': '取消固定',
+  'tab.close': '关闭',
+  'tab.closeDirty': '关闭（有未保存更改）',
+  'tab.untitled': 'Untitled.md',
+
+  // ── Status Bar ────────────────────────────────────────────────────────────
+  'status.words': '{count} 词',
+  'status.chars': '{count} 字',
+  'status.lines': '第 {line} 行',
+  'status.col': '第 {col} 列',
+
+  // ── Input Dialog ─────────────────────────────────────────────────────────
+  'dialog.insertLink.title': '插入链接',
+  'dialog.insertLink.desc': '请输入目标网址，应用于已选中文字或指定链接文字',
+  'dialog.insertLink.placeholder': 'https://example.com',
+  'dialog.insertImage.title': '插入图片',
+  'dialog.insertImage.desc': '请输入图片 URL 地址，应用于已选中文字作为替代文字',
+  'dialog.insertImage.placeholder': 'https://example.com/image.png',
+
+  // ── Table Editor ─────────────────────────────────────────────────────────
+  'table.edit': '编辑表格',
+  'table.addRow': '添加行',
+  'table.deleteRow': '删除末行',
+  'table.addCol': '添加列',
+  'table.deleteCol': '删除末列',
+  'table.deleteThisRow': '删除此行',
+  'table.headerPlaceholder': '表头 {n}',
+  'table.empty': '暂无数据行，点击上方"添加行"按钮添加',
+  'table.align': '对齐: {align}',
+
+  // ── Mermaid ───────────────────────────────────────────────────────────────
+  'mermaid.rendering': '🔄 正在渲染图表…',
+
+  // ── Language picker ───────────────────────────────────────────────────────
+  'lang.zh-CN': '中文',
+  'lang.en': 'English',
+} as const;
+
+export type TranslationKey = keyof typeof zhCN;

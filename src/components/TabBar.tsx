@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { X, Plus, ChevronLeft, ChevronRight, Pin } from 'lucide-react';
 import { Tab } from '../types';
+import { useI18n } from '../i18n';
 
 interface TabBarProps {
   tabs: Tab[];
@@ -26,6 +27,7 @@ interface TabBarProps {
 }
 
 export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorder, onContextMenu, getTabTitle, renamingTabId, onStartRename, onConfirmRename, onCancelRename, onPin, onUnpin }: TabBarProps) {
+  const { t } = useI18n();
   const [dragOverTabId, setDragOverTabId] = useState<string | null>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -70,7 +72,7 @@ export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorde
   const handlePointerDown = (e: React.PointerEvent, id: string) => {
     if (e.button !== 0) return;
     tabDragRef.current = { fromId: id, startX: e.clientX, overId: null };
-    onActivate(id);
+    // onActivate is called at pointerDown in the tab's own handler
   };
 
   useEffect(() => {
@@ -127,7 +129,11 @@ export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorde
             <div
               key={tab.id}
               data-tab-id={tab.id}
-              onPointerDown={(e) => !isRenaming && !isPinned && handlePointerDown(e, tab.id)}
+              onPointerDown={(e) => {
+                if (e.button !== 0 || isRenaming) return;
+                onActivate(tab.id);
+                if (!isPinned) handlePointerDown(e, tab.id);
+              }}
               onContextMenu={(e) => { e.preventDefault(); onActivate(tab.id); onContextMenu(e.clientX, e.clientY, tab.id); }}
               style={{
                 borderRightColor: 'var(--border-color)',
@@ -175,7 +181,7 @@ export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorde
                     onMouseLeave={(e) => {
                       if (!isPinned) e.currentTarget.style.color = 'var(--text-tertiary)';
                     }}
-                    title={isPinned ? '取消固定' : '固定标签'}
+                    title={isPinned ? t('tab.unpin') : t('tab.pin')}
                   >
                     <Pin size={11} strokeWidth={2} />
                   </button>
@@ -202,7 +208,7 @@ export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorde
                         e.currentTarget.style.backgroundColor = '';
                         e.currentTarget.style.color = tab.isDirty ? 'var(--warning-color)' : 'var(--text-tertiary)';
                       }}
-                      title={tab.isDirty ? '关闭（有未保存更改）' : '关闭'}
+                      title={tab.isDirty ? t('tab.closeDirty') : t('tab.close')}
                     >
                       <X size={11} />
                     </button>
@@ -214,7 +220,7 @@ export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorde
         })}
         <button
           onClick={onNew}
-          title="新建标签页"
+          title={t('tab.newTab')}
           className="flex self-end items-center justify-center w-6 h-6 shrink-0 ml-0.5"
           style={{ color: 'var(--text-secondary)' }}
           onMouseEnter={(e) => {

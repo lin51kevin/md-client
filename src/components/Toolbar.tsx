@@ -1,8 +1,9 @@
 
-import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, List, SpellCheck, FolderTree, Search, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link } from 'lucide-react';
+import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, List, SpellCheck, FolderTree, Search, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Languages } from 'lucide-react';
 import { ViewMode, FocusMode } from '../types';
 import type { ThemeName } from '../lib/theme';
 import { FileMenuDropdown } from './FileMenuDropdown';
+import { useI18n } from '../i18n';
 
 interface ToolbarProps {
   viewMode: ViewMode;
@@ -42,6 +43,7 @@ interface ToolbarProps {
 }
 
 export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentTheme, onNewTab, onOpenFile, onSaveFile, onSaveAsFile, onExportDocx, onExportPdf, onExportHtml, onSetViewMode, onFocusModeChange, onToggleToc, onThemeChange, spellCheck, onToggleSpellCheck, onToggleFileTree, onToggleSearch, showSearch, onFormatAction, recentFiles, onOpenRecent, onClearRecent, onImageLocal }: ToolbarProps & { onImageLocal?: () => void }) {
+  const { t, locale, setLocale } = useI18n();
   const btnCls = 'flex items-center gap-1.5 px-2.5 py-1 text-xs hover:shadow-sm border border-transparent rounded transition-all';
   const viewBtnCls = (active: boolean) =>
     'flex items-center gap-1.5 px-2.5 py-1 text-xs rounded border transition-all ' +
@@ -76,39 +78,39 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentThe
 
         <div className="w-px h-5 mx-1" style={{ backgroundColor: 'var(--border-color)' }} />
         {/* F014 — 格式化工具栏 */}
-        <button onClick={() => onFormatAction?.('bold')} title="加粗 (Ctrl+B)" className={btnCls}>
+        <button onClick={() => onFormatAction?.('bold')} title={t('toolbar.bold')} className={btnCls}>
           <Bold size={14} strokeWidth={2} />
         </button>
-        <button onClick={() => onFormatAction?.('italic')} title="斜体 (Ctrl+I)" className={btnCls}>
+        <button onClick={() => onFormatAction?.('italic')} title={t('toolbar.italic')} className={btnCls}>
           <Italic size={14} strokeWidth={2} />
         </button>
-        <button onClick={() => onFormatAction?.('strikethrough')} title="删除线" className={btnCls}>
+        <button onClick={() => onFormatAction?.('strikethrough')} title={t('toolbar.strikethrough')} className={btnCls}>
           <Strikethrough size={14} strokeWidth={2} />
         </button>
-        <button onClick={() => onFormatAction?.('code')} title="行内代码 (Ctrl+`)" className={btnCls}>
+        <button onClick={() => onFormatAction?.('code')} title={t('toolbar.code')} className={btnCls}>
           <Code size={14} strokeWidth={2} />
         </button>
         <div className="w-px h-5 mx-0.5" style={{ backgroundColor: 'var(--border-color)' }} />
-        <button onClick={() => onFormatAction?.('heading')} title="标题" className={btnCls}>
+        <button onClick={() => onFormatAction?.('heading')} title={t('toolbar.heading')} className={btnCls}>
           <Heading size={14} strokeWidth={2} />
         </button>
-        <button onClick={() => onFormatAction?.('blockquote')} title="引用" className={btnCls}>
+        <button onClick={() => onFormatAction?.('blockquote')} title={t('toolbar.blockquote')} className={btnCls}>
           <Quote size={14} strokeWidth={2} />
         </button>
-        <button onClick={() => onFormatAction?.('ul')} title="无序列表" className={btnCls}>
+        <button onClick={() => onFormatAction?.('ul')} title={t('toolbar.ul')} className={btnCls}>
           <List size={14} strokeWidth={2} />
         </button>
-        <button onClick={() => onFormatAction?.('ol')} title="有序列表" className={btnCls}>
+        <button onClick={() => onFormatAction?.('ol')} title={t('toolbar.ol')} className={btnCls}>
           <ListOrdered size={14} strokeWidth={2} />
         </button>
         <div className="w-px h-5 mx-0.5" style={{ backgroundColor: 'var(--border-color)' }} />
-        <button onClick={() => onFormatAction?.('link')} title="插入链接" className={btnCls}>
+        <button onClick={() => onFormatAction?.('link')} title={t('toolbar.link')} className={btnCls}>
           <Link size={14} strokeWidth={2} />
         </button>
-        <button onClick={() => onImageLocal?.()} title="打开本地图片" className={btnCls}>
+        <button onClick={() => onImageLocal?.()} title={t('toolbar.imageLocal')} className={btnCls}>
           <ImagePlus size={14} strokeWidth={2} />
         </button>
-        <button onClick={() => onFormatAction?.('image-link')} title="插入图片链接" className={btnCls}>
+        <button onClick={() => onFormatAction?.('image-link')} title={t('toolbar.imageLink')} className={btnCls}>
           <Link2 size={14} strokeWidth={2} />
         </button>
       </div>
@@ -116,7 +118,7 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentThe
         {/* F014 — 文件树切换 */}
         <button
           onClick={onToggleFileTree}
-          title="文件树"
+          title={t('toolbar.fileTree')}
           className={focusBtnCls(!!showFileTree)}
           style={{
             backgroundColor: showFileTree ? 'var(--accent-bg)' : 'transparent',
@@ -142,7 +144,7 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentThe
         {/* 搜索与替换 */}
         <button
           onClick={onToggleSearch}
-          title="搜索与替换"
+          title={t('toolbar.search')}
           className={focusBtnCls(!!showSearch)}
           style={{
             backgroundColor: showSearch ? 'var(--accent-bg)' : 'transparent',
@@ -168,7 +170,7 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentThe
         {/* F010 — 大纲导航切换 */}
         <button
           onClick={onToggleToc}
-          title="大纲导航"
+          title={t('toolbar.toc')}
           className={focusBtnCls(!!showToc)}
           style={{
             backgroundColor: showToc ? 'var(--accent-bg)' : 'transparent',
@@ -194,7 +196,7 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentThe
         {/* F013 — 拼写检查切换 */}
         <button
           onClick={onToggleSpellCheck}
-          title={spellCheck ? '关闭拼写检查' : '开启拼写检查'}
+          title={spellCheck ? t('toolbar.spellCheckOff') : t('toolbar.spellCheckOn')}
           className={focusBtnCls(!!spellCheck)}
           style={{
             backgroundColor: spellCheck ? 'var(--accent-bg)' : 'transparent',
@@ -217,10 +219,28 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentThe
           <SpellCheck size={14} strokeWidth={1.8} />
         </button>
 
+        {/* Language switcher */}
+        <button
+          onClick={() => setLocale(locale === 'zh-CN' ? 'en' : 'zh-CN')}
+          title={locale === 'zh-CN' ? 'Switch to English' : '切换到中文'}
+          className={focusBtnCls(false)}
+          style={{ color: 'var(--text-secondary)', borderColor: 'transparent' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'var(--text-primary)';
+            e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'var(--text-secondary)';
+            e.currentTarget.style.backgroundColor = '';
+          }}
+        >
+          <Languages size={14} strokeWidth={1.8} />
+        </button>
+
         {/* F011 — 主题切换（亮/暗 toggle） */}
         <button
           onClick={() => onThemeChange?.(currentTheme === 'dark' ? 'light' : 'dark')}
-          title={currentTheme === 'dark' ? '切换到亮色主题' : '切换到暗色主题'}
+          title={currentTheme === 'dark' ? t('toolbar.themeLight') : t('toolbar.themeDark')}
           className={focusBtnCls(false)}
           style={{
             color: 'var(--text-secondary)',
@@ -242,7 +262,7 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentThe
         {/* F009 — 焦点模式切换 */}
         <button
           onClick={() => onFocusModeChange?.('typewriter')}
-          title="打字机模式 (当前行居中)"
+          title={t('toolbar.typewriter')}
           className={focusBtnCls(focusMode === 'typewriter')}
           style={{
             backgroundColor: focusMode === 'typewriter' ? 'var(--accent-bg)' : 'transparent',
@@ -266,7 +286,7 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentThe
         </button>
         <button
           onClick={() => onFocusModeChange?.('focus')}
-          title="专注模式"
+          title={t('toolbar.focus')}
           className={focusBtnCls(focusMode === 'focus')}
           style={{
             backgroundColor: focusMode === 'focus' ? 'var(--accent-bg)' : 'transparent',
@@ -290,7 +310,7 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentThe
         </button>
         <button
           onClick={() => onFocusModeChange?.(focusMode === 'fullscreen' ? 'normal' : 'fullscreen')}
-          title="全屏模式"
+          title={t('toolbar.fullscreen')}
           className={focusBtnCls(focusMode === 'fullscreen')}
           style={{
             backgroundColor: focusMode === 'fullscreen' ? 'var(--accent-bg)' : 'transparent',
@@ -315,7 +335,7 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentThe
         <div className="w-px h-5 mx-1" style={{ backgroundColor: 'var(--border-color)' }} />
         <button
           onClick={() => onSetViewMode('edit')}
-          title="仅编辑 (Ctrl+1)"
+          title={t('toolbar.editOnly')}
           className={viewBtnCls(viewMode === 'edit')}
           style={{
             backgroundColor: viewMode === 'edit' ? 'var(--bg-primary)' : 'transparent',
@@ -337,11 +357,11 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentThe
             }
           }}
         >
-          <PanelRightClose size={15} strokeWidth={1.8} /><span>编辑</span>
+          <PanelRightClose size={15} strokeWidth={1.8} /><span>{t('toolbar.edit')}</span>
         </button>
         <button
           onClick={() => onSetViewMode('split')}
-          title="分栏视图 (Ctrl+2)"
+          title={t('toolbar.split')}
           className={viewBtnCls(viewMode === 'split')}
           style={{
             backgroundColor: viewMode === 'split' ? 'var(--bg-primary)' : 'transparent',
@@ -363,11 +383,11 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentThe
             }
           }}
         >
-          <Columns2 size={15} strokeWidth={1.8} /><span>分栏</span>
+          <Columns2 size={15} strokeWidth={1.8} /><span>{t('toolbar.splitLabel')}</span>
         </button>
         <button
           onClick={() => onSetViewMode('preview')}
-          title="仅预览 (Ctrl+3)"
+          title={t('toolbar.previewOnly')}
           className={viewBtnCls(viewMode === 'preview')}
           style={{
             backgroundColor: viewMode === 'preview' ? 'var(--bg-primary)' : 'transparent',
@@ -389,7 +409,7 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentThe
             }
           }}
         >
-          <PanelLeftClose size={15} strokeWidth={1.8} /><span>预览</span>
+          <PanelLeftClose size={15} strokeWidth={1.8} /><span>{t('toolbar.preview')}</span>
         </button>
       </div>
     </div>

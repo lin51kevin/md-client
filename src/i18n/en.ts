@@ -1,0 +1,94 @@
+import type { TranslationKey } from './zh-CN';
+
+export const en: Record<TranslationKey, string> = {
+  // ── Common ────────────────────────────────────────────────────────────────
+  'common.confirm': 'OK',
+  'common.cancel': 'Cancel',
+  'common.close': 'Close',
+  'common.save': 'Save',
+  'common.delete': 'Delete',
+  'common.rename': 'Rename',
+
+  // ── Toolbar ───────────────────────────────────────────────────────────────
+  'toolbar.fileMenu': 'File',
+  'toolbar.bold': 'Bold (Ctrl+B)',
+  'toolbar.italic': 'Italic (Ctrl+I)',
+  'toolbar.strikethrough': 'Strikethrough',
+  'toolbar.code': 'Inline Code (Ctrl+`)',
+  'toolbar.heading': 'Heading',
+  'toolbar.blockquote': 'Blockquote',
+  'toolbar.ul': 'Unordered List',
+  'toolbar.ol': 'Ordered List',
+  'toolbar.link': 'Insert Link',
+  'toolbar.imageLocal': 'Insert Local Image',
+  'toolbar.imageLink': 'Insert Image URL',
+  'toolbar.fileTree': 'File Tree',
+  'toolbar.search': 'Find & Replace',
+  'toolbar.toc': 'Outline',
+  'toolbar.spellCheckOn': 'Enable Spell Check',
+  'toolbar.spellCheckOff': 'Disable Spell Check',
+  'toolbar.themeDark': 'Switch to Dark Theme',
+  'toolbar.themeLight': 'Switch to Light Theme',
+  'toolbar.typewriter': 'Typewriter Mode (center current line)',
+  'toolbar.focus': 'Focus Mode',
+  'toolbar.fullscreen': 'Fullscreen',
+  'toolbar.editOnly': 'Edit Only (Ctrl+1)',
+  'toolbar.split': 'Split View (Ctrl+2)',
+  'toolbar.previewOnly': 'Preview Only (Ctrl+3)',
+  'toolbar.edit': 'Edit',
+  'toolbar.splitLabel': 'Split',
+  'toolbar.preview': 'Preview',
+
+  // ── File Menu ─────────────────────────────────────────────────────────────
+  'file.new': 'New File',
+  'file.open': 'Open File…',
+  'file.openRecent': 'Recent Files',
+  'file.save': 'Save',
+  'file.saveAs': 'Save As…',
+  'file.export': 'Export',
+  'file.exportDocx': 'Word Document (.docx)',
+  'file.exportPdf': 'PDF Document (.pdf)',
+  'file.exportHtml': 'HTML File (.html)',
+  'file.noRecent': 'No recent files',
+  'file.clearRecent': 'Clear History',
+
+  // ── Tab Bar ───────────────────────────────────────────────────────────────
+  'tab.newTab': 'New Tab',
+  'tab.pin': 'Pin Tab',
+  'tab.unpin': 'Unpin Tab',
+  'tab.close': 'Close',
+  'tab.closeDirty': 'Close (unsaved changes)',
+  'tab.untitled': 'Untitled.md',
+
+  // ── Status Bar ────────────────────────────────────────────────────────────
+  'status.words': '{count} words',
+  'status.chars': '{count} chars',
+  'status.lines': 'Ln {line}',
+  'status.col': 'Col {col}',
+
+  // ── Input Dialog ─────────────────────────────────────────────────────────
+  'dialog.insertLink.title': 'Insert Link',
+  'dialog.insertLink.desc': 'Enter the target URL. Applied to the selected text or as link text.',
+  'dialog.insertLink.placeholder': 'https://example.com',
+  'dialog.insertImage.title': 'Insert Image',
+  'dialog.insertImage.desc': 'Enter the image URL. The selected text will be used as alt text.',
+  'dialog.insertImage.placeholder': 'https://example.com/image.png',
+
+  // ── Table Editor ─────────────────────────────────────────────────────────
+  'table.edit': 'Edit Table',
+  'table.addRow': 'Add Row',
+  'table.deleteRow': 'Delete Last Row',
+  'table.addCol': 'Add Column',
+  'table.deleteCol': 'Delete Last Column',
+  'table.deleteThisRow': 'Delete this row',
+  'table.headerPlaceholder': 'Header {n}',
+  'table.empty': 'No rows yet — click "Add Row" above',
+  'table.align': 'Alignment: {align}',
+
+  // ── Mermaid ───────────────────────────────────────────────────────────────
+  'mermaid.rendering': '🔄 Rendering diagram…',
+
+  // ── Language picker ───────────────────────────────────────────────────────
+  'lang.zh-CN': '中文',
+  'lang.en': 'English',
+};

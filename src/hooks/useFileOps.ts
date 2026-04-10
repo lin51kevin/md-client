@@ -87,7 +87,7 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
         filters: [{ name: filterName, extensions: [format] }],
       });
       if (savePath) {
-        await invoke('export_document', { markdown: tab.doc, outputPath: savePath, format });
+        await invoke('export_document', { markdown: tab.doc, output_path: savePath, format });
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
