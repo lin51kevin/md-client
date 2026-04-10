@@ -57,7 +57,7 @@ describe('ShortcutSettings', () => {
         { action: '保存文件', key: 'Ctrl+S' },
         { action: '另存为', key: 'Ctrl+Shift+S' },
         { action: '关闭标签页', key: 'Ctrl+W' },
-        { action: '查找与替换', key: 'Ctrl+F / Ctrl+H' },
+        { action: '查找与替换', key: 'Ctrl+F' },
         { action: '仅编辑模式', key: 'Ctrl+1' },
         { action: '分栏模式', key: 'Ctrl+2' },
         { action: '仅预览模式', key: 'Ctrl+3' },

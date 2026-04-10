@@ -28,9 +28,11 @@ interface TabBarProps {
   showWelcomeTab?: boolean;
   /** Called when the virtual Welcome tab's × button is clicked */
   onCloseWelcomeTab?: () => void;
+  /** 关闭所有非固定标签页 */
+  onCloseAll?: () => void;
 }
 
-export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorder, onContextMenu, getTabTitle, renamingTabId, onStartRename, onConfirmRename, onCancelRename, onPin, onUnpin, showWelcomeTab, onCloseWelcomeTab }: TabBarProps) {
+export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorder, onContextMenu, getTabTitle, renamingTabId, onStartRename, onConfirmRename, onCancelRename, onPin, onUnpin, showWelcomeTab, onCloseWelcomeTab, onCloseAll: _onCloseAll }: TabBarProps) {
   const { t } = useI18n();
   const [dragOverTabId, setDragOverTabId] = useState<string | null>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);

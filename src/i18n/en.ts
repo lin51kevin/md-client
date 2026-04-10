@@ -102,6 +102,7 @@ export const en: Record<TranslationKey, string> = {
   'file.exportPng': 'PNG Image (.png)',
   'file.noRecent': 'No recent files',
   'file.clearRecent': 'Clear History',
+  'file.closeAll': 'Close All Tabs',
 
   // ── Tab Bar ───────────────────────────────────────────────────────────────
   'tab.newTab': 'New Tab',
@@ -110,6 +111,7 @@ export const en: Record<TranslationKey, string> = {
   'tab.close': 'Close',
   'tab.closeDirty': 'Close (unsaved changes)',
   'tab.untitled': 'Untitled.md',
+  'tab.closeAll': 'Close All',
 
   // ── Status Bar ────────────────────────────────────────────────────────────
   'status.words': '{count} chars',

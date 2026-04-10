@@ -15,8 +15,8 @@ describe('F011 — 主题系统', () => {
   });
 
   describe('THEMES 注册表', () => {
-    it('应包含两种内置主题', () => {
-      expect(Object.keys(THEMES)).toEqual(['light', 'dark']);
+    it('应包含四种内置主题', () => {
+      expect(Object.keys(THEMES)).toEqual(['light', 'dark', 'sepia', 'high-contrast']);
     });
 
     it('每种主题应包含完整的 CSS 变量集', () => {

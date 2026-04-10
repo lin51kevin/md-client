@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { FilePlus, Clock, Save, SaveAll, FileText, FolderOpen, FileCode, Trash2, ChevronRight, Download, BookOpen, Image } from 'lucide-react';
+import { FilePlus, Clock, Save, SaveAll, FileText, FolderOpen, FileCode, Trash2, ChevronRight, Download, BookOpen, Image, X } from 'lucide-react';
 import type { RecentFile } from '../lib/recent-files';
 import { useI18n } from '../i18n';
 
@@ -15,6 +15,7 @@ export interface FileMenuDropdownProps {
   recentFiles?: RecentFile[];
   onOpenRecent?: (path: string) => void;
   onClearRecent?: () => void;
+  onCloseAll?: () => void;
 }
 
 interface MenuItem {
@@ -39,6 +40,7 @@ export function FileMenuDropdown({
   recentFiles,
   onOpenRecent,
   onClearRecent,
+  onCloseAll,
 }: FileMenuDropdownProps) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
@@ -275,6 +277,13 @@ export function FileMenuDropdown({
       icon: <Download size={13} strokeWidth={1.8} />,
       label: t('file.export'),
       submenu: exportItems,
+    },
+    { id: 'sep3', icon: null, label: '' } as unknown as MenuItem,
+    {
+      id: 'close-all',
+      icon: <X size={13} strokeWidth={1.8} />,
+      label: t('file.closeAll'),
+      action: onCloseAll,
     },
   ];
 

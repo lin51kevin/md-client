@@ -47,6 +47,8 @@ interface ToolbarProps {
   onOpenRecent?: (filePath: string) => void;
   /** F013: 清空最近文件 */
   onClearRecent?: () => void;
+  /** 关闭所有非固定标签页 */
+  onCloseAll?: () => void;
   /** Tab navigation: list of open tabs */
   tabs?: import('../types').Tab[];
   /** Tab navigation: current active tab id */
@@ -55,7 +57,7 @@ interface ToolbarProps {
   onActivateTab?: (id: string) => void;
 }
 
-export function Toolbar({ viewMode, focusMode, showToc, showFileTree, onNewTab, onOpenFile, onSaveFile, onSaveAsFile, onExportDocx, onExportPdf, onExportHtml, onExportPng, onSetViewMode, onFocusModeChange, onToggleToc, spellCheck, onToggleSpellCheck, onToggleFileTree, onToggleSearch, showSearch, onFormatAction, recentFiles, onOpenRecent, onClearRecent, vimMode, onToggleVimMode, onImageLocal, onOpenSettings, tabs, activeTabId, onActivateTab }: ToolbarProps & { onImageLocal?: () => void }) {
+export function Toolbar({ viewMode, focusMode, showToc, showFileTree, onNewTab, onOpenFile, onSaveFile, onSaveAsFile, onExportDocx, onExportPdf, onExportHtml, onExportPng, onSetViewMode, onFocusModeChange, onToggleToc, spellCheck, onToggleSpellCheck, onToggleFileTree, onToggleSearch, showSearch, onFormatAction, recentFiles, onOpenRecent, onClearRecent, vimMode, onToggleVimMode, onImageLocal, onOpenSettings, tabs, activeTabId, onActivateTab, onCloseAll }: ToolbarProps & { onImageLocal?: () => void }) {
   const { t } = useI18n();
 
   // Compute prev/next tab ids for navigation arrows
@@ -92,6 +94,7 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, onNewTab, 
           recentFiles={recentFiles}
           onOpenRecent={onOpenRecent}
           onClearRecent={onClearRecent}
+          onCloseAll={onCloseAll}
         />
 
         {/* 文件操作图标按钮 */}

@@ -203,6 +203,25 @@ export default function App() {
     closeTab(id);
   }, [tabs, closeTab]);
 
+  // 关闭所有非固定标签页
+  const handleCloseAllTabs = useCallback(async () => {
+    const unpinnedTabs = tabs.filter(t => !t.isPinned);
+    for (const tab of unpinnedTabs) {
+      if (tab.isDirty) {
+        const name = tab.filePath?.split(/[\\/]/).pop() ?? 'Untitled.md';
+        const path = tab.filePath ?? t('app.unsavedPath');
+        const yes = await confirm(
+          t('app.closeTabUnsaved', { name, path }),
+          { title: t('app.closeTab'), kind: 'warning' }
+        );
+        if (!yes) return;
+      }
+    }
+    for (const tab of unpinnedTabs) {
+      closeTab(tab.id);
+    }
+  }, [tabs, closeTab, t]);
+
   const { handleOpenFile, handleSaveFile: rawHandleSaveFile, handleSaveAsFile, handleExportDocx, handleExportPdf, handleExportHtml, handleExportPng } = useFileOps({
     getActiveTab, tabs, openFileInTab, markSaved, markSavedAs, t,
   });
@@ -802,6 +821,7 @@ export default function App() {
               onUnpin={(id) => { unpinTab(id); setCtxMenu(null); }}
               tabs={tabs}
               onDismiss={() => setCtxMenu(null)}
+              onCloseAll={handleCloseAllTabs}
             />
           )}
 
@@ -837,6 +857,7 @@ export default function App() {
             recentFiles={recentFiles}
             onOpenRecent={handleOpenRecent}
             onClearRecent={handleClearRecent}
+            onCloseAll={handleCloseAllTabs}
             onToggleSearch={() => setShowSearchPanel(prev => !prev)}
             showSearch={showSearchPanel}
             onFormatAction={handleFormatAction}
@@ -881,6 +902,7 @@ export default function App() {
             onUnpin={unpinTab}
             showWelcomeTab={isPristine && !welcomeDismissed}
             onCloseWelcomeTab={handleDismissWelcome}
+            onCloseAll={handleCloseAllTabs}
           />
         </>
       )}

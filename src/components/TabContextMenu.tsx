@@ -1,4 +1,4 @@
-import { Pencil, Pin, PinOff } from 'lucide-react';
+import { Pencil, Pin, PinOff, X } from 'lucide-react';
 import { Tab } from '../types';
 import { useI18n } from '../i18n';
 
@@ -17,9 +17,11 @@ interface TabContextMenuProps {
   /** F013: 取消固定 */
   onUnpin: (tabId: string) => void;
   onDismiss: () => void;
+  /** 关闭所有非固定标签页 */
+  onCloseAll?: () => void;
 }
 
-export function TabContextMenu({ x, y, tabId, tabs, onSave, onSaveAs, onClose, onRename, onPin, onUnpin, onDismiss }: TabContextMenuProps) {
+export function TabContextMenu({ x, y, tabId, tabs, onSave, onSaveAs, onClose, onRename, onPin, onUnpin, onDismiss, onCloseAll }: TabContextMenuProps) {
   const { t } = useI18n();
   const tab = tabs.find(t => t.id === tabId);
   const isPinned = tab?.isPinned ?? false;
@@ -135,6 +137,23 @@ export function TabContextMenu({ x, y, tabId, tabs, onSave, onSaveAs, onClose, o
           onPointerDown={() => { if (!isPinned) { onClose(tabId); onDismiss(); } }}
         >
           <span>{t('tabCtx.close')}</span><span className="text-xs opacity-60">Ctrl+W</span>
+        </button>
+        <div className="my-1" style={{ borderTop: '1px solid var(--border-color)' }} />
+        <button
+          className="w-full flex items-center gap-2 px-4 py-1.5"
+          style={{ color: 'var(--text-primary)' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--accent-color)';
+            e.currentTarget.style.color = 'var(--bg-primary)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '';
+            e.currentTarget.style.color = 'var(--text-primary)';
+          }}
+          onPointerDown={() => { onCloseAll?.(); onDismiss(); }}
+        >
+          <X size={13} strokeWidth={1.8} />
+          <span>{t('tab.closeAll')}</span>
         </button>
       </div>
     </>

@@ -21,15 +21,21 @@ vi.stubGlobal('localStorage', mockLocalStorage);
 
 // Mock document.documentElement.style for applyTheme
 const cssVarMap: Record<string, string> = {};
+const originalDocument = globalThis.document;
 vi.stubGlobal('document', {
   ...globalThis.document,
   documentElement: {
+    ...originalDocument.documentElement,
     style: {
+      ...originalDocument.documentElement.style,
       setProperty: (name: string, value: string) => { cssVarMap[name] = value; },
       removeProperty: (name: string) => { delete cssVarMap[name]; },
       colorScheme: '',
     },
   },
+  body: originalDocument.body, // Preserve body for portal rendering
+  createElement: originalDocument.createElement.bind(originalDocument), // Preserve createElement  querySelector: originalDocument.querySelector.bind(originalDocument),
+  querySelectorAll: originalDocument.querySelectorAll.bind(originalDocument),
 });
 
 describe('Unified Theme System', () => {
@@ -162,6 +168,6 @@ describe('Unified Theme System', () => {
     expect(selects.length).toBe(1);
 
     // No "预览主题" or "Preview Theme" label text
-    expect(screen.queryTextContent(/预览主题|Preview Theme/i)).toBeNull();
+    expect(screen.queryByText(/预览主题|Preview Theme/i)).toBeNull();
   });
 });

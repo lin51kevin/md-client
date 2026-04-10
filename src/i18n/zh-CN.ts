@@ -100,6 +100,7 @@ export const zhCN = {
   'file.exportPng': 'PNG 图片 (.png)',
   'file.noRecent': '暂无最近文件',
   'file.clearRecent': '清空记录',
+  'file.closeAll': '关闭所有标签页',
 
   // ── Tab Bar ───────────────────────────────────────────────────────────────
   'tab.newTab': '新建标签页',
@@ -108,6 +109,7 @@ export const zhCN = {
   'tab.close': '关闭',
   'tab.closeDirty': '关闭（有未保存更改）',
   'tab.untitled': 'Untitled.md',
+  'tab.closeAll': '关闭所有',
 
   // ── Status Bar ────────────────────────────────────────────────────────────
   'status.words': '{count} 字',

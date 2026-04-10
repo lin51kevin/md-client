@@ -24,6 +24,23 @@ vi.mock('../../lib/version-history', () => ({
 }));
 
 describe('useTabs', () => {
+  // Mock t function for i18n
+  const mockT = (key: string, params?: Record<string, any>) => {
+    const translations: Record<string, string> = {
+      'rename.title': '重命名',
+      'rename.hasSlash': '文件名不能包含 / 或 \\ 字符。',
+      'rename.illegalChars': '文件名包含非法字符（< > : " | ? * 或控制字符）。',
+      'rename.reserved': `"${params?.name || ''}" 是系统保留文件名，请换一个名称。`,
+      'rename.trailingDotSpace': '文件名不能以句点或空格结尾。',
+      'rename.tooLong': '文件名过长，请缩短后重试。',
+      'rename.alreadyExists': `"${params?.name || ''}" 已存在，请换一个文件名。`,
+      'rename.failed': `重命名失败: ${params?.error || ''}`,
+      'rename.openFileFailed': '打开文件失败',
+      'rename.cannotRead': `无法读取文件: ${params?.error || ''}`,
+    };
+    return translations[key] || key;
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -34,7 +51,7 @@ describe('useTabs', () => {
 
   describe('Initial State', () => {
     it('should initialize with one default tab', () => {
-      const { result } = renderHook(() => useTabs());
+      const { result } = renderHook(() => useTabs(mockT));
       
       expect(result.current.tabs).toHaveLength(1);
       expect(result.current.tabs[0]).toMatchObject({
@@ -47,7 +64,7 @@ describe('useTabs', () => {
     });
 
     it('should return active tab correctly', () => {
-      const { result } = renderHook(() => useTabs());
+      const { result } = renderHook(() => useTabs(mockT));
       
       const activeTab = result.current.getActiveTab();
       expect(activeTab.id).toBe(INITIAL_TAB_ID);
@@ -55,15 +72,15 @@ describe('useTabs', () => {
   });
 
   describe('getTabTitle', () => {
-    it('should show "Untitled.md" for tabs without filePath', () => {
-      const { result } = renderHook(() => useTabs());
+    it('should show "sample.md" for tabs without filePath', () => {
+      const { result } = renderHook(() => useTabs(mockT));
       
       const title = result.current.getTabTitle(result.current.tabs[0]);
-      expect(title).toBe('Untitled.md');
+      expect(title).toBe('sample.md');
     });
 
     it('should show dirty indicator for modified tabs', () => {
-      const { result } = renderHook(() => useTabs());
+      const { result } = renderHook(() => useTabs(mockT));
       
       act(() => {
         result.current.updateActiveDoc('# New Content');
@@ -74,7 +91,7 @@ describe('useTabs', () => {
     });
 
     it('should use displayName if set after rename', async () => {
-      const { result } = renderHook(() => useTabs());
+      const { result } = renderHook(() => useTabs(mockT));
       
       // Rename unsaved file sets displayName
       await act(async () => {
@@ -86,7 +103,7 @@ describe('useTabs', () => {
     });
 
     it('should extract filename from filePath', () => {
-      const { result } = renderHook(() => useTabs());
+      const { result } = renderHook(() => useTabs(mockT));
       
       // Use getTabTitle with a mock tab that has filePath
       const mockTab = {
@@ -103,7 +120,7 @@ describe('useTabs', () => {
 
   describe('updateActiveDoc', () => {
     it('should update document content and mark as dirty', () => {
-      const { result } = renderHook(() => useTabs());
+      const { result } = renderHook(() => useTabs(mockT));
       
       act(() => {
         result.current.updateActiveDoc('# New Content');
@@ -114,19 +131,27 @@ describe('useTabs', () => {
     });
 
     it('should only update active tab', () => {
-      const { result } = renderHook(() => useTabs());
+      const { result } = renderHook(() => useTabs(mockT));
+      
+      // Make the first tab dirty so createNewTab doesn't replace it
+      act(() => {
+        result.current.updateActiveDoc('First tab content');
+      });
       
       // Create second tab  
       act(() => {
         result.current.createNewTab();
       });
       
+      // Verify second tab was created
+      expect(result.current.tabs).toHaveLength(2);
+      
       // Update second tab's content
       act(() => {
         result.current.updateActiveDoc('Tab 2 content');
       });
       
-      const tab2Content = result.current.tabs[1].doc;
+      const tab2Content = result.current.tabs[1]?.doc;
       
       // Switch back to first tab
       act(() => {
@@ -145,7 +170,7 @@ describe('useTabs', () => {
 
   describe('renameTab', () => {
     it('should reject empty names', async () => {
-      const { result } = renderHook(() => useTabs());
+      const { result } = renderHook(() => useTabs(mockT));
       
       const success = await act(async () => {
         return await result.current.renameTab(INITIAL_TAB_ID, '   ');
@@ -155,7 +180,7 @@ describe('useTabs', () => {
     });
 
     it('should reject names with path separators', async () => {
-      const { result } = renderHook(() => useTabs());
+      const { result } = renderHook(() => useTabs(mockT));
       const { message } = await import('@tauri-apps/plugin-dialog');
       
       const success = await act(async () => {
@@ -170,7 +195,7 @@ describe('useTabs', () => {
     });
 
     it('should reject names with illegal characters', async () => {
-      const { result } = renderHook(() => useTabs());
+      const { result } = renderHook(() => useTabs(mockT));
       const { message } = await import('@tauri-apps/plugin-dialog');
       
       const success = await act(async () => {
@@ -185,7 +210,7 @@ describe('useTabs', () => {
     });
 
     it('should reject Windows reserved names', async () => {
-      const { result } = renderHook(() => useTabs());
+      const { result } = renderHook(() => useTabs(mockT));
       const { message } = await import('@tauri-apps/plugin-dialog');
       
       const success = await act(async () => {
@@ -200,7 +225,7 @@ describe('useTabs', () => {
     });
 
     it('should set displayName for unsaved files', async () => {
-      const { result } = renderHook(() => useTabs());
+      const { result } = renderHook(() => useTabs(mockT));
       
       const success = await act(async () => {
         return await result.current.renameTab(INITIAL_TAB_ID, 'New Name');
@@ -211,7 +236,7 @@ describe('useTabs', () => {
     });
 
     it('should invoke rename_file for saved files', async () => {
-      const { result } = renderHook(() => useTabs());
+      const { result } = renderHook(() => useTabs(mockT));
       const { invoke } = await import('@tauri-apps/api/core');
       const { moveSnapshots } = await import('../../lib/version-history');
       const { addRecentFile, removeRecentFile } = await import('../../lib/recent-files');
@@ -244,7 +269,7 @@ describe('useTabs', () => {
     });
 
     it('should handle file exists error', async () => {
-      const { result } = renderHook(() => useTabs());
+      const { result } = renderHook(() => useTabs(mockT));
       const { invoke } = await import('@tauri-apps/api/core');
       const { message } = await import('@tauri-apps/plugin-dialog');
       
@@ -274,7 +299,7 @@ describe('useTabs', () => {
 
   describe('Tab State Management', () => {
     it('should maintain tabs and activeTabId refs', () => {
-      const { result } = renderHook(() => useTabs());
+      const { result } = renderHook(() => useTabs(mockT));
       
       act(() => {
         result.current.setActiveTabId('new-id');
@@ -285,7 +310,7 @@ describe('useTabs', () => {
     });
 
     it('should prevent duplicate file opening with openingPaths ref', () => {
-      const { result } = renderHook(() => useTabs());
+      const { result } = renderHook(() => useTabs(mockT));
       
       // This tests the internal openingPaths ref behavior
       // The actual file opening logic would be tested in integration tests

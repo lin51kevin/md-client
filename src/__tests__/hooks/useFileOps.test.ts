@@ -43,6 +43,21 @@ describe('useFileOps', () => {
     mockMarkSavedAs = vi.fn();
   });
 
+  // Mock t function for i18n
+  const mockT = (key: string) => {
+    const translations: Record<string, string> = {
+      'fileOps.saveAsFailed': '另存为失败',
+      'fileOps.saveFailed': '保存失败',
+      'fileOps.emptyDocExport': '文档内容为空，无法导出。',
+      'fileOps.hint': '提示',
+      'fileOps.noPreviewArea': '未找到预览区域，无法导出PNG。',
+      'fileOps.error': '错误',
+      'fileOps.exportFailed': '导出失败',
+      'fileOps.exportPngFailed': '导出 PNG 失败',
+    };
+    return translations[key] || key;
+  };
+
   const renderFileOps = () => {
     return renderHook(() => useFileOps({
       getActiveTab: mockGetActiveTab,
@@ -50,6 +65,7 @@ describe('useFileOps', () => {
       openFileInTab: mockOpenFileInTab,
       markSaved: mockMarkSaved,
       markSavedAs: mockMarkSavedAs,
+      t: mockT,
     }));
   };
 

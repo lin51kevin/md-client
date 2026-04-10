@@ -145,14 +145,7 @@ describe('useKeyboardShortcuts', () => {
       expect(toggleFindReplace).toHaveBeenCalledTimes(1);
     });
 
-    it('should toggle find/replace with Ctrl+H', () => {
-      renderShortcuts();
-      
-      const event = dispatchKeyEvent('h', { ctrlKey: true });
-      
-      expect(event.defaultPrevented).toBe(true);
-      expect(toggleFindReplace).toHaveBeenCalledTimes(1);
-    });
+    // Note: Ctrl+H is no longer a default binding for find/replace (only Ctrl+F is supported)
   });
 
   describe('Focus Mode', () => {

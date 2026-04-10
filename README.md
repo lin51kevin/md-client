@@ -35,15 +35,22 @@
 - **✏️ Toolbar Formatting** — 加粗、斜体、删除线、代码、标题、引用、列表、链接等一键格式化按钮
 - **📋 Right-Click Context Menu** — 编辑器内右键菜单，支持上下文感知的操作（20+个菜单项），可在表格内直接编辑
 - **🎯 Writing Statistics** — 实时字数、字符数、句子数、阅读时间统计
+- **⌨️ Custom Shortcuts** — 支持自定义快捷键绑定
 
 ### 🎨 视图与主题
 - **Three View Modes** — 仅编辑 / 分栏（默认）/ 仅预览，快捷键一键切换
-- **Light & Dark Themes** — GitHub 风格亮色主题 + GitHub Dark 暗色主题，一键切换并持久化
+- **Multiple Themes** — 四种主题：
+  - ☀️ **Light** — GitHub Light 风格亮色主题
+  - 🌙 **Dark** — GitHub Dark 暗色主题
+  - 📜 **Sepia** — 护眼棕色调主题
+  - 🔲 **High Contrast** — 高对比度主题
+- **System Theme Follow** — 可选跟随操作系统深色模式，持久化到 localStorage
 - **Focus Modes** — 三种专注模式：
   - 📝 **打字机模式** (Typewriter) — 当前行始终居中显示，隐藏工具栏与状态栏
   - 🖥️ **专注模式** (Focus) — 仅保留编辑器，暗化 UI，沉浸式写作
   - 🔲 **全屏模式** (Fullscreen) — 占满整个屏幕，按 ESC 或 F11 退出
 - **Synchronized Scrolling** — 分栏模式下编辑区与预览区联动滚动
+- **Welcome Page** — 空标签页欢迎页面，展示快捷操作入口和快捷键提示
 
 ### 🔍 搜索与导航
 - **Find & Replace** — 全功能查找替换工具栏（`Ctrl+F` / `Ctrl+H`），支持：
@@ -52,13 +59,14 @@
   - 逐个/全部替换
   - 编辑器内高亮定位匹配项
 - **Table of Contents (TOC)** — 左侧大纲侧边栏，自动提取 H1-H6 标题，支持折叠/展开子节点，点击跳转
-- **Cross-File Search** — 在整个文件夹中搜索，支持大小写敏感和正则表达式
-- **File Tree Sidebar** — 打开文件夹后，左侧显示文件树，支持双击打开、快捷菜单等
+- **Cross-File Search** — 在整个文件夹中搜索与替换，支持大小写敏感、正则表达式、未保存内容搜索
+- **File Tree Sidebar** — 打开文件夹后，左侧显示文件树，支持双击打开、搜索过滤、新建/删除/重命名文件
 
 ### 📤 导出格式
-- **DOCX** — 导出为 Word 文档（通过 Rust 后端渲染）
+- **DOCX** — 导出为 Word 文档（通过 Rust 后端渲染，支持 Mermaid 图表和数学公式）
 - **PDF** — 导出为 PDF 文件（通过 Rust 后端渲染）
 - **HTML** — 导出为独立 HTML 文件（前端生成，含完整样式）
+- **PNG** — 导出为 PNG 图片（基于 html2canvas）
 
 ### 📐 富文本预览 (GFM+)
 - **GFM Support** — 表格、任务列表、删除线、自动链接、脚注等
@@ -74,10 +82,15 @@
 - **Open / Save / Save As** — 原生文件对话框，支持 `.md` / `.markdown` / `.txt`
 - **Drag & Drop** — 直接将 `.md` 文件拖入编辑器打开
 - **CLI Integration** — 支持从命令行/文件管理器双击打开文件（`get_open_file` Tauri command）
+- **File Tree CRUD** — 在文件树中直接新建、删除、重命名文件
 - **Version Snapshots** — 本地版本快照系统（基于 localStorage）：
   - 每次手动保存时自动创建快照（最多保留 20 个）
   - 状态栏显示快照数量，点击可浏览历史版本
   - 一键恢复到任意历史快照
+
+### 🌐 国际化
+- **中英文双语** — 完整 i18n 覆盖，所有 UI 文本支持中/英切换
+- **Settings Panel** — 统一设置弹窗，管理主题、语言、快捷键等偏好
 
 ### ⌨️ 键盘快捷键
 
@@ -148,12 +161,20 @@ yarn tauri build
 marklite/
 ├── src/                        # React frontend
 │   ├── components/             # UI 组件
-│   │   ├── Toolbar.tsx         # 工具栏（文件操作/导出/视图切换/主题/焦点模式）
+│   │   ├── Toolbar.tsx         # 工具栏（文件菜单/导出/视图切换/主题/焦点模式）
 │   │   ├── TabBar.tsx          # 标签栏（多标签/拖拽排序/右键菜单/滚动）
 │   │   ├── StatusBar.tsx       # 状态栏（路径/字数统计/行列号/版本历史入口）
 │   │   ├── FindReplaceBar.tsx  # 查找替换栏
 │   │   ├── MarkdownPreview.tsx # Markdown 渲染预览（含 Mermaid/KaTeX）
 │   │   ├── TocSidebar.tsx      # 大纲导航侧边栏（可折叠标题树）
+│   │   ├── FileTreeSidebar.tsx # 文件树侧边栏（CRUD/搜索过滤）
+│   │   ├── SearchPanel.tsx     # 跨文件搜索面板
+│   │   ├── EditorContextMenu.tsx # 编辑器右键上下文菜单
+│   │   ├── FileMenuDropdown.tsx # 文件菜单下拉
+│   │   ├── SettingsModal.tsx   # 设置面板（主题/语言/快捷键）
+│   │   ├── WelcomePage.tsx     # 空标签页欢迎页
+│   │   ├── TableEditor.tsx     # 表格可视化编辑器
+│   │   ├── InputDialog.tsx     # 通用输入对话框
 │   │   ├── DragOverlay.tsx     # 拖拽覆盖层提示
 │   │   └── TabContextMenu.tsx  # 标签右键菜单
 │   ├── hooks/                  # 自定义 React Hooks
@@ -165,19 +186,36 @@ marklite/
 │   │   ├── useCursorPosition.ts # 光标位置追踪
 │   │   ├── useFocusMode.ts     # 焦点模式（打字机/专注/全屏）
 │   │   ├── useSearchHighlight.ts # 搜索结果高亮
+│   │   ├── useFormatActions.ts # 格式化操作
+│   │   ├── useImagePaste.ts    # 图片粘贴处理
 │   │   └── useWindowTitle.ts   # 窗口标题同步
+│   ├── i18n/                   # 国际化
+│   │   ├── en.ts               # 英文语言包
+│   │   └── zh-CN.ts            # 中文语言包
 │   ├── lib/                    # 工具库
 │   │   ├── auto-save.ts        # 防抖自动保存引擎
 │   │   ├── theme.ts            # 亮/暗主题定义与切换
+│   │   ├── theme-auto.ts       # 系统主题跟随
+│   │   ├── cm-themes.ts        # CodeMirror 额外主题（Sepia/High-Contrast）
 │   │   ├── version-history.ts  # 本地版本快照系统
 │   │   ├── toc.ts              # TOC 标题提取算法
 │   │   ├── word-count.ts       # 字数统计
+│   │   ├── writing-stats.ts    # 写作统计
 │   │   ├── search.ts           # 搜索/替换引擎
 │   │   ├── mermaid.ts          # Mermaid 图表渲染
 │   │   ├── html-export.ts      # HTML 导出生成
+│   │   ├── export-prerender.ts # 导出预渲染（Mermaid/Math）
 │   │   ├── latex.ts            # LaTeX 处理
+│   │   ├── image-paste.ts      # 图片粘贴工具
+│   │   ├── text-format.ts      # 文本格式化工具
+│   │   ├── table-parser.ts     # 表格解析器
+│   │   ├── context-menu.ts     # 右键菜单逻辑
+│   │   ├── shortcuts-config.ts # 快捷键配置
+│   │   ├── recent-files.ts     # 最近文件管理
+│   │   ├── split-preference.ts # 分栏比例记忆
 │   │   ├── cmAutocomplete.ts   # CodeMirror 自动补全括号
 │   │   └── cmVim.ts            # Vim 模式集成
+│   ├── __tests__/              # 单元测试
 │   ├── App.tsx                 # 主应用组件
 │   ├── types.ts                # TypeScript 类型定义
 │   ├── constants.ts            # 常量与默认值

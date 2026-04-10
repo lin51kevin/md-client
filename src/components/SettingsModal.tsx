@@ -298,26 +298,6 @@ function ToggleSwitch({
   );
 }
 
-/** Keyboard shortcut definition */
-interface ShortcutDef {
-  labelKey: string;
-  keys: string;
-}
-
-const SHORTCUT_LIST: ShortcutDef[] = [
-  { labelKey: 'settings.shortcuts.newTab', keys: 'Ctrl+N' },
-  { labelKey: 'settings.shortcuts.openFile', keys: 'Ctrl+O' },
-  { labelKey: 'settings.shortcuts.saveFile', keys: 'Ctrl+S' },
-  { labelKey: 'settings.shortcuts.saveAsFile', keys: 'Ctrl+Shift+S' },
-  { labelKey: 'settings.shortcuts.closeTab', keys: 'Ctrl+W' },
-  { labelKey: 'settings.shortcuts.findReplace', keys: 'Ctrl+F / Ctrl+H' },
-  { labelKey: 'settings.shortcuts.editMode', keys: 'Ctrl+1' },
-  { labelKey: 'settings.shortcuts.splitMode', keys: 'Ctrl+2' },
-  { labelKey: 'settings.shortcuts.previewMode', keys: 'Ctrl+3' },
-  { labelKey: 'settings.shortcuts.typewriterMode', keys: 'Ctrl+.' },
-  { labelKey: 'settings.shortcuts.focusMode', keys: 'Ctrl+,' },
-];
-
 /** 可编辑快捷键列表组件 */
 function EditableShortcuts() {
   const { t } = useI18n();
