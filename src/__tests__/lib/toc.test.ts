@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { extractToc, slugify } from './toc';
+import { extractToc, slugify } from '../../lib/toc';
 
 describe('F010 — 大纲导航 (TOC)', () => {
 

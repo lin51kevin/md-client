@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
 }));
 
-vi.mock('../lib/image-paste', () => ({
+vi.mock('../../lib/image-paste', () => ({
   getImageSaveDir: vi.fn(() => ''),
   generateImageFileName: vi.fn((ext) => `img-1700000000000.${ext}`),
   buildImageMarkdownPath: vi.fn((_dir, file) => file),
@@ -18,7 +18,7 @@ vi.mock('../lib/image-paste', () => ({
 
 describe('useImagePaste — pure integration checks', () => {
   it('should be importable as a module', async () => {
-    const mod = await import('./useImagePaste');
+    const mod = await import('../../hooks/useImagePaste');
     expect(mod.useImagePaste).toBeDefined();
   });
 });

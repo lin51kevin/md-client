@@ -7,7 +7,7 @@ import {
   getReadingTimeLabel,
   buildStatsSummary,
   type WritingStats,
-} from './writing-stats';
+} from '../../lib/writing-stats';
 
 describe('writing-stats: countWords', () => {
   it('counts Chinese characters correctly', () => {

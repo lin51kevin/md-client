@@ -5,7 +5,7 @@ import {
   deleteSnapshot,
   clearSnapshots,
   formatSnapshotTime,
-} from './version-history';
+} from '../../lib/version-history';
 
 describe('F012 — 版本历史（本地快照）', () => {
   const TEST_FILE = '/test/docs.md';

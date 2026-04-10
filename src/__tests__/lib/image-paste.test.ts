@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { getImageSaveDir, setImageSaveDir, generateImageFileName, buildImageMarkdownPath } from './image-paste';
+import { getImageSaveDir, setImageSaveDir, generateImageFileName, buildImageMarkdownPath } from '../../lib/image-paste';
 
 describe('image-paste utilities', () => {
   describe('generateImageFileName', () => {

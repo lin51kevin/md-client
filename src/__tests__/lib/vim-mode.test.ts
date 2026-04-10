@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { VimModeManager } from './vim-mode';
+import { VimModeManager } from '../../lib/vim-mode';
 
 /**
  * F003 — Vim 模式功能测试

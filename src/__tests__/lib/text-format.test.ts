@@ -5,7 +5,7 @@ import {
   insertLink,
   insertImage,
   type SelectionInfo,
-} from './text-format';
+} from '../../lib/text-format';
 
 function makeSelection(text: string, start: number, end: number): SelectionInfo {
   return { text, start, end };

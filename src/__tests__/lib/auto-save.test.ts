@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createAutoSave } from './auto-save';
+import { createAutoSave } from '../../lib/auto-save';
 
 describe('F004 — 自动保存', () => {
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { renderLatex } from './latex';
+import { renderLatex } from '../../lib/latex';
 
 describe('F007 — LaTeX 数学公式渲染', () => {
 

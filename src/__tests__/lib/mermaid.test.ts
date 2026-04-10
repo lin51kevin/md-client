@@ -9,8 +9,8 @@ vi.mock('mermaid', () => ({
   },
 }));
 
-import { renderMermaid } from './mermaid';
-import { resetMermaidInit } from './mermaid';
+import { renderMermaid } from '../../lib/mermaid';
+import { resetMermaidInit } from '../../lib/mermaid';
 
 describe('F008 — Mermaid 图表渲染', () => {
 

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   detectContextType,
   detectContext,
-} from './context-menu';
+} from '../../lib/context-menu';
 
 describe('context-menu: detectContextType', () => {
   it('returns "heading" for text starting with #', () => {

@@ -1,6 +1,5 @@
 export const INITIAL_TAB_ID = '1';
-let _tabIdCounter = 2;
-export const genTabId = () => String(_tabIdCounter++);
+export const genTabId = () => crypto.randomUUID();
 
 export const DEFAULT_MARKDOWN = `
 # Welcome to Markdown Editor 🚀

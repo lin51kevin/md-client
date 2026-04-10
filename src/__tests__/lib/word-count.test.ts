@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { countWords, countCharacters, getReadingTime } from './word-count';
+import { countWords, countCharacters, getReadingTime } from '../../lib/word-count';
 
 describe('F006 — 实时字数统计', () => {
 

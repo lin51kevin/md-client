@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { markdownToHtml, generateHtmlDocument } from './html-export';
+import { markdownToHtml, generateHtmlDocument } from '../../lib/html-export';
 
 describe('F005 — 导出 HTML', () => {
 

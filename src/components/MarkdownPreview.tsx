@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkDirective from "remark-directive";
@@ -51,6 +51,9 @@ const MIME_MAP: Record<string, string> = {
 
 const MD_EXTENSIONS = new Set(["md", "markdown", "txt"]);
 
+/** Module-level cache to avoid re-loading the same image on every re-render */
+const imageCache = new Map<string, string>();
+
 interface MarkdownPreviewProps {
   content: string;
   className?: string;
@@ -95,6 +98,11 @@ function LocalImage({
 
   useEffect(() => {
     const absPath = resolvePath(docFilePath, src);
+    const cached = imageCache.get(absPath);
+    if (cached !== undefined) {
+      setDataSrc(cached);
+      return;
+    }
     invoke<number[]>("read_file_bytes", { path: absPath })
       .then((numArray) => {
         const bytes = new Uint8Array(numArray);
@@ -105,9 +113,14 @@ function LocalImage({
         for (let i = 0; i < bytes.length; i += CHUNK) {
           binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
         }
-        setDataSrc(`data:${mime};base64,${btoa(binary)}`);
+        const dataUrl = `data:${mime};base64,${btoa(binary)}`;
+        imageCache.set(absPath, dataUrl);
+        setDataSrc(dataUrl);
       })
-      .catch(() => setDataSrc("")); // '' → browser broken-image placeholder
+      .catch(() => {
+        imageCache.set(absPath, "");
+        setDataSrc(""); // '' → browser broken-image placeholder
+      });
   }, [docFilePath, src]);
 
   return <img src={dataSrc} alt={alt} {...props} />;
@@ -120,7 +133,7 @@ function LocalImage({
  *   1. 检测 mermaid 代码块 → renderMermaid() 异步渲染为 SVG（防抖 200ms）
  *   2. 其余内容经 react-markdown 管线（GFM + Math + 高亮）
  */
-export function MarkdownPreview({
+export const MarkdownPreview = memo(function MarkdownPreview({
   content,
   className,
   filePath,
@@ -240,7 +253,7 @@ export function MarkdownPreview({
     }
 
     return components;
-  }, [filePath, onOpenFile, onContentChange, content, allTables]);
+  }, [filePath, onOpenFile, onContentChange, allTables]);
 
   // Memo: 检测内容是否包含 mermaid 块，避免不必要的异步渲染
   const hasMermaidBlocks = useMemo(
@@ -310,4 +323,4 @@ export function MarkdownPreview({
       )}
     </div>
   );
-}
+});

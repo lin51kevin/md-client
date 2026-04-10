@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { searchAll, replaceAll, replaceNext } from './search';
+import { searchAll, replaceAll, replaceNext } from '../../lib/search';
 
 /**
  * F002 — 搜索替换功能测试

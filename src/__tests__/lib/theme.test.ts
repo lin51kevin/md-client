@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { THEMES, applyTheme, getSavedTheme, saveTheme, type ThemeName } from './theme';
+import { THEMES, applyTheme, getSavedTheme, saveTheme, type ThemeName } from '../../lib/theme';
 
 describe('F011 — 主题系统', () => {
 

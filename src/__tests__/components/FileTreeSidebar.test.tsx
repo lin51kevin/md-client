@@ -17,8 +17,8 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({
   open: vi.fn(),
 }));
 
-import { FileTreeSidebar } from './FileTreeSidebar';
-import type { DirEntry } from './FileTreeSidebar';
+import { FileTreeSidebar } from '../../components/FileTreeSidebar';
+import type { DirEntry } from '../../components/FileTreeSidebar';
 const { invoke } = await import('@tauri-apps/api/core');
 const mockedInvoke = vi.mocked(invoke);
 

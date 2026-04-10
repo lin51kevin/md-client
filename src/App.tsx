@@ -64,7 +64,7 @@ import { TocSidebar } from './components/TocSidebar';
 import { FileTreeSidebar } from './components/FileTreeSidebar';
 import { useSearchHighlight } from './hooks/useSearchHighlight';
 import { useImagePaste } from './hooks/useImagePaste';
-import { wrapSelection, toggleLinePrefix, insertLink, insertImage, type SelectionInfo, type FormatResult } from './lib/text-format';
+import { useFormatActions } from './hooks/useFormatActions';
 import { parseTable, serializeTable } from './lib/table-parser';
 
 
@@ -165,6 +165,12 @@ export default function App() {
 
   useDragDrop({ isTauri, setIsDragOver, openFileInTab });
 
+  // Per-tab EditorState persistence: declared early so all callbacks can close over it
+  const cmViewRef = useRef<EditorView | null>(null);
+
+  // F014 — 工具栏格式化操作处理器
+  const { handleFormatAction } = useFormatActions({ cmViewRef, getActiveTab });
+
   // F014 — 图片粘贴/拖拽插入
   const insertImageMarkdown = useCallback((markdown: string) => {
     const view = cmViewRef.current;
@@ -176,167 +182,6 @@ export default function App() {
     });
     view.focus();
   }, []);
-
-  // F014 — 工具栏格式化操作处理器
-  const handleFormatAction = useCallback((action: string) => {
-    const view = cmViewRef.current;
-    if (!view) return;
-
-    const sel = view.state.selection.main;
-    const docText = view.state.doc.toString();
-
-    switch (action) {
-      case 'bold': case 'italic': case 'strikethrough': case 'code': {
-        const wrappers: Record<string, string> = {
-          bold: '**', italic: '*', strikethrough: '~~', code: '`' };
-        const wrapper = wrappers[action];
-        const selectedText = docText.substring(sel.from, sel.to);
-        const isMultiLine = selectedText.includes('\n');
-
-        if (!isMultiLine) {
-          // 单行：走原有逻辑
-          const selInfo: SelectionInfo = { text: docText, start: sel.from, end: sel.to };
-          const result: FormatResult = wrapSelection(selInfo, wrapper);
-          view.dispatch({
-            changes: { from: sel.from, to: sel.to, insert: result.replacement },
-            selection: { anchor: sel.from + result.newCursorOffset },
-          });
-        } else {
-          // 多行：对每一行分别包装
-          const lines = selectedText.split('\n');
-          const wrappedLines = lines.map(line => {
-            if (line.length === 0) return line; // 空行不包装
-            // 检测 toggle：已被同符号包裹则去除
-            if (line.startsWith(wrapper) && line.endsWith(wrapper) && line.length > wrapper.length * 2) {
-              return line.slice(wrapper.length, line.length - wrapper.length);
-            }
-            return wrapper + line + wrapper;
-          });
-          view.dispatch({
-            changes: { from: sel.from, to: sel.to, insert: wrappedLines.join('\n') },
-            selection: { anchor: sel.from + wrappedLines[0].length > 0 ? wrapper.length : 0 },
-          });
-        }
-        break;
-      }
-      case 'heading': case 'blockquote': case 'ul': case 'ol': {
-        const prefixes: Record<string, string> = {
-          heading: '# ', blockquote: '> ', ul: '- ', ol: '1. ' };
-        const prefix = prefixes[action];
-
-        // 检测是否多行选区
-        const startLine = view.state.doc.lineAt(sel.from);
-        const endLine = view.state.doc.lineAt(sel.to);
-        const isMultiLineSelection = startLine.number !== endLine.number;
-
-        if (!isMultiLineSelection || action === 'heading') {
-          // 单行或标题：只处理光标所在行（标题不支持多行）
-          const lineStart = startLine.from;
-          const lineEnd = startLine.to;
-          const result: FormatResult = toggleLinePrefix(docText, lineStart, prefix);
-          view.dispatch({
-            changes: { from: lineStart, to: lineEnd, insert: result.replacement },
-            selection: { anchor: lineStart + result.newCursorOffset },
-          });
-        } else {
-          // 多行：对选区内的每一行添加前缀（从后往前处理，避免位置偏移）
-          const changes: { from: number; to: number; insert: string }[] = [];
-          let cursorPos = sel.from; // 光标放到第一行开头
-
-          for (let lineNum = endLine.number; lineNum >= startLine.number; lineNum--) {
-            const line = view.state.doc.line(lineNum);
-            const lineText = docText.substring(line.from, line.to);
-
-            // 检查该行是否已有前缀，有则跳过（toggle 语义）
-            const hasPrefix = action === 'ol'
-              ? /^\d+\. /.test(lineText)
-              : lineText.startsWith(prefix);
-
-            if (hasPrefix) {
-              // 已有前缀 → 移除
-              const removeLen = action === 'ol'
-                ? lineText.match(/^\d+\. /)?.[0].length ?? prefix.length
-                : prefix.length;
-              changes.push({ from: line.from, to: line.from + removeLen, insert: '' });
-            } else {
-              // 无前缀 → 添加（有序列表需要计算正确序号）
-              const insertPrefix = action === 'ol'
-                ? `${lineNum - startLine.number + 1}. `
-                : prefix;
-              changes.push({ from: line.from, to: line.from, insert: insertPrefix });
-            }
-          }
-
-          view.dispatch({ changes, selection: { anchor: cursorPos } });
-        }
-        break;
-      }
-      case 'link': {
-        const url = window.prompt('请输入链接地址：');
-        if (url === null) return; // 用户取消
-        const selInfo: SelectionInfo = { text: docText, start: sel.from, end: sel.to };
-        const result: FormatResult = insertLink(selInfo, url);
-        view.dispatch({
-          changes: { from: sel.from, to: sel.to, insert: result.replacement },
-          selection: { anchor: sel.from + result.newCursorOffset },
-        });
-        break;
-      }
-      case 'image':
-      case 'image-local': {
-        (async () => {
-          try {
-            const { open } = await import('@tauri-apps/plugin-dialog');
-            const filePath = await open({
-              filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'] }],
-              multiple: false,
-              directory: false,
-            }) as string | null;
-            if (!filePath) return;
-
-            const resp = await fetch(`asset://localhost/${encodeURIComponent(filePath)}`);
-            const buffer = await resp.arrayBuffer();
-            const data = Array.from(new Uint8Array(buffer));
-
-            const ext = filePath.split('.').pop()?.toLowerCase() || 'png';
-            const timestamp = Date.now();
-            const fileName = `img-${timestamp}.${ext}`;
-            const docPath = getActiveTab().filePath;
-            const saveDir = docPath ? `${docPath.replace(/[/\\][^/\\]+$/, '')}/assets/images` : './assets/images';
-            const savePath = `${saveDir}/${fileName}`;
-
-            await invoke('write_image_bytes', { path: savePath, data });
-
-            const mdSyntax = `![](assets/images/${fileName})`;
-            view.dispatch({
-              changes: { from: sel.from, to: sel.to, insert: mdSyntax },
-              selection: { anchor: sel.from + mdSyntax.length },
-            });
-          } catch {
-            // 非 Tauri 环境 → 提示用户使用图片链接功能
-            window.alert('本地图片选择需要 Tauri 环境，请使用「插入图片链接」功能。');
-          }
-        })();
-        break;
-      }
-      case 'image-link': {
-        const src = window.prompt('请输入图片链接：');
-        if (src === null) return;
-        if (src === '') {
-          view.dispatch({ changes: { from: sel.from, to: sel.from, insert: '![]()' } });
-          return;
-        }
-        const selInfo: SelectionInfo = { text: docText, start: sel.from, end: sel.to };
-        const result: FormatResult = insertImage(selInfo, src);
-        view.dispatch({
-          changes: { from: sel.from, to: sel.to, insert: result.replacement },
-          selection: { anchor: sel.from + result.newCursorOffset },
-        });
-        break;
-      }
-    }
-    view.focus();
-  }, [getActiveTab]);
 
   // Open file passed via CLI argument (e.g. double-clicked from file explorer)
   useEffect(() => {
@@ -484,12 +329,20 @@ export default function App() {
     if (!view) return;
 
     switch (action) {
-      case 'cut':
-        document.execCommand('cut');
+      case 'cut': {
+        const cutSel = view.state.selection.main;
+        const cutText = view.state.doc.sliceString(cutSel.from, cutSel.to);
+        navigator.clipboard.writeText(cutText).catch(() => {});
+        if (cutSel.from !== cutSel.to) {
+          view.dispatch({ changes: { from: cutSel.from, to: cutSel.to, insert: '' } });
+        }
         break;
-      case 'copy':
-        document.execCommand('copy');
+      }
+      case 'copy': {
+        const copySel = view.state.selection.main;
+        navigator.clipboard.writeText(view.state.doc.sliceString(copySel.from, copySel.to)).catch(() => {});
         break;
+      }
       case 'paste':
         navigator.clipboard.readText().then(text => {
           if (!text) return;
@@ -549,7 +402,7 @@ export default function App() {
           const codeContent = doc.substring(start + (doc.indexOf('\n', start) + 1), end).trim();
           navigator.clipboard.writeText(codeContent);
         } else {
-          document.execCommand('copy');
+          navigator.clipboard.writeText(view.state.doc.sliceString(sel.from, sel.to)).catch(() => {});
         }
         break;
       }
@@ -676,7 +529,6 @@ export default function App() {
 
   // Per-tab EditorState persistence: preserves cursor position and undo history
   const savedStatesRef = useRef<Map<string, EditorState>>(new Map());
-  const cmViewRef = useRef<EditorView | null>(null);
 
   const handleCreateEditor = useCallback((view: EditorView) => {
     cmViewRef.current = view;
@@ -888,7 +740,7 @@ export default function App() {
             <div className="h-full overflow-auto border-l" style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--bg-primary)' }} ref={previewRef} onScroll={handlePreviewScroll}>
               <div className="p-8">
                 <Suspense fallback={<div className="p-4 text-sm animate-pulse" style={{ color: 'var(--text-secondary)' }}>正在加载预览引擎...</div>}>
-                  <MarkdownPreview content={activeTab.doc} filePath={activeTab.filePath ?? undefined} onOpenFile={openFileInTab} onContentChange={updateActiveDoc} className={`markdown-preview max-w-full min-h-full ${theme === 'dark' ? 'markdown-preview-dark' : ''}`} />
+                  <MarkdownPreview content={debouncedDoc} filePath={activeTab.filePath ?? undefined} onOpenFile={openFileInTab} onContentChange={updateActiveDoc} className={`markdown-preview max-w-full min-h-full ${theme === 'dark' ? 'markdown-preview-dark' : ''}`} />
                 </Suspense>
               </div>
             </div>
@@ -915,7 +767,7 @@ export default function App() {
               <div ref={previewRef} className="w-full h-full overflow-auto" style={{ backgroundColor: 'var(--bg-primary)' }}>
                 <div className="p-8">
                   <Suspense fallback={<div className="p-4 text-sm animate-pulse" style={{ color: 'var(--text-secondary)' }}>正在加载预览引擎...</div>}>
-                    <MarkdownPreview content={activeTab.doc} filePath={activeTab.filePath ?? undefined} onOpenFile={openFileInTab} onContentChange={updateActiveDoc} className={`markdown-preview max-w-full min-h-full ${theme === 'dark' ? 'markdown-preview-dark' : ''}`} />
+                    <MarkdownPreview content={debouncedDoc} filePath={activeTab.filePath ?? undefined} onOpenFile={openFileInTab} onContentChange={updateActiveDoc} className={`markdown-preview max-w-full min-h-full ${theme === 'dark' ? 'markdown-preview-dark' : ''}`} />
                   </Suspense>
                 </div>
               </div>

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseTable, serializeTable } from './table-parser';
+import { parseTable, serializeTable } from '../../lib/table-parser';
 
 describe('table-parser', () => {
   const BASIC_TABLE = `| Name | Age | City |
