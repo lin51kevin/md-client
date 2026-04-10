@@ -597,14 +597,25 @@ export default function App() {
     focusMode, setFocusMode,
   });
 
-  // Per-tab EditorState persistence: preserves cursor position and undo history
-  const savedStatesRef = useRef<Map<string, EditorState>>(new Map());
+  // Per-tab EditorState persistence: preserves cursor position and undo history.
+  // themeKey is stored alongside the state so we can detect stale theme configs on restore.
+  const savedStatesRef = useRef<Map<string, { state: EditorState; themeKey: string }>>(new Map());
 
   const handleCreateEditor = useCallback((view: EditorView) => {
     cmViewRef.current = view;
-    const savedState = savedStatesRef.current.get(activeTabId);
-    if (savedState) {
-      view.setState(savedState);
+    const saved = savedStatesRef.current.get(activeTabId);
+    if (saved) {
+      if (saved.themeKey === theme) {
+        // Same theme: restore full state (cursor, undo history, config)
+        view.setState(saved.state);
+      } else {
+        // Theme changed since this tab was last active: the saved EditorState
+        // embeds the old CodeMirror theme extensions. Restoring it via setState
+        // would override the current theme and @uiw/react-codemirror's reconfigure
+        // effect won't re-fire (theme prop didn't change between renders).
+        // Only restore the cursor selection; the new theme config stays intact.
+        view.dispatch({ selection: saved.state.selection });
+      }
     }
 
     // F014 — 编辑器右键上下文菜单（在 onCreateEditor 中绑定,确保 view 已就绪）
@@ -637,7 +648,7 @@ export default function App() {
       }
     };
     view.dom.addEventListener('dblclick', handleDblClick, { capture: true });
-  }, [activeTabId]);
+  }, [activeTabId, theme]);
 
   // F014 — 表格编辑确认处理
   const handleTableConfirm = useCallback((newTableMarkdown: string) => {
@@ -657,8 +668,8 @@ export default function App() {
   }, [editingTable, updateActiveDoc]);
 
   const handleEditorUpdate = useCallback((viewUpdate: ViewUpdate) => {
-    savedStatesRef.current.set(activeTabId, viewUpdate.state);
-  }, [activeTabId]);
+    savedStatesRef.current.set(activeTabId, { state: viewUpdate.state, themeKey: theme });
+  }, [activeTabId, theme]);
 
   // Vim extension is loaded asynchronously
   const [vimExtension, setVimExtension] = useState<Extension | null>(null);
