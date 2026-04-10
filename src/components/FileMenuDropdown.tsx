@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { FilePlus, FolderOpen, Clock, Save, SaveAll, FileText, Printer, FileCode, Trash2, ChevronRight } from 'lucide-react';
+import { FilePlus, Clock, Save, SaveAll, FileText, Printer, FileCode, Trash2, ChevronRight } from 'lucide-react';
 import type { RecentFile } from '../lib/recent-files';
 
 export interface FileMenuDropdownProps {
@@ -17,7 +17,7 @@ export interface FileMenuDropdownProps {
 
 interface MenuItem {
   id: string;
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
   label: string;
   shortcut?: string;
   action?: () => void;
@@ -138,6 +138,7 @@ export function FileMenuDropdown({
         {/* Submenu */}
         {item.submenu && isActive && (
           <div
+            className={item.id === 'recent' ? 'file-menu-recent-list' : undefined}
             style={{
               position: 'absolute',
               left: '100%',
@@ -164,7 +165,7 @@ export function FileMenuDropdown({
     ? [
         ...recentFiles.slice(0, 10).map((f) => ({
           id: `recent-${f.path}`,
-          icon: <FolderOpen size={13} strokeWidth={1.8} />,
+          
           label: f.name,
           action: () => { onOpenRecent?.(f.path); },
         })),
@@ -217,7 +218,7 @@ export function FileMenuDropdown({
     },
     {
       id: 'open',
-      icon: <FolderOpen size={13} strokeWidth={1.8} />,
+      
       label: '打开文件…',
       shortcut: 'Ctrl+O',
       action: onOpenFile,

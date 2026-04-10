@@ -282,11 +282,10 @@ export default function App() {
         });
         break;
       }
-      case 'image': {
+      case 'image':
+      case 'image-local': {
         (async () => {
-          let mdSyntax: string | null = null;
           try {
-            // 优先使用 Tauri 文件对话框选择本地图片
             const { open } = await import('@tauri-apps/plugin-dialog');
             const filePath = await open({
               filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'] }],
@@ -295,12 +294,10 @@ export default function App() {
             }) as string | null;
             if (!filePath) return;
 
-            // 读取选中文件为 ArrayBuffer
             const resp = await fetch(`asset://localhost/${encodeURIComponent(filePath)}`);
             const buffer = await resp.arrayBuffer();
             const data = Array.from(new Uint8Array(buffer));
 
-            // 确定保存路径和文件名
             const ext = filePath.split('.').pop()?.toLowerCase() || 'png';
             const timestamp = Date.now();
             const fileName = `img-${timestamp}.${ext}`;
@@ -308,35 +305,33 @@ export default function App() {
             const saveDir = docPath ? `${docPath.replace(/[/\\][^/\\]+$/, '')}/assets/images` : './assets/images';
             const savePath = `${saveDir}/${fileName}`;
 
-            // 调用 Rust 命令保存图片
             await invoke('write_image_bytes', { path: savePath, data });
 
-            // 构建相对路径 Markdown
-            mdSyntax = `![](assets/images/${fileName})`;
-          } catch {
-            // Tauri 对话框不可用（非 Tauri 环境）→ 回退到 prompt
-            const src = window.prompt('请输入图片地址或 URL：');
-            if (src === null) return;
-            if (src === '') {
-              view.dispatch({ changes: { from: sel.from, to: sel.from, insert: '![]()' } });
-              return;
-            }
-            const selInfo: SelectionInfo = { text: docText, start: sel.from, end: sel.to };
-            const result: FormatResult = insertImage(selInfo, src);
-            view.dispatch({
-              changes: { from: sel.from, to: sel.to, insert: result.replacement },
-              selection: { anchor: sel.from + result.newCursorOffset },
-            });
-            return;
-          }
-
-          if (mdSyntax) {
+            const mdSyntax = `![](assets/images/${fileName})`;
             view.dispatch({
               changes: { from: sel.from, to: sel.to, insert: mdSyntax },
               selection: { anchor: sel.from + mdSyntax.length },
             });
+          } catch {
+            // 非 Tauri 环境 → 提示用户使用图片链接功能
+            window.alert('本地图片选择需要 Tauri 环境，请使用「插入图片链接」功能。');
           }
         })();
+        break;
+      }
+      case 'image-link': {
+        const src = window.prompt('请输入图片链接：');
+        if (src === null) return;
+        if (src === '') {
+          view.dispatch({ changes: { from: sel.from, to: sel.from, insert: '![]()' } });
+          return;
+        }
+        const selInfo: SelectionInfo = { text: docText, start: sel.from, end: sel.to };
+        const result: FormatResult = insertImage(selInfo, src);
+        view.dispatch({
+          changes: { from: sel.from, to: sel.to, insert: result.replacement },
+          selection: { anchor: sel.from + result.newCursorOffset },
+        });
         break;
       }
     }
@@ -507,7 +502,7 @@ export default function App() {
         break;
       case 'bold': case 'italic': case 'strikethrough': case 'code':
       case 'heading': case 'blockquote': case 'ul': case 'ol':
-      case 'link': case 'image':
+      case 'link': case 'image': case 'image-link':
         handleFormatAction(action);
         break;
       case 'headingPromote': {
@@ -816,6 +811,7 @@ export default function App() {
             onToggleSearch={() => setShowSearchPanel(prev => !prev)}
             showSearch={showSearchPanel}
             onFormatAction={handleFormatAction}
+            onImageLocal={() => handleFormatAction('image-local')}
           />
 
           <TabBar

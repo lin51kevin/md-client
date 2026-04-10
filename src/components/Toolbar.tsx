@@ -1,5 +1,5 @@
 
-import { Save, SaveAll, PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, List, SpellCheck, FolderTree, Search, Image, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link } from 'lucide-react';
+import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, List, SpellCheck, FolderTree, Search, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link } from 'lucide-react';
 import { ViewMode, FocusMode } from '../types';
 import type { ThemeName } from '../lib/theme';
 import { FileMenuDropdown } from './FileMenuDropdown';
@@ -41,7 +41,7 @@ interface ToolbarProps {
   onClearRecent?: () => void;
 }
 
-export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentTheme, onNewTab, onOpenFile, onSaveFile, onSaveAsFile, onExportDocx, onExportPdf, onExportHtml, onSetViewMode, onFocusModeChange, onToggleToc, onThemeChange, spellCheck, onToggleSpellCheck, onToggleFileTree, onToggleSearch, showSearch, onFormatAction, recentFiles, onOpenRecent, onClearRecent }: ToolbarProps) {
+export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentTheme, onNewTab, onOpenFile, onSaveFile, onSaveAsFile, onExportDocx, onExportPdf, onExportHtml, onSetViewMode, onFocusModeChange, onToggleToc, onThemeChange, spellCheck, onToggleSpellCheck, onToggleFileTree, onToggleSearch, showSearch, onFormatAction, recentFiles, onOpenRecent, onClearRecent, onImageLocal }: ToolbarProps & { onImageLocal?: () => void }) {
   const btnCls = 'flex items-center gap-1.5 px-2.5 py-1 text-xs hover:shadow-sm border border-transparent rounded transition-all';
   const viewBtnCls = (active: boolean) =>
     'flex items-center gap-1.5 px-2.5 py-1 text-xs rounded border transition-all ' +
@@ -72,13 +72,7 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentThe
           onClearRecent={onClearRecent}
         />
 
-        {/* 保留：保存、另存为（快捷键 Ctrl+S / Ctrl+Shift+S 是刚需） */}
-        <button onClick={onSaveFile} title="保存 (Ctrl+S)" className={btnCls}>
-          <Save size={15} strokeWidth={1.8} /><span>保存</span>
-        </button>
-        <button onClick={onSaveAsFile} title="另存为… (Ctrl+Shift+S)" className={btnCls}>
-          <SaveAll size={15} strokeWidth={1.8} /><span>另存为</span>
-        </button>
+
 
         <div className="w-px h-5 mx-1" style={{ backgroundColor: 'var(--border-color)' }} />
         {/* F014 — 格式化工具栏 */}
@@ -111,8 +105,11 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentThe
         <button onClick={() => onFormatAction?.('link')} title="插入链接" className={btnCls}>
           <Link size={14} strokeWidth={2} />
         </button>
-        <button onClick={() => onFormatAction?.('image')} title="插入图片" className={btnCls}>
-          <Image size={14} strokeWidth={2} />
+        <button onClick={() => onImageLocal?.()} title="打开本地图片" className={btnCls}>
+          <ImagePlus size={14} strokeWidth={2} />
+        </button>
+        <button onClick={() => onFormatAction?.('image-link')} title="插入图片链接" className={btnCls}>
+          <Link2 size={14} strokeWidth={2} />
         </button>
       </div>
       <div className="flex items-center gap-0.5">

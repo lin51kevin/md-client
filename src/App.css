@@ -802,3 +802,18 @@ body {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
 }
+
+/* 文件菜单滚动条主题适配 */
+.file-menu-recent-list::-webkit-scrollbar {
+  width: 6px;
+}
+.file-menu-recent-list::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+.file-menu-recent-list::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+.file-menu-recent-list::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
