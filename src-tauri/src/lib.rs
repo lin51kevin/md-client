@@ -155,7 +155,8 @@ fn read_dir_recursive(path: String, depth: Option<u32>) -> Result<DirEntry, Stri
             .map_err(|e| e.to_string())?
             .filter_map(Result::ok)
             .filter(|entry| {
-                let name_str = entry.file_name().to_string_lossy();
+                let file_name = entry.file_name();
+                let name_str = file_name.to_string_lossy();
                 if name_str.starts_with('.') { return false; }
                 if entry.path().is_dir() { return true; }
                 if !entry.path().is_file() { return false; }

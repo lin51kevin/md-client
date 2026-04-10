@@ -25,3 +25,7 @@ dist-ssr
 
 # Claude Code
 .claude/
+
+# Docs
+docs/FEATURE_COMPARISON.md
+docs/ISSUES_TO_FIX.md
