@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { FilePlus, Clock, Save, SaveAll, FileText, FolderOpen,Printer, FileCode, Trash2, ChevronRight, Download } from 'lucide-react';
+import { FilePlus, Clock, Save, SaveAll, FileText, FolderOpen, FileCode, Trash2, ChevronRight, Download, BookOpen, Image } from 'lucide-react';
 import type { RecentFile } from '../lib/recent-files';
 import { useI18n } from '../i18n';
 
@@ -215,7 +215,7 @@ export function FileMenuDropdown({
     },
     {
       id: 'export-pdf',
-      icon: <Printer size={13} strokeWidth={1.8} />,
+      icon: <BookOpen size={13} strokeWidth={1.8} />,
       label: t('file.exportPdf'),
       action: onExportPdf,
     },
@@ -227,7 +227,7 @@ export function FileMenuDropdown({
     },
     ...(onExportPng ? [{
       id: 'export-png',
-      icon: <Download size={13} strokeWidth={1.8} />,
+      icon: <Image size={13} strokeWidth={1.8} />,
       label: t('file.exportPng'),
       action: onExportPng,
     }] : []),

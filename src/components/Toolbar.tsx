@@ -1,5 +1,5 @@
 
-import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, List, SpellCheck, FolderTree, Search, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, Settings } from 'lucide-react';
+import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, List, SpellCheck, FolderTree, Search, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, Settings, FilePlus, FolderOpen as FolderOpenIcon, Save, SaveAll } from 'lucide-react';
 import { ViewMode, FocusMode } from '../types';
 
 import { FileMenuDropdown } from './FileMenuDropdown';
@@ -82,7 +82,19 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, onNewTab, 
           onClearRecent={onClearRecent}
         />
 
-
+        {/* 文件操作图标按钮 */}
+        <button onClick={onNewTab} title={t('file.new')} className={btnCls}>
+          <FilePlus size={14} strokeWidth={1.8} />
+        </button>
+        <button onClick={onOpenFile} title={t('file.open')} className={btnCls}>
+          <FolderOpenIcon size={14} strokeWidth={1.8} />
+        </button>
+        <button onClick={onSaveFile} title={t('file.save')} className={btnCls}>
+          <Save size={14} strokeWidth={1.8} />
+        </button>
+        <button onClick={onSaveAsFile} title={t('file.saveAs')} className={btnCls}>
+          <SaveAll size={14} strokeWidth={1.8} />
+        </button>
 
         <div className="w-px h-5 mx-1" style={{ backgroundColor: 'var(--border-color)' }} />
         {/* F014 — 格式化工具栏 */}
