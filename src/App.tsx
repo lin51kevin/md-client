@@ -23,6 +23,7 @@ import { useCursorPosition } from './hooks/useCursorPosition';
 import { useFocusMode } from './hooks/useFocusMode';
 import { extractToc, type TocEntry } from './lib/toc';
 import { applyTheme, getSavedTheme, saveTheme, THEMES, type ThemeName } from './lib/theme';
+import { sepiaCmTheme, highContrastCmTheme } from './lib/cm-themes';
 import { getSnapshots, createSnapshot as createVersionSnapshot, restoreSnapshot } from './lib/version-history';
 import { getRecentFiles, clearRecentFiles, type RecentFile } from './lib/recent-files';
 import { autoCloseBrackets } from './lib/cmAutocomplete';
@@ -86,7 +87,7 @@ import { useFormatActions } from './hooks/useFormatActions';
 import { parseTable, serializeTable, type TableData } from './lib/table-parser';
 import { TableEditor } from './components/TableEditor';
 import { InputDialog, type InputDialogConfig } from './components/InputDialog';
-import { WelcomePage } from './components/WelcomePage';
+import { WelcomePage, EmptyEditorState } from './components/WelcomePage';
 import { DEFAULT_MARKDOWN } from './constants';
 
 
@@ -124,6 +125,22 @@ export default function App() {
 
   // F011 - 主题系统
   const [theme, setThemeState] = useState<ThemeName>(() => getSavedTheme() || 'light');
+
+  // Welcome page dismissed state – persisted so closing sticks across restarts
+  const [welcomeDismissed, setWelcomeDismissed] = useState<boolean>(() => {
+    try { return localStorage.getItem('marklite-welcome-dismissed') === 'true'; }
+    catch { return false; }
+  });
+
+  const handleDismissWelcome = useCallback(() => {
+    try { localStorage.setItem('marklite-welcome-dismissed', 'true'); } catch { /* ignore */ }
+    setWelcomeDismissed(true);
+  }, []);
+
+  const handleShowWelcome = useCallback(() => {
+    try { localStorage.removeItem('marklite-welcome-dismissed'); } catch { /* ignore */ }
+    setWelcomeDismissed(false);
+  }, []);
 
 
   // F012 - 版本历史
@@ -677,8 +694,13 @@ export default function App() {
   ], [cursorExtension, vimExtension, vimMode, searchHighlightExtension]);
   const editorSetup = EDITOR_SETUP;
 
-  // F009 - 根据焦点模式动态调整主题色 (使用当前主题)
-  const editorTheme = THEMES[theme].cmTheme;
+  // F011 - 解析 CodeMirror 主题（内置字符串或自定义 Extension）
+  const editorTheme: string | Extension[] = (() => {
+    const cm = THEMES[theme].cmTheme;
+    if (cm === 'sepia') return sepiaCmTheme;
+    if (cm === 'high-contrast') return highContrastCmTheme;
+    return cm; // 'light' | 'dark'
+  })();
 
   return (
     <I18nContext.Provider value={i18n}>
@@ -840,12 +862,17 @@ export default function App() {
         />
 
         {tabs.length === 1 && !tabs[0].isDirty && tabs[0].doc === DEFAULT_MARKDOWN ? (
-          <WelcomePage
-            recentFiles={recentFiles}
-            onNew={createNewTab}
-            onOpenFile={handleOpenFile}
-            onOpenRecent={handleOpenRecent}
-          />
+          welcomeDismissed ? (
+            <EmptyEditorState onShowWelcome={handleShowWelcome} />
+          ) : (
+            <WelcomePage
+              recentFiles={recentFiles}
+              onNew={createNewTab}
+              onOpenFile={handleOpenFile}
+              onOpenRecent={handleOpenRecent}
+              onDismiss={handleDismissWelcome}
+            />
+          )
         ) : viewMode === 'split' ? (
           <Split
             sizes={splitSizes}

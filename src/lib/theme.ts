@@ -51,7 +51,7 @@ export interface ThemeConfig {
   /** CSS 变量映射（注入到 :root 或容器上） */
   cssVars: Record<string, string>;
   /** CodeMirror 主题名 */
-  cmTheme: 'light' | 'dark';
+  cmTheme: 'light' | 'dark' | 'sepia' | 'high-contrast';
   /** 预览区域 CSS class */
   previewClass: string;
   /** 是否为深色主题 */
@@ -112,7 +112,7 @@ export const THEMES: Record<ThemeName, ThemeConfig> = {
     name: 'sepia',
     label: '📖 护眼',
     labelEn: 'Sepia (Eye Care)',
-    cmTheme: 'light',
+    cmTheme: 'sepia',
     previewClass: 'markdown-preview-sepia',
     isDark: false,
     cssVars: {
@@ -136,7 +136,7 @@ export const THEMES: Record<ThemeName, ThemeConfig> = {
     name: 'high-contrast',
     label: '◻️ 高对比',
     labelEn: 'High Contrast',
-    cmTheme: 'light',
+    cmTheme: 'high-contrast',
     previewClass: 'markdown-preview-high-contrast',
     isDark: false,
     cssVars: {

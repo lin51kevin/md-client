@@ -57,7 +57,7 @@ describe('Unified Theme System', () => {
       expect(cfg).toHaveProperty('isDark');
       expect(typeof cfg.label).toBe('string');
       expect(typeof cfg.previewClass).toBe('string');
-      expect(['light', 'dark']).toContain(cfg.cmTheme);
+      expect(['light', 'dark', 'sepia', 'high-contrast']).toContain(cfg.cmTheme);
     }
   });
 
