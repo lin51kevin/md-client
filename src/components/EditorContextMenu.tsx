@@ -5,7 +5,7 @@ import {
   Heading1, ArrowDownToLine, ArrowUpFromLine,
   Plus, Minus, AlignLeft, AlignCenter, AlignRight,
   IndentIncrease, IndentDecrease, ListOrdered,
-  Quote, Sigma
+  Quote, Sigma, Pencil
 } from 'lucide-react';
 import type { ContextInfo } from '../lib/context-menu';
 import { useI18n } from '../i18n';
@@ -69,6 +69,7 @@ function buildMenuItems(context: ContextInfo, t: (key: TranslationKey) => string
 
     case 'table':
       contextual.push(
+        { id: 'editTable', label: t('ctx.editTable'), icon: <Pencil size={14} strokeWidth={1.8} />, divider: true },
         { id: 'tableInsertRow', label: t('ctx.tableInsertRow'), icon: <Plus size={14} strokeWidth={1.8} /> },
         { id: 'tableDeleteRow', label: t('ctx.tableDeleteRow'), icon: <Minus size={14} strokeWidth={1.8} /> },
         { id: 'tableInsertCol', label: t('ctx.tableInsertCol'), icon: <Plus size={14} strokeWidth={1.8} /> },

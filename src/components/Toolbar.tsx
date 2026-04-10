@@ -1,5 +1,5 @@
 
-import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, List, SpellCheck, FolderTree, Search, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Languages } from 'lucide-react';
+import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, List, SpellCheck, FolderTree, Search, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Languages, Terminal } from 'lucide-react';
 import { ViewMode, FocusMode } from '../types';
 import type { ThemeName } from '../lib/theme';
 import { FileMenuDropdown } from './FileMenuDropdown';
@@ -34,6 +34,10 @@ interface ToolbarProps {
   showSearch?: boolean;
   /** F014: 格式化操作回调 */
   onFormatAction?: (action: string) => void;
+  /** F014: Vim 模式状态 */
+  vimMode?: boolean;
+  /** F014: Vim 模式切换回调 */
+  onToggleVimMode?: () => void;
   /** F013: 最近文件列表 */
   recentFiles?: import('../lib/recent-files').RecentFile[];
   /** F013: 打开最近文件 */
@@ -42,7 +46,7 @@ interface ToolbarProps {
   onClearRecent?: () => void;
 }
 
-export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentTheme, onNewTab, onOpenFile, onSaveFile, onSaveAsFile, onExportDocx, onExportPdf, onExportHtml, onSetViewMode, onFocusModeChange, onToggleToc, onThemeChange, spellCheck, onToggleSpellCheck, onToggleFileTree, onToggleSearch, showSearch, onFormatAction, recentFiles, onOpenRecent, onClearRecent, onImageLocal }: ToolbarProps & { onImageLocal?: () => void }) {
+export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentTheme, onNewTab, onOpenFile, onSaveFile, onSaveAsFile, onExportDocx, onExportPdf, onExportHtml, onSetViewMode, onFocusModeChange, onToggleToc, onThemeChange, spellCheck, onToggleSpellCheck, onToggleFileTree, onToggleSearch, showSearch, onFormatAction, recentFiles, onOpenRecent, onClearRecent, vimMode, onToggleVimMode, onImageLocal }: ToolbarProps & { onImageLocal?: () => void }) {
   const { t, locale, setLocale } = useI18n();
   const btnCls = 'flex items-center gap-1.5 px-2.5 py-1 text-xs hover:shadow-sm border border-transparent rounded transition-all';
   const viewBtnCls = (active: boolean) =>
@@ -217,6 +221,32 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentThe
           }}
         >
           <SpellCheck size={14} strokeWidth={1.8} />
+        </button>
+
+        {/* F014 — Vim 模式切换 */}
+        <button
+          onClick={onToggleVimMode}
+          title={vimMode ? t('toolbar.vimModeOff') : t('toolbar.vimModeOn')}
+          className={focusBtnCls(!!vimMode)}
+          style={{
+            backgroundColor: vimMode ? 'var(--accent-bg)' : 'transparent',
+            borderColor: vimMode ? 'var(--accent-color)' : 'transparent',
+            color: vimMode ? 'var(--accent-color)' : 'var(--text-secondary)'
+          }}
+          onMouseEnter={(e) => {
+            if (!vimMode) {
+              e.currentTarget.style.color = 'var(--text-primary)';
+              e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!vimMode) {
+              e.currentTarget.style.color = 'var(--text-secondary)';
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }
+          }}
+        >
+          <Terminal size={14} strokeWidth={1.8} />
         </button>
 
         {/* Language switcher */}

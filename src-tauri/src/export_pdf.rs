@@ -1,10 +1,39 @@
 use std::fs;
-use pulldown_cmark::{Event, Options, Parser, Tag, TagEnd, HeadingLevel};
+use pulldown_cmark::{Event, Options, Parser, Tag, TagEnd, HeadingLevel, CodeBlockKind};
 use genpdf::elements;
 use genpdf::style;
 use genpdf::Element as _;
+use image::GenericImageView as _;
 
 use crate::markdown_preprocess::preprocess_markdown;
+
+/// Replace supplementary-plane characters (U+10000+) that standard CJK fonts
+/// cannot render in PDF.  Known emoji are substituted with their shortcode
+/// notation (:name:); other unrenderable characters are dropped silently.
+fn sanitize_text_for_pdf(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    for c in text.chars() {
+        let cp = c as u32;
+        if cp > 0xFFFF {
+            // Supplementary plane — most common case is emoji
+            let s = c.to_string();
+            if let Some(emoji) = emojis::get(&s) {
+                if let Some(sc) = emoji.shortcode() {
+                    out.push(':');
+                    out.push_str(sc);
+                    out.push(':');
+                }
+                // else: drop (no shortcode available)
+            }
+            // else: drop unknown supplementary-plane char
+        } else if (0xFE00..=0xFE0F).contains(&cp) {
+            // Variation selectors — not renderable, drop
+        } else {
+            out.push(c);
+        }
+    }
+    out
+}
 
 fn find_system_font_dir() -> Result<std::path::PathBuf, String> {
     // Try common system font directories
@@ -106,7 +135,11 @@ fn list_prefix(list_stack: &[Option<u64>], item_counter: &mut [u64], indent_leve
     }
 }
 
-pub fn export_pdf(markdown: &str, output_path: &str) -> Result<(), String> {
+pub fn export_pdf(
+    markdown: &str,
+    output_path: &str,
+    images: &std::collections::HashMap<String, (Vec<u8>, u32, u32)>,
+) -> Result<(), String> {
     let font_family = load_font_family()?;
     let mut doc = genpdf::Document::new(font_family);
     doc.set_title("Exported Document");
@@ -121,7 +154,8 @@ pub fn export_pdf(markdown: &str, output_path: &str) -> Result<(), String> {
 
     let options = Options::ENABLE_TABLES
         | Options::ENABLE_STRIKETHROUGH
-        | Options::ENABLE_TASKLISTS;
+        | Options::ENABLE_TASKLISTS
+        | Options::ENABLE_MATH;
     let preprocessed = preprocess_markdown(markdown);
     let parser = Parser::new_ext(&preprocessed, options);
 
@@ -130,6 +164,8 @@ pub fn export_pdf(markdown: &str, output_path: &str) -> Result<(), String> {
     let mut is_italic = false;
     let mut in_code_block = false;
     let mut code_block_text = String::new();
+    let mut code_block_lang = String::new();
+    let mut mermaid_counter = 0usize;
     let mut heading_level: Option<HeadingLevel> = None;
     let mut heading_text = String::new();
     let mut in_blockquote = false;
@@ -294,19 +330,53 @@ pub fn export_pdf(markdown: &str, output_path: &str) -> Result<(), String> {
             }
 
             // --- Code blocks ---
-            Event::Start(Tag::CodeBlock(_)) => {
+            Event::Start(Tag::CodeBlock(kind)) => {
                 in_code_block = true;
                 code_block_text.clear();
+                code_block_lang = match kind {
+                    CodeBlockKind::Fenced(lang) => lang.trim().to_string(),
+                    CodeBlockKind::Indented => String::new(),
+                };
             }
             Event::End(TagEnd::CodeBlock) => {
                 in_code_block = false;
+
+                // --- Mermaid diagrams: embed pre-rendered PNG if available ---
+                if code_block_lang == "mermaid" {
+                    let key = format!("mermaid_{}", mermaid_counter);
+                    mermaid_counter += 1;
+                    if let Some((png_bytes, _, _)) = images.get(&key) {
+                        match image::load_from_memory(png_bytes) {
+                            Ok(raw_img) => {
+                                let (px_w, _) = raw_img.dimensions();
+                                // Compute DPI so image fits within 170mm content width
+                                let dpi = (25.4 * px_w as f64 / 170.0).max(72.0);
+                                // Convert RGBA→RGB (genpdf doesn't support alpha)
+                                let rgb = image::DynamicImage::ImageRgb8(raw_img.to_rgb8());
+                                match elements::Image::from_dynamic_image(rgb) {
+                                    Ok(img_el) => {
+                                        doc.push(elements::Break::new(1.0));
+                                        doc.push(img_el.with_dpi(dpi));
+                                        doc.push(elements::Break::new(1.0));
+                                        code_block_text.clear();
+                                        code_block_lang.clear();
+                                        continue;
+                                    }
+                                    Err(_) => {} // fall through to code-block fallback
+                                }
+                            }
+                            Err(_) => {} // fall through to code-block fallback
+                        }
+                    }
+                }
+
                 // Render code block as framed, mono-styled text
                 let mut code_style = style::Style::new();
                 code_style.set_font_size(9);
                 code_style.set_color(style::Color::Rgb(33, 37, 41)); // Dark gray/black for contrast
                 let mut layout = elements::LinearLayout::vertical();
                 for line in code_block_text.trim_end().lines() {
-                    let text_line = if line.is_empty() { " " } else { line };  
+                    let text_line = if line.is_empty() { " " } else { line };
                     layout.push(elements::Paragraph::new(
                         style::StyledString::new(text_line.to_string(), code_style.clone())
                     ));
@@ -315,12 +385,13 @@ pub fn export_pdf(markdown: &str, output_path: &str) -> Result<(), String> {
                 // Add inner padding INSIDE the frame
                 let inner_padded = elements::PaddedElement::new(layout, genpdf::Margins::trbl(2, 3, 2, 3));
                 let mut frame_style = style::Style::new();
-                frame_style.set_color(style::Color::Rgb(230, 230, 230));       
+                frame_style.set_color(style::Color::Rgb(230, 230, 230));
                 let framed = elements::FramedElement::new(inner_padded).styled(frame_style);
                 // Bottom spacing will stack with next paragraph's margin (1mm), so use 0.5mm here
                 let outer_padded = elements::PaddedElement::new(framed, genpdf::Margins::trbl(1, 0, 0.5, 0));
                 doc.push(outer_padded);
                 code_block_text.clear();
+                code_block_lang.clear();
             }
 
             // --- Inline code ---
@@ -436,6 +507,41 @@ pub fn export_pdf(markdown: &str, output_path: &str) -> Result<(), String> {
                 doc.push(UnderlineElement.styled(rule_style));
             }
 
+            // --- Math (requires ENABLE_MATH option) ---
+            Event::InlineMath(formula) => {
+                // Show inline math without $ delimiters in a distinguishable style
+                let mut s = style::Style::new();
+                s.set_font_size(10);
+                s.set_italic();
+                s.set_color(style::Color::Rgb(70, 90, 180));
+                para_parts.push(style::StyledString::new(formula.to_string(), s));
+            }
+            Event::DisplayMath(formula) => {
+                // Flush any pending inline paragraph first
+                if !para_parts.is_empty() {
+                    let p = flush_para(&mut para_parts);
+                    let padded = elements::PaddedElement::new(p, genpdf::Margins::trbl(0, 0, 1, 0));
+                    doc.push(padded);
+                }
+                // Render display math as a framed styled block (LaTeX source, no $ signs)
+                let mut math_style = style::Style::new();
+                math_style.set_font_size(10);
+                math_style.set_italic();
+                math_style.set_color(style::Color::Rgb(70, 90, 180));
+                let mut layout = elements::LinearLayout::vertical();
+                for line in formula.lines() {
+                    let text_line = if line.trim().is_empty() { " " } else { line };
+                    layout.push(elements::Paragraph::new(
+                        style::StyledString::new(text_line.to_string(), math_style.clone())
+                    ));
+                }
+                let inner = elements::PaddedElement::new(layout, genpdf::Margins::trbl(2, 3, 2, 3));
+                let mut frame_style = style::Style::new();
+                frame_style.set_color(style::Color::Rgb(180, 200, 240));
+                let framed = elements::FramedElement::new(inner).styled(frame_style);
+                doc.push(elements::PaddedElement::new(framed, genpdf::Margins::trbl(1, 0, 1, 0)));
+            }
+
             // --- Task lists ---
             Event::TaskListMarker(checked) => {
                 let symbol = if checked { "[x] " } else { "[ ] " };
@@ -449,10 +555,10 @@ pub fn export_pdf(markdown: &str, output_path: &str) -> Result<(), String> {
                 } else if heading_level.is_some() {
                     heading_text.push_str(&text);
                 } else if in_table {
-                    current_cell_text.push_str(&text);
+                    current_cell_text.push_str(&sanitize_text_for_pdf(&text));
                 } else {
                     para_parts.push(style::StyledString::new(
-                        text.to_string(),
+                        sanitize_text_for_pdf(&text),
                         make_style(is_bold, is_italic),
                     ));
                 }

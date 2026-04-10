@@ -26,6 +26,8 @@ tauri-plugin-dialog = "2.7"
 tauri-plugin-fs = "2.5"
 pulldown-cmark = { version = "0.12", features = ["html"] }
 docx-rs = "0.4"
-genpdf = "0.2"
+genpdf = { version = "0.2", features = ["images"] }
+base64 = "0.22"
+image = { version = "0.23", default-features = false, features = ["png", "jpeg"] }
 emojis = "0.8.0"
 regex = "1"

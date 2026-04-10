@@ -18,6 +18,10 @@ vi.mock('../../lib/html-export', () => ({
   generateHtmlDocument: vi.fn(() => Promise.resolve('<html></html>')),
 }));
 
+vi.mock('../../lib/export-prerender', () => ({
+  prerenderExportAssets: vi.fn(() => Promise.resolve({})),
+}));
+
 describe('useFileOps', () => {
   let mockGetActiveTab: ReturnType<typeof vi.fn>;
   let mockOpenFileInTab: ReturnType<typeof vi.fn>;
@@ -349,6 +353,7 @@ describe('useFileOps', () => {
         markdown: '# Content 1',
         outputPath: '/export.docx',
         format: 'docx',
+        preRenderedImages: {},
       });
     });
 
@@ -372,6 +377,7 @@ describe('useFileOps', () => {
         markdown: '# Content 1',
         outputPath: '/export.pdf',
         format: 'pdf',
+        preRenderedImages: {},
       });
     });
   });

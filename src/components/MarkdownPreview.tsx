@@ -70,7 +70,21 @@ interface MarkdownPreviewProps {
  * Resolve a relative path against the directory of the open document.
  * Works for both forward and back slashes on Windows.
  */
+/**
+ * Check if a path is absolute (Unix /home/user or Windows C:\)
+ */
+function isAbsolutePath(p: string): boolean {
+  // Unix absolute path
+  if (p.startsWith('/')) return true;
+  // Windows absolute path (C:\, D:\, etc.)
+  if (/^[a-zA-Z]:[\/]/.test(p)) return true;
+  return false;
+}
+
 function resolvePath(docFilePath: string, rel: string): string {
+  // If src is already absolute, return as-is
+  if (isAbsolutePath(rel)) return rel;
+
   const dir = docFilePath.replace(/\\/g, "/").replace(/\/[^/]+$/, "");
   const parts = (dir + "/" + rel.replace(/\\/g, "/")).split("/");
   const resolved: string[] = [];

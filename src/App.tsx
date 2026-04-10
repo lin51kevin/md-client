@@ -50,6 +50,22 @@ function saveSpellCheck(value: boolean): void {
   } catch { /* ignore quota errors */ }
 }
 
+
+// F014: Vim 模式状态管理(默认关闭)
+const DEFAULT_VIM_MODE = false;
+
+function getSavedVimMode(): boolean {
+  try {
+    const saved = localStorage.getItem('marklite-vimmode');
+    return saved === null ? DEFAULT_VIM_MODE : saved === 'true';
+  } catch { return DEFAULT_VIM_MODE; }
+}
+
+function saveVimMode(value: boolean): void {
+  try {
+    localStorage.setItem('marklite-vimmode', String(value));
+  } catch { /* ignore quota errors */ }
+}
 import { Toolbar } from './components/Toolbar';
 import { TabBar } from './components/TabBar';
 import { TabContextMenu } from './components/TabContextMenu';
@@ -66,7 +82,8 @@ import { FileTreeSidebar } from './components/FileTreeSidebar';
 import { useSearchHighlight } from './hooks/useSearchHighlight';
 import { useImagePaste } from './hooks/useImagePaste';
 import { useFormatActions } from './hooks/useFormatActions';
-import { parseTable, serializeTable } from './lib/table-parser';
+import { parseTable, serializeTable, type TableData } from './lib/table-parser';
+import { TableEditor } from './components/TableEditor';
 import { InputDialog, type InputDialogConfig } from './components/InputDialog';
 
 
@@ -82,6 +99,8 @@ export default function App() {
 
   // F014 — 编辑器右键上下文菜单
   const [editorCtxMenu, setEditorCtxMenu] = useState<{ x: number; y: number; context: import('./lib/context-menu').ContextInfo } | null>(null);
+  // F014 — 表格编辑状态
+  const [editingTable, setEditingTable] = useState<TableData | null>(null);
 
   // F009 - 焦点模式
   const { focusMode, setFocusMode, isChromeless, hideStatusBar } = useFocusMode();
@@ -95,6 +114,8 @@ export default function App() {
 
   // F013 - 拼写检查
   const [spellCheck, setSpellCheck] = useState<boolean>(getSavedSpellCheck);
+  // F014 - Vim 模式
+  const [vimMode, setVimMode] = useState<boolean>(getSavedVimMode);
 
   // F011 - 主题系统
   const [theme, setThemeState] = useState<ThemeName>(() => getSavedTheme() || 'light');
@@ -326,20 +347,37 @@ export default function App() {
   }, [openFileInTab, activeTab.filePath, activeTabId, setActiveTabId]);
 
   // F014 — 编辑器右键菜单事件监听
+  // 使用 ref 保存 cleanup 函数，确保每次都能正确清理
+  const ctxMenuCleanupRef = useRef<(() => void) | null>(null);
+
   useEffect(() => {
+    // 清理之前的监听器
+    ctxMenuCleanupRef.current?.();
+
     const view = cmViewRef.current;
-    if (!view) return;
+    if (!view) {
+      ctxMenuCleanupRef.current = null;
+      return;
+    }
+
     const dom = view.dom;
     const handleCtxMenu = (e: MouseEvent) => {
       e.preventDefault();
+      e.stopPropagation(); // 阻止事件冒泡到父元素
       const pos = view.posAtCoords({ x: e.clientX, y: e.clientY });
       if (!pos) return;
       const contextInfo = detectContext(activeTab.doc, pos);
       setEditorCtxMenu({ x: e.clientX, y: e.clientY, context: contextInfo });
     };
-    dom.addEventListener('contextmenu', handleCtxMenu);
-    return () => dom.removeEventListener('contextmenu', handleCtxMenu);
-  }, [activeTab.doc]);
+
+    dom.addEventListener('contextmenu', handleCtxMenu, { capture: true }); // 使用 capture 阶段
+    ctxMenuCleanupRef.current = () => {
+      dom.removeEventListener('contextmenu', handleCtxMenu, { capture: true });
+      ctxMenuCleanupRef.current = null;
+    };
+
+    return ctxMenuCleanupRef.current;
+  }, [activeTab.doc, activeTabId]); // 添加 activeTabId 依赖
 
   // F014 — 编辑器右键菜单操作处理
   const handleEditorCtxAction = useCallback((action: string) => {
@@ -457,6 +495,15 @@ export default function App() {
       case 'removeBlockquote':
         handleFormatAction('blockquote'); // toggle removes it
         break;
+      case 'editTable': {
+        const doc = view.state.doc.toString();
+        const sel = view.state.selection.main;
+        const tableData = parseTable(doc, sel.from);
+        if (tableData) {
+          setEditingTable(tableData);
+        }
+        return;
+      }
       case 'tableInsertRow': case 'tableDeleteRow':
       case 'tableInsertCol': case 'tableDeleteCol':
       case 'alignLeft': case 'alignCenter': case 'alignRight': {
@@ -554,7 +601,37 @@ export default function App() {
     if (savedState) {
       view.setState(savedState);
     }
+
+    // F014 — 双击表格时打开表格编辑器
+    const handleDblClick = (e: MouseEvent) => {
+      const pos = view.posAtCoords({ x: e.clientX, y: e.clientY });
+      if (!pos) return;
+      const doc = view.state.doc.toString();
+      const tableData = parseTable(doc, pos);
+      if (tableData) {
+        e.preventDefault();
+        setEditingTable(tableData);
+      }
+    };
+    view.dom.addEventListener('dblclick', handleDblClick, { capture: true });
   }, [activeTabId]);
+
+  // F014 — 表格编辑确认处理
+  const handleTableConfirm = useCallback((newTableMarkdown: string) => {
+    if (!editingTable) return;
+    const view = cmViewRef.current;
+    if (!view) return;
+    const doc = view.state.doc.toString();
+    const newContent =
+      doc.slice(0, editingTable.rawStart) +
+      newTableMarkdown +
+      doc.slice(editingTable.rawEnd);
+    view.dispatch({
+      changes: { from: editingTable.rawStart, to: editingTable.rawEnd, insert: newTableMarkdown },
+    });
+    updateActiveDoc(newContent);
+    setEditingTable(null);
+  }, [editingTable, updateActiveDoc]);
 
   const handleEditorUpdate = useCallback((viewUpdate: ViewUpdate) => {
     savedStatesRef.current.set(activeTabId, viewUpdate.state);
@@ -601,8 +678,8 @@ export default function App() {
     cursorExtension,
     autoCloseBrackets(),
     searchHighlightExtension,
-    ...(vimExtension ? [vimExtension] : []),
-  ], [cursorExtension, vimExtension, searchHighlightExtension]);
+    ...(vimMode && vimExtension ? [vimExtension] : []),
+  ], [cursorExtension, vimExtension, vimMode, searchHighlightExtension]);
   const editorSetup = EDITOR_SETUP;
 
   // F009 - 根据焦点模式动态调整主题色 (使用当前主题)
@@ -668,6 +745,15 @@ export default function App() {
             />
           )}
 
+          {/* F014 — 表格编辑器 */}
+          {editingTable && (
+            <TableEditor
+              table={editingTable}
+              onConfirm={handleTableConfirm}
+              onCancel={() => setEditingTable(null)}
+            />
+          )}
+
           <Toolbar
             viewMode={viewMode}
             focusMode={focusMode}
@@ -691,6 +777,12 @@ export default function App() {
               const next = !spellCheck;
               setSpellCheck(next);
               saveSpellCheck(next);
+            }}
+            vimMode={vimMode}
+            onToggleVimMode={() => {
+              const next = !vimMode;
+              setVimMode(next);
+              saveVimMode(next);
             }}
             recentFiles={recentFiles}
             onOpenRecent={handleOpenRecent}

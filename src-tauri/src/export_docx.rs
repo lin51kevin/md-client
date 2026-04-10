@@ -24,10 +24,15 @@ fn list_prefix(list_stack: &[Option<u64>], item_counter: &mut [u64], indent_leve
     }
 }
 
-pub fn export_docx(markdown: &str, output_path: &str) -> Result<(), String> {
+pub fn export_docx(
+    markdown: &str,
+    output_path: &str,
+    images: &std::collections::HashMap<String, (Vec<u8>, u32, u32)>,
+) -> Result<(), String> {
     let options = Options::ENABLE_TABLES
         | Options::ENABLE_STRIKETHROUGH
-        | Options::ENABLE_TASKLISTS;
+        | Options::ENABLE_TASKLISTS
+        | Options::ENABLE_MATH;
     let preprocessed = preprocess_markdown(markdown);
     let parser = Parser::new_ext(&preprocessed, options);
 
@@ -39,6 +44,7 @@ pub fn export_docx(markdown: &str, output_path: &str) -> Result<(), String> {
     let mut in_code_block = false;
     let mut code_block_text = String::new();
     let mut code_block_lang = String::new();
+    let mut mermaid_counter = 0usize;
     let mut heading_level: Option<HeadingLevel> = None;
     let mut heading_runs: Vec<Run> = Vec::new();
     let mut in_blockquote = false;
@@ -208,6 +214,28 @@ pub fn export_docx(markdown: &str, output_path: &str) -> Result<(), String> {
             }
             Event::End(TagEnd::CodeBlock) => {
                 in_code_block = false;
+
+                // --- Mermaid diagrams: embed pre-rendered PNG if available ---
+                if code_block_lang == "mermaid" {
+                    let key = format!("mermaid_{}", mermaid_counter);
+                    mermaid_counter += 1;
+                    if let Some((png_bytes, w_px, h_px)) = images.get(&key) {
+                        // Scale down to fit within ~160mm (600px at 96 DPI) page width
+                        const MAX_W: u32 = 600;
+                        let (display_w, display_h) = if *w_px > MAX_W {
+                            let scale = MAX_W as f64 / *w_px as f64;
+                            (MAX_W, (*h_px as f64 * scale).round() as u32)
+                        } else {
+                            (*w_px, *h_px)
+                        };
+                        let pic = Pic::new_with_dimensions(png_bytes.clone(), display_w, display_h);
+                        let run = Run::new().add_image(pic);
+                        docx = docx.add_paragraph(Paragraph::new().add_run(run));
+                        code_block_text.clear();
+                        code_block_lang.clear();
+                        continue;
+                    }
+                }
 
                 let code_shading = Shading::new()
                     .shd_type(ShdType::Clear)
@@ -406,6 +434,46 @@ pub fn export_docx(markdown: &str, output_path: &str) -> Result<(), String> {
                             .color("E0E0E0")
                     )
                 );
+                docx = docx.add_paragraph(p);
+            }
+
+            // --- Math (requires ENABLE_MATH option) ---
+            Event::InlineMath(formula) => {
+                // Show inline math without $ delimiters in blue italic
+                let run = Run::new()
+                    .add_text(&*formula)
+                    .italic()
+                    .color("465AB4")
+                    .fonts(RunFonts::new().ascii("Courier New").hi_ansi("Courier New"));
+                let target = if in_table { &mut current_cell_runs }
+                    else if heading_level.is_some() { &mut heading_runs }
+                    else { &mut current_runs };
+                target.push(run);
+            }
+            Event::DisplayMath(formula) => {
+                // Flush pending inline text
+                if !current_runs.is_empty() {
+                    let runs = flush_runs(&mut current_runs);
+                    let mut p = Paragraph::new().line_spacing(LineSpacing::new().after(220));
+                    for run in runs { p = p.add_run(run); }
+                    docx = docx.add_paragraph(p);
+                }
+                // Render display math as a shaded block (LaTeX source without $$ signs)
+                let shading = Shading::new().shd_type(ShdType::Clear).fill("EEF2FF").color("auto");
+                let mut p = Paragraph::new()
+                    .indent(Some(360), None, None, None)
+                    .line_spacing(LineSpacing::new().after(220));
+                p.property = p.property.shading(shading).set_borders(
+                    ParagraphBorders::with_empty()
+                        .set(ParagraphBorder::new(ParagraphBorderPosition::Left)
+                            .val(BorderType::Single).color("8899DD").size(12).space(4))
+                );
+                let math_run = Run::new()
+                    .add_text(formula.trim())
+                    .italic()
+                    .color("465AB4")
+                    .fonts(RunFonts::new().ascii("Courier New").hi_ansi("Courier New"));
+                p = p.add_run(math_run);
                 docx = docx.add_paragraph(p);
             }
 

@@ -6,6 +6,17 @@ mod export_docx;
 
 use export_pdf::export_pdf;
 use export_docx::export_docx;
+use base64::Engine as _;
+
+/// Pre-rendered image blob passed from the JS side.
+/// The `data` field is a base64-encoded PNG.  `width` and `height` are the
+/// pixel dimensions of the PNG at the render scale used by the frontend.
+#[derive(serde::Deserialize)]
+struct ExportImage {
+    data: String,
+    width: u32,
+    height: u32,
+}
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -36,10 +47,28 @@ fn get_open_file() -> Option<OpenFileResult> {
 }
 
 #[tauri::command]
-async fn export_document(markdown: String, output_path: String, format: String) -> Result<(), String> {
+async fn export_document(
+    markdown: String,
+    output_path: String,
+    format: String,
+    pre_rendered_images: Option<std::collections::HashMap<String, ExportImage>>,
+) -> Result<(), String> {
+    // Decode base64 → raw PNG bytes + dimensions
+    let images: std::collections::HashMap<String, (Vec<u8>, u32, u32)> =
+        pre_rendered_images
+            .unwrap_or_default()
+            .into_iter()
+            .filter_map(|(k, v)| {
+                let bytes = base64::engine::general_purpose::STANDARD
+                    .decode(&v.data)
+                    .ok()?;
+                Some((k, (bytes, v.width, v.height)))
+            })
+            .collect();
+
     match format.as_str() {
-        "pdf" => export_pdf(&markdown, &output_path),
-        "docx" => export_docx(&markdown, &output_path),
+        "pdf" => export_pdf(&markdown, &output_path, &images),
+        "docx" => export_docx(&markdown, &output_path, &images),
         _ => Err(format!("不支持的格式: {format}。请使用 'pdf' 或 'docx'。")),
     }
 }

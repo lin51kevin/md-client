@@ -87,7 +87,9 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
         filters: [{ name: filterName, extensions: [format] }],
       });
       if (savePath) {
-        await invoke('export_document', { markdown: tab.doc, outputPath: savePath, format });
+        const { prerenderExportAssets } = await import('../lib/export-prerender');
+        const preRenderedImages = await prerenderExportAssets(tab.doc);
+        await invoke('export_document', { markdown: tab.doc, outputPath: savePath, format, preRenderedImages });
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
