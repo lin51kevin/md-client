@@ -61,7 +61,7 @@ export const en: Record<TranslationKey, string> = {
   'tab.untitled': 'Untitled.md',
 
   // ── Status Bar ────────────────────────────────────────────────────────────
-  'status.words': '{count} words',
+  'status.words': '{count} chars',
   'status.chars': '{count} chars',
   'status.lines': 'Ln {line}',
   'status.col': 'Col {col}',
@@ -89,7 +89,7 @@ export const en: Record<TranslationKey, string> = {
   // ── Search Panel ─────────────────────────────────────────────────────────
   'search.find': 'Find',
   'search.currentFile': 'Current File',
-  'search.findPlaceholder': 'Find (Enter to search)',
+  'search.findPlaceholder': 'Find (Enter to search) ...',
   'search.replace': 'Replace',
   'search.replacePlaceholder': 'Replace with',
   'search.caseSensitive': 'Case Sensitive',
@@ -110,4 +110,60 @@ export const en: Record<TranslationKey, string> = {
   // ── Language picker ───────────────────────────────────────────────────────
   'lang.zh-CN': '中文',
   'lang.en': 'English',
+
+  // ── Status Bar extended ───────────────────────────────────────────────────
+  'status.newFile': 'New file',
+  'status.unsaved': 'Unsaved changes',
+  'status.versionHistory': 'Version history ({count} snapshots)',
+  'status.versionHistoryTitle': '📋 Version history',
+  'status.charCount': '{count} chars',
+  'status.emptyFile': '(empty)',
+  'status.lineCol': 'Ln {line}, Col {col}',
+
+  // ── App ───────────────────────────────────────────────────────────────────
+  'app.closeTabUnsaved': '"{name}" has unsaved changes that will be lost.\n\nPath: {path}',
+  'app.closeTab': 'Close Tab',
+  'app.unsavedPath': '(unsaved)',
+  'app.langSwitchToEn': 'Switch to English',
+  'app.langSwitchToZh': 'Switch to Chinese',
+
+  // ── Editor Context Menu ───────────────────────────────────────────────────
+  'ctx.cut': 'Cut',
+  'ctx.copy': 'Copy',
+  'ctx.paste': 'Paste',
+  'ctx.selectAll': 'Select All',
+  'ctx.bold': 'Bold',
+  'ctx.italic': 'Italic',
+  'ctx.strikethrough': 'Strikethrough',
+  'ctx.code': 'Inline Code',
+  'ctx.link': 'Insert Link',
+  'ctx.image': 'Insert Image',
+  'ctx.headingPromote': 'Promote Heading',
+  'ctx.headingDemote': 'Demote Heading',
+  'ctx.headingRemove': 'Remove Heading',
+  'ctx.headingRemoveFormat': 'Remove Heading Format',
+  'ctx.copyCodeBlock': 'Copy Code Block',
+  'ctx.tableInsertRow': 'Insert Row',
+  'ctx.tableDeleteRow': 'Delete Row',
+  'ctx.tableInsertCol': 'Insert Column',
+  'ctx.tableDeleteCol': 'Delete Column',
+  'ctx.alignLeft': 'Align Left',
+  'ctx.alignCenter': 'Align Center',
+  'ctx.alignRight': 'Align Right',
+  'ctx.indent': 'Indent',
+  'ctx.outdent': 'Outdent',
+  'ctx.toggleListType': 'Toggle List Type',
+  'ctx.removeBlockquote': 'Remove Blockquote',
+  'ctx.copyFormula': 'Copy Formula',
+
+  // ── Tab Context Menu ──────────────────────────────────────────────────────
+  'tabCtx.save': 'Save',
+  'tabCtx.saveAs': 'Save As…',
+  'tabCtx.pin': 'Pin Tab',
+  'tabCtx.unpin': 'Unpin Tab',
+  'tabCtx.rename': 'Rename',
+  'tabCtx.close': 'Close',
+
+  // ── Drag Overlay ──────────────────────────────────────────────────────────
+  'drag.dropToOpen': 'Drop to open file',
 };

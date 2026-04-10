@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { History, X } from 'lucide-react';
+import { useI18n } from '../i18n';
 
 interface StatusBarProps {
   filePath: string | null;
@@ -14,6 +15,7 @@ interface StatusBarProps {
 }
 
 export function StatusBar({ filePath, isDirty, line, col, wordCount, snapshots, onSnapshotRestore }: StatusBarProps) {
+  const { t } = useI18n();
   const [showSnapshots, setShowSnapshots] = useState(false);
 
   const displaySnapshots = showSnapshots ? snapshots : null;
@@ -24,18 +26,18 @@ export function StatusBar({ filePath, isDirty, line, col, wordCount, snapshots, 
       <div className="flex items-center justify-between px-3 py-0.5 text-xs select-none" style={{ backgroundColor: 'var(--bg-tertiary)', borderTop: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1.5">
-            {isDirty && <span className="font-bold" style={{ color: 'var(--warning-color)' }} title="有未保存的更改">●</span>}
-            <span>{filePath ?? '新文件'}</span>
+            {isDirty && <span className="font-bold" style={{ color: 'var(--warning-color)' }} title={t('status.unsaved')}>●</span>}
+            <span>{filePath ?? t('status.newFile')}</span>
           </span>
           {wordCount !== undefined && wordCount > 0 && (
-            <span className="tabular-nums">{wordCount} 字</span>
+            <span className="tabular-nums">{t('status.words', { count: wordCount })}</span>
           )}
         </div>
         <div className="flex items-center gap-3">
           {snapshots && snapshots.length > 0 && (
             <button
               onClick={() => setShowSnapshots(prev => !prev)}
-              title={`版本历史 (${snapshots.length} 个快照)`}
+              title={t('status.versionHistory', { count: snapshots.length })}
               className="flex items-center gap-1 transition-colors"
               onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
               onMouseLeave={e => (e.currentTarget.style.color = '')}
@@ -44,7 +46,7 @@ export function StatusBar({ filePath, isDirty, line, col, wordCount, snapshots, 
               <span>{snapshots.length}</span>
             </button>
           )}
-          <span className="tabular-nums">行 {line}，列 {col}</span>
+          <span className="tabular-nums">{t('status.lineCol', { line, col })}</span>
         </div>
       </div>
 
@@ -52,7 +54,7 @@ export function StatusBar({ filePath, isDirty, line, col, wordCount, snapshots, 
       {displaySnapshots && displaySnapshots.length > 0 && (
         <div className="absolute bottom-full right-2 mb-1 w-80 rounded-lg shadow-xl z-50 max-h-60 overflow-hidden flex flex-col" style={{ backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-color)' }}>
           <div className="shrink-0 flex items-center justify-between px-3 py-1.5" style={{ backgroundColor: 'var(--bg-tertiary)', borderBottom: '1px solid var(--border-color)' }}>
-            <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>📋 版本历史</span>
+            <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{t('status.versionHistoryTitle')}</span>
             <button onClick={() => setShowSnapshots(false)} style={{ color: 'var(--text-secondary)' }}>
               <X size={14} />
             </button>
@@ -72,10 +74,10 @@ export function StatusBar({ filePath, isDirty, line, col, wordCount, snapshots, 
               >
                 <div className="flex items-center justify-between">
                   <span className="font-medium">{formatTime(snap.timestamp)}</span>
-                  <span className="tabular-nums" style={{ color: 'var(--text-secondary)' }}>{snap.contentLength} 字符</span>
+                  <span className="tabular-nums" style={{ color: 'var(--text-secondary)' }}>{t('status.charCount', { count: snap.contentLength })}</span>
                 </div>
                 <span className="truncate block mt-0.5" style={{ color: 'var(--text-secondary)' }} title={snap.preview}>
-                  {snap.preview || '(空文件)'}
+                  {snap.preview || t('status.emptyFile')}
                 </span>
               </button>
             ))}

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
+import { useI18n } from '../i18n';
 
 export interface InputDialogConfig {
   title: string;
@@ -21,10 +22,12 @@ export function InputDialog({
   description,
   placeholder = '',
   defaultValue = '',
-  confirmLabel = '确定',
+  confirmLabel,
   onConfirm,
   onCancel,
 }: InputDialogProps) {
+  const { t } = useI18n();
+  const resolvedConfirmLabel = confirmLabel ?? t('common.confirm');
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -139,7 +142,7 @@ export function InputDialog({
               e.currentTarget.style.borderColor = 'var(--border-color)';
             }}
           >
-            取消
+            {t('common.cancel')}
           </button>
           <button
             onClick={handleConfirm}
@@ -156,7 +159,7 @@ export function InputDialog({
               e.currentTarget.style.opacity = '1';
             }}
           >
-            {confirmLabel}
+            {resolvedConfirmLabel}
           </button>
         </div>
       </div>

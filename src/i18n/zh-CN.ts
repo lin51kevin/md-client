@@ -59,7 +59,7 @@ export const zhCN = {
   'tab.untitled': 'Untitled.md',
 
   // ── Status Bar ────────────────────────────────────────────────────────────
-  'status.words': '{count} 词',
+  'status.words': '{count} 字',
   'status.chars': '{count} 字',
   'status.lines': '第 {line} 行',
   'status.col': '第 {col} 列',
@@ -107,6 +107,62 @@ export const zhCN = {
   // ── Language picker ───────────────────────────────────────────────────────
   'lang.zh-CN': '中文',
   'lang.en': 'English',
+
+  // ── Status Bar extended ───────────────────────────────────────────────────
+  'status.newFile': '新文件',
+  'status.unsaved': '有未保存的更改',
+  'status.versionHistory': '版本历史 ({count} 个快照)',
+  'status.versionHistoryTitle': '📋 版本历史',
+  'status.charCount': '{count} 字符',
+  'status.emptyFile': '(空文件)',
+  'status.lineCol': '行 {line}，列 {col}',
+
+  // ── App ───────────────────────────────────────────────────────────────────
+  'app.closeTabUnsaved': '"{name}" 有未保存的更改,关闭后将丢失这些更改。\n\n路径: {path}',
+  'app.closeTab': '关闭标签页',
+  'app.unsavedPath': '(未保存)',
+  'app.langSwitchToEn': 'Switch to English',
+  'app.langSwitchToZh': '切换到中文',
+
+  // ── Editor Context Menu ───────────────────────────────────────────────────
+  'ctx.cut': '剪切',
+  'ctx.copy': '复制',
+  'ctx.paste': '粘贴',
+  'ctx.selectAll': '全选',
+  'ctx.bold': '加粗',
+  'ctx.italic': '斜体',
+  'ctx.strikethrough': '删除线',
+  'ctx.code': '行内代码',
+  'ctx.link': '插入链接',
+  'ctx.image': '插入图片',
+  'ctx.headingPromote': '升级标题',
+  'ctx.headingDemote': '降级标题',
+  'ctx.headingRemove': '移除标题',
+  'ctx.headingRemoveFormat': '移除标题格式',
+  'ctx.copyCodeBlock': '复制代码块',
+  'ctx.tableInsertRow': '插入行',
+  'ctx.tableDeleteRow': '删除行',
+  'ctx.tableInsertCol': '插入列',
+  'ctx.tableDeleteCol': '删除列',
+  'ctx.alignLeft': '左对齐',
+  'ctx.alignCenter': '居中对齐',
+  'ctx.alignRight': '右对齐',
+  'ctx.indent': '缩进',
+  'ctx.outdent': '反缩进',
+  'ctx.toggleListType': '切换列表类型',
+  'ctx.removeBlockquote': '移除引用',
+  'ctx.copyFormula': '复制公式',
+
+  // ── Tab Context Menu ──────────────────────────────────────────────────────
+  'tabCtx.save': '保存',
+  'tabCtx.saveAs': '另存为…',
+  'tabCtx.pin': '固定标签',
+  'tabCtx.unpin': '取消固定',
+  'tabCtx.rename': '重命名',
+  'tabCtx.close': '关闭',
+
+  // ── Drag Overlay ──────────────────────────────────────────────────────────
+  'drag.dropToOpen': '释放以打开文件',
 } as const;
 
 export type TranslationKey = keyof typeof zhCN;

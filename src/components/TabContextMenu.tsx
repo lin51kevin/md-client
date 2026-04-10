@@ -1,5 +1,6 @@
 import { Pencil, Pin, PinOff } from 'lucide-react';
 import { Tab } from '../types';
+import { useI18n } from '../i18n';
 
 interface TabContextMenuProps {
   x: number;
@@ -19,6 +20,7 @@ interface TabContextMenuProps {
 }
 
 export function TabContextMenu({ x, y, tabId, tabs, onSave, onSaveAs, onClose, onRename, onPin, onUnpin, onDismiss }: TabContextMenuProps) {
+  const { t } = useI18n();
   const tab = tabs.find(t => t.id === tabId);
   const isPinned = tab?.isPinned ?? false;
 
@@ -42,7 +44,7 @@ export function TabContextMenu({ x, y, tabId, tabs, onSave, onSaveAs, onClose, o
           }}
           onPointerDown={() => { onSave(tabId); onDismiss(); }}
         >
-          <span>保存</span><span className="text-xs opacity-60">Ctrl+S</span>
+          <span>{t('tabCtx.save')}</span><span className="text-xs opacity-60">Ctrl+S</span>
         </button>
         <button
           className="w-full flex items-center justify-between px-4 py-1.5 gap-6"
@@ -57,7 +59,7 @@ export function TabContextMenu({ x, y, tabId, tabs, onSave, onSaveAs, onClose, o
           }}
           onPointerDown={() => { onSaveAs(tabId); onDismiss(); }}
         >
-          <span>另存为…</span><span className="text-xs opacity-60">Ctrl+Shift+S</span>
+          <span>{t('tabCtx.saveAs')}</span><span className="text-xs opacity-60">Ctrl+Shift+S</span>
         </button>
         <div className="my-1" style={{ borderTop: '1px solid var(--border-color)' }} />
         {/* F013: 固定 / 取消固定 */}
@@ -76,7 +78,7 @@ export function TabContextMenu({ x, y, tabId, tabs, onSave, onSaveAs, onClose, o
             onPointerDown={() => { onUnpin(tabId); onDismiss(); }}
           >
             <PinOff size={13} strokeWidth={1.8} />
-            <span>取消固定</span>
+            <span>{t('tabCtx.unpin')}</span>
           </button>
         ) : (
           <button
@@ -93,7 +95,7 @@ export function TabContextMenu({ x, y, tabId, tabs, onSave, onSaveAs, onClose, o
             onPointerDown={() => { onPin(tabId); onDismiss(); }}
           >
             <Pin size={13} strokeWidth={1.8} />
-            <span>固定标签</span>
+            <span>{t('tabCtx.pin')}</span>
           </button>
         )}
         {/* F013: 重命名 */}
@@ -111,7 +113,7 @@ export function TabContextMenu({ x, y, tabId, tabs, onSave, onSaveAs, onClose, o
           onPointerDown={() => { onRename(tabId); onDismiss(); }}
         >
           <Pencil size={13} strokeWidth={1.8} />
-          <span>重命名</span>
+          <span>{t('tabCtx.rename')}</span>
         </button>
         <div className="my-1" style={{ borderTop: '1px solid var(--border-color)' }} />
         {/* F013: 固定标签不可关闭（按钮禁用） */}
@@ -132,7 +134,7 @@ export function TabContextMenu({ x, y, tabId, tabs, onSave, onSaveAs, onClose, o
           }}
           onPointerDown={() => { if (!isPinned) { onClose(tabId); onDismiss(); } }}
         >
-          <span>关闭</span><span className="text-xs opacity-60">Ctrl+W</span>
+          <span>{t('tabCtx.close')}</span><span className="text-xs opacity-60">Ctrl+W</span>
         </button>
       </div>
     </>

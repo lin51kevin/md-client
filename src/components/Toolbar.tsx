@@ -222,7 +222,7 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentThe
         {/* Language switcher */}
         <button
           onClick={() => setLocale(locale === 'zh-CN' ? 'en' : 'zh-CN')}
-          title={locale === 'zh-CN' ? 'Switch to English' : '切换到中文'}
+          title={locale === 'zh-CN' ? t('app.langSwitchToEn') : t('app.langSwitchToZh')}
           className={focusBtnCls(false)}
           style={{ color: 'var(--text-secondary)', borderColor: 'transparent' }}
           onMouseEnter={(e) => {

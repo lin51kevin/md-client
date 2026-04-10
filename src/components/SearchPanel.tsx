@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useI18n } from '../i18n';
-import { Search, X, CaseSensitive, Regex, Loader2, FileText } from 'lucide-react';
+import { Search, X, CaseSensitive, Regex, FileText } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import { searchAll, replaceAll } from '../lib/search';
 
@@ -339,7 +339,7 @@ export function SearchPanel({
         borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', flexShrink: 0,
       }}>
         <Search size={14} strokeWidth={1.8} style={{ color: 'var(--accent-color)', flexShrink: 0 }} />
-        <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>{t('toolbar.search')}</span>
+        <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' }}>{t('toolbar.search')}</span>
         <button onClick={onClose} title={`${t('common.close')} (Esc)`}
           style={{ color: 'var(--text-secondary)', flexShrink: 0, padding: 3 }}>
           <X size={15} strokeWidth={1.8} />
@@ -363,7 +363,7 @@ export function SearchPanel({
               value={query}
               onChange={e => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={'查找（回车搜索）…'}
+              placeholder={t('search.findPlaceholder')}
               spellCheck={false}
               style={{ ...inputStyle, paddingLeft: 24, paddingRight: query ? 22 : 8 }}
             />
@@ -376,13 +376,13 @@ export function SearchPanel({
               </button>
             )}
           </div>
-          {crossFile && (
+          {/* {crossFile && (
             <button onClick={doSearchAll} disabled={!query.trim() || loading}
               title={`${t('search.find')} (Enter)`}
               style={{ padding: 4, color: 'var(--text-secondary)', opacity: (!query.trim() || loading) ? 0.3 : 1 }}>
               {loading ? <Loader2 size={14} strokeWidth={1.8} className="spin-icon" /> : <Search size={14} strokeWidth={1.8} />}
             </button>
-          )}
+          )} */}
         </div>
 
         {/* Replace */}
@@ -394,7 +394,7 @@ export function SearchPanel({
               if (e.key === 'Escape') onClose();
               else if (e.key === 'Enter') handleReplaceSingle();
             }}
-            placeholder="替换为…"
+            placeholder={t('search.replacePlaceholder')}
             spellCheck={false}
             style={inputStyle}
           />
@@ -449,7 +449,6 @@ export function SearchPanel({
       <div style={{ flex: 1, overflowY: 'auto', padding: '4px 0' }}>
         {!query.trim() && !loading && (
           <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-secondary)', fontSize: 13 }}>
-            <Search size={28} strokeWidth={1} style={{ opacity: 0.3, display: 'block', margin: '0 auto 8px' }} />
             <p>{t('search.enterHint')}</p>
           </div>
         )}

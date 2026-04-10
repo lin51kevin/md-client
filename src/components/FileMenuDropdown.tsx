@@ -177,7 +177,7 @@ export function FileMenuDropdown({
           icon: <Trash2 size={13} strokeWidth={1.8} />,
           label: t('file.clearRecent'),
           action: () => { onClearRecent?.(); setSubmenu(null); },
-          danger: true,
+          // danger: true,
         } as MenuItem,
       ]
     : [

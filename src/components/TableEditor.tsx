@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { X, Plus, Trash2, AlignLeft, AlignCenter, AlignRight, Check } from 'lucide-react';
 import type { TableData, Alignment } from '../lib/table-parser';
 import { serializeTable } from '../lib/table-parser';
+import { useI18n } from '../i18n';
 
 interface TableEditorProps {
   table: TableData;
@@ -10,6 +11,7 @@ interface TableEditorProps {
 }
 
 export function TableEditor({ table, onConfirm, onCancel }: TableEditorProps) {
+  const { t } = useI18n();
   const [headers, setHeaders] = useState<string[][]>(() => [table.headers[0]?.map((c) => c) ?? []]);
   const [rows, setRows] = useState<string[][]>(() => table.rows.map((r) => [...r]));
   const [alignment, setAlignment] = useState<Alignment[]>(() => [...table.alignment]);
@@ -131,8 +133,8 @@ export function TableEditor({ table, onConfirm, onCancel }: TableEditorProps) {
       <div className="table-editor-modal" ref={modalRef} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="table-editor-header">
-          <span className="table-editor-title">编辑表格</span>
-          <button className="table-editor-icon-btn" onClick={onCancel} title="关闭">
+          <span className="table-editor-title">{t('table.edit')}</span>
+          <button className="table-editor-icon-btn" onClick={onCancel} title={t('common.close')}>
             <X size={18} />
           </button>
         </div>
@@ -140,18 +142,18 @@ export function TableEditor({ table, onConfirm, onCancel }: TableEditorProps) {
         {/* Toolbar */}
         <div className="table-editor-toolbar">
           <div className="toolbar-group">
-            <button className="toolbar-btn" onClick={addRow} title="添加行">
-              <Plus size={14} /> 行
+            <button className="toolbar-btn" onClick={addRow} title={t('table.addRow')}>
+              <Plus size={14} /> {t('table.addRow')}
             </button>
-            <button className="toolbar-btn" onClick={() => rows.length > 0 && removeRow(rows.length - 1)} disabled={rows.length === 0} title="删除末行">
-              <Trash2 size={14} /> 行
+            <button className="toolbar-btn" onClick={() => rows.length > 0 && removeRow(rows.length - 1)} disabled={rows.length === 0} title={t('table.deleteRow')}>
+              <Trash2 size={14} /> {t('table.deleteRow')}
             </button>
             <span className="toolbar-sep" />
-            <button className="toolbar-btn" onClick={addCol} title="添加列">
-              <Plus size={14} /> 列
+            <button className="toolbar-btn" onClick={addCol} title={t('table.addCol')}>
+              <Plus size={14} /> {t('table.addCol')}
             </button>
-            <button className="toolbar-btn" onClick={() => currentColCount > 0 && removeCol(currentColCount - 1)} disabled={currentColCount === 0} title="删除末列">
-              <Trash2 size={14} /> 列
+            <button className="toolbar-btn" onClick={() => currentColCount > 0 && removeCol(currentColCount - 1)} disabled={currentColCount === 0} title={t('table.deleteCol')}>
+              <Trash2 size={14} /> {t('table.deleteCol')}
             </button>
           </div>
         </div>
@@ -168,12 +170,12 @@ export function TableEditor({ table, onConfirm, onCancel }: TableEditorProps) {
                       className="editor-cell-input"
                       value={headers[0]?.[ci] ?? ''}
                       onChange={(e) => updateHeader(ci, e.target.value)}
-                      placeholder={`表头 ${ci + 1}`}
+                      placeholder={t('table.headerPlaceholder', { n: String(ci + 1) })}
                     />
                     <button
                       className="align-btn"
                       onClick={() => cycleAlignment(ci)}
-                      title={`对齐: ${alignment[ci] || 'left'}`}
+                      title={t('table.align', { align: alignment[ci] || 'left' })}
                     >
                       <AlignIcon align={alignment[ci] || 'left'} />
                     </button>
@@ -188,7 +190,7 @@ export function TableEditor({ table, onConfirm, onCancel }: TableEditorProps) {
                     <button
                       className="row-delete-btn"
                       onClick={() => removeRow(ri)}
-                      title="删除此行"
+                      title={t('table.deleteThisRow')}
                     >
                       <Trash2 size={12} />
                     </button>
@@ -209,7 +211,7 @@ export function TableEditor({ table, onConfirm, onCancel }: TableEditorProps) {
               {rows.length === 0 && (
                 <tr>
                   <td colSpan={currentColCount + 1} className="empty-table-hint">
-                    暂无数据行，点击上方"添加行"按钮添加
+                    {t('table.empty')}
                   </td>
                 </tr>
               )}
@@ -219,9 +221,9 @@ export function TableEditor({ table, onConfirm, onCancel }: TableEditorProps) {
 
         {/* Footer */}
         <div className="table-editor-footer">
-          <button className="btn-cancel" onClick={onCancel}>取消</button>
+          <button className="btn-cancel" onClick={onCancel}>{t('common.cancel')}</button>
           <button className="btn-confirm" onClick={handleConfirm}>
-            <Check size={16} /> 确定
+            <Check size={16} /> {t('common.confirm')}
           </button>
         </div>
       </div>

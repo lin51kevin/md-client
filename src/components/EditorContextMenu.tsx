@@ -8,6 +8,8 @@ import {
   Quote, Sigma
 } from 'lucide-react';
 import type { ContextInfo } from '../lib/context-menu';
+import { useI18n } from '../i18n';
+import type { TranslationKey } from '../i18n/zh-CN';
 
 interface EditorContextMenuProps {
   visible: boolean;
@@ -27,12 +29,12 @@ interface MenuItem {
 }
 
 /** Build menu items based on context type */
-function buildMenuItems(context: ContextInfo): MenuItem[] {
+function buildMenuItems(context: ContextInfo, t: (key: TranslationKey) => string): MenuItem[] {
   const base: MenuItem[] = [
-    { id: 'cut', label: '剪切', icon: <Scissors size={14} strokeWidth={1.8} /> },
-    { id: 'copy', label: '复制', icon: <Copy size={14} strokeWidth={1.8} /> },
-    { id: 'paste', label: '粘贴', icon: <Clipboard size={14} strokeWidth={1.8} /> },
-    { id: 'selectAll', label: '全选', icon: <MousePointerClick size={14} strokeWidth={1.8} />, divider: true },
+    { id: 'cut', label: t('ctx.cut'), icon: <Scissors size={14} strokeWidth={1.8} /> },
+    { id: 'copy', label: t('ctx.copy'), icon: <Copy size={14} strokeWidth={1.8} /> },
+    { id: 'paste', label: t('ctx.paste'), icon: <Clipboard size={14} strokeWidth={1.8} /> },
+    { id: 'selectAll', label: t('ctx.selectAll'), icon: <MousePointerClick size={14} strokeWidth={1.8} />, divider: true },
   ];
 
   const contextual: MenuItem[] = [];
@@ -40,60 +42,60 @@ function buildMenuItems(context: ContextInfo): MenuItem[] {
   switch (context.type) {
     case 'normal':
       contextual.push(
-        { id: 'bold', label: '加粗', icon: <Bold size={14} strokeWidth={2} /> },
-        { id: 'italic', label: '斜体', icon: <Italic size={14} strokeWidth={2} /> },
-        { id: 'strikethrough', label: '删除线', icon: <Strikethrough size={14} strokeWidth={2} /> },
-        { id: 'code', label: '行内代码', icon: <Code size={14} strokeWidth={2} />, divider: true },
-        { id: 'link', label: '插入链接', icon: <Link2 size={14} strokeWidth={2} /> },
-        { id: 'image', label: '插入图片', icon: <Image size={14} strokeWidth={2} /> },
+        { id: 'bold', label: t('ctx.bold'), icon: <Bold size={14} strokeWidth={2} /> },
+        { id: 'italic', label: t('ctx.italic'), icon: <Italic size={14} strokeWidth={2} /> },
+        { id: 'strikethrough', label: t('ctx.strikethrough'), icon: <Strikethrough size={14} strokeWidth={2} /> },
+        { id: 'code', label: t('ctx.code'), icon: <Code size={14} strokeWidth={2} />, divider: true },
+        { id: 'link', label: t('ctx.link'), icon: <Link2 size={14} strokeWidth={2} /> },
+        { id: 'image', label: t('ctx.image'), icon: <Image size={14} strokeWidth={2} /> },
       );
       break;
 
     case 'heading':
       contextual.push(
-        { id: 'headingPromote', label: '升级标题', icon: <ArrowUpFromLine size={14} strokeWidth={1.8} /> },
-        { id: 'headingDemote', label: context.headingLevel <= 1 ? '移除标题' : '降级标题', icon: context.headingLevel <= 1 ? <Minus size={14} strokeWidth={1.8} /> : <ArrowDownToLine size={14} strokeWidth={1.8} /> },
-        { id: 'headingRemove', label: '移除标题格式', icon: <Heading1 size={14} strokeWidth={1.8} />, divider: true },
-        { id: 'bold', label: '加粗', icon: <Bold size={14} strokeWidth={2} /> },
-        { id: 'italic', label: '斜体', icon: <Italic size={14} strokeWidth={2} /> },
+        { id: 'headingPromote', label: t('ctx.headingPromote'), icon: <ArrowUpFromLine size={14} strokeWidth={1.8} /> },
+        { id: 'headingDemote', label: context.headingLevel <= 1 ? t('ctx.headingRemove') : t('ctx.headingDemote'), icon: context.headingLevel <= 1 ? <Minus size={14} strokeWidth={1.8} /> : <ArrowDownToLine size={14} strokeWidth={1.8} /> },
+        { id: 'headingRemove', label: t('ctx.headingRemoveFormat'), icon: <Heading1 size={14} strokeWidth={1.8} />, divider: true },
+        { id: 'bold', label: t('ctx.bold'), icon: <Bold size={14} strokeWidth={2} /> },
+        { id: 'italic', label: t('ctx.italic'), icon: <Italic size={14} strokeWidth={2} /> },
       );
       break;
 
     case 'code':
       contextual.push(
-        { id: 'copyCodeBlock', label: '复制代码块', icon: <Copy size={14} strokeWidth={1.8} /> },
+        { id: 'copyCodeBlock', label: t('ctx.copyCodeBlock'), icon: <Copy size={14} strokeWidth={1.8} /> },
       );
       break;
 
     case 'table':
       contextual.push(
-        { id: 'tableInsertRow', label: '插入行', icon: <Plus size={14} strokeWidth={1.8} /> },
-        { id: 'tableDeleteRow', label: '删除行', icon: <Minus size={14} strokeWidth={1.8} /> },
-        { id: 'tableInsertCol', label: '插入列', icon: <Plus size={14} strokeWidth={1.8} /> },
-        { id: 'tableDeleteCol', label: '删除列', icon: <Minus size={14} strokeWidth={1.8} />, divider: true },
-        { id: 'alignLeft', label: '左对齐', icon: <AlignLeft size={14} strokeWidth={1.8} /> },
-        { id: 'alignCenter', label: '居中对齐', icon: <AlignCenter size={14} strokeWidth={1.8} /> },
-        { id: 'alignRight', label: '右对齐', icon: <AlignRight size={14} strokeWidth={1.8} /> },
+        { id: 'tableInsertRow', label: t('ctx.tableInsertRow'), icon: <Plus size={14} strokeWidth={1.8} /> },
+        { id: 'tableDeleteRow', label: t('ctx.tableDeleteRow'), icon: <Minus size={14} strokeWidth={1.8} /> },
+        { id: 'tableInsertCol', label: t('ctx.tableInsertCol'), icon: <Plus size={14} strokeWidth={1.8} /> },
+        { id: 'tableDeleteCol', label: t('ctx.tableDeleteCol'), icon: <Minus size={14} strokeWidth={1.8} />, divider: true },
+        { id: 'alignLeft', label: t('ctx.alignLeft'), icon: <AlignLeft size={14} strokeWidth={1.8} /> },
+        { id: 'alignCenter', label: t('ctx.alignCenter'), icon: <AlignCenter size={14} strokeWidth={1.8} /> },
+        { id: 'alignRight', label: t('ctx.alignRight'), icon: <AlignRight size={14} strokeWidth={1.8} /> },
       );
       break;
 
     case 'listItem':
       contextual.push(
-        { id: 'indent', label: '缩进', icon: <IndentIncrease size={14} strokeWidth={1.8} /> },
-        { id: 'outdent', label: '反缩进', icon: <IndentDecrease size={14} strokeWidth={1.8} />, divider: true },
-        { id: 'toggleListType', label: '切换列表类型', icon: <ListOrdered size={14} strokeWidth={1.8} /> },
+        { id: 'indent', label: t('ctx.indent'), icon: <IndentIncrease size={14} strokeWidth={1.8} /> },
+        { id: 'outdent', label: t('ctx.outdent'), icon: <IndentDecrease size={14} strokeWidth={1.8} />, divider: true },
+        { id: 'toggleListType', label: t('ctx.toggleListType'), icon: <ListOrdered size={14} strokeWidth={1.8} /> },
       );
       break;
 
     case 'blockquote':
       contextual.push(
-        { id: 'removeBlockquote', label: '移除引用', icon: <Quote size={14} strokeWidth={2} /> },
+        { id: 'removeBlockquote', label: t('ctx.removeBlockquote'), icon: <Quote size={14} strokeWidth={2} /> },
       );
       break;
 
     case 'math':
       contextual.push(
-        { id: 'copyFormula', label: '复制公式', icon: <Sigma size={14} strokeWidth={1.8} /> },
+        { id: 'copyFormula', label: t('ctx.copyFormula'), icon: <Sigma size={14} strokeWidth={1.8} /> },
       );
       break;
   }
@@ -102,6 +104,7 @@ function buildMenuItems(context: ContextInfo): MenuItem[] {
 }
 
 export function EditorContextMenu({ visible, x, y, context, onClose, onAction }: EditorContextMenuProps) {
+  const { t } = useI18n();
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Click outside or Escape to close
@@ -125,7 +128,7 @@ export function EditorContextMenu({ visible, x, y, context, onClose, onAction }:
 
   if (!visible) return null;
 
-  const items = buildMenuItems(context);
+  const items = buildMenuItems(context, t);
 
   // Clamp position to viewport
   const menuWidth = 180;

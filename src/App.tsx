@@ -72,6 +72,7 @@ import { InputDialog, type InputDialogConfig } from './components/InputDialog';
 
 export default function App() {
   const i18n = useI18nProvider();
+  const { t } = i18n;
 
 
   const [viewMode, setViewMode] = useState<ViewMode>('split');
@@ -140,10 +141,10 @@ export default function App() {
     if (tab?.isPinned) return; // pinned tabs cannot be normally closed
     if (tab?.isDirty) {
       const name = tab.filePath?.split(/[\\/]/).pop() ?? 'Untitled.md';
-      const path = tab.filePath ?? '(未保存)';
+      const path = tab.filePath ?? t('app.unsavedPath');
       const yes = await confirm(
-        `"${name}" 有未保存的更改,关闭后将丢失这些更改。\n\n路径: ${path}`,
-        { title: '关闭标签页', kind: 'warning' }
+        t('app.closeTabUnsaved', { name, path }),
+        { title: t('app.closeTab'), kind: 'warning' }
       );
       if (!yes) return;
     }
