@@ -1,4 +1,3 @@
-import { Pencil, Pin, PinOff, X } from 'lucide-react';
 import { Tab } from '../types';
 import { useI18n } from '../i18n';
 
@@ -79,8 +78,7 @@ export function TabContextMenu({ x, y, tabId, tabs, onSave, onSaveAs, onClose, o
             }}
             onPointerDown={() => { onUnpin(tabId); onDismiss(); }}
           >
-            <PinOff size={13} strokeWidth={1.8} />
-            <span>{t('tabCtx.unpin')}</span>
+<span>{t('tabCtx.unpin')}</span>
           </button>
         ) : (
           <button
@@ -96,8 +94,7 @@ export function TabContextMenu({ x, y, tabId, tabs, onSave, onSaveAs, onClose, o
             }}
             onPointerDown={() => { onPin(tabId); onDismiss(); }}
           >
-            <Pin size={13} strokeWidth={1.8} />
-            <span>{t('tabCtx.pin')}</span>
+<span>{t('tabCtx.pin')}</span>
           </button>
         )}
         {/* F013: 重命名 */}
@@ -114,8 +111,7 @@ export function TabContextMenu({ x, y, tabId, tabs, onSave, onSaveAs, onClose, o
           }}
           onPointerDown={() => { onRename(tabId); onDismiss(); }}
         >
-          <Pencil size={13} strokeWidth={1.8} />
-          <span>{t('tabCtx.rename')}</span>
+<span>{t('tabCtx.rename')}</span>
         </button>
         <div className="my-1" style={{ borderTop: '1px solid var(--border-color)' }} />
         {/* F013: 固定标签不可关闭（按钮禁用） */}
@@ -152,8 +148,7 @@ export function TabContextMenu({ x, y, tabId, tabs, onSave, onSaveAs, onClose, o
           }}
           onPointerDown={() => { onCloseAll?.(); onDismiss(); }}
         >
-          <X size={13} strokeWidth={1.8} />
-          <span>{t('tab.closeAll')}</span>
+<span>{t('tab.closeAll')}</span>
         </button>
       </div>
     </>
