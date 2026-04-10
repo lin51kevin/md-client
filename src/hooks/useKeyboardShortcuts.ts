@@ -42,6 +42,9 @@ export function useKeyboardShortcuts(params: ShortcutsParams) {
   useEffect(() => {
     const custom = getCustomShortcuts();
 
+    // 全局阻止原生右键菜单
+    document.addEventListener('contextmenu', (e) => e.preventDefault());
+
     const handler = (e: KeyboardEvent) => {
       const { createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile, closeTab, setViewMode, activeTabIdRef, toggleFindReplace, setFocusMode, focusMode } = paramsRef.current;
       
@@ -49,6 +52,23 @@ export function useKeyboardShortcuts(params: ShortcutsParams) {
       if (e.key === 'Escape' && focusMode && focusMode !== 'normal') {
         e.preventDefault();
         setFocusMode?.('normal');
+        return;
+      }
+
+      // 拦截 F5 / Ctrl+R / Ctrl+Shift+R 等刷新快捷键
+      if (
+        e.key === 'F5' ||
+        (e.ctrlKey && e.key === 'r') ||
+        (e.ctrlKey && e.shiftKey && e.key === 'R') ||
+        (e.ctrlKey && e.key === 'F5')
+      ) {
+        e.preventDefault();
+        return;
+      }
+
+      // 拦截 DevTools 快捷键
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && ['I', 'J', 'C'].includes(e.key)) {
+        e.preventDefault();
         return;
       }
 
