@@ -15,6 +15,8 @@ import {
   RefreshCw,
   ArrowUp,
   Loader2,
+  Search,
+  X,
 } from 'lucide-react';
 
 
@@ -46,6 +48,28 @@ interface TreeNode extends DirEntry {
 
 function buildTreeNode(entry: DirEntry): TreeNode {
   return { ...entry, expanded: false, childrenLoaded: !!entry.children?.length };
+}
+
+/**
+ * 递归过滤树节点：返回名称匹配 query 的节点（保留父目录结构）
+ */
+function filterTree(nodes: TreeNode[], query: string): TreeNode[] {
+  if (!query.trim()) return nodes;
+  const lower = query.toLowerCase();
+
+  return nodes.reduce<TreeNode[]>((acc, node) => {
+    const nameMatch = node.name.toLowerCase().includes(lower);
+    const filteredChildren = node.children ? filterTree(node.children as TreeNode[], query) : [];
+
+    if (nameMatch || filteredChildren.length > 0) {
+      acc.push({
+        ...node,
+        children: filteredChildren.length > 0 ? filteredChildren : node.children,
+        expanded: filteredChildren.length > 0 || (nameMatch && node.is_dir),
+      });
+    }
+    return acc;
+  }, []);
 }
 
 /**
@@ -156,6 +180,7 @@ export function FileTreeSidebar({
   const [rootEntries, setRootEntries] = useState<TreeNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const expandedDirsRef = useRef<Set<string>>(new Set());
 
   /**
@@ -293,6 +318,11 @@ export function FileTreeSidebar({
     if (visible) init();
   }, [visible]);
 
+  // 搜索过滤后的文件列表
+  const filteredEntries = searchQuery.trim()
+    ? filterTree(rootEntries, searchQuery)
+    : rootEntries;
+
   if (!visible) return null;
 
   return (
@@ -348,6 +378,36 @@ export function FileTreeSidebar({
         </span>
       </div>
 
+      {/* 搜索框 */}
+      <div
+        className="shrink-0 flex items-center gap-1.5 px-3 py-1.5"
+        style={{
+          borderBottom: '1px solid var(--border-color)',
+        }}
+      >
+        <Search size={12} style={{ color: 'var(--text-secondary)', shrink: 0 }} />
+        <input
+          type="text"
+          placeholder="搜索文件..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="flex-1 text-xs bg-transparent outline-none"
+          style={{
+            color: 'var(--text-primary)',
+            caretColor: 'var(--accent-color)',
+          }}
+        />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery('')}
+            className="shrink-0 flex items-center justify-center"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            <X size={12} />
+          </button>
+        )}
+      </div>
+
       {/* 内容区 */}
       {error ? (
         <div className="flex-1 flex items-center justify-center p-4">
@@ -359,6 +419,12 @@ export function FileTreeSidebar({
         <div className="flex-1 flex items-center justify-center">
           <Loader2 size={20} className="animate-spin" style={{ color: 'var(--text-secondary)' }} />
         </div>
+      ) : filteredEntries.length === 0 && searchQuery.trim() ? (
+        <div className="flex-1 flex items-center justify-center p-4">
+          <p className="text-xs text-center" style={{ color: 'var(--text-secondary)' }}>
+            无匹配结果
+          </p>
+        </div>
       ) : rootEntries.length === 0 ? (
         <div className="flex-1 flex items-center justify-center p-4">
           <p className="text-xs text-center" style={{ color: 'var(--text-secondary)' }}>
@@ -367,7 +433,7 @@ export function FileTreeSidebar({
         </div>
       ) : (
         <nav className="flex-1 py-1 overflow-y-auto file-tree-nav">
-          {rootEntries.map((node) => (
+          {filteredEntries.map((node) => (
             <TreeNodeView
               key={node.path}
               node={node}

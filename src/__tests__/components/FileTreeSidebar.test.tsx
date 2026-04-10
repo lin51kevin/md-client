@@ -96,4 +96,53 @@ describe('FileTreeSidebar', () => {
       expect(html.length).toBeGreaterThan(0);
     });
   });
+
+  describe('搜索过滤', () => {
+    it('渲染搜索输入框', async () => {
+      render(<FileTreeSidebar visible={true} onFileOpen={vi.fn()} activeFilePath={null} />);
+      await waitFor(() => screen.getByText('README.md'));
+      const searchInput = screen.getByPlaceholderText('搜索文件...');
+      expect(searchInput).toBeTruthy();
+      expect((searchInput as HTMLInputElement).type).toBe('text');
+    });
+
+    it('输入关键词后过滤文件列表', async () => {
+      render(<FileTreeSidebar visible={true} onFileOpen={vi.fn()} activeFilePath={null} />);
+      await waitFor(() => screen.getByText('README.md'));
+
+      const searchInput = screen.getByPlaceholderText('搜索文件...');
+      fireEvent.change(searchInput, { target: { value: 'todo' } });
+
+      // 应该只显示匹配的文件
+      expect(screen.queryByText('docs')).toBeFalsy();
+      expect(screen.queryByText('notes')).toBeTruthy();
+      expect(screen.queryByText('todo.md')).toBeTruthy();
+      expect(screen.queryByText('ideas.txt')).toBeFalsy();
+      expect(screen.queryByText('README.md')).toBeFalsy();
+    });
+
+    it('清空搜索框恢复全部文件', async () => {
+      render(<FileTreeSidebar visible={true} onFileOpen={vi.fn()} activeFilePath={null} />);
+      await waitFor(() => screen.getByText('README.md'));
+
+      const searchInput = screen.getByPlaceholderText('搜索文件...');
+      fireEvent.change(searchInput, { target: { value: 'todo' } });
+      expect(screen.queryByText('README.md')).toBeFalsy();
+
+      fireEvent.change(searchInput, { target: { value: '' } });
+      expect(screen.getByText('docs')).toBeTruthy();
+      expect(screen.getByText('notes')).toBeTruthy();
+      expect(screen.getByText('README.md')).toBeTruthy();
+    });
+
+    it('无匹配结果时不崩溃', async () => {
+      render(<FileTreeSidebar visible={true} onFileOpen={vi.fn()} activeFilePath={null} />);
+      await waitFor(() => screen.getByText('README.md'));
+
+      const searchInput = screen.getByPlaceholderText('搜索文件...');
+      fireEvent.change(searchInput, { target: { value: 'zzz_no_match' } });
+      // 不应崩溃，可以没有条目或显示空状态提示
+      expect(document.body.innerHTML.length).toBeGreaterThan(0);
+    });
+  });
 });
