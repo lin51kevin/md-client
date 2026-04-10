@@ -7,6 +7,7 @@
 import { useState, useMemo } from 'react';
 import { List, ChevronRight } from 'lucide-react';
 import type { TocEntry } from '../lib/toc';
+import { useI18n } from '../i18n';
 
 interface TocSidebarProps {
   /** 提取的标题列表 */
@@ -25,6 +26,7 @@ const MAX_TOC_LEVEL = 6;
 type FlatItem = TocEntry & { indent: number; hasChildren: boolean };
 
 export function TocSidebar({ toc, onNavigate, activeId, visible = true }: TocSidebarProps) {
+  const { t } = useI18n();
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
 
   // 过滤 h1-h3，标记每项是否有子节点
@@ -71,13 +73,13 @@ export function TocSidebar({ toc, onNavigate, activeId, visible = true }: TocSid
     <div className="w-60 shrink-0 h-full flex flex-col overflow-hidden" style={{ backgroundColor: 'var(--bg-secondary)', borderRight: '1px solid var(--border-color)' }}>
       <div className="shrink-0 flex items-center gap-2 px-3 py-2" style={{ backgroundColor: 'var(--bg-tertiary)', borderBottom: '1px solid var(--border-color)' }}>
         <List size={14} style={{ color: 'var(--text-secondary)' }} />
-        <span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>大纲</span>
-        <span className="text-xs ml-auto" style={{ color: 'var(--text-secondary)' }}>{items.length} 项</span>
+        <span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{t('toc.title')}</span>
+        <span className="text-xs ml-auto" style={{ color: 'var(--text-secondary)' }}>{t('toc.itemCount', { count: items.length })}</span>
       </div>
 
       {items.length === 0 ? (
         <div className="flex-1 flex items-center justify-center p-4">
-          <p className="text-xs text-center" style={{ color: 'var(--text-secondary)' }}>未检测到标题<br/>使用 # 创建标题</p>
+          <p className="text-xs text-center" style={{ color: 'var(--text-secondary)' }}>{t('toc.empty')}<br/>{t('toc.emptyHint')}</p>
         </div>
       ) : (
         <nav className="flex-1 py-1 overflow-y-auto">
@@ -102,7 +104,7 @@ export function TocSidebar({ toc, onNavigate, activeId, visible = true }: TocSid
                   className="shrink-0 flex items-center justify-center w-5 h-6"
                   style={{ color: 'var(--text-secondary)', cursor: item.hasChildren ? 'pointer' : 'default', opacity: item.hasChildren ? 1 : 0 }}
                   tabIndex={item.hasChildren ? 0 : -1}
-                  aria-label={isCollapsed ? '展开' : '折叠'}
+                  aria-label={isCollapsed ? t('toc.expand') : t('toc.collapse')}
                 >
                   <ChevronRight
                     size={11}
@@ -114,7 +116,7 @@ export function TocSidebar({ toc, onNavigate, activeId, visible = true }: TocSid
                 {/* 跳转按钮 */}
                 <button
                   onClick={() => onNavigate?.(item)}
-                  title={`跳转到: ${item.text}`}
+                  title={`${t('toc.jumpTo')}: ${item.text}`}
                   className="flex-1 text-left py-1.5 pr-2 truncate transition-colors"
                   style={{
                     color: isActive ? 'var(--accent-color)' :

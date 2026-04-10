@@ -39,6 +39,15 @@ export const zhCN = {
   'toolbar.splitLabel': '分栏',
   'toolbar.preview': '预览',
 
+  // ── TOC Sidebar ────────────────────────────────────────────────────────────
+  'toc.title': '大纲',
+  'toc.itemCount': '{count} 项',
+  'toc.empty': '未检测到标题',
+  'toc.emptyHint': '使用 # 创建标题',
+  'toc.expand': '展开',
+  'toc.collapse': '折叠',
+  'toc.jumpTo': '跳转到',
+
   // ── File Menu ─────────────────────────────────────────────────────────────
   'file.new': '新建文件',
   'file.open': '打开文件…',

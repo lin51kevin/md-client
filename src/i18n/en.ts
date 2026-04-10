@@ -41,6 +41,15 @@ export const en: Record<TranslationKey, string> = {
   'toolbar.splitLabel': 'Split',
   'toolbar.preview': 'Preview',
 
+  // ── TOC Sidebar ────────────────────────────────────────────────────────────
+  'toc.title': 'Outline',
+  'toc.itemCount': '{count} items',
+  'toc.empty': 'No headings detected',
+  'toc.emptyHint': 'Use # to create headings',
+  'toc.expand': 'Expand',
+  'toc.collapse': 'Collapse',
+  'toc.jumpTo': 'Jump to',
+
   // ── File Menu ─────────────────────────────────────────────────────────────
   'file.new': 'New File',
   'file.open': 'Open File…',
