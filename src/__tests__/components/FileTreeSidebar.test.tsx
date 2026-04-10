@@ -146,3 +146,149 @@ describe('FileTreeSidebar', () => {
     });
   });
 });
+
+// ==================== CRUD 功能测试 ====================
+
+describe('FileTreeSidebar CRUD', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockedInvoke.mockImplementation((cmd: string) => {
+      if (cmd === 'read_dir_recursive') {
+        return Promise.resolve({
+          name: '.', path: '.', is_dir: true, is_file: false,
+          extension: null, children: MOCK_ENTRIES,
+        });
+      }
+      return Promise.resolve([]);
+    });
+  });
+
+  it('工具栏有新建文件按钮', async () => {
+    render(<FileTreeSidebar visible={true} onFileOpen={vi.fn()} activeFilePath={null} />);
+    await waitFor(() => screen.getByText('README.md'));
+    const buttons = document.querySelectorAll('.file-tree-tool-btn');
+    expect(buttons.length).toBeGreaterThanOrEqual(4);
+  });
+
+  it('点击新建文件调用 create_file 命令', async () => {
+    mockedInvoke.mockImplementation((cmd: string) => {
+      if (cmd === 'read_dir_recursive') {
+        return Promise.resolve({ name: '.', path: '.', is_dir: true, is_file: false, extension: null, children: MOCK_ENTRIES });
+      }
+      return Promise.resolve(undefined);
+    });
+    render(<FileTreeSidebar visible={true} onFileOpen={vi.fn()} activeFilePath={null} />);
+    await waitFor(() => screen.getByText('README.md'));
+
+    const buttons = document.querySelectorAll('.file-tree-tool-btn');
+    fireEvent.click(buttons[0]);
+
+    await waitFor(() => {
+      expect(mockedInvoke).toHaveBeenCalledWith(
+        'create_file',
+        expect.objectContaining({ path: expect.stringContaining('untitled-') })
+      );
+    }, { timeout: 3000 });
+  });
+
+  it('右键点击文件显示上下文菜单', async () => {
+    render(<FileTreeSidebar visible={true} onFileOpen={vi.fn()} activeFilePath={null} />);
+    await waitFor(() => screen.getByText('README.md'));
+
+    fireEvent.contextMenu(screen.getByText('README.md'));
+    await waitFor(() => {
+      expect(screen.getByText('重命名')).toBeTruthy();
+      expect(screen.getByText('删除')).toBeTruthy();
+    }, { timeout: 2000 });
+  });
+
+  it('点击删除按钮调用 delete_file 命令', async () => {
+    mockedInvoke.mockImplementation((cmd: string) => {
+      if (cmd === 'read_dir_recursive') {
+        return Promise.resolve({ name: '.', path: '.', is_dir: true, is_file: false, extension: null, children: MOCK_ENTRIES });
+      }
+      return Promise.resolve(undefined);
+    });
+    render(<FileTreeSidebar visible={true} onFileOpen={vi.fn()} activeFilePath={null} />);
+    await waitFor(() => screen.getByText('README.md'));
+
+    fireEvent.contextMenu(screen.getByText('README.md'));
+    await waitFor(() => screen.getByText('删除'));
+    fireEvent.click(screen.getByText('删除'));
+
+    await waitFor(() => {
+      expect(mockedInvoke).toHaveBeenCalledWith(
+        'delete_file',
+        expect.objectContaining({ path: './README.md' })
+      );
+    }, { timeout: 2000 });
+  });
+
+  it('点击重命名进入内联编辑模式', async () => {
+    render(<FileTreeSidebar visible={true} onFileOpen={vi.fn()} activeFilePath={null} />);
+    await waitFor(() => screen.getByText('README.md'));
+
+    fireEvent.contextMenu(screen.getByText('README.md'))
+    await waitFor(() => screen.getByText('重命名'))
+    fireEvent.click(screen.getByText('重命名'))
+
+    await waitFor(() => {
+      const input = document.querySelector('.file-tree-nav input') as HTMLInputElement | null;
+      expect(input).toBeTruthy();
+      expect(input?.value).toBe('README');
+    }, { timeout: 2000 });
+  });
+
+  it('重命名按 Enter 确认调用 rename_file', async () => {
+    mockedInvoke.mockImplementation((cmd: string) => {
+      if (cmd === 'read_dir_recursive') {
+        return Promise.resolve({ name: '.', path: '.', is_dir: true, is_file: false, extension: null, children: MOCK_ENTRIES });
+      }
+      return Promise.resolve(undefined);
+    });
+    render(<FileTreeSidebar visible={true} onFileOpen={vi.fn()} activeFilePath={null} />);
+    await waitFor(() => screen.getByText('README.md'));
+
+    fireEvent.contextMenu(screen.getByText('README.md'))
+    await waitFor(() => screen.getByText('重命名'))
+    fireEvent.click(screen.getByText('重命名'))
+
+    const input = await waitFor(() => document.querySelector('.file-tree-nav input') as HTMLInputElement)
+    fireEvent.change(input, { target: { value: 'new-name' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+
+    await waitFor(() => {
+      expect(mockedInvoke).toHaveBeenCalledWith(
+        'rename_file',
+        expect.objectContaining({
+          oldPath: './README.md',
+          newPath: expect.stringContaining('new-name.md'),
+        })
+      );
+    }, { timeout: 2000 });
+  });
+
+  it('右键目录不显示上下文菜单', async () => {
+    render(<FileTreeSidebar visible={true} onFileOpen={vi.fn()} activeFilePath={null} />);
+    await waitFor(() => screen.getByText('docs'));
+
+    fireEvent.contextMenu(screen.getByText('docs'));
+    await new Promise((r) => setTimeout(r, 500));
+    expect(screen.queryByText('重命名')).toBeFalsy();
+  });
+
+  it('点击空白处关闭上下文菜单', async () => {
+    render(<FileTreeSidebar visible={true} onFileOpen={vi.fn()} activeFilePath={null} />);
+    await waitFor(() => screen.getByText('README.md'));
+
+    fireEvent.contextMenu(screen.getByText('README.md'))
+    await waitFor(() => screen.getByText('重命名'))
+
+    const nav = document.querySelector('.file-tree-nav')!
+    fireEvent.click(nav)
+
+    await waitFor(() => {
+      expect(screen.queryByText('重命名')).toBeFalsy()
+    }, { timeout: 1000 })
+  });
+});

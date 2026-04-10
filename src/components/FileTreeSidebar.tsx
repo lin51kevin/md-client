@@ -17,6 +17,9 @@ import {
   Loader2,
   Search,
   X,
+  Plus,
+  Trash2,
+  Pencil,
 } from 'lucide-react';
 
 
@@ -82,6 +85,13 @@ function TreeNodeView({
   onFileOpen,
   onToggleDir,
   onLoadChildren,
+  onContextMenu,
+  renamingPath,
+  renameValue,
+  onRenameValueChange,
+  onRenameConfirm,
+  onRenameCancel,
+  onStartRename,
 }: {
   node: TreeNode;
   depth?: number;
@@ -89,8 +99,16 @@ function TreeNodeView({
   onFileOpen?: (path: string) => void;
   onToggleDir: (path: string) => void;
   onLoadChildren: (path: string) => Promise<void>;
+  onContextMenu: (e: React.MouseEvent, node: TreeNode) => void;
+  renamingPath: string | null;
+  renameValue: string;
+  onRenameValueChange: (v: string) => void;
+  onRenameConfirm: () => void;
+  onRenameCancel: () => void;
+  onStartRename: (node: TreeNode) => void;
 }) {
   const isActive = activeFilePath === node.path;
+  const isRenaming = renamingPath === node.path;
 
   return (
     <div>
@@ -132,22 +150,38 @@ function TreeNodeView({
           }
         </span>
 
-        {/* 名称 */}
-        <button
-          onClick={() => {
-            if (node.is_dir) {
-              onToggleDir(node.path);
-              if (!node.childrenLoaded) { onLoadChildren(node.path); }
-            } else {
-              onFileOpen?.(node.path);
-            }
-          }}
-          title={node.path}
-          className="flex-1 text-left py-1.5 pr-2 text-xs truncate transition-colors file-tree-item"
-          style={{ color: isActive ? 'var(--accent-color)' : 'var(--text-primary)' }}
-        >
-          {node.name}
-        </button>
+        {/* 名称 / 重命名输入 */}
+        {isRenaming ? (
+          <input
+            autoFocus
+            className="flex-1 text-xs bg-transparent outline-none border px-0.5"
+            style={{ color: 'var(--accent-color)', borderColor: 'var(--accent-color)' }}
+            value={renameValue}
+            onChange={(e) => onRenameValueChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') onRenameConfirm();
+              if (e.key === 'Escape') onRenameCancel();
+            }}
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <button
+            onClick={() => {
+              if (node.is_dir) {
+                onToggleDir(node.path);
+                if (!node.childrenLoaded) { onLoadChildren(node.path); }
+              } else {
+                onFileOpen?.(node.path);
+              }
+            }}
+            onContextMenu={(e) => onContextMenu(e, node)}
+            title={node.path}
+            className="flex-1 text-left py-1.5 pr-2 text-xs truncate transition-colors file-tree-item"
+            style={{ color: isActive ? 'var(--accent-color)' : 'var(--text-primary)' }}
+          >
+            {node.name}
+          </button>
+        )}
       </div>
 
       {/* 子节点 */}
@@ -182,6 +216,12 @@ export function FileTreeSidebar({
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const expandedDirsRef = useRef<Set<string>>(new Set());
+
+  // --- CRUD 状态 ---
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; node: TreeNode } | null>(null);
+  const [renamingPath, setRenamingPath] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState<string>('');
+  const menuRef = useRef<HTMLDivElement>(null);
 
   /**
    * 从路径提取显示用的目录名
@@ -269,6 +309,99 @@ export function FileTreeSidebar({
     loadRoot(parent);
   }, [rootPath, loadRoot]);
 
+  // --- CRUD 处理函数 ---
+
+  /** 新建文件 */
+  const handleNewFile = useCallback(async () => {
+    const dirPath = rootPath;
+    if (!dirPath) return;
+    const name = `untitled-${Date.now()}.md`;
+    const fullPath = dirPath.replace(/[/\\]*$/, '') + '/' + name;
+    try {
+      await invoke('create_file', { path: fullPath });
+      // 重新加载根目录以显示新文件
+      await loadRoot();
+      // 打开新文件
+      onFileOpen?.(fullPath);
+    } catch (e) {
+      console.error('创建文件失败:', e);
+    }
+  }, [rootPath, loadRoot, onFileOpen]);
+
+  /** 删除文件 */
+  const handleDelete = useCallback(async (node: TreeNode) => {
+    if (node.is_dir) return; // 不删除目录
+    try {
+      await invoke('delete_file', { path: node.path });
+      setContextMenu(null);
+      await loadRoot();
+    } catch (e) {
+      console.error('删除文件失败:', e);
+    }
+  }, [loadRoot]);
+
+  /** 开始重命名 */
+  const handleStartRename = useCallback((node: TreeNode) => {
+    // 去掉扩展名用于编辑（保留扩展名）
+    const dotIndex = node.name.lastIndexOf('.');
+    const baseName = dotIndex > 0 ? node.name.slice(0, dotIndex) : node.name;
+    const ext = dotIndex > 0 ? node.name.slice(dotIndex) : '';
+    setRenamingPath(node.path);
+    setRenameValue(baseName); // 只编辑文件名部分，不包含扩展名
+    setContextMenu(null);
+  }, []);
+
+  /** 确认重命名 */
+  const handleConfirmRename = useCallback(async () => {
+    if (!renamingPath || !renameValue.trim()) {
+      setRenamingPath(null);
+      return;
+    }
+    // 找到原始文件的目录和扩展名
+    const originalName = renamingPath.split('/').pop() || renamingPath.split('\\').pop() || '';
+    const dotIndex = originalName.lastIndexOf('.');
+    const ext = dotIndex > 0 ? originalName.slice(dotIndex) : '.md';
+    const newName = renameValue.trim() + ext;
+    const dirPart = renamingPath.substring(0, renamingPath.length - originalName.length);
+    const newPath = dirPart + newName;
+
+    if (newPath === renamingPath) {
+      setRenamingPath(null);
+      return;
+    }
+
+    try {
+      await invoke('rename_file', { oldPath: renamingPath, newPath });
+      setRenamingPath(null);
+      setRenameValue('');
+      await loadRoot();
+    } catch (e) {
+      console.error('重命名失败:', e);
+    }
+  }, [renamingPath, renameValue, loadRoot]);
+
+  /** 右键菜单 */
+  const handleContextMenu = useCallback((e: React.MouseEvent, node: TreeNode) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (node.is_file) {
+      setContextMenu({ x: e.clientX, y: e.clientY, node });
+    }
+  }, []);
+
+  /** 点击空白处关闭菜单 */
+  useEffect(() => {
+    const closeMenu = () => setContextMenu(null);
+    window.addEventListener('click', closeMenu);
+    return () => window.removeEventListener('click', closeMenu);
+  }, []);
+
+  /** 重命名输入框键盘事件 */
+  const handleRenameKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') handleConfirmRename();
+    if (e.key === 'Escape') { setRenamingPath(null); setRenameValue(''); }
+  }, [handleConfirmRename]);
+
   /** 使用 Tauri 对话框选择新根目录 */
   const pickFolder = useCallback(async () => {
     try {
@@ -352,6 +485,14 @@ export function FileTreeSidebar({
 
         <span className="ml-auto flex items-center gap-0.5">
           <button
+            onClick={handleNewFile}
+            title="新建文件"
+            className="file-tree-tool-btn"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            <Plus size={12} />
+          </button>
+          <button
             onClick={goParent}
             title="上级目录"
             className="file-tree-tool-btn"
@@ -432,7 +573,7 @@ export function FileTreeSidebar({
           </p>
         </div>
       ) : (
-        <nav className="flex-1 py-1 overflow-y-auto file-tree-nav">
+        <nav className="flex-1 py-1 overflow-y-auto file-tree-nav" onClick={() => setContextMenu(null)}>
           {filteredEntries.map((node) => (
             <TreeNodeView
               key={node.path}
@@ -441,9 +582,50 @@ export function FileTreeSidebar({
               onFileOpen={onFileOpen}
               onToggleDir={toggleDir}
               onLoadChildren={loadChildren}
+              onContextMenu={handleContextMenu}
+              renamingPath={renamingPath}
+              renameValue={renameValue}
+              onRenameValueChange={setRenameValue}
+              onRenameConfirm={handleConfirmRename}
+              onRenameCancel={() => { setRenamingPath(null); setRenameValue(''); }}
+              onStartRename={handleStartRename}
             />
           ))}
         </nav>
+      )}
+
+      {/* 右键上下文菜单 */}
+      {contextMenu && (
+        <div
+          ref={menuRef}
+          className="fixed z-50 rounded shadow-lg py-1 min-w-[120px]"
+          style={{
+            left: contextMenu.x,
+            top: contextMenu.y,
+            backgroundColor: 'var(--bg-tertiary)',
+            border: '1px solid var(--border-color)',
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            className="w-full text-left px-3 py-1.5 text-xs flex items-center gap-2 transition-colors hover:bg-opacity-10"
+            style={{ color: 'var(--text-primary)' }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--accent-color) 15%, transparent)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            onClick={() => handleStartRename(contextMenu.node)}
+          >
+            <Pencil size={12} /> 重命名
+          </button>
+          <button
+            className="w-full text-left px-3 py-1.5 text-xs flex items-center gap-2 transition-colors hover:bg-opacity-10"
+            style={{ color: 'var(--danger-color, #ef4444)' }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'color-mix(in srgb, #ef4444 12%, transparent)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            onClick={() => handleDelete(contextMenu.node)}
+          >
+            <Trash2 size={12} /> 删除
+          </button>
+        </div>
       )}
     </div>
   );

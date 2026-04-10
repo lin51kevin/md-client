@@ -479,6 +479,34 @@ fn write_image_bytes(path: String, data: Vec<u8>) -> Result<(), String> {
     std::fs::write(&path, data).map_err(|e| e.to_string())
 }
 
+/// Create a new file (and parent directories if needed).
+#[tauri::command]
+fn create_file(path: String) -> Result<(), String> {
+    let p = std::path::Path::new(&path);
+    if p.exists() {
+        return Err(format!("文件已存在: {}", path));
+    }
+    if let Some(parent) = p.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+    std::fs::write(&p, "").map_err(|e| e.to_string())
+}
+
+/// Delete a file or empty directory.
+#[tauri::command]
+fn delete_file(path: String) -> Result<(), String> {
+    let p = std::path::Path::new(&path);
+    if !p.exists() {
+        return Err(format!("文件不存在: {}", path));
+    }
+    // Safety: only allow deleting files (not non-empty dirs)
+    if p.is_dir() {
+        std::fs::remove_dir(p).map_err(|e| e.to_string())
+    } else {
+        std::fs::remove_file(p).map_err(|e| e.to_string())
+    }
+}
+
 #[tauri::command]
 fn rename_file(old_path: String, new_path: String) -> Result<(), String> {
     let new = std::path::Path::new(&new_path);
@@ -496,7 +524,7 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet, get_open_file, export_document, read_file_text, read_file_bytes, write_file_text, write_image_bytes, rename_file, list_directory, read_dir_recursive, search_files, replace_in_files])
+        .invoke_handler(tauri::generate_handler![greet, get_open_file, export_document, read_file_text, read_file_bytes, write_file_text, write_image_bytes, create_file, delete_file, rename_file, list_directory, read_dir_recursive, search_files, replace_in_files])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
