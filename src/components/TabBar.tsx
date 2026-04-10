@@ -32,7 +32,7 @@ interface TabBarProps {
   onCloseAll?: () => void;
 }
 
-export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorder, onContextMenu, getTabTitle, renamingTabId, onStartRename, onConfirmRename, onCancelRename, onPin, onUnpin, showWelcomeTab, onCloseWelcomeTab, onCloseAll: _onCloseAll }: TabBarProps) {
+export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorder, onContextMenu, getTabTitle, renamingTabId, onStartRename, onConfirmRename, onCancelRename, onPin, onUnpin, showWelcomeTab, onCloseWelcomeTab }: TabBarProps) {
   const { t } = useI18n();
   const [dragOverTabId, setDragOverTabId] = useState<string | null>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
