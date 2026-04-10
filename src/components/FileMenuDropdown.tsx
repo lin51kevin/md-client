@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { FilePlus, Clock, Save, SaveAll, FileText, Printer, FileCode, Trash2, ChevronRight, Download } from 'lucide-react';
+import { FilePlus, Clock, Save, SaveAll, FileText, FolderOpen,Printer, FileCode, Trash2, ChevronRight, Download } from 'lucide-react';
 import type { RecentFile } from '../lib/recent-files';
 import { useI18n } from '../i18n';
 
@@ -220,7 +220,7 @@ export function FileMenuDropdown({
     },
     {
       id: 'open',
-      icon: <FileText size={13} strokeWidth={1.8} />,
+      icon: <FolderOpen size={13} strokeWidth={1.8} />,
       label: t('file.open'),
       shortcut: 'Ctrl+O',
       action: onOpenFile,
