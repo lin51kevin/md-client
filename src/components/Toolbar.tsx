@@ -1,7 +1,7 @@
 
-import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, List, SpellCheck, FolderTree, Search, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Languages, Terminal } from 'lucide-react';
+import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, List, SpellCheck, FolderTree, Search, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, Settings } from 'lucide-react';
 import { ViewMode, FocusMode } from '../types';
-import type { ThemeName } from '../lib/theme';
+
 import { FileMenuDropdown } from './FileMenuDropdown';
 import { useI18n } from '../i18n';
 
@@ -19,8 +19,8 @@ interface ToolbarProps {
   onSetViewMode: (mode: ViewMode) => void;
   onFocusModeChange?: (mode: FocusMode) => void;
   onToggleToc?: () => void;
-  onThemeChange?: (theme: ThemeName) => void;
-  currentTheme?: ThemeName;
+  
+  
   /** F013: 拼写检查状态 */
   spellCheck?: boolean;
   /** F013: 拼写检查切换回调 */
@@ -38,6 +38,8 @@ interface ToolbarProps {
   vimMode?: boolean;
   /** F014: Vim 模式切换回调 */
   onToggleVimMode?: () => void;
+  /** F015: 打开设置面板回调 */
+  onOpenSettings?: () => void;
   /** F013: 最近文件列表 */
   recentFiles?: import('../lib/recent-files').RecentFile[];
   /** F013: 打开最近文件 */
@@ -46,8 +48,8 @@ interface ToolbarProps {
   onClearRecent?: () => void;
 }
 
-export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentTheme, onNewTab, onOpenFile, onSaveFile, onSaveAsFile, onExportDocx, onExportPdf, onExportHtml, onSetViewMode, onFocusModeChange, onToggleToc, onThemeChange, spellCheck, onToggleSpellCheck, onToggleFileTree, onToggleSearch, showSearch, onFormatAction, recentFiles, onOpenRecent, onClearRecent, vimMode, onToggleVimMode, onImageLocal }: ToolbarProps & { onImageLocal?: () => void }) {
-  const { t, locale, setLocale } = useI18n();
+export function Toolbar({ viewMode, focusMode, showToc, showFileTree, onNewTab, onOpenFile, onSaveFile, onSaveAsFile, onExportDocx, onExportPdf, onExportHtml, onSetViewMode, onFocusModeChange, onToggleToc, spellCheck, onToggleSpellCheck, onToggleFileTree, onToggleSearch, showSearch, onFormatAction, recentFiles, onOpenRecent, onClearRecent, vimMode, onToggleVimMode, onImageLocal, onOpenSettings }: ToolbarProps & { onImageLocal?: () => void }) {
+  const { t } = useI18n();
   const btnCls = 'flex items-center gap-1.5 px-2.5 py-1 text-xs hover:shadow-sm border border-transparent rounded transition-all';
   const viewBtnCls = (active: boolean) =>
     'flex items-center gap-1.5 px-2.5 py-1 text-xs rounded border transition-all ' +
@@ -403,7 +405,7 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentThe
         </button>
         <div className="w-px h-5 mx-1" style={{ backgroundColor: 'var(--border-color)' }} />
         {/* F011 — 主题切换（亮/暗 toggle） */}
-        <button
+        {/* <button
           onClick={() => onThemeChange?.(currentTheme === 'dark' ? 'light' : 'dark')}
           title={currentTheme === 'dark' ? t('toolbar.themeLight') : t('toolbar.themeDark')}
           className={focusBtnCls(false)}
@@ -421,9 +423,28 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentThe
           }}
         >
           {currentTheme === 'dark' ? '☀️' : '🌙'}
-        </button>
-        {/* Language switcher */}
+        </button> */}
+
+        {/* F015 — 设置按钮 */}
         <button
+          onClick={onOpenSettings}
+          title={t('settings.title')}
+          className={focusBtnCls(false)}
+          style={{ color: 'var(--text-secondary)', borderColor: 'transparent' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'var(--text-primary)';
+            e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'var(--text-secondary)';
+            e.currentTarget.style.backgroundColor = 'transparent';
+          }}
+        >
+          <Settings size={14} strokeWidth={1.8} />
+        </button>
+
+        {/* Language switcher */}
+        {/* <button
           onClick={() => setLocale(locale === 'zh-CN' ? 'en' : 'zh-CN')}
           title={locale === 'zh-CN' ? t('app.langSwitchToEn') : t('app.langSwitchToZh')}
           className={focusBtnCls(false)}
@@ -438,7 +459,7 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, currentThe
           }}
         >
           <Languages size={14} strokeWidth={1.8} />
-        </button>
+        </button> */}
       </div>
     </div>
   );

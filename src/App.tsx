@@ -72,6 +72,7 @@ import { TabContextMenu } from './components/TabContextMenu';
 import { EditorContextMenu } from './components/EditorContextMenu';
 import { detectContext } from './lib/context-menu';
 import { StatusBar } from './components/StatusBar';
+import { SettingsModal } from './components/SettingsModal';
 import { DragOverlay } from './components/DragOverlay';
 const MarkdownPreview = lazy(() =>
   import('./components/MarkdownPreview').then((m) => ({ default: m.MarkdownPreview }))
@@ -116,6 +117,8 @@ export default function App() {
   const [spellCheck, setSpellCheck] = useState<boolean>(getSavedSpellCheck);
   // F014 - Vim 模式
   const [vimMode, setVimMode] = useState<boolean>(getSavedVimMode);
+  // F015 - 设置面板
+  const [showSettings, setShowSettings] = useState(false);
 
   // F011 - 主题系统
   const [theme, setThemeState] = useState<ThemeName>(() => getSavedTheme() || 'light');
@@ -759,8 +762,6 @@ export default function App() {
             onSetViewMode={setViewMode}
             onFocusModeChange={setFocusMode}
             onToggleToc={() => setShowToc(prev => !prev)}
-            currentTheme={theme}
-            onThemeChange={setThemeState}
             spellCheck={spellCheck}
             onToggleSpellCheck={() => {
               const next = !spellCheck;
@@ -780,6 +781,24 @@ export default function App() {
             showSearch={showSearchPanel}
             onFormatAction={handleFormatAction}
             onImageLocal={() => handleFormatAction('image-local')}
+            onOpenSettings={() => setShowSettings(true)}
+          />
+
+          <SettingsModal
+            visible={showSettings}
+            onClose={() => setShowSettings(false)}
+            currentTheme={theme}
+            onThemeChange={setThemeState}
+            spellCheck={spellCheck}
+            onSpellCheckChange={(enabled) => {
+              setSpellCheck(enabled);
+              saveSpellCheck(enabled);
+            }}
+            vimMode={vimMode}
+            onVimModeChange={(enabled) => {
+              setVimMode(enabled);
+              saveVimMode(enabled);
+            }}
           />
 
           <TabBar

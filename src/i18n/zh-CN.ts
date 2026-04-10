@@ -1,5 +1,26 @@
 export const zhCN = {
   // ── Common ────────────────────────────────────────────────────────────────
+  // ── Settings Modal ─────────────────────────────────────────────────────────
+  'settings.title': '设置',
+  'settings.tabs.general': '通用',
+  'settings.tabs.editor': '编辑器',
+  'settings.tabs.appearance': '外观',
+  'settings.tabs.files': '文件',
+  'settings.general.language': '语言',
+  'settings.general.languageDesc': '选择界面显示语言',
+  'settings.editor.spellCheck': '拼写检查',
+  'settings.editor.spellCheckDesc': '启用浏览器内置拼写检查（英文支持较好）',
+  'settings.editor.vimMode': 'Vim 模式',
+  'settings.editor.vimModeDesc': '使用 Vim 键盘映射（hjkl导航、dd删除行等）',
+  'settings.appearance.theme': '主题',
+  'settings.appearance.themeDesc': '选择编辑器配色方案',
+  'settings.appearance.themeLight': '浅色',
+  'settings.appearance.themeDark': '深色',
+  'settings.files.imageDir': '图片保存目录',
+  'settings.files.imageDirDesc': '粘贴或拖拽图片时，保存到的文件夹路径（空值表示跟随文档目录）',
+  'settings.files.imageDirPlaceholder': '留空则保存在文档同级目录',
+  'settings.files.browse': '浏览',
+
   'common.confirm': '确定',
   'common.cancel': '取消',
   'common.close': '关闭',

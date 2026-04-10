@@ -2,6 +2,27 @@ import type { TranslationKey } from './zh-CN';
 
 export const en: Record<TranslationKey, string> = {
   // ── Common ────────────────────────────────────────────────────────────────
+  // ── Settings Modal ─────────────────────────────────────────────────────────
+  'settings.title': 'Settings',
+  'settings.tabs.general': 'General',
+  'settings.tabs.editor': 'Editor',
+  'settings.tabs.appearance': 'Appearance',
+  'settings.tabs.files': 'Files',
+  'settings.general.language': 'Language',
+  'settings.general.languageDesc': 'Select the interface display language',
+  'settings.editor.spellCheck': 'Spell Check',
+  'settings.editor.spellCheckDesc': 'Enable browser built-in spell check (better for English)',
+  'settings.editor.vimMode': 'Vim Mode',
+  'settings.editor.vimModeDesc': 'Use Vim keybindings (hjkl navigation, dd to delete line, etc.)',
+  'settings.appearance.theme': 'Theme',
+  'settings.appearance.themeDesc': 'Choose editor color scheme',
+  'settings.appearance.themeLight': 'Light',
+  'settings.appearance.themeDark': 'Dark',
+  'settings.files.imageDir': 'Image Directory',
+  'settings.files.imageDirDesc': 'Folder path for pasted or dragged images (empty = same as document)',
+  'settings.files.imageDirPlaceholder': 'Leave empty for document directory',
+  'settings.files.browse': 'Browse',
+
   'common.confirm': 'OK',
   'common.cancel': 'Cancel',
   'common.close': 'Close',
