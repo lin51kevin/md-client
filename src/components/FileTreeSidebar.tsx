@@ -230,6 +230,7 @@ export function FileTreeSidebar({
   const [renamingPath, setRenamingPath] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState<string>('');
   const menuRef = useRef<HTMLDivElement>(null);
+  const renamingRef = useRef(false); // 防止 Enter + 双重触发
 
   /**
    * 从路径提取显示用的目录名
@@ -366,6 +367,10 @@ export function FileTreeSidebar({
       setRenamingPath(null);
       return;
     }
+    // 防止 Enter + onBlur 双重触发
+    if (renamingRef.current) return;
+    renamingRef.current = true;
+
     // 找到原始文件的目录和扩展名
     const originalName = renamingPath.split('/').pop() || renamingPath.split('\\').pop() || '';
     const dotIndex = originalName.lastIndexOf('.');
@@ -376,6 +381,7 @@ export function FileTreeSidebar({
 
     if (newPath === renamingPath) {
       setRenamingPath(null);
+      renamingRef.current = false;
       return;
     }
 
@@ -383,10 +389,10 @@ export function FileTreeSidebar({
       await invoke('rename_file', { oldPath: renamingPath, newPath });
     } catch (e) {
       console.error('重命名失败:', e);
-      // 即使失败也要退出重命名模式，避免卡在输入框
     } finally {
       setRenamingPath(null);
       setRenameValue('');
+      renamingRef.current = false;
       await loadRoot();
     }
   }, [renamingPath, renameValue, loadRoot]);

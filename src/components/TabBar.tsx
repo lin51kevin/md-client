@@ -24,9 +24,13 @@ interface TabBarProps {
   onPin?: (id: string) => void;
   /** F013: 取消固定 */
   onUnpin?: (id: string) => void;
+  /** Show a virtual "Welcome" tab before all real tabs */
+  showWelcomeTab?: boolean;
+  /** Called when the virtual Welcome tab's × button is clicked */
+  onCloseWelcomeTab?: () => void;
 }
 
-export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorder, onContextMenu, getTabTitle, renamingTabId, onStartRename, onConfirmRename, onCancelRename, onPin, onUnpin }: TabBarProps) {
+export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorder, onContextMenu, getTabTitle, renamingTabId, onStartRename, onConfirmRename, onCancelRename, onPin, onUnpin, showWelcomeTab, onCloseWelcomeTab }: TabBarProps) {
   const { t } = useI18n();
   const [dragOverTabId, setDragOverTabId] = useState<string | null>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -122,6 +126,37 @@ export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorde
         ref={scrollRef}
         className="flex items-end flex-1 overflow-x-auto tabbar-scroll min-w-0"
       >
+        {/* Virtual "Welcome" tab – shown when the welcome page is active */}
+        {showWelcomeTab && (
+          <div
+            className="group relative flex items-center gap-1 pl-3 pr-1.5 py-1 text-xs border-r whitespace-nowrap select-none cursor-default"
+            style={{
+              borderRightColor: 'var(--border-color)',
+              backgroundColor: 'var(--bg-primary)',
+              color: 'var(--text-primary)',
+              marginBottom: '-1px',
+              borderTop: '2px solid var(--accent-color)',
+            }}
+          >
+            <span className="max-w-45 truncate">{t('welcome.tab')}</span>
+            <button
+              onClick={(e) => { e.stopPropagation(); onCloseWelcomeTab?.(); }}
+              className="ml-1 flex items-center justify-center w-4 h-4 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+              style={{ color: 'var(--text-tertiary)' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
+                e.currentTarget.style.color = 'var(--text-secondary)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '';
+                e.currentTarget.style.color = 'var(--text-tertiary)';
+              }}
+              title={t('welcome.dismiss')}
+            >
+              <X size={11} />
+            </button>
+          </div>
+        )}
         {tabs.map(tab => {
           const isRenaming = renamingTabId === tab.id;
           const isPinned = !!tab.isPinned;

@@ -236,4 +236,6 @@ export const en: Record<TranslationKey, string> = {
   'welcome.moreFiles': 'More...',
   'welcome.dismiss': 'Close Welcome',
   'welcome.showWelcome': 'Show Welcome',
+  'welcome.tab': 'Welcome',
+  'welcome.sample': '示例 · Sample',
 };

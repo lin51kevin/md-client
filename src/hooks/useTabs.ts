@@ -138,15 +138,9 @@ export function useTabs() {
   }, []);
 
   const createNewTab = () => {
-    // 首次启动（无标签）→ sample.md 带引导内容
-    if (tabsRef.current.length === 0) {
-      const newTab: Tab = { id: genTabId(), filePath: null, doc: DEFAULT_MARKDOWN, isDirty: false };
-      setTabs([newTab]);
-      setActiveTabId(newTab.id);
-      return;
-    }
+    const current = tabsRef.current;
     // 用户新建 → untitled + 序号，空内容
-    const usedNames = new Set(tabsRef.current.map(t => getTabTitle(t).replace(/ \u25cf$/, '')));
+    const usedNames = new Set(current.map(t => getTabTitle(t).replace(/ \u25cf$/, '')));
     let name = 'untitled.md';
     if (usedNames.has(name)) {
       let i = 1;
@@ -154,9 +148,20 @@ export function useTabs() {
       name = `untitled${i}.md`;
     }
     const newTab: Tab = { id: genTabId(), filePath: null, doc: '', isDirty: false, displayName: name };
-    setTabs(prev => [...prev, newTab]);
+    // Replace the pristine backing tab (no file, not dirty, no custom displayName = welcome state)
+    const isPristineBacking = current.length === 1 && !current[0].filePath && !current[0].isDirty && !current[0].displayName;
+    if (isPristineBacking) {
+      setTabs([newTab]);
+    } else {
+      setTabs(prev => [...prev, newTab]);
+    }
     setActiveTabId(newTab.id);
   };
+
+  /** Set a custom display name on a tab without any filesystem side-effects */
+  const setTabDisplayName = useCallback((id: string, name: string) => {
+    setTabs(prev => prev.map(t => t.id === id ? { ...t, displayName: name } : t));
+  }, []);
 
   const closeTab = (id: string) => {
     const current = tabsRef.current;
@@ -229,7 +234,7 @@ export function useTabs() {
     tabs, activeTabId, setActiveTabId, activeTabIdRef,
     getActiveTab, getTabTitle, updateActiveDoc, updateTabDoc, openFileInTab, openFileWithContent,
     createNewTab, closeTab, reorderTabs, markSaved, markSavedAs,
-    renameTab,
+    renameTab, setTabDisplayName,
     pinTab, unpinTab,
   };
 }

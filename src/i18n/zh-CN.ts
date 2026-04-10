@@ -233,6 +233,8 @@ export const zhCN = {
   'welcome.moreFiles': '更多...',
   'welcome.dismiss': '关闭欢迎页',
   'welcome.showWelcome': '重新显示欢迎页',
+  'welcome.tab': 'Welcome',
+  'welcome.sample': '示例 · Sample',
 } as const;
 
 export type TranslationKey = keyof typeof zhCN;

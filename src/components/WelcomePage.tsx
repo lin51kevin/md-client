@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { FilePlus, FolderOpen, Clock, Keyboard, X } from 'lucide-react';
+import { FilePlus, FolderOpen, FileText, Clock, Keyboard, X } from 'lucide-react';
 import { useI18n } from '../i18n';
 import type { RecentFile } from '../lib/recent-files';
 
@@ -22,7 +22,9 @@ const EMPTY_SHORTCUTS = [
   { key: 'Ctrl+O', i18nKey: 'welcome.shortcut.open' as const },
   { key: 'Ctrl+S', i18nKey: 'welcome.shortcut.save' as const },
   { key: 'Ctrl+F', i18nKey: 'welcome.shortcut.find' as const },
+  { key: 'Ctrl+1', i18nKey: 'welcome.shortcut.edit' as const },
   { key: 'Ctrl+2', i18nKey: 'welcome.shortcut.split' as const },
+  { key: 'Ctrl+3', i18nKey: 'welcome.shortcut.preview' as const },
 ] as const;
 
 interface WelcomePageProps {
@@ -30,6 +32,8 @@ interface WelcomePageProps {
   onNew: () => void;
   onOpenFile: () => void;
   onOpenRecent: (filePath: string) => void;
+  /** Opens the sample document in an editable tab */
+  onOpenSample?: () => void;
   /** When provided, renders a dismiss (×) button in the top-right corner */
   onDismiss?: () => void;
 }
@@ -132,7 +136,7 @@ export function EmptyEditorState({ onShowWelcome }: EmptyEditorStateProps) {
 // WelcomePage – VS Code-inspired two-column layout
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function WelcomePage({ recentFiles, onNew, onOpenFile, onOpenRecent, onDismiss }: WelcomePageProps) {
+export function WelcomePage({ recentFiles, onNew, onOpenFile, onOpenRecent, onOpenSample, onDismiss }: WelcomePageProps) {
   const { t } = useI18n();
   const visibleRecent = recentFiles.slice(0, MAX_VISIBLE_RECENT);
   const hasMore = recentFiles.length > MAX_VISIBLE_RECENT;
@@ -200,6 +204,13 @@ export function WelcomePage({ recentFiles, onNew, onOpenFile, onOpenRecent, onDi
                     label={t('welcome.openFile')}
                     onClick={onOpenFile}
                   />
+                  {onOpenSample && (
+                    <ActionLink
+                      icon={<FileText size={14} strokeWidth={1.8} />}
+                      label={t('welcome.sample')}
+                      onClick={onOpenSample}
+                    />
+                  )}
                 </div>
               </section>
 
