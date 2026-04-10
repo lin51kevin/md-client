@@ -110,7 +110,15 @@ function svgToPngBase64(svg: string, width: number, height: number): Promise<str
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, width, height);
 
-    const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+    // <foreignObject> in SVG taints the canvas (browser security spec).
+    // Mermaid uses foreignObject for HTML node labels in flowcharts/sequence
+    // diagrams.  Strip it before rasterising so toDataURL() works.
+    // Also strip external @import rules that could reference remote fonts.
+    const sanitized = svg
+      .replace(/<foreignObject[^>]*>[\s\S]*?<\/foreignObject>/gi, '')
+      .replace(/@import\s+[^;]+;/g, '');
+
+    const blob = new Blob([sanitized], { type: 'image/svg+xml;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const img = new Image();
 
