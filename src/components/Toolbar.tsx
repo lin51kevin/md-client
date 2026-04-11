@@ -17,6 +17,7 @@ interface ToolbarProps {
   onExportDocx: () => void;
   onExportPdf: () => void;
   onExportHtml: () => void;
+  onExportEpub?: () => void;
   onExportPng?: () => void;
   onSetViewMode: (mode: ViewMode) => void;
   onFocusModeChange?: (mode: FocusMode) => void;
@@ -63,7 +64,7 @@ const DIVIDER = (
 export function Toolbar({
   viewMode, focusMode, showToc, showFileTree,
   onNewTab, onOpenFile, onSaveFile, onSaveAsFile,
-  onExportDocx, onExportPdf, onExportHtml, onExportPng,
+  onExportDocx, onExportPdf, onExportHtml, onExportEpub, onExportPng,
   onSetViewMode, onFocusModeChange, onToggleToc,
   spellCheck, onToggleSpellCheck, onToggleFileTree,
   onToggleSearch, showSearch, onFormatAction,

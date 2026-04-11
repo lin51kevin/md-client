@@ -88,7 +88,7 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
    * The actual state is managed via React state (exporting).
    */
   const handleExport = async (
-    format: 'docx' | 'pdf' | 'html',
+    format: 'docx' | 'pdf' | 'html' | 'epub',
     onProgress?: (stage: string, progress: number) => void
   ) => {
     const tab = getActiveTab();
@@ -114,6 +114,22 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
           const { generateHtmlDocument } = await import('../lib/html-export');
           const html = await generateHtmlDocument(tab.doc);
           await invoke('write_file_text', { path: savePath, content: html });
+          onProgress?.('Complete!', 100);
+        }
+        return;
+      }
+
+      // [P2 EPUB 导出]
+      if (format === 'epub') {
+        onProgress?.('Generating EPUB...', 20);
+        const savePath = await save({
+          filters: [{ name: 'EPUB Document', extensions: ['epub'] }],
+          defaultPath: getDefaultFileName('epub'),
+        });
+        if (savePath) {
+          onProgress?.('Converting content...', 50);
+          const { generateEpub } = await import('../lib/html-export');
+          await generateEpub(tab.doc, savePath);
           onProgress?.('Complete!', 100);
         }
         return;
@@ -185,6 +201,8 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
   };
 
   const handleExportHtml = () => handleExport('html');
+  // [P2 EPUB 导出]
+  const handleExportEpub = () => handleExport('epub');
 
-  return { handleOpenFile, handleSaveFile, handleSaveAsFile, handleExportDocx, handleExportPdf, handleExportHtml, handleExportPng, exporting };
+  return { handleOpenFile, handleSaveFile, handleSaveAsFile, handleExportDocx, handleExportPdf, handleExportHtml, handleExportEpub, handleExportPng, exporting };
 }

@@ -22,6 +22,10 @@ export const DEFAULT_SHORTCUTS: ShortcutAction[] = [
   { id: 'previewMode', labelKey: 'settings.shortcuts.previewMode', defaultKeys: 'Ctrl+3' },
   { id: 'typewriterMode', labelKey: 'settings.shortcuts.typewriterMode', defaultKeys: 'Ctrl+.' },
   { id: 'focusMode', labelKey: 'settings.shortcuts.focusMode', defaultKeys: 'Ctrl+,' },
+  // Multi-cursor
+  { id: 'multicursor.selectAllOccurrences', labelKey: 'settings.shortcuts.selectAllOccurrences', defaultKeys: 'Alt+D' },
+  { id: 'multicursor.addCursorAbove', labelKey: 'settings.shortcuts.addCursorAbove', defaultKeys: 'Alt+Up' },
+  { id: 'multicursor.addCursorBelow', labelKey: 'settings.shortcuts.addCursorBelow', defaultKeys: 'Alt+Down' },
 ];
 
 const STORAGE_KEY = 'marklite-custom-shortcuts';

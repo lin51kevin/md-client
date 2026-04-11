@@ -11,6 +11,7 @@ export interface FileMenuDropdownProps {
   onExportDocx: () => void;
   onExportPdf: () => void;
   onExportHtml: () => void;
+  onExportEpub?: () => void;
   onExportPng?: () => void;
   recentFiles?: RecentFile[];
   onOpenRecent?: (path: string) => void;
@@ -227,6 +228,13 @@ export function FileMenuDropdown({
       label: t('file.exportHtml'),
       action: onExportHtml,
     },
+    // [P2 EPUB 导出]
+    ...(onExportEpub ? [{
+      id: 'export-epub',
+      icon: <BookOpen size={13} strokeWidth={1.8} />,
+      label: 'EPUB',
+      action: onExportEpub,
+    }] : []),
     ...(onExportPng ? [{
       id: 'export-png',
       icon: <Image size={13} strokeWidth={1.8} />,

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { X, Settings, Palette, Type, FolderOpen, Keyboard, RotateCcw } from 'lucide-react';
+import { X, Settings, Palette, Type, FolderOpen, Keyboard, RotateCcw, FileText } from 'lucide-react';
 import { useI18n, type Locale } from '../i18n';
 import type { TranslationKey } from '../i18n/zh-CN';
 import type { ThemeName } from '../lib/theme';
@@ -11,6 +11,7 @@ import {
   setCustomShortcuts,
   formatKeyEvent,
 } from '../lib/shortcuts-config';
+import { SnippetManager } from './SnippetManager';
 
 interface SettingsModalProps {
   visible: boolean;
@@ -23,7 +24,7 @@ interface SettingsModalProps {
   onVimModeChange: (enabled: boolean) => void;
 }
 
-type TabId = 'general' | 'editor' | 'appearance' | 'files' | 'shortcuts';
+type TabId = 'general' | 'editor' | 'appearance' | 'files' | 'shortcuts' | 'snippets';
 
 const TABS: { id: TabId; icon: React.ReactNode; labelKey: string }[] = [
   { id: 'general', icon: <Settings size={14} />, labelKey: 'settings.tabs.general' },
@@ -31,6 +32,7 @@ const TABS: { id: TabId; icon: React.ReactNode; labelKey: string }[] = [
   { id: 'appearance', icon: <Palette size={14} />, labelKey: 'settings.tabs.appearance' },
   { id: 'files', icon: <FolderOpen size={14} />, labelKey: 'settings.tabs.files' },
   { id: 'shortcuts', icon: <Keyboard size={14} />, labelKey: 'settings.tabs.shortcuts' },
+  { id: 'snippets', icon: <FileText size={14} />, labelKey: 'snippet.manager' },
 ];
 
 export function SettingsModal({
@@ -239,6 +241,10 @@ export function SettingsModal({
                 </p>
                 <EditableShortcuts />
               </div>
+            )}
+
+            {activeTab === 'snippets' && (
+              <SnippetManager visible={true} />
             )}
           </div>
         </div>

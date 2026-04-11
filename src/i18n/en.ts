@@ -38,6 +38,9 @@ export const en: Record<TranslationKey, string> = {
   'settings.shortcuts.previewMode': 'Preview Only Mode',
   'settings.shortcuts.typewriterMode': 'Typewriter Mode',
   'settings.shortcuts.focusMode': 'Focus Mode',
+  'settings.shortcuts.selectAllOccurrences': 'Select All Occurrences (Alt+D)',
+  'settings.shortcuts.addCursorAbove': 'Add Cursor Above (Alt+Up)',
+  'settings.shortcuts.addCursorBelow': 'Add Cursor Below (Alt+Down)',
 
   'common.confirm': 'OK',
   'common.cancel': 'Cancel',
@@ -172,6 +175,7 @@ export const en: Record<TranslationKey, string> = {
   'status.charCount': '{count} chars',
   'status.emptyFile': '(empty)',
   'status.lineCol': 'Ln {line}, Col {col}',
+  'status.cursorCount': '{count} cursors',
 
   // ── App ───────────────────────────────────────────────────────────────────
   'app.closeTabUnsaved': '"{name}" has unsaved changes that will be lost.\n\nPath: {path}',
@@ -282,4 +286,24 @@ export const en: Record<TranslationKey, string> = {
   'fileOps.exporting': 'Exporting {format}...',
   'fileOps.exportFailed': 'Export {format} Failed',
   'fileOps.exportPngFailed': 'Export PNG Failed',
+
+  // ── Wiki Links ────────────────────────────────────────────────────────
+  'wiki.notFound': 'Document "{name}" not found. Create it?',
+  'wiki.create': 'Create',
+  'wiki.cancel': 'Cancel',
+
+  // ── Snippets / Templates ───────────────────────────────────────────────
+  'snippet.pickerTitle': 'Select Snippet',
+  'snippet.searchPlaceholder': 'Search snippets...',
+  'snippet.insert': 'Insert Snippet...',
+  'snippet.manager': 'Snippet Manager',
+  'snippet.newSnippet': 'New Snippet',
+  'snippet.editSnippet': 'Edit Snippet',
+  'snippet.defaultName': 'Unnamed Snippet',
+  'snippet.noResults': 'No matching snippets',
+  'snippet.restoreDefaults': 'Restore Defaults',
+  'snippet.fieldName': 'Name',
+  'snippet.fieldDesc': 'Description',
+  'snippet.fieldDescPlaceholder': 'Optional description (e.g., meeting template)',
+  'snippet.fieldContent': 'Content',
 };

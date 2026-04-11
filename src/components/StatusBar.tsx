@@ -9,12 +9,14 @@ interface StatusBarProps {
   col: number;
   /** F012: 字数统计 */
   wordCount?: number;
+  /** 多光标数量（>1 时显示） */
+  cursorCount?: number;
   /** F012: 快照列表（有值时显示版本历史入口） */
   snapshots?: import('../lib/version-history').Snapshot[] | null;
   onSnapshotRestore?: (snapshotId: string) => void;
 }
 
-export function StatusBar({ filePath, isDirty, line, col, wordCount, snapshots, onSnapshotRestore }: StatusBarProps) {
+export function StatusBar({ filePath, isDirty, line, col, wordCount, cursorCount, snapshots, onSnapshotRestore }: StatusBarProps) {
   const { t } = useI18n();
   const [showSnapshots, setShowSnapshots] = useState(false);
 
@@ -45,6 +47,9 @@ export function StatusBar({ filePath, isDirty, line, col, wordCount, snapshots, 
               <History size={12} strokeWidth={1.8} />
               <span>{snapshots.length}</span>
             </button>
+          )}
+          {cursorCount !== undefined && cursorCount > 1 && (
+            <span className="tabular-nums" style={{ color: 'var(--accent-color)' }}>{t('status.cursorCount', { count: cursorCount })}</span>
           )}
           <span className="tabular-nums">{t('status.lineCol', { line, col })}</span>
         </div>

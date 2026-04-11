@@ -14,6 +14,8 @@ import "katex/dist/katex.min.css";
 import { invoke } from "@tauri-apps/api/core";
 import { openPath, openUrl } from "@tauri-apps/plugin-opener";
 import { rehypeFilterInvalidElements } from "../lib/rehypeFilterInvalidElements";
+import { remarkWikiLinks } from "../lib/remark-wikilinks";
+import { rehypeWikiLinks } from "../lib/rehype-wikilinks";
 import { initMermaid } from "../lib/mermaid";
 import { parseTable, type TableData } from "../lib/table-parser";
 import { extractFrontmatter, type Frontmatter } from "../lib/markdown-extensions";
@@ -29,12 +31,14 @@ const REMARK_PLUGINS = [
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   remarkFootnotes as any,
   remarkFrontmatter,
+  remarkWikiLinks,
 ];
 const REHYPE_PLUGINS = [
   rehypeSlug,
   rehypeHighlight,
   rehypeRaw,
   rehypeKatex,
+  rehypeWikiLinks,
   rehypeFilterInvalidElements,
 ];
 
@@ -74,6 +78,8 @@ interface MarkdownPreviewProps {
   onOpenFile?: (absPath: string) => void;
   /** Called when table editing is confirmed — receives updated full content */
   onContentChange?: (newContent: string) => void;
+  /** Called when user clicks a [[wiki-link]]; target is the link text */
+  onWikiLinkNavigate?: (target: string) => void;
 }
 
 /**
@@ -232,6 +238,7 @@ export const MarkdownPreview = memo(function MarkdownPreview({
   filePath,
   onOpenFile,
   onContentChange,
+  onWikiLinkNavigate,
 }: MarkdownPreviewProps) {
   const [editingTable, setEditingTable] = useState<TableData | null>(null);
   /** Resets to 0 before each ReactMarkdown render pass to keep table indices aligned */
@@ -282,7 +289,17 @@ export const MarkdownPreview = memo(function MarkdownPreview({
       children,
       ...props
     }: React.ComponentPropsWithoutRef<"a">) => {
+      const isWikiLink = 'data-wiki-target' in props;
+      const wikiTarget = (props as any)['data-wiki-target'] as string | undefined;
+
       const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+        // Wiki-link click → delegate to parent
+        if (isWikiLink && wikiTarget) {
+          e.preventDefault();
+          onWikiLinkNavigate?.(wikiTarget);
+          return;
+        }
+
         if (!href) return;
 
         // Fragment anchors — let the browser scroll the preview container
@@ -301,10 +318,8 @@ export const MarkdownPreview = memo(function MarkdownPreview({
         const ext = absPath.split(".").pop()?.toLowerCase() ?? "";
 
         if (MD_EXTENSIONS.has(ext)) {
-          // Open Markdown/text file in a new editor tab
           onOpenFile?.(absPath);
         } else {
-          // Open other files (PDF, images, etc.) with the OS default app
           openPath(absPath).catch(() => {});
         }
       };
@@ -329,7 +344,7 @@ export const MarkdownPreview = memo(function MarkdownPreview({
     };
 
     return components;
-  }, [filePath, onOpenFile, onContentChange, allTables]);
+  }, [filePath, onOpenFile, onContentChange, onWikiLinkNavigate, allTables]);
 
   const handleTableConfirm = useCallback((newTableMd: string) => {
     if (!editingTable || !onContentChange) return;

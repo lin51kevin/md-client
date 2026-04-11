@@ -5,7 +5,7 @@ import {
   Heading1, ArrowDownToLine, ArrowUpFromLine,
   Plus, Minus, AlignLeft, AlignCenter, AlignRight,
   IndentIncrease, IndentDecrease, ListOrdered,
-  Quote, Sigma, Pencil
+  Quote, Sigma, Pencil, FileText
 } from 'lucide-react';
 import type { ContextInfo } from '../lib/context-menu';
 import { useI18n } from '../i18n';
@@ -47,7 +47,8 @@ function buildMenuItems(context: ContextInfo, t: (key: TranslationKey) => string
         { id: 'strikethrough', label: t('ctx.strikethrough'), icon: <Strikethrough size={14} strokeWidth={2} /> },
         { id: 'code', label: t('ctx.code'), icon: <Code size={14} strokeWidth={2} />, divider: true },
         { id: 'link', label: t('ctx.link'), icon: <Link2 size={14} strokeWidth={2} /> },
-        { id: 'image', label: t('ctx.image'), icon: <Image size={14} strokeWidth={2} /> },
+        { id: 'image', label: t('ctx.image'), icon: <Image size={14} strokeWidth={2} />, divider: true },
+        { id: 'insertSnippet', label: t('snippet.insert'), icon: <FileText size={14} strokeWidth={1.8} /> },
       );
       break;
 

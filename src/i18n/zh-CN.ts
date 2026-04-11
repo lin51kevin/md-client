@@ -36,6 +36,9 @@ export const zhCN = {
   'settings.shortcuts.previewMode': '仅预览模式',
   'settings.shortcuts.typewriterMode': '打字机模式',
   'settings.shortcuts.focusMode': '专注模式',
+  'settings.shortcuts.selectAllOccurrences': '选中所有相同词 (Alt+D)',
+  'settings.shortcuts.addCursorAbove': '在上方添加光标 (Alt+Up)',
+  'settings.shortcuts.addCursorBelow': '在下方添加光标 (Alt+Down)',
 
   'common.confirm': '确定',
   'common.cancel': '取消',
@@ -169,6 +172,7 @@ export const zhCN = {
   'status.charCount': '{count} 字符',
   'status.emptyFile': '(空文件)',
   'status.lineCol': '行 {line}，列 {col}',
+  'status.cursorCount': '{count} 个光标',
 
   // ── App ───────────────────────────────────────────────────────────────────
   'app.closeTabUnsaved': '"{name}" 有未保存的更改,关闭后将丢失这些更改。\n\n路径: {path}',
@@ -279,6 +283,26 @@ export const zhCN = {
   'fileOps.exporting': '正在导出 {format}...',
   'fileOps.exportFailed': '导出 {format} 失败',
   'fileOps.exportPngFailed': '导出 PNG 失败',
-} as const;
+
+  // ── Wiki Links ────────────────────────────────────────────────────────
+  'wiki.notFound': '未找到文档 "{name}"，是否创建？',
+  'wiki.create': '创建',
+  'wiki.cancel': '取消',
+
+  // ── Snippets / Templates ───────────────────────────────────────────────
+  'snippet.pickerTitle': '选择片段',
+  'snippet.searchPlaceholder': '搜索片段...',
+  'snippet.insert': '插入片段...',
+  'snippet.manager': '片段管理',
+  'snippet.newSnippet': '新建片段',
+  'snippet.editSnippet': '编辑片段',
+  'snippet.defaultName': '未命名片段',
+  'snippet.noResults': '暂无匹配的片段',
+  'snippet.restoreDefaults': '恢复默认片段',
+  'snippet.fieldName': '名称',
+  'snippet.fieldDesc': '描述',
+  'snippet.fieldDescPlaceholder': '可选描述（如：会议纪要模板）',
+  'snippet.fieldContent': '内容',
+};
 
 export type TranslationKey = keyof typeof zhCN;

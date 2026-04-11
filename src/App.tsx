@@ -9,6 +9,7 @@ import Split from 'react-split';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { invoke } from '@tauri-apps/api/core';
 import { confirm } from '@tauri-apps/plugin-dialog';
+import { X } from 'lucide-react';
 import './App.css';
 
 import { I18nContext, useI18nProvider } from './i18n';
@@ -30,6 +31,7 @@ import { sepiaCmTheme, highContrastCmTheme } from './lib/cm-themes';
 import { getSnapshots, createSnapshot as createVersionSnapshot, restoreSnapshot } from './lib/version-history';
 import { getRecentFiles, clearRecentFiles, type RecentFile } from './lib/recent-files';
 import { autoCloseBrackets } from './lib/cmAutocomplete';
+import { multicursorKeymap } from './lib/multicursor-keymap';
 import { countWords } from './lib/word-count';
 import { vimKeymap } from './lib/cmVim';
 import { createAutoSave } from './lib/auto-save';
@@ -58,6 +60,10 @@ import { parseTable, type TableData } from './lib/table-parser';
 import { TableEditor } from './components/TableEditor';
 import { InputDialog, type InputDialogConfig } from './components/InputDialog';
 import { WelcomePage, EmptyEditorState } from './components/WelcomePage';
+import { CommandPalette } from './components/CommandPalette';
+import { SnippetPicker } from './components/SnippetPicker';
+import { SnippetManager } from './components/SnippetManager';
+import type { Command } from './lib/commands';
 
 
 export default function App() {
@@ -91,6 +97,13 @@ export default function App() {
   const [vimMode, setVimMode] = useLocalStorageBool('marklite-vimmode', false);
   // F015 - 设置面板
   const [showSettings, setShowSettings] = useState(false);
+
+  // 命令面板 (Ctrl+Shift+P)
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
+
+  // 片段选择器
+  const [showSnippetPicker, setShowSnippetPicker] = useState(false);
+  const [showSnippetManager, setShowSnippetManager] = useState(false);
 
   // F011 - 主题系统
   const [theme, setThemeState] = useState<ThemeName>(() => getSavedTheme() || 'light');
@@ -179,7 +192,7 @@ export default function App() {
     }
   }, [tabs, closeTab, t]);
 
-  const { handleOpenFile, handleSaveFile: rawHandleSaveFile, handleSaveAsFile, handleExportDocx, handleExportPdf, handleExportHtml, handleExportPng, exporting } = useFileOps({
+  const { handleOpenFile, handleSaveFile: rawHandleSaveFile, handleSaveAsFile, handleExportDocx, handleExportPdf, handleExportHtml, handleExportEpub, handleExportPng, exporting } = useFileOps({
     getActiveTab, tabs, openFileInTab, markSaved, markSavedAs, t,
   });
 
@@ -195,6 +208,9 @@ export default function App() {
 
   const { editorRef, previewRef, handleEditorScroll, handlePreviewScroll } = useScrollSync(viewMode);
   const { cursorPos, cursorExtension } = useCursorPosition();
+
+  // Multi-cursor: track cursor/range count from EditorView
+  const [cursorCount, setCursorCount] = useState(1);
   const { searchHighlightExtension, setMatches, clearMatches } = useSearchHighlight();
 
   // Per-tab EditorState persistence: declared early so all callbacks can close over it
@@ -226,6 +242,19 @@ export default function App() {
     });
     view.focus();
   }, []);
+
+  // 片段插入处理：将解析后的片段文本插入编辑器光标位置
+  const handleSnippetInsert = useCallback((_snippetId: string, resolved: { text: string; cursorPosition: number | null }) => {
+    const view = cmViewRef.current;
+    if (!view) return;
+    const pos = view.state.selection.main.head;
+    view.dispatch({
+      changes: { from: pos, insert: resolved.text },
+      selection: { anchor: resolved.cursorPosition !== null ? pos + resolved.cursorPosition : pos + resolved.text.length },
+    });
+    updateActiveDoc(resolved.text);
+    view.focus();
+  }, [updateActiveDoc]);
 
   // Open file passed via CLI argument (e.g. double-clicked from file explorer)
   useEffect(() => {
@@ -368,12 +397,22 @@ export default function App() {
   const [activeEditorView, setActiveEditorView] = useState<EditorView | null>(null);
 
   // F014 — 编辑器右键菜单操作处理（提取为独立 hook）
-  const { handleEditorCtxAction } = useEditorContextActions({
+  const { handleEditorCtxAction: _handleEditorCtxAction } = useEditorContextActions({
     cmViewRef,
     handleFormatAction,
     setEditingTable,
     setEditorCtxMenu,
   });
+
+  // 包装：拦截 insertSnippet 动作，显示片段选择器
+  const handleEditorCtxAction = useCallback((action: string) => {
+    if (action === 'insertSnippet') {
+      setEditorCtxMenu(null);
+      setShowSnippetPicker(true);
+      return;
+    }
+    _handleEditorCtxAction(action);
+  }, [_handleEditorCtxAction, setEditorCtxMenu, setShowSnippetPicker]);
 
   useKeyboardShortcuts({
     createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile,
@@ -381,6 +420,66 @@ export default function App() {
     toggleFindReplace: () => { setShowSearchPanel(prev => !prev); },
     focusMode, setFocusMode,
   });
+
+  // ── Command Palette: Ctrl+Shift+P (not inside input fields) ──
+  const commandRegistry = useMemo<Command[]>(() => [
+    // 文件
+    { id: 'file.new', label: '新建标签页', labelEn: 'New Tab', shortcut: 'Ctrl+N', category: 'file', action: () => createNewTab() },
+    { id: 'file.open', label: '打开文件', labelEn: 'Open File', shortcut: 'Ctrl+O', category: 'file', action: () => handleOpenFile() },
+    { id: 'file.save', label: '保存', labelEn: 'Save', shortcut: 'Ctrl+S', category: 'file', action: () => handleSaveFile() },
+    { id: 'file.saveAs', label: '另存为', labelEn: 'Save As', shortcut: 'Ctrl+Shift+S', category: 'file', action: () => handleSaveAsFile() },
+    // 编辑
+    { id: 'edit.find', label: '查找', labelEn: 'Find', shortcut: 'Ctrl+F', category: 'edit', action: () => setShowSearchPanel(prev => !prev) },
+    { id: 'edit.replace', label: '查找替换', labelEn: 'Find & Replace', shortcut: 'Ctrl+H', category: 'edit', action: () => setShowSearchPanel(prev => !prev) },
+    { id: 'edit.undo', label: '撤销', labelEn: 'Undo', shortcut: 'Ctrl+Z', category: 'edit', action: () => {
+      document.execCommand('undo');
+      cmViewRef.current?.dispatch({});
+    }},
+    { id: 'edit.redo', label: '重做', labelEn: 'Redo', shortcut: 'Ctrl+Y', category: 'edit', action: () => {
+      document.execCommand('redo');
+      cmViewRef.current?.dispatch({});
+    }},
+    // 视图
+    { id: 'view.editOnly', label: '仅编辑器', labelEn: 'Editor Only', shortcut: 'Ctrl+1', category: 'view', action: () => setViewMode('edit') },
+    { id: 'view.split', label: '分栏预览', labelEn: 'Split Preview', shortcut: 'Ctrl+2', category: 'view', action: () => setViewMode('split') },
+    { id: 'view.previewOnly', label: '仅预览', labelEn: 'Preview Only', shortcut: 'Ctrl+3', category: 'view', action: () => setViewMode('preview') },
+    { id: 'view.focusTypewriter', label: '打字机模式', labelEn: 'Typewriter Mode', shortcut: 'Ctrl+.', category: 'view', action: () => setFocusMode(focusMode === 'typewriter' ? 'normal' : 'typewriter') },
+    { id: 'view.focusMode', label: '专注模式', labelEn: 'Focus Mode', shortcut: 'Ctrl+,', category: 'view', action: () => setFocusMode(focusMode === 'focus' ? 'normal' : 'focus') },
+    { id: 'view.fullscreen', label: '全屏模式', labelEn: 'Fullscreen', shortcut: 'F11', category: 'view', action: async () => {
+      if (!isTauri) return;
+      try { const { getCurrentWindow } = await import('@tauri-apps/api/window'); const w = getCurrentWindow(); w.isFullscreen().then(fs => w.setFullscreen(!fs)); }
+      catch {} /* ignore */
+    }},
+    // 格式化
+    { id: 'format.bold', label: '加粗', labelEn: 'Bold', shortcut: 'Ctrl+B', category: 'format', action: () => handleFormatAction('bold') },
+    { id: 'format.italic', label: '斜体', labelEn: 'Italic', shortcut: 'Ctrl+I', category: 'format', action: () => handleFormatAction('italic') },
+    { id: 'format.strikethrough', label: '删除线', labelEn: 'Strikethrough', shortcut: '', category: 'format', action: () => handleFormatAction('strikethrough') },
+    { id: 'format.code', label: '行内代码', labelEn: 'Inline Code', shortcut: 'Ctrl+`', category: 'format', action: () => handleFormatAction('code') },
+    { id: 'format.link', label: '插入链接', labelEn: 'Insert Link', shortcut: 'Ctrl+K', category: 'format', action: () => handleFormatAction('link') },
+    { id: 'format.image', label: '插入图片', labelEn: 'Insert Image', shortcut: '', category: 'format', action: () => handleFormatAction('image-local') },
+    // 导出
+    { id: 'export.docx', label: '导出 Word', labelEn: 'Export Word', shortcut: '', category: 'export', action: () => handleExportDocx() },
+    { id: 'export.pdf', label: '导出 PDF', labelEn: 'Export PDF', shortcut: '', category: 'export', action: () => handleExportPdf() },
+    { id: 'export.html', label: '导出 HTML', labelEn: 'Export HTML', shortcut: '', category: 'export', action: () => handleExportHtml() },
+    { id: 'export.png', label: '导出 PNG', labelEn: 'Export PNG', shortcut: '', category: 'export', action: () => handleExportPng(previewRef.current) },
+    // 片段
+    { id: 'snippet.insert', label: '插入片段', labelEn: 'Insert Snippet', shortcut: '', category: 'custom', action: () => setShowSnippetPicker(true) },
+    { id: 'snippet.manager', label: '片段管理', labelEn: 'Snippet Manager', shortcut: '', category: 'custom', action: () => setShowSnippetManager(true) },
+  ], [createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile, setViewMode, focusMode, setFocusMode, handleFormatAction, handleExportDocx, handleExportPdf, handleExportHtml, previewRef.current, setShowSnippetPicker, setShowSnippetManager]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      // Don't trigger when typing in input/textarea/editor
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (e.target as HTMLElement).isContentEditable) return;
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'P') {
+        e.preventDefault();
+        setShowCommandPalette(v => !v);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   // Per-tab EditorState persistence: preserves cursor position and undo history.
   // themeKey is stored alongside the state so we can detect stale theme configs on restore.
@@ -465,8 +564,11 @@ export default function App() {
     setEditingTable(null);
   }, [editingTable, updateActiveDoc]);
 
-  const handleEditorUpdate = useCallback((viewUpdate: ViewUpdate) => {
+    const handleEditorUpdate = useCallback((viewUpdate: ViewUpdate) => {
     savedStatesRef.current.set(activeTabId, { state: viewUpdate.state, themeKey: theme });
+    // Track cursor/range count for status bar
+    const rangeCount = viewUpdate.state.selection.ranges.length;
+    setCursorCount(rangeCount);
   }, [activeTabId, theme]);
 
   // Vim extension is loaded asynchronously
@@ -505,13 +607,16 @@ export default function App() {
   }, [activeTab.doc, activeTabId]);
 
   const editorExtensions = useMemo(() => [
+    // [P1 spellcheck] Set spellcheck attribute on editor content
+    EditorView.contentAttributes.of({ spellcheck: spellCheck ? 'true' : 'false' }),
     markdown({ base: markdownLanguage, codeLanguages: languages }),
     foldGutter(),
     cursorExtension,
     autoCloseBrackets(),
     searchHighlightExtension,
+    multicursorKeymap(),
     ...(vimMode && vimExtension ? [vimExtension] : []),
-  ], [cursorExtension, vimExtension, vimMode, searchHighlightExtension]);
+  ], [spellCheck, cursorExtension, vimExtension, vimMode, searchHighlightExtension]);
   const editorSetup = EDITOR_SETUP;
 
   // F011 - 解析 CodeMirror 主题（内置字符串或自定义 Extension）
@@ -606,6 +711,7 @@ export default function App() {
             onExportDocx={handleExportDocx}
             onExportPdf={handleExportPdf}
             onExportHtml={handleExportHtml}
+            onExportEpub={handleExportEpub}
             onExportPng={() => handleExportPng(previewRef.current)}
             onSetViewMode={setViewMode}
             onFocusModeChange={setFocusMode}
@@ -774,6 +880,7 @@ export default function App() {
           col={cursorPos.col}
           snapshots={snapshots}
           wordCount={wordCount}
+          cursorCount={cursorCount}
           onSnapshotRestore={(id) => {
             if (!activeTab.filePath) return;
             const restoredContent = restoreSnapshot(activeTab.filePath, id);
@@ -807,6 +914,45 @@ export default function App() {
         <div className="export-loading-indicator">
           <span className="export-spinner" />
           {t('fileOps.exporting', { format: exporting.toUpperCase() })}
+        </div>
+      )}
+
+      {/* 命令面板 (Ctrl+Shift+P) */}
+      <CommandPalette
+        visible={showCommandPalette}
+        commands={commandRegistry}
+        onClose={() => setShowCommandPalette(false)}
+        locale={i18n.locale}
+      />
+
+      {/* 片段选择器 */}
+      <SnippetPicker
+        visible={showSnippetPicker}
+        onClose={() => setShowSnippetPicker(false)}
+        onSelect={handleSnippetInsert}
+      />
+
+      {/* 片段管理器（独立窗口） */}
+      {showSnippetManager && (
+        <div
+          className="fixed inset-0 flex items-center justify-center z-[10001]"
+          style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
+          onClick={() => setShowSnippetManager(false)}
+        >
+          <div
+            className="snippet-manager-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="snippet-manager-header">
+              <span>{i18n.t('snippet.manager')}</span>
+              <button onClick={() => setShowSnippetManager(false)}>
+                <X size={14} />
+              </button>
+            </div>
+            <div className="snippet-manager-body">
+              <SnippetManager visible={true} />
+            </div>
+          </div>
         </div>
       )}
     </div>

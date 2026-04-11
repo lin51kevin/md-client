@@ -170,6 +170,37 @@ fn load_font_family() -> Result<genpdf::fonts::FontFamily<genpdf::fonts::FontDat
     Err("未找到合适的字体。请确保已安装系统字体。".into())
 }
 
+/// [P1 PDF Header] Extract document title from markdown.
+/// Priority: 1) frontmatter title, 2) first H1 heading, 3) "Document"
+fn extract_doc_title(markdown: &str) -> String {
+    // Try frontmatter first
+    if markdown.starts_with("---") {
+        if let Some(rel) = markdown[4..].find("\n---\n") {
+            let frontmatter = &markdown[4..4 + rel];
+            for line in frontmatter.lines() {
+                if line.trim_start().starts_with("title:") {
+                    if let Some(val) = line.split(':').nth(1) {
+                        let title = val.trim().trim_matches('"').trim_matches('\'');
+                        if !title.is_empty() {
+                            return title.to_string();
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // Try first H1 heading
+    for line in markdown.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with("# ") {
+            return trimmed[2..].trim().to_string();
+        }
+    }
+    
+    "Document".to_string()
+}
+
 /// Generate list item prefix (e.g., "1. ", "• ", "◦ ")
 fn list_prefix(list_stack: &[Option<u64>], item_counter: &mut [u64], indent_level: usize) -> String {
     let is_ordered = list_stack.last().copied().flatten().is_some();
@@ -193,14 +224,16 @@ fn list_prefix(list_stack: &[Option<u64>], item_counter: &mut [u64], indent_leve
 /// Custom page decorator that applies margins and renders page numbers at bottom center.
 /// genpdf calls decorate_page before rendering each page, so total_pages is unknown.
 /// We track the current page number internally (increment on each call).
+/// [P1 PDF Header] Added title field for page header rendering.
 struct NumberedPageDecorator {
     margins: u32,
     page_num: u32,
+    title: String,
 }
 
 impl NumberedPageDecorator {
-    fn new(margins: u32) -> Self {
-        Self { margins, page_num: 0 }
+    fn new(margins: u32, title: String) -> Self {
+        Self { margins, page_num: 0, title }
     }
 }
 
@@ -223,22 +256,34 @@ impl genpdf::PageDecorator for NumberedPageDecorator {
 
         // Reserve 10mm at bottom for footer, return shrunk content area
         let footer_height = genpdf::Mm::from(10.0_f32);
+        // [P1 PDF Header] Reserve 8mm at top for header
+        let header_height = genpdf::Mm::from(8.0_f32);
         let mut content_area = area.clone();
         content_area.add_margins((
+            header_height,   // top: header
             genpdf::Mm::default(),
-            genpdf::Mm::default(),
-            footer_height,
+            footer_height,   // bottom: footer
             genpdf::Mm::default(),
         ));
 
+        // [P1 PDF Header] Draw document title in top-left of page
+        if !self.title.is_empty() && self.title != "Document" {
+            let mut header_style = style.clone();
+            header_style.set_font_size(9);
+            header_style.set_color(genpdf::style::Color::Rgb(100, 100, 100));
+            // Draw at top-left of the content area (which is below the header margin)
+            let header_pos = genpdf::Position::new(
+                genpdf::Mm::from(0.0),
+                genpdf::Mm::from(0.0),
+            );
+            let _ = area.print_str(&context.font_cache, header_pos, &self.title, header_style);
+        }
+
         // Draw page number text centered in footer area
         let footer_text = format!("— {} —", self.page_num);
-        let mut footer_style = style;
+        let mut footer_style = style.clone();
         footer_style.set_font_size(9);
         footer_style.set_color(genpdf::style::Color::Rgb(128, 128, 128));
-        let _ = area.print_str(
-            &context.font_cache,
-            genpdf::Position::new(
                 (area.size().width - genpdf::Mm::from(20.0_f32)) / 2.0,
                 area.size().height - genpdf::Mm::from(6.0_f32),
             ),
@@ -257,11 +302,15 @@ pub fn export_pdf(
 ) -> Result<(), String> {
     let font_family = load_font_family()?;
     let mut doc = genpdf::Document::new(font_family);
-    doc.set_title("Exported Document");
+    // [P1 PDF Header] Extract title from markdown (frontmatter or first H1)
+    let doc_title = extract_doc_title(markdown);
+    doc.set_title(&doc_title);
     doc.set_minimal_conformance();
 
-    // Custom page decorator: margins + footer page number
-    doc.set_page_decorator(NumberedPageDecorator::new(20));
+    // [P1 PDF Header] Use NumberedPageDecorator with title for page headers
+    let mut decorator = NumberedPageDecorator::new(20, doc_title);
+    decorator.set_margins(20);
+    doc.set_page_decorator(decorator);
 
     // Set default font size
     doc.set_font_size(11);
