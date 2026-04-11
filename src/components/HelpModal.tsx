@@ -111,6 +111,8 @@ export function HelpModal({ visible, onClose }: HelpModalProps) {
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
         className="rounded-lg shadow-xl flex flex-col overflow-hidden"
         style={{
           backgroundColor: 'var(--bg-primary)',

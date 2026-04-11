@@ -7,7 +7,7 @@ import type { TableData } from '../../lib/table-parser';
 const mockTableData: TableData = {
   rawStart: 0,
   rawEnd: 20,
-  headers: ['Name', 'Age'],
+  headers: [['Name'], ['Age']],
   rows: [['Alice', '30']],
   alignments: ['left', 'right'],
 };

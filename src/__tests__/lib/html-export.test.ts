@@ -151,11 +151,9 @@ describe('F005 — 导出 HTML', () => {
       expect(bodyMatch?.[1]).not.toContain('onclick');
     });
 
-    it('应阻止 javascript: 协议链接（sanitizeJavascriptUris）', async () => {
-      // 直接使用 sanitizeJavascriptUris 的效果测试
+    it('应阻止 javascript: 协议链接（DOMPurify sanitisation）', async () => {
       const html = await generateHtmlDocument('[click](javascript:alert(1))');
       expect(html).not.toContain('javascript:alert');
-      expect(html).toContain('href="#javascript-blocked"');
     });
   });
 
@@ -178,11 +176,11 @@ describe('F005 — 导出 HTML', () => {
       expect(titleMatch?.[1]).toContain('&quot;');
     });
 
-    it('应正确处理含 HTML 实体的 Markdown 内容（rehype 使用数字实体）', async () => {
+    it('应正确处理含 HTML 实体的 Markdown 内容', async () => {
       const result = await markdownToHtml('&amp; &lt; &gt;');
-      // In HTML text nodes, only & and < must be escaped; > can stay as literal
-      expect(result).toContain('&#x26;'); // & encoded
-      expect(result).toContain('&#x3C;'); // < encoded
+      // rehype may use named (&amp;) or numeric (&#x26;) entities — both valid
+      expect(result).toMatch(/&amp;|&#x26;/); // & encoded
+      expect(result).toMatch(/&lt;|&#x3C;/); // < encoded
       // > may or may not be encoded — both are valid
     });
 

@@ -44,8 +44,11 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
       for (const p of paths) {
         await openFileInTab(p);
       }
-    } catch {
-      // ignore: dialog cancellation or file read error — no user-visible action needed
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      if (errMsg !== 'Cancelled' && errMsg !== '') {
+        console.warn(`[useFileOps] openFile cancelled/error: ${errMsg}`);
+      }
     }
   };
 

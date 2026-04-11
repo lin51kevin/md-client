@@ -13,7 +13,7 @@ const defaultProps = {
 };
 
 const recentFiles = [
-  { path: '/docs/note.md', name: 'note.md' },
+  { path: '/docs/note.md', name: 'note.md', openedAt: '2024-01-01T00:00:00Z' },
 ];
 
 describe('FileMenuDropdown', () => {

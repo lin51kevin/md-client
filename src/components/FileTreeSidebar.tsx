@@ -50,8 +50,12 @@ interface TreeNode extends DirEntry {
   childrenLoaded: boolean; // 是否已从后端加载过子项
 }
 
-function buildTreeNode(entry: DirEntry): TreeNode {
-  return { ...entry, expanded: false, childrenLoaded: !!entry.children?.length };
+function buildTreeNode(entry: DirEntry, expandedSet?: Set<string>): TreeNode {
+  return { 
+    ...entry, 
+    expanded: expandedSet?.has(entry.path) ?? false, 
+    childrenLoaded: !!entry.children?.length 
+  };
 }
 
 /**
@@ -216,6 +220,15 @@ function TreeNodeView({
   );
 }
 
+/** Module-level helper — runs only when the module is first loaded (not on re-renders) */
+function loadSavedExpanded(): Set<string> {
+  try {
+    const saved = localStorage.getItem('marklite-filetree-expanded');
+    if (saved) return new Set(JSON.parse(saved));
+  } catch { /* ignore */ }
+  return new Set();
+}
+
 export function FileTreeSidebar({
   visible = true,
   onFileOpen,
@@ -230,7 +243,7 @@ export function FileTreeSidebar({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const expandedDirsRef = useRef<Set<string>>(new Set());
+  const expandedDirsRef = useRef<Set<string>>(loadSavedExpanded());
   const initializedRef = useRef(false);
 
   // --- CRUD 状态 ---
@@ -252,7 +265,7 @@ export function FileTreeSidebar({
   const loadChildren = useCallback(async (dirPath: string) => {
     try {
       const entries: DirEntry[] = await invoke('list_directory', { path: dirPath });
-      const nodes: TreeNode[] = entries.map(buildTreeNode);
+      const nodes: TreeNode[] = entries.map(e => buildTreeNode(e, expandedDirsRef.current));
 
       // 更新 rootEntries 中对应目录的 children
       setRootEntries(prev =>
@@ -260,7 +273,7 @@ export function FileTreeSidebar({
       );
       expandedDirsRef.current.add(dirPath);
     } catch (e) {
-      // ignore: user will see via UI state
+      console.warn(`[FileTreeSidebar] loadChildren failed: ${e}`);
     }
   }, []);
 
@@ -280,11 +293,21 @@ export function FileTreeSidebar({
     return node;
   }
 
-  /** 切换展开/折叠 */
+  /** 切换展开/折叠（含持久化） */
   const toggleDir = useCallback((path: string) => {
-    setRootEntries(prev =>
-      prev.map(node => toggleNodeExpand(node, path))
-    );
+    setRootEntries(prev => {
+      const next = prev.map(node => toggleNodeExpand(node, path));
+      // Re-walk the new tree to collect currently expanded paths and persist synchronously
+      const expanded = new Set<string>();
+      function collect(n: TreeNode) {
+        if (n.expanded) expanded.add(n.path);
+        if (n.children) n.children.forEach(c => collect(c as TreeNode));
+      }
+      next.forEach(collect);
+      expandedDirsRef.current = expanded;
+      try { localStorage.setItem('marklite-filetree-expanded', JSON.stringify([...expanded])); } catch { /* ignore */ }
+      return next;
+    });
   }, []);
 
   function toggleNodeExpand(node: TreeNode, targetPath: string): TreeNode {
@@ -310,7 +333,7 @@ export function FileTreeSidebar({
     if (!target) { setLoading(false); return; }
     try {
       const entries: DirEntry[] = await invoke('list_directory', { path: target });
-      setRootEntries(entries.map(buildTreeNode));
+      setRootEntries(entries.map(e => buildTreeNode(e, expandedDirsRef.current)));
       setRootPath(target);
       setRootName(displayName(target));
       try { localStorage.setItem('marklite-filetree-root', target); } catch { /* ignore */ }
@@ -429,7 +452,7 @@ export function FileTreeSidebar({
         loadRoot(selected as string);
       }
     } catch (e) {
-      // ignore: user will see via UI state
+      console.warn(`[FileTreeSidebar] pickFolder failed: ${e}`);
     }
   }, [loadRoot]);
 
@@ -453,7 +476,7 @@ export function FileTreeSidebar({
           const rootEntry: DirEntry = await invoke('read_dir_recursive', { path: savedPath, depth: 2 });
           setRootPath(savedPath);
           setRootName(displayName(savedPath));
-          setRootEntries((rootEntry.children || []).map(buildTreeNode));
+          setRootEntries((rootEntry.children || []).map(e => buildTreeNode(e, expandedDirsRef.current)));
           try { localStorage.setItem('marklite-filetree-root', savedPath); } catch { /* ignore */ }
         } else {
           setError('无法访问当前目录');
@@ -465,7 +488,7 @@ export function FileTreeSidebar({
           const p = rootPath || '.';
           setRootPath(p);
           setRootName(displayName(p));
-          setRootEntries(entries.map(buildTreeNode));
+          setRootEntries(entries.map(e => buildTreeNode(e, expandedDirsRef.current)));
         } catch (e2) {
           setError(String(e2));
         }

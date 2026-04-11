@@ -82,6 +82,7 @@ export const en: Record<TranslationKey, string> = {
   'toolbar.edit': 'Edit',
   'toolbar.splitLabel': 'Split',
   'toolbar.preview': 'Preview',
+  'toolbar.label': 'Formatting Toolbar',
 
   // ── TOC Sidebar ────────────────────────────────────────────────────────────
   'toc.title': 'Outline',

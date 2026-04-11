@@ -1,4 +1,5 @@
 
+import { useRef } from 'react';
 import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, List, SpellCheck, FolderTree, Search, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, Settings, HelpCircle, FilePlus, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ViewMode, FocusMode } from '../types';
 
@@ -75,6 +76,24 @@ export function Toolbar({
   tabs, activeTabId, onActivateTab, onCloseAll,
 }: ToolbarProps & { onImageLocal?: () => void }) {
   const { t } = useI18n();
+  const toolbarRef = useRef<HTMLDivElement>(null);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    const toolbar = toolbarRef.current;
+    if (!toolbar) return;
+    const focusable = Array.from(toolbar.querySelectorAll<HTMLElement>('[tabindex="0"],button:not([disabled])'))
+      .filter(el => el !== toolbar && el.offsetWidth > 0 && el.offsetHeight > 0);
+    if (focusable.length === 0) return;
+    const idx = focusable.indexOf(document.activeElement as HTMLElement);
+    const nextIdx = idx === -1
+      ? (e.key === 'ArrowRight' ? 0 : focusable.length - 1)
+      : e.key === 'ArrowRight'
+        ? (idx + 1) % focusable.length
+        : (idx - 1 + focusable.length) % focusable.length;
+    focusable[nextIdx].focus();
+    e.preventDefault();
+  };
 
   const tabList = tabs ?? [];
   const activeIdx = tabList.findIndex((tab) => tab.id === activeTabId);
@@ -84,6 +103,11 @@ export function Toolbar({
 
   return (
     <div
+      ref={toolbarRef}
+      role="toolbar"
+      aria-label={t('toolbar.label')}
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
       className="relative shrink-0 flex items-center justify-between px-2 py-1"
       style={{ backgroundColor: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-color)' }}
     >

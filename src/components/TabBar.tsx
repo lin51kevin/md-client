@@ -123,7 +123,9 @@ export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorde
   };
 
   return (
-    <div className="shrink-0 flex items-stretch" style={{ minHeight: 30, backgroundColor: 'var(--bg-tertiary)', borderBottom: '1px solid var(--border-color)' }}>
+    <div
+      role="tablist"
+      className="shrink-0 flex items-stretch" style={{ minHeight: 30, backgroundColor: 'var(--bg-tertiary)', borderBottom: '1px solid var(--border-color)' }}>
       <div
         ref={scrollRef}
         className="flex items-end flex-1 overflow-x-auto tabbar-scroll min-w-0"
@@ -166,6 +168,8 @@ export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorde
             <div
               key={tab.id}
               data-tab-id={tab.id}
+              role="tab"
+              aria-selected={tab.id === activeTabId}
               onPointerDown={(e) => {
                 if (e.button !== 0 || isRenaming) return;
                 onActivate(tab.id);

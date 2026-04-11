@@ -80,6 +80,7 @@ export const zhCN = {
   'toolbar.edit': '编辑',
   'toolbar.splitLabel': '分栏',
   'toolbar.preview': '预览',
+  'toolbar.label': '格式化工具栏',
 
   // ── TOC Sidebar ────────────────────────────────────────────────────────────
   'toc.title': '大纲',

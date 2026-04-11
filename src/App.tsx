@@ -1,10 +1,8 @@
 import { useState, useRef, useCallback, useEffect, useLayoutEffect, useMemo } from 'react';
 import { EditorView } from '@codemirror/view';
-import { undo, redo } from '@codemirror/commands';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { invoke } from '@tauri-apps/api/core';
 import { confirm, message } from '@tauri-apps/plugin-dialog';
-import { X } from 'lucide-react';
 import './App.css';
 
 import { I18nContext, useI18nProvider } from './i18n';
@@ -51,7 +49,7 @@ import { SnippetPicker } from './components/SnippetPicker';
 import { SnippetManager } from './components/SnippetManager';
 import { HelpModal } from './components/HelpModal';
 import { EditorContentArea } from './components/EditorContentArea';
-import type { Command } from './lib/commands';
+import { createCommandRegistry } from './lib/command-registry';
 
 
 export default function App() {
@@ -289,37 +287,14 @@ export default function App() {
   });
 
   // ── Command Palette registry ─────────────────────────────────────
-  const commandRegistry = useMemo<Command[]>(() => [
-    { id: 'file.new', label: '新建标签页', labelEn: 'New Tab', shortcut: 'Ctrl+N', category: 'file', action: () => createNewTab() },
-    { id: 'file.open', label: '打开文件', labelEn: 'Open File', shortcut: 'Ctrl+O', category: 'file', action: () => handleOpenFile() },
-    { id: 'file.save', label: '保存', labelEn: 'Save', shortcut: 'Ctrl+S', category: 'file', action: () => handleSaveFile() },
-    { id: 'file.saveAs', label: '另存为', labelEn: 'Save As', shortcut: 'Ctrl+Shift+S', category: 'file', action: () => handleSaveAsFile() },
-    { id: 'edit.find', label: '查找', labelEn: 'Find', shortcut: 'Ctrl+F', category: 'edit', action: () => setShowSearchPanel(p => !p) },
-    { id: 'edit.replace', label: '查找替换', labelEn: 'Find & Replace', shortcut: 'Ctrl+H', category: 'edit', action: () => setShowSearchPanel(p => !p) },
-    { id: 'edit.undo', label: '撤销', labelEn: 'Undo', shortcut: 'Ctrl+Z', category: 'edit', action: () => { if (cmViewRef.current) undo(cmViewRef.current); } },
-    { id: 'edit.redo', label: '重做', labelEn: 'Redo', shortcut: 'Ctrl+Y', category: 'edit', action: () => { if (cmViewRef.current) redo(cmViewRef.current); } },
-    { id: 'view.editOnly', label: '仅编辑器', labelEn: 'Editor Only', shortcut: 'Ctrl+1', category: 'view', action: () => setViewMode('edit') },
-    { id: 'view.split', label: '分栏预览', labelEn: 'Split Preview', shortcut: 'Ctrl+2', category: 'view', action: () => setViewMode('split') },
-    { id: 'view.previewOnly', label: '仅预览', labelEn: 'Preview Only', shortcut: 'Ctrl+3', category: 'view', action: () => setViewMode('preview') },
-    { id: 'view.focusTypewriter', label: '打字机模式', labelEn: 'Typewriter Mode', shortcut: 'Ctrl+.', category: 'view', action: () => setFocusMode(focusMode === 'typewriter' ? 'normal' : 'typewriter') },
-    { id: 'view.focusMode', label: '专注模式', labelEn: 'Focus Mode', shortcut: 'Ctrl+,', category: 'view', action: () => setFocusMode(focusMode === 'focus' ? 'normal' : 'focus') },
-    { id: 'view.fullscreen', label: '全屏模式', labelEn: 'Fullscreen', shortcut: 'F11', category: 'view', action: async () => {
-      if (!isTauri) return;
-      try { const { getCurrentWindow: gcw } = await import('@tauri-apps/api/window'); const w = gcw(); w.isFullscreen().then(fs => w.setFullscreen(!fs)); } catch {}
-    }},
-    { id: 'format.bold', label: '加粗', labelEn: 'Bold', shortcut: 'Ctrl+B', category: 'format', action: () => handleFormatAction('bold') },
-    { id: 'format.italic', label: '斜体', labelEn: 'Italic', shortcut: 'Ctrl+I', category: 'format', action: () => handleFormatAction('italic') },
-    { id: 'format.strikethrough', label: '删除线', labelEn: 'Strikethrough', shortcut: '', category: 'format', action: () => handleFormatAction('strikethrough') },
-    { id: 'format.code', label: '行内代码', labelEn: 'Inline Code', shortcut: 'Ctrl+`', category: 'format', action: () => handleFormatAction('code') },
-    { id: 'format.link', label: '插入链接', labelEn: 'Insert Link', shortcut: 'Ctrl+K', category: 'format', action: () => handleFormatAction('link') },
-    { id: 'format.image', label: '插入图片', labelEn: 'Insert Image', shortcut: '', category: 'format', action: () => handleFormatAction('image-local') },
-    { id: 'export.docx', label: '导出 Word', labelEn: 'Export Word', shortcut: '', category: 'export', action: () => handleExportDocx() },
-    { id: 'export.pdf', label: '导出 PDF', labelEn: 'Export PDF', shortcut: '', category: 'export', action: () => handleExportPdf() },
-    { id: 'export.html', label: '导出 HTML', labelEn: 'Export HTML', shortcut: '', category: 'export', action: () => handleExportHtml() },
-    { id: 'export.png', label: '导出 PNG', labelEn: 'Export PNG', shortcut: '', category: 'export', action: () => handleExportPng(previewRef.current) },
-    { id: 'snippet.insert', label: '插入片段', labelEn: 'Insert Snippet', shortcut: '', category: 'custom', action: () => setShowSnippetPicker(true) },
-    { id: 'snippet.manager', label: '片段管理', labelEn: 'Snippet Manager', shortcut: '', category: 'custom', action: () => setShowSnippetManager(true) },
-  ], [createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile, setViewMode, focusMode, setFocusMode, handleFormatAction, handleExportDocx, handleExportPdf, handleExportHtml, previewRef.current, setShowSnippetPicker, setShowSnippetManager]);
+  const commandRegistry = useMemo(() => createCommandRegistry({
+    createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile,
+    setViewMode, focusMode, setFocusMode,
+    handleFormatAction, handleExportDocx, handleExportPdf, handleExportHtml,
+    handleExportPng, previewRef, setShowSnippetPicker, setShowSnippetManager,
+    setShowSearchPanel, cmViewRef, isTauri,
+  }), [createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile, setViewMode, focusMode, setFocusMode, handleFormatAction, handleExportDocx, handleExportPdf, handleExportHtml, handleExportPng, previewRef, setShowSnippetPicker, setShowSnippetManager, setShowSearchPanel, cmViewRef, isTauri]);
+
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -484,21 +459,7 @@ export default function App() {
 
       <SnippetPicker visible={showSnippetPicker} onClose={() => setShowSnippetPicker(false)} onSelect={handleSnippetInsert} />
 
-      {showSnippetManager && (
-        <div
-          className="fixed inset-0 flex items-center justify-center z-[10001]"
-          style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
-          onClick={() => setShowSnippetManager(false)}
-        >
-          <div className="snippet-manager-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="snippet-manager-header">
-              <span>{i18n.t('snippet.manager')}</span>
-              <button onClick={() => setShowSnippetManager(false)}><X size={14} /></button>
-            </div>
-            <div className="snippet-manager-body"><SnippetManager visible={true} /></div>
-          </div>
-        </div>
-      )}
+      <SnippetManager visible={showSnippetManager} onClose={() => setShowSnippetManager(false)} />
     </div>
     </I18nContext.Provider>
   );

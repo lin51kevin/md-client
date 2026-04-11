@@ -1,3 +1,5 @@
+import { escapeHtml } from './utils/html-safety';
+
 /**
  * F014 — Markdown 扩展支持：脚注 + frontmatter
  *
@@ -85,7 +87,7 @@ export function buildFootnoteHtml(footnotes: FootnoteDef[]): string {
 }
 
 /**
- * 从 Markdown 文本中提取 YAML frontmatter
+ * 从 Markdown 文本中提取 YAML frontmatter（同步版本）
  *
  * 支持格式：
  * ---
@@ -95,6 +97,8 @@ export function buildFootnoteHtml(footnotes: FootnoteDef[]): string {
  *   - tech
  *   - writing
  * ---
+ *
+ * 策略：优先使用轻量内置解析器（零依赖）。如需 js-yaml 后备处理复杂嵌套，请使用 extractFrontmatterAsync。
  */
 export function extractFrontmatter(md: string): Frontmatter {
   if (!md.startsWith('---')) return {};
@@ -177,11 +181,26 @@ export function buildFrontmatterHtml(fm: Frontmatter): string {
   );
 }
 
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+/**
+ * 异步版本的 frontmatter 提取 — 内置解析器失败时 fallback 到 js-yaml。
+ * 适用于导出等可接受 async 的场景。
+ */
+export async function extractFrontmatterAsync(md: string): Promise<Frontmatter> {
+  const syncResult = extractFrontmatter(md);
+  // If simple parser got nothing but there IS a frontmatter block, try js-yaml
+  if (Object.keys(syncResult).length === 0 && md.startsWith('---')) {
+    const endIdx = md.indexOf('\n---', 3);
+    if (endIdx !== -1) {
+      const yaml = md.substring(4, endIdx).trim();
+      if (yaml) {
+        try {
+          const yamlModule = await import('js-yaml');
+          const parsed = yamlModule.load(yaml);
+          if (parsed && typeof parsed === 'object') return parsed as Frontmatter;
+        } catch { /* fallback to empty result */ }
+      }
+    }
+  }
+  return syncResult;
 }
+

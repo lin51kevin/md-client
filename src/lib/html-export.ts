@@ -1,5 +1,12 @@
+/**
+ * HTML Export Module
+ *
+ * Single remark/rehype pipeline for Markdown → HTML conversion.
+ * DOMPurify sanitisation applied uniformly to all exported content.
+ */
 
-
+import DOMPurify from 'dompurify';
+import { escapeHtml } from './utils/html-safety';
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkGfm from 'remark-gfm';
@@ -9,11 +16,37 @@ import remarkRehype from 'remark-rehype';
 import rehypeStringify from 'rehype-stringify';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
-
-// Inline KaTeX CSS so exported HTML works offline (no CDN dependency)
 import katexCss from 'katex/dist/katex.min.css?raw';
-// [P2 HTML 离线包增强] Inline highlight.js CSS so exported HTML works offline
 import highlightCss from 'highlight.js/styles/github.css?raw';
+
+// ── Shared DOMPurify configuration ─────────────────────────────────────────
+// Allows KaTeX MathML + SVG output while blocking dangerous URIs & attributes.
+const DOMPURIFY_CONFIG = {
+  ADD_TAGS: [
+    // MathML elements used by KaTeX
+    'math', 'semantics', 'mrow', 'mi', 'mo', 'mspace', 'mtext',
+    'mfrac', 'msup', 'msub', 'msubsup', 'munder', 'mover',
+    'munderover', 'mpadded', 'mtable', 'mtr', 'mtd', 'merror',
+    'annotation', 'annotation-xml',
+    // SVG elements used by KaTeX font glyphs
+    'svg', 'path', 'g', 'use', 'defs', 'symbol', 'marker',
+  ],
+  ADD_ATTR: [
+    'xmlns', 'xlink:href', 'viewBox', 'd', 'fill', 'stroke',
+    'stroke-width', 'stroke-linecap', 'stroke-linejoin',
+    'stroke-dasharray', 'stroke-dashoffset', 'width', 'height',
+    'display', 'position', 'overflow', 'color',
+  ],
+  ALLOW_DATA_ATTR: false,
+  ALLOWED_URI_REGEXP: /^(?:(?:https?|ftp|mailto|tel|file):|[^a-z]|[a-z+.-]+(?:\/|$))/i,
+};
+
+/** Run DOMPurify with the shared KaTeX-safe configuration */
+function sanitizeHtml(html: string): string {
+  return DOMPurify.sanitize(html, { ...DOMPURIFY_CONFIG, RETURN_TRUSTED_TYPE: false }) as unknown as string;
+}
+
+// ── Public types ───────────────────────────────────────────────────────────
 
 export interface HtmlExportOptions {
   /** 文档 <title>（默认取第一个 h1 或 "Untitled"） */
@@ -22,7 +55,8 @@ export interface HtmlExportOptions {
   css?: string;
 }
 
-/** 默认内嵌样式：保证导出的 HTML 离线可读 */
+// ── Default CSS ────────────────────────────────────────────────────────────
+
 const DEFAULT_CSS = `
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
@@ -88,14 +122,14 @@ li { margin-bottom: 0.25em; }
 input[type="checkbox"] { margin-right: 0.4em; }
 `;
 
+// ── Core conversion ────────────────────────────────────────────────────────
+
 /**
- * 将 Markdown 字符串转换为 HTML 片段（不含 <html> 外壳）
- *
- * 使用与 MarkdownPreview 组件一致的插件链确保渲染结果一致。
+ * Convert Markdown to an HTML fragment using the remark/rehype pipeline.
+ * The result is sanitised with DOMPurify.
  */
 export async function markdownToHtml(markdown: string): Promise<string> {
   if (!markdown.trim()) return '';
-
   const result = await unified()
     .use(remarkParse)
     .use(remarkGfm)
@@ -106,34 +140,25 @@ export async function markdownToHtml(markdown: string): Promise<string> {
     .use(rehypeKatex)
     .use(rehypeStringify)
     .process(markdown);
-
-  return String(result);
+  return sanitizeHtml(String(result));
 }
 
-/**
- * 从 HTML 中提取第一个 h1 的文本内容作为默认标题
- */
+/** Extract first h1 text from an HTML string */
 function extractTitle(html: string): string {
   const match = html.match(/<h1[^>]*>(.*?)<\/h1>/s);
-  if (match) {
-    // 去掉内部 HTML 标签，只留文本
-    return match[1].replace(/<[^>]+>/g, '').trim();
-  }
+  if (match) return match[1].replace(/<[^>]+>/g, '').trim();
   return 'Untitled';
 }
 
 /**
- * 生成完整的 HTML 文档字符串
- *
- * @param markdown - 源 Markdown 文本
- * @param options  - 导出选项（标题、自定义 CSS）
- * @returns 完整的 HTML 文档字符串（可直接写入 .html 文件）
+ * Generate a complete, self-contained HTML document from Markdown.
+ * Includes CSP meta tag and inline styles for offline viewing.
  */
 export async function generateHtmlDocument(
   markdown: string,
   options: HtmlExportOptions = {},
 ): Promise<string> {
-  const bodyHtml = sanitizeJavascriptUris(await markdownToHtml(markdown));
+  const bodyHtml = await markdownToHtml(markdown);
   const title = options.title ?? extractTitle(bodyHtml);
   const customCss = options.css ? `\n${options.css}` : '';
 
@@ -142,6 +167,7 @@ export async function generateHtmlDocument(
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'none'; style-src 'unsafe-inline'; img-src 'self' data: https:; connect-src 'none'">
 <title>${escapeHtml(title)}</title>
 <style>${DEFAULT_CSS}${customCss}</style>
 <style>${katexCss}</style>
@@ -153,62 +179,29 @@ ${bodyHtml}
 </html>`;
 }
 
-/** 简单的 HTML 实体转义（防止 title 注入） */
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-/** 移除危险的 javascript: 协议链接（防御性 XSS 防护） */
-function sanitizeJavascriptUris(html: string): string {
-  return html.replace(
-    /href\s*=\s*["']javascript:[^"']*["']/gi,
-    'href="#javascript-blocked"'
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// [P2 EPUB 导出] EPUB 生成
-// ─────────────────────────────────────────────────────────────────────────────
+// ── EPUB export ────────────────────────────────────────────────────────────
 
 interface EpubOptions {
-  /** 文档标题，默认从第一个 H1 或 frontmatter 提取 */
   title?: string;
-  /** 作者，默认从 frontmatter 提取 */
   author?: string;
-  /** 书籍语言，默认 zh-CN */
   language?: string;
-  /** 出版者 */
   publisher?: string;
-  /** 描述/简介 */
   description?: string;
-  /** 封面图片 URL（可选） */
   coverImage?: string;
 }
 
 /**
- * [P2 EPUB 导出]
- * 从 Markdown 生成 EPUB 电子书文件。
- * 使用 epub-gen 库生成标准 EPUB2/EPUB3 文件。
+ * Generate an EPUB e-book file from Markdown via epub-gen.
  */
 export async function generateEpub(
   markdown: string,
   outputPath: string,
-  options?: EpubOptions
+  options?: EpubOptions,
 ): Promise<void> {
-  // Dynamically import epub-gen to avoid adding a heavy dependency for non-EPUB exports
   const { default: EpubGen } = await import('epub-gen');
-
-  // Extract metadata from markdown
   const metadata = extractEpubMetadata(markdown, options);
-
-  // Convert markdown to HTML content
   const htmlContent = await markdownToHtmlForEpub(markdown);
 
-  // Build EPUB
   const book = new EpubGen(
     {
       title: metadata.title,
@@ -217,15 +210,9 @@ export async function generateEpub(
       publisher: metadata.publisher,
       description: metadata.description,
       cover: metadata.coverImage,
-      // Use chapter-based structure: each H1 = new chapter
-      content: [
-        {
-          title: metadata.title,
-          data: `<div class="epub-chapter">${htmlContent}</div>`,
-        },
-      ],
+      content: [{ title: metadata.title, data: `<div class="epub-chapter">${htmlContent}</div>` }],
     },
-    outputPath
+    outputPath,
   );
 
   await book.generate();
@@ -234,7 +221,7 @@ export async function generateEpub(
 /** Extract EPUB metadata from markdown frontmatter or headings */
 function extractEpubMetadata(
   markdown: string,
-  options?: EpubOptions
+  options?: EpubOptions,
 ): {
   title: string;
   author: string;
@@ -246,14 +233,8 @@ function extractEpubMetadata(
   const defaultAuthor = 'Unknown Author';
   const defaultLang = 'zh-CN';
 
-  // Try to extract from frontmatter.
-  // NOTE: This is a simplified line-by-line parser that only supports flat
-  // "key: value" pairs. Multi-line values, arrays, and nested objects are
-  // not supported. Use js-yaml if full YAML parsing is needed in the future.
-  const frontmatterMatch = markdown.match(
-    /^---\r?\n([\s\S]*?)\r?\n---\r?\n/
-  );
-  let frontmatter: Record<string, string> = {};
+  const frontmatterMatch = markdown.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n/);
+  const frontmatter: Record<string, string> = {};
   if (frontmatterMatch) {
     for (const line of frontmatterMatch[1].split('\n')) {
       const colonIdx = line.indexOf(':');
@@ -265,11 +246,8 @@ function extractEpubMetadata(
     }
   }
 
-  // Extract first H1 as title fallback
   const h1Match = markdown.match(/^#\s+(.+)$/m);
   const firstH1 = h1Match ? h1Match[1].trim() : 'Untitled Document';
-
-  // Extract author from frontmatter (multiple authors comma-separated)
   const authorMatch = markdown.match(/^author[s]?:\s*(.+)$/mi);
   const frontmatterAuthor = authorMatch ? authorMatch[1].trim() : defaultAuthor;
 
@@ -283,19 +261,10 @@ function extractEpubMetadata(
   };
 }
 
-/** Convert markdown to HTML for EPUB content */
+/** Convert markdown to HTML body for EPUB content */
 async function markdownToHtmlForEpub(markdown: string): Promise<string> {
-  // Strip frontmatter before conversion
   const stripped = markdown.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '');
-
-  // Use the same HTML generation pipeline as generateHtmlDocument
-  // but return just the body content
   const html = await generateHtmlDocument(stripped);
-
-  // Extract body content (strip DOCTYPE, html, head tags)
   const bodyMatch = html.match(/<body>([\s\S]*?)<\/body>/);
-  if (bodyMatch) {
-    return sanitizeJavascriptUris(bodyMatch[1]);
-  }
-  return sanitizeJavascriptUris(html);
+  return bodyMatch ? bodyMatch[1] : html;
 }

@@ -66,6 +66,9 @@ export function InputDialog({
       onClick={onCancel}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
         className="rounded-lg shadow-xl p-5 min-w-80 max-w-md w-full mx-4"
         style={{
           backgroundColor: 'var(--bg-primary)',

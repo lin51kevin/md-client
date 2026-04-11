@@ -11,6 +11,7 @@ import {
 
 interface SnippetManagerProps {
   visible: boolean;
+  onClose?: () => void;
 }
 
 /** Blank snippet template for creating new */
@@ -25,7 +26,7 @@ function blankSnippet(): Snippet & { _isNew?: boolean } {
   };
 }
 
-export function SnippetManager({ visible }: SnippetManagerProps) {
+export function SnippetManager({ visible, onClose }: SnippetManagerProps) {
   const { t } = useI18n();
   const [snippets, setSnippets] = useState<Snippet[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -101,7 +102,7 @@ export function SnippetManager({ visible }: SnippetManagerProps) {
 
   if (!visible) return null;
 
-  return (
+  const content = (
     <div className="snippet-manager">
       {saveError && (
         <div className="snippet-manager-error" role="alert">
@@ -226,4 +227,25 @@ export function SnippetManager({ visible }: SnippetManagerProps) {
       )}
     </div>
   );
+
+  // If onClose is provided, render with own modal wrapper
+  if (onClose) {
+    return (
+      <div
+        className="fixed inset-0 flex items-center justify-center z-[10001]"
+        style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
+        onClick={onClose}
+      >
+        <div className="snippet-manager-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="snippet-manager-header">
+            <span>{t('snippet.manager')}</span>
+            <button onClick={onClose}><X size={14} /></button>
+          </div>
+          <div className="snippet-manager-body">{content}</div>
+        </div>
+      </div>
+    );
+  }
+
+  return content;
 }

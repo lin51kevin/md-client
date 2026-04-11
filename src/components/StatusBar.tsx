@@ -25,7 +25,7 @@ export function StatusBar({ filePath, isDirty, line, col, wordCount, cursorCount
   return (
     <div className="relative shrink-0">
       {/* 主状态栏 */}
-      <div className="flex items-center justify-between px-3 py-0.5 text-xs select-none" style={{ backgroundColor: 'var(--bg-tertiary)', borderTop: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
+      <div role="status" aria-live="polite" className="flex items-center justify-between px-3 py-0.5 text-xs select-none" style={{ backgroundColor: 'var(--bg-tertiary)', borderTop: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1.5">
             {isDirty && <span className="font-bold" style={{ color: 'var(--warning-color)' }} title={t('status.unsaved')}>●</span>}

@@ -287,6 +287,35 @@ struct SearchResult {
     match_end: usize,
 }
 
+fn build_search_regex(
+    query: &str,
+    case_sensitive: bool,
+    use_regex: bool,
+    whole_word: bool,
+) -> Result<Option<regex::Regex>, String> {
+    if !use_regex && !whole_word {
+        return Ok(None);
+    }
+
+    let source = if use_regex {
+        query.to_string()
+    } else {
+        regex::escape(query)
+    };
+
+    let pattern = if whole_word {
+        format!(r"\b(?:{})\b", source)
+    } else {
+        source
+    };
+
+    regex::RegexBuilder::new(&pattern)
+        .case_insensitive(!case_sensitive)
+        .build()
+        .map(Some)
+        .map_err(|e| format!("正则表达式错误: {}", e))
+}
+
 /// Search for text across all .md/.markdown/.txt files in a directory (recursive).
 #[tauri::command]
 fn search_files(
@@ -294,6 +323,7 @@ fn search_files(
     query: String,
     case_sensitive: bool,
     use_regex: bool,
+    whole_word: bool,
 ) -> Result<Vec<SearchResult>, String> {
     validate_user_path(&directory)?;
     if query.is_empty() {
@@ -339,16 +369,7 @@ fn search_files(
 
     let files = collect_files(dir_path);
 
-    // Build regex or plain matcher
-    let re: Result<Option<regex::Regex>, _> = if use_regex {
-        regex::RegexBuilder::new(&query)
-            .case_insensitive(!case_sensitive)
-            .build()
-            .map(Some)
-    } else {
-        Ok(None)
-    };
-    let regex = re.map_err(|e| format!("正则表达式错误: {}", e))?;
+    let regex = build_search_regex(&query, case_sensitive, use_regex, whole_word)?;
 
     let pattern = if case_sensitive { query.clone() } else { query.to_lowercase() };
 
@@ -425,6 +446,7 @@ fn replace_in_files(
     replacement: String,
     case_sensitive: bool,
     use_regex: bool,
+    whole_word: bool,
 ) -> Result<ReplaceInFilesResult, String> {
     validate_user_path(&directory)?;
     if query.is_empty() {
@@ -465,16 +487,7 @@ fn replace_in_files(
         return Err(format!("目录不存在或不是目录: {}", directory));
     }
 
-    let re: Option<regex::Regex> = if use_regex {
-        Some(
-            regex::RegexBuilder::new(&query)
-                .case_insensitive(!case_sensitive)
-                .build()
-                .map_err(|e| format!("正则表达式错误: {}", e))?,
-        )
-    } else {
-        None
-    };
+    let re = build_search_regex(&query, case_sensitive, use_regex, whole_word)?;
 
     let pattern_lower = query.to_lowercase();
     let mut replaced_count = 0u32;

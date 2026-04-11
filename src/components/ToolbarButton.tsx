@@ -100,6 +100,7 @@ export function ToolbarButton({
     <button
       onClick={onClick}
       title={title}
+      aria-label={title}
       disabled={disabled}
       className={`${BASE} ${className ?? ''}`}
       style={getStyle(variant, active)}
