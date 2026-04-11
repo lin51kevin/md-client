@@ -43,18 +43,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 自动生成目录和页码
   - 支持嵌入图片和样式表
 
+#### 帮助与文档
+- **内置用户手册** — 工具栏 `?` 按钮打开帮助弹窗，内嵌完整 USER_GUIDE.md，提供可折叠 TOC 侧边栏和标题快速跳转
+
 ### Fixed
 - 修复 PDF 导出时页码和页眉/页脚位置错误（`NumberedPageDecorator` 参数顺序）
 - 修复拼写检查性能问题（改用 useEffect 替代 updateListener，减少不必要的 DOM 更新）
 - 修复片段保存时忽略返回值导致的静默失败（存储空间满时现在显示错误提示）
 - 修复 Wiki-Link 路径在 Windows 上混用正反斜杠的问题（后端自动规范化）
 - 修复 CRLF 换行符在某些导出格式中的处理
+- 修复文件菜单（`FileMenuDropdown`）鼠标 hover 其他一级菜单项时二级子菜单未关闭的问题
+- 修复 `extractLatexFormulas` 在 CRLF 换行文档中多行 `$$...$$` 数学块无法识别的问题（`trimStart()` → `trim()`）
 
 ### Changed
 - 移除死代码 `isEpubAvailable()` 函数（始终返回 true，无实际用途）
 - 移除生产代码中的 `console.warn` 语句（改为静默处理或返回值指示）
 - 优化编辑器扩展依赖数组（移除 spellCheck/activeTabId，避免频繁重建）
 - 更新片段哨兵占位符（`\x00` → Unicode `\uFFFD`，改进兼容性）
+- 重构 `App.tsx`（约 1000 行 → 506 行）：按功能抽取 6 个专用 Hook（`useInputDialog`、`useDocMetrics`、`useVersionHistory`、`useTableEditor`、`useSnippetFlow`、`useEditorInstance`）及 `EditorContentArea` 布局组件
+- 完善测试套件：45 个测试文件，562 个用例全部通过，为本次新增功能补充 7 个测试文件
 
 ### Security
 - 添加 TypeScript 类型定义用于外部 `epub-gen` 包（`src/types/epub-gen.d.ts`）

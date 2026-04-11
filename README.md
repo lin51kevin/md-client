@@ -186,6 +186,8 @@ marklite/
 │   │   ├── TableEditor.tsx     # 表格可视化编辑器
 │   │   ├── InputDialog.tsx     # 通用输入对话框
 │   │   ├── DragOverlay.tsx     # 拖拽覆盖层提示
+│   │   ├── HelpModal.tsx       # 内置用户手册弹窗（带可折叠 TOC 侧边栏）
+│   │   ├── EditorContentArea.tsx # 主编辑区域布局（分栏/编辑/预览模式）
 │   │   └── TabContextMenu.tsx  # 标签右键菜单
 │   ├── hooks/                  # 自定义 React Hooks
 │   │   ├── useTabs.ts          # 标签页状态管理
@@ -198,7 +200,13 @@ marklite/
 │   │   ├── useSearchHighlight.ts # 搜索结果高亮
 │   │   ├── useFormatActions.ts # 格式化操作
 │   │   ├── useImagePaste.ts    # 图片粘贴处理
-│   │   └── useWindowTitle.ts   # 窗口标题同步
+│   │   ├── useWindowTitle.ts   # 窗口标题同步
+│   │   ├── useInputDialog.ts   # React 状态驱动的输入对话框
+│   │   ├── useDocMetrics.ts    # 防抖文档分析（TOC + 字数统计）
+│   │   ├── useVersionHistory.ts # 版本快照生命周期（保存时自动创建）
+│   │   ├── useTableEditor.ts   # 表格编辑器弹窗状态管理
+│   │   ├── useSnippetFlow.ts   # 片段选择/管理器状态与插入逻辑
+│   │   └── useEditorInstance.ts # CodeMirror 编辑器生命周期管理
 │   ├── i18n/                   # 国际化
 │   │   ├── en.ts               # 英文语言包
 │   │   └── zh-CN.ts            # 中文语言包
