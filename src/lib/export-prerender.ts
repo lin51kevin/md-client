@@ -152,7 +152,9 @@ interface LatexDef {
  * All formulas are emitted in document order so the index matches the
  * order that pulldown-cmark emits InlineMath/DisplayMath events in Rust.
  */
-function extractLatexFormulas(markdown: string): LatexDef[] {
+// Exported for testing
+// Internal helpers (exported for testing)
+export function extractLatexFormulas(markdown: string): LatexDef[] {
   const defs: LatexDef[] = [];
   let inCodeBlock = false;
   let inDisplayBlock = false;

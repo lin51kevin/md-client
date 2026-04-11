@@ -276,6 +276,7 @@ export const zhCN = {
   'fileOps.hint': '提示',
   'fileOps.noPreviewArea': '未找到预览区域，无法导出PNG。',
   'fileOps.error': '错误',
+  'fileOps.exporting': '正在导出 {format}...',
   'fileOps.exportFailed': '导出 {format} 失败',
   'fileOps.exportPngFailed': '导出 PNG 失败',
 } as const;

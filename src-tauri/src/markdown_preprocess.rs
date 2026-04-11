@@ -37,17 +37,30 @@ fn replace_emoji_shortcodes(text: &str) -> String {
 pub fn preprocess_markdown(markdown: &str) -> String {
     // [P1-1] Strip YAML frontmatter (--- ... ---) at the start of the document.
     // Only treat the opening "---" as frontmatter when it is on its own line
-    // (i.e. the document starts with "---\n") to avoid misidentifying a bare
-    // horizontal-rule that happens to be the first line.
-    let md = if markdown.starts_with("---\n") {
+    // to avoid misidentifying a bare horizontal-rule that happens to be the first line.
+    // [FIX P1-1] Handle both LF (\n) and CRLF (\r\n) line endings.
+    let md = if markdown.starts_with("---\n") || markdown.starts_with("---\r\n") {
+        // Skip opening ---\n or ---\r\n
+        let skip_len = if markdown.starts_with("---\r\n") { 5 } else { 4 };
+        let after_open = &markdown[skip_len..];
+        
         // Look for the closing delimiter: a line that is exactly "---" (with
         // optional trailing whitespace) followed by a newline or end-of-string.
-        if let Some(rel) = markdown[4..].find("\n---\n").or_else(|| {
-            // Handle the case where the closing "---" is the very last line.
-            markdown[4..].strip_suffix("\n---").map(|s| s.len())
-        }) {
-            let after = markdown[4 + rel + 5..].trim_start_matches('\n');
-            if after.is_empty() { "" } else { after }
+        // Handle both \n and \r\n line endings.
+        let closing_lf = after_open.find("\n---\n").map(|p| p + 5);  // +5 for "\n---\n"
+        let closing_crlf = after_open.find("\r\n---\r\n").map(|p| p + 7);  // +7 for "\r\n---\r\n"
+        let closing_lf_end = after_open.strip_suffix("\n---").map(|s| s.len() + 4);  // +4 for "\n---"
+        let closing_crlf_end = after_open.strip_suffix("\r\n---").map(|s| s.len() + 5);  // +5 for "\r\n---"
+        
+        let end_pos = closing_lf
+            .or(closing_crlf)
+            .or(closing_lf_end)
+            .or(closing_crlf_end);
+        
+        if let Some(rel) = end_pos {
+            let after = &after_open[rel..];
+            let trimmed = after.trim_start_matches('\n').trim_start_matches('\r');
+            if trimmed.is_empty() { "" } else { trimmed }
         } else {
             markdown
         }

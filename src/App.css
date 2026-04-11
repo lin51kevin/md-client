@@ -918,3 +918,34 @@ body {
 .file-menu-recent-list::-webkit-scrollbar-thumb:hover {
   background: var(--text-secondary);
 }
+
+/* 导出进度指示器 */
+.export-loading-indicator {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  background-color: var(--accent-color);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  z-index: 9999;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.export-spinner {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid white;
+  border-top-color: transparent;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { open, save, message } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
 import { Tab } from '../types';
@@ -16,6 +17,7 @@ interface FileOpsParams {
 
 export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markSavedAs, t }: FileOpsParams) {
   const tr = t ?? ((k: string) => k);
+  const [exporting, setExporting] = useState<string | null>(null);
 
   /** Generate a default filename from the active tab (uses file name or first heading) */
   const getDefaultFileName = (ext: string): string => {
@@ -80,7 +82,15 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
     }
   };
 
-  const handleExport = async (format: 'docx' | 'pdf' | 'html') => {
+  /**
+   * [P1-6] Export with progress tracking.
+   * Returns an object with isExporting state that can be used for loading UI.
+   * The actual state is managed via React state (exporting).
+   */
+  const handleExport = async (
+    format: 'docx' | 'pdf' | 'html',
+    onProgress?: (stage: string, progress: number) => void
+  ) => {
     const tab = getActiveTab();
     if (!tab) return;
     
@@ -89,34 +99,46 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
       return;
     }
 
-    // HTML 导出走前端生成，无需 Rust 后端
-    if (format === 'html') {
-      const savePath = await save({
-        filters: [{ name: 'HTML Document', extensions: ['html'] }],
-        defaultPath: getDefaultFileName('html'),
-      });
-      if (savePath) {
-        const { generateHtmlDocument } = await import('../lib/html-export');
-        const html = await generateHtmlDocument(tab.doc);
-        await invoke('write_file_text', { path: savePath, content: html });
-      }
-      return;
-    }
+    setExporting(format);
 
-    const filterName = format === 'docx' ? 'Word Document' : 'PDF Document';
     try {
+      // HTML 导出走前端生成，无需 Rust 后端
+      if (format === 'html') {
+        onProgress?.('Generating HTML...', 30);
+        const savePath = await save({
+          filters: [{ name: 'HTML Document', extensions: ['html'] }],
+          defaultPath: getDefaultFileName('html'),
+        });
+        if (savePath) {
+          onProgress?.('Writing file...', 70);
+          const { generateHtmlDocument } = await import('../lib/html-export');
+          const html = await generateHtmlDocument(tab.doc);
+          await invoke('write_file_text', { path: savePath, content: html });
+          onProgress?.('Complete!', 100);
+        }
+        return;
+      }
+
+      const filterName = format === 'docx' ? 'Word Document' : 'PDF Document';
       const savePath = await save({
         filters: [{ name: filterName, extensions: [format] }],
         defaultPath: getDefaultFileName(format),
       });
       if (savePath) {
+        // [P1-6] Report progress for pre-rendering phase
+        onProgress?.('Pre-rendering diagrams and formulas...', 20);
         const { prerenderExportAssets } = await import('../lib/export-prerender');
+        onProgress?.('Exporting document...', 60);
         const preRenderedImages = await prerenderExportAssets(tab.doc);
+        onProgress?.('Generating file...', 80);
         await invoke('export_document', { markdown: tab.doc, outputPath: savePath, format, preRenderedImages });
+        onProgress?.('Complete!', 100);
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
       await message(errMsg, { title: tr('fileOps.exportFailed', { format: format.toUpperCase() }), kind: 'error' });
+    } finally {
+      setExporting(null);
     }
   };
 
@@ -133,6 +155,9 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
       await message(tr('fileOps.noPreviewArea'), { title: tr('fileOps.error'), kind: 'error' });
       return;
     }
+
+    setExporting('png');
+
     try {
       const { default: html2canvas } = await import('html2canvas');
       const canvas = await html2canvas(previewEl, {
@@ -154,10 +179,12 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
       await message(errMsg, { title: tr('fileOps.exportPngFailed'), kind: 'error' });
+    } finally {
+      setExporting(null);
     }
   };
 
   const handleExportHtml = () => handleExport('html');
 
-  return { handleOpenFile, handleSaveFile, handleSaveAsFile, handleExportDocx, handleExportPdf, handleExportHtml, handleExportPng };
+  return { handleOpenFile, handleSaveFile, handleSaveAsFile, handleExportDocx, handleExportPdf, handleExportHtml, handleExportPng, exporting };
 }

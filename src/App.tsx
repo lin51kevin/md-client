@@ -179,7 +179,7 @@ export default function App() {
     }
   }, [tabs, closeTab, t]);
 
-  const { handleOpenFile, handleSaveFile: rawHandleSaveFile, handleSaveAsFile, handleExportDocx, handleExportPdf, handleExportHtml, handleExportPng } = useFileOps({
+  const { handleOpenFile, handleSaveFile: rawHandleSaveFile, handleSaveAsFile, handleExportDocx, handleExportPdf, handleExportHtml, handleExportPng, exporting } = useFileOps({
     getActiveTab, tabs, openFileInTab, markSaved, markSavedAs, t,
   });
 
@@ -801,6 +801,14 @@ export default function App() {
         currentTabId={activeTabId}
         onAnyTabContentChange={updateTabDoc}
       />
+
+      {/* 导出进度指示器 */}
+      {exporting && (
+        <div className="export-loading-indicator">
+          <span className="export-spinner" />
+          {t('fileOps.exporting', { format: exporting.toUpperCase() })}
+        </div>
+      )}
     </div>
     </I18nContext.Provider>
   );

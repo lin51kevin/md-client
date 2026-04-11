@@ -121,7 +121,7 @@ fn load_font_family() -> Result<genpdf::fonts::FontFamily<genpdf::fonts::FontDat
             ("Arial", "Arial"),
         ]
     } else {
-        // Linux: prioritize CJK fonts, then fallback to Latin fonts
+        // Linux: prioritize CJK fonts, then fallback to Latin fonts and emoji
         vec![
             // [P0-1] CJK font candidates for Chinese/Japanese/Korean rendering
             ("NotoSansCJK", "Noto Sans CJK SC"),
@@ -129,6 +129,9 @@ fn load_font_family() -> Result<genpdf::fonts::FontFamily<genpdf::fonts::FontDat
             ("WenQuanYiMicroHei", "WenQuanYi Micro Hei"),
             ("SourceHanSansSC", "Source Han Sans SC"),
             ("simhei", "SimHei"),
+            // [FIX P0-5 Bug 5] Emoji font for emoji rendering
+            ("NotoEmoji", "Noto Emoji"),
+            ("SegoiuEmoji", "Segoe UI Emoji"),  // Some Linux systems have this
             // Fallback to Latin fonts if no CJK available
             ("DejaVuSans", "DejaVu Sans"),
             ("LiberationSans", "Liberation Sans"),
@@ -187,6 +190,66 @@ fn list_prefix(list_stack: &[Option<u64>], item_counter: &mut [u64], indent_leve
     }
 }
 
+/// Custom page decorator that applies margins and renders page numbers at bottom center.
+/// genpdf calls decorate_page before rendering each page, so total_pages is unknown.
+/// We track the current page number internally (increment on each call).
+struct NumberedPageDecorator {
+    margins: u32,
+    page_num: u32,
+}
+
+impl NumberedPageDecorator {
+    fn new(margins: u32) -> Self {
+        Self { margins, page_num: 0 }
+    }
+}
+
+impl genpdf::PageDecorator for NumberedPageDecorator {
+    fn decorate_page<'a>(
+        &mut self,
+        context: &genpdf::Context,
+        mut area: genpdf::render::Area<'a>,
+        style: genpdf::style::Style,
+    ) -> Result<genpdf::render::Area<'a>, genpdf::error::Error> {
+        self.page_num += 1;
+
+        // Apply margins (same as SimplePageDecorator::set_margins)
+        area.add_margins((
+            genpdf::Mm::from(self.margins),
+            genpdf::Mm::from(self.margins),
+            genpdf::Mm::from(self.margins),
+            genpdf::Mm::from(self.margins),
+        ));
+
+        // Reserve 10mm at bottom for footer, return shrunk content area
+        let footer_height = genpdf::Mm::from(10.0_f32);
+        let mut content_area = area.clone();
+        content_area.add_margins((
+            genpdf::Mm::default(),
+            genpdf::Mm::default(),
+            footer_height,
+            genpdf::Mm::default(),
+        ));
+
+        // Draw page number text centered in footer area
+        let footer_text = format!("— {} —", self.page_num);
+        let mut footer_style = style;
+        footer_style.set_font_size(9);
+        footer_style.set_color(genpdf::style::Color::Rgb(128, 128, 128));
+        let _ = area.print_str(
+            &context.font_cache,
+            genpdf::Position::new(
+                (area.size().width - genpdf::Mm::from(20.0_f32)) / 2.0,
+                area.size().height - genpdf::Mm::from(6.0_f32),
+            ),
+            footer_style,
+            &footer_text,
+        );
+
+        Ok(content_area)
+    }
+}
+
 pub fn export_pdf(
     markdown: &str,
     output_path: &str,
@@ -197,10 +260,8 @@ pub fn export_pdf(
     doc.set_title("Exported Document");
     doc.set_minimal_conformance();
 
-    // Use default page decorator with margins
-    let mut decorator = genpdf::SimplePageDecorator::new();
-    decorator.set_margins(20);
-    doc.set_page_decorator(decorator);
+    // Custom page decorator: margins + footer page number
+    doc.set_page_decorator(NumberedPageDecorator::new(20));
 
     // Set default font size
     doc.set_font_size(11);
@@ -307,8 +368,7 @@ pub fn export_pdf(
                         doc.push(p);
                     }
 
-                    // [P1-5] Record heading for TOC
-                // Add space after heading
+                    // Add space after heading
                     doc.push(elements::Break::new(space_after));
                 }
                 heading_level = None;
@@ -600,16 +660,41 @@ pub fn export_pdf(
 
             // --- Math (requires ENABLE_MATH option) [P0-5] ---
             Event::InlineMath(formula) => {
-                // Read the key first (matches DOCX convention and frontend index order).
-                // genpdf paragraphs can only hold styled text, not images, so inline math
-                // images cannot be embedded inline — use italic blue text as fallback.
-                let _key = format!("latex_{}", latex_counter);
+                // [FIX P0-5 Bug 3] Try pre-rendered image first
+                let key = format!("latex_{}", latex_counter);
                 latex_counter += 1;
-                let mut s = style::Style::new();
-                s.set_font_size(10);
-                s.set_italic();
-                s.set_color(style::Color::Rgb(70, 90, 180));
-                para_parts.push(style::StyledString::new(formula.to_string(), s));
+                
+                // Try to use pre-rendered image as background/image if available
+                // genpdf doesn't support inline images in paragraphs well, so we
+                // use styled text fallback (blue italic) which is the best we can do
+                if let Some((png_bytes, w_px, h_px)) = images.get(&key) {
+                    if let Some((img_el, dpi)) = decode_png_for_pdf(png_bytes, *w_px, *h_px) {
+                        // Flush current text
+                        if !para_parts.is_empty() {
+                            let p = flush_para(&mut para_parts);
+                            let padded = elements::PaddedElement::new(p, genpdf::Margins::trbl(0, 0, 1, 0));
+                            doc.push(padded);
+                        }
+                        // Add inline math as small image
+                        doc.push(elements::Break::new(0.5));
+                        doc.push(img_el.with_dpi(dpi));
+                        doc.push(elements::Break::new(0.5));
+                    } else {
+                        // Fallback to styled text
+                        let mut s = style::Style::new();
+                        s.set_font_size(10);
+                        s.set_italic();
+                        s.set_color(style::Color::Rgb(70, 90, 180));
+                        para_parts.push(style::StyledString::new(formula.to_string(), s));
+                    }
+                } else {
+                    // Fallback: styled text (no pre-rendered image available)
+                    let mut s = style::Style::new();
+                    s.set_font_size(10);
+                    s.set_italic();
+                    s.set_color(style::Color::Rgb(70, 90, 180));
+                    para_parts.push(style::StyledString::new(formula.to_string(), s));
+                }
             }
             Event::DisplayMath(formula) => {
                 // [P0-5] Try pre-rendered image first

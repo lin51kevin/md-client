@@ -279,6 +279,7 @@ export const en: Record<TranslationKey, string> = {
   'fileOps.hint': 'Notice',
   'fileOps.noPreviewArea': 'Preview area not found. Cannot export PNG.',
   'fileOps.error': 'Error',
+  'fileOps.exporting': 'Exporting {format}...',
   'fileOps.exportFailed': 'Export {format} Failed',
   'fileOps.exportPngFailed': 'Export PNG Failed',
 };

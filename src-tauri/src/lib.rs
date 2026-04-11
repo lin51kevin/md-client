@@ -102,13 +102,23 @@ async fn export_document(
                 let bytes = base64::engine::general_purpose::STANDARD
                     .decode(&v.data)
                     .ok()?;
-                // [P2-5] Reject images larger than 50MB to prevent OOM
+                // [P2-5] Reject individual images larger than 50MB to prevent OOM
                 if bytes.len() > 50 * 1024 * 1024 {
                     return None;
                 }
                 Some((k, (bytes, v.width, v.height)))
             })
             .collect();
+
+    // [W1] Total images size check: prevent OOM from many large images
+    let total_size: usize = images.values().map(|(b, _, _)| b.len()).sum();
+    const MAX_TOTAL_SIZE: usize = 200 * 1024 * 1024; // 200MB total
+    if total_size > MAX_TOTAL_SIZE {
+        return Err(format!(
+            "总图片大小（{}MB）超过限制（200MB），请减少文档中的图片或公式数量。",
+            total_size / (1024 * 1024)
+        ));
+    }
 
     match format.as_str() {
         "pdf" => export_pdf(&markdown, &output_path, &images),
