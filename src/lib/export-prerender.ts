@@ -161,7 +161,7 @@ export function extractLatexFormulas(markdown: string): LatexDef[] {
   const displayBlockLines: string[] = [];
 
   for (const line of markdown.split('\n')) {
-    const trimmed = line.trimStart();
+    const trimmed = line.trim();
 
     // ── Fenced code block boundary (use startsWith for both open and close) ──
     if (trimmed.startsWith('```') || trimmed.startsWith('~~~')) {

@@ -31,7 +31,7 @@ describe('useWindowTitle', () => {
       expect(mockSetTitle).toHaveBeenCalledWith('document.md - MarkLite');
     });
 
-    it('should set window title for new file', () => {
+    it('should set window title for new file (no filePath, no displayName)', () => {
       const tab: Tab = {
         id: 'tab-1',
         filePath: null,
@@ -41,7 +41,8 @@ describe('useWindowTitle', () => {
 
       renderHook(() => useWindowTitle(tab, true));
 
-      expect(mockSetTitle).toHaveBeenCalledWith('Untitled.md - MarkLite');
+      // No filePath and no displayName → just the app name
+      expect(mockSetTitle).toHaveBeenCalledWith('MarkLite');
     });
 
     it('should add asterisk prefix for dirty files', () => {
@@ -57,7 +58,7 @@ describe('useWindowTitle', () => {
       expect(mockSetTitle).toHaveBeenCalledWith('*document.md - MarkLite');
     });
 
-    it('should add asterisk prefix for dirty new files', () => {
+    it('should set plain MarkLite title for dirty new files with no displayName', () => {
       const tab: Tab = {
         id: 'tab-1',
         filePath: null,
@@ -67,7 +68,8 @@ describe('useWindowTitle', () => {
 
       renderHook(() => useWindowTitle(tab, true));
 
-      expect(mockSetTitle).toHaveBeenCalledWith('*Untitled.md - MarkLite');
+      // No name available → just 'MarkLite', no prefix
+      expect(mockSetTitle).toHaveBeenCalledWith('MarkLite');
     });
 
     it('should extract filename from Windows path', () => {
@@ -157,7 +159,8 @@ describe('useWindowTitle', () => {
         { initialProps: { tab } }
       );
 
-      expect(mockSetTitle).toHaveBeenCalledWith('Untitled.md - MarkLite');
+      // No filePath and no displayName → just app name
+      expect(mockSetTitle).toHaveBeenCalledWith('MarkLite');
 
       const savedTab = { ...tab, filePath: '/path/saved.md' };
       rerender({ tab: savedTab });

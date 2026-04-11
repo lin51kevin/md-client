@@ -141,7 +141,7 @@ export function FileMenuDropdown({
           onMouseEnter={(e) => {
             e.currentTarget.style.backgroundColor = isSub ? 'var(--bg-tertiary)' : 'var(--accent-color)';
             e.currentTarget.style.color = isSub ? 'var(--text-primary)' : 'var(--bg-primary)';
-            if (item.submenu) setSubmenu(item.id);
+            setSubmenu(item.submenu ? item.id : null);
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.backgroundColor = '';

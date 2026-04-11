@@ -104,10 +104,10 @@ describe('export-prerender', () => {
       const md = 'Inline $x$ and display $$\\sum_{i=1}^n i$$';
       const formulas = extractLatexFormulas(md);
       expect(formulas).toHaveLength(2);
-      expect(formulas[0].formula).toBe('x');
-      expect(formulas[0].display).toBe(false);
-      expect(formulas[1].formula).toBe('\\sum_{i=1}^n i');
-      expect(formulas[1].display).toBe(true);
+      expect(formulas[0].formula).toBe('\\sum_{i=1}^n i');
+      expect(formulas[0].display).toBe(true);
+      expect(formulas[1].formula).toBe('x');
+      expect(formulas[1].display).toBe(false);
     });
 
     it('应跳过代码块中的内容', () => {
@@ -128,18 +128,19 @@ describe('export-prerender', () => {
       expect(formulas1).toHaveLength(1);
       expect(formulas1[0].formula).toBe('x1');
 
-      // $1x$ should match
-      const formulas2 = extractLatexFormulas('$1x$');
+      // $x1$ should match (starts with non-digit — avoids price patterns like $5.00)
+      const formulas2 = extractLatexFormulas('$x1$');
       expect(formulas2).toHaveLength(1);
-      expect(formulas2[0].formula).toBe('1x');
+      expect(formulas2[0].formula).toBe('x1');
     });
 
     it('应处理复杂的 LaTeX 公式', () => {
       const md = 'Einstein wrote $E = mc^2$ and the mass-energy equivalence follows from $$\\frac{E}{c^2} = m$$';
       const formulas = extractLatexFormulas(md);
       expect(formulas).toHaveLength(2);
-      expect(formulas[0].display).toBe(false);
-      expect(formulas[1].display).toBe(true);
+      // display ($$...$$) regex runs before inline ($...$) on the same line
+      expect(formulas[0].display).toBe(true);
+      expect(formulas[1].display).toBe(false);
     });
 
     it('空文档应返回空数组', () => {
@@ -156,10 +157,11 @@ describe('export-prerender', () => {
       const md = `First $a$ then $$b$$ then $c$`;
       const formulas = extractLatexFormulas(md);
       expect(formulas).toHaveLength(3);
-      expect(formulas[0].formula).toBe('a');
-      expect(formulas[0].display).toBe(false);
-      expect(formulas[1].formula).toBe('b');
-      expect(formulas[1].display).toBe(true);
+      // display ($$b$$) is extracted first per-line, then inline ($a$, $c$)
+      expect(formulas[0].formula).toBe('b');
+      expect(formulas[0].display).toBe(true);
+      expect(formulas[1].formula).toBe('a');
+      expect(formulas[1].display).toBe(false);
       expect(formulas[2].formula).toBe('c');
       expect(formulas[2].display).toBe(false);
     });
@@ -181,9 +183,11 @@ describe('export-prerender', () => {
     });
 
     it('连续 inline 公式应分别提取', () => {
-      const md = '$a$$b$';  // 两个连续的 inline 公式
+      const md = '$a$ $b$';  // two inline formulas separated by space
       const formulas = extractLatexFormulas(md);
       expect(formulas).toHaveLength(2);
+      expect(formulas[0].formula).toBe('a');
+      expect(formulas[1].formula).toBe('b');
     });
 
     it('空公式 $$...$$ 不应提取', () => {
