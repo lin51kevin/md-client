@@ -15,7 +15,7 @@ export interface RecentFile {
 }
 
 const STORAGE_KEY = 'marklite-recent-files';
-const MAX_RECENT = 10;
+const MAX_RECENT = 8;
 
 /**
  * 从 localStorage 读取最近文件列表

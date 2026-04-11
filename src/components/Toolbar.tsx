@@ -1,5 +1,5 @@
 
-import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, List, SpellCheck, FolderTree, Search, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, Settings, FilePlus, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight } from 'lucide-react';
+import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, List, SpellCheck, FolderTree, Search, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, Settings, HelpCircle, FilePlus, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ViewMode, FocusMode } from '../types';
 
 import { FileMenuDropdown } from './FileMenuDropdown';
@@ -41,6 +41,8 @@ interface ToolbarProps {
   onToggleVimMode?: () => void;
   /** F015: 打开设置面板回调 */
   onOpenSettings?: () => void;
+  /** 打开帮助/用户指南 */
+  onOpenHelp?: () => void;
   /** F013: 最近文件列表 */
   recentFiles?: import('../lib/recent-files').RecentFile[];
   /** F013: 打开最近文件 */
@@ -69,7 +71,7 @@ export function Toolbar({
   spellCheck, onToggleSpellCheck, onToggleFileTree,
   onToggleSearch, showSearch, onFormatAction,
   recentFiles, onOpenRecent, onClearRecent,
-  vimMode, onToggleVimMode, onImageLocal, onOpenSettings,
+  vimMode, onToggleVimMode, onImageLocal, onOpenSettings, onOpenHelp,
   tabs, activeTabId, onActivateTab, onCloseAll,
 }: ToolbarProps & { onImageLocal?: () => void }) {
   const { t } = useI18n();
@@ -326,6 +328,11 @@ export function Toolbar({
         {/* F015 — 设置 */}
         <ToolbarButton onClick={onOpenSettings} title={t('settings.title')}>
           <Settings size={14} strokeWidth={1.8} />
+        </ToolbarButton>
+
+        {/* 帮助 — 用户指南 */}
+        <ToolbarButton onClick={onOpenHelp} title={t('help.title')}>
+          <HelpCircle size={14} strokeWidth={1.8} />
         </ToolbarButton>
       </div>
     </div>

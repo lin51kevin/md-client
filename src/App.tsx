@@ -64,6 +64,7 @@ import { WelcomePage, EmptyEditorState } from './components/WelcomePage';
 import { CommandPalette } from './components/CommandPalette';
 import { SnippetPicker } from './components/SnippetPicker';
 import { SnippetManager } from './components/SnippetManager';
+import { HelpModal } from './components/HelpModal';
 import type { Command } from './lib/commands';
 
 
@@ -102,6 +103,9 @@ export default function App() {
   // 命令面板 (Ctrl+Shift+P)
   const [showCommandPalette, setShowCommandPalette] = useState(false);
 
+  // 用户指南帮助面板
+  const [showHelp, setShowHelp] = useState(false);
+
   // 片段选择器
   const [showSnippetPicker, setShowSnippetPicker] = useState(false);
   const [showSnippetManager, setShowSnippetManager] = useState(false);
@@ -126,7 +130,7 @@ export default function App() {
     markSaved, markSavedAs,
     renameTab, setTabDisplayName,
     pinTab, unpinTab,
-  } = useTabs(t);
+  } = useTabs(t, () => setRecentFiles(getRecentFiles()));
 
   // True when only the initial backing tab exists untouched — welcome/empty state
   const isPristine = tabs.length === 1 && !tabs[0].filePath && !tabs[0].isDirty && !tabs[0].displayName;
@@ -764,6 +768,7 @@ export default function App() {
             onFormatAction={handleFormatAction}
             onImageLocal={() => handleFormatAction('image-local')}
             onOpenSettings={() => setShowSettings(true)}
+            onOpenHelp={() => setShowHelp(true)}
             tabs={tabs}
             activeTabId={activeTabId}
             onActivateTab={setActiveTabId}
@@ -778,6 +783,11 @@ export default function App() {
             onSpellCheckChange={setSpellCheck}
             vimMode={vimMode}
             onVimModeChange={setVimMode}
+          />
+
+          <HelpModal
+            visible={showHelp}
+            onClose={() => setShowHelp(false)}
           />
 
           <TabBar

@@ -308,4 +308,5 @@ export const en: Record<TranslationKey, string> = {
   'snippet.fieldDesc': 'Description',
   'snippet.fieldDescPlaceholder': 'Optional description (e.g., meeting template)',
   'snippet.fieldContent': 'Content',
+  'help.title': 'User Guide',
 };

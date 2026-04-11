@@ -9,9 +9,10 @@ import type { TranslationKey } from '../i18n/zh-CN';
 
 type TFn = (key: TranslationKey, params?: Record<string, string | number>) => string;
 
-export function useTabs(t?: TFn) {
+export function useTabs(t?: TFn, onRecentChange?: () => void) {
   // Fallback: if no t() provided, use identity (raw key)
   const tr = t ?? ((k: string) => k);
+  const notifyRecent = () => onRecentChange?.();
   const [tabs, setTabs] = useState<Tab[]>([
     { id: INITIAL_TAB_ID, filePath: null, doc: DEFAULT_MARKDOWN, isDirty: false },
   ]);
@@ -81,6 +82,7 @@ export function useTabs(t?: TFn) {
         ));
         removeRecentFile(tab.filePath);
         addRecentFile(newPath);
+        notifyRecent();
         return true;
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);
@@ -142,6 +144,7 @@ export function useTabs(t?: TFn) {
         setActiveTabId(newTab.id);
       }
       addRecentFile(filePath);
+      notifyRecent();
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
       await message(tr('rename.cannotRead', { error: errMsg }), { title: tr('rename.openFileFailed'), kind: 'error' });
@@ -233,6 +236,7 @@ export function useTabs(t?: TFn) {
       setActiveTabId(newTab.id);
     }
     addRecentFile(filePath);
+    notifyRecent();
   }, []);
 
   const markSaved = (id: string) => {
@@ -241,6 +245,8 @@ export function useTabs(t?: TFn) {
 
   const markSavedAs = (id: string, filePath: string) => {
     setTabs(prev => prev.map(t => t.id === id ? { ...t, filePath, isDirty: false } : t));
+    addRecentFile(filePath);
+    notifyRecent();
   };
 
   return {

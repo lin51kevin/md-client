@@ -305,6 +305,7 @@ export const zhCN = {
   'snippet.fieldDesc': '描述',
   'snippet.fieldDescPlaceholder': '可选描述（如：会议纪要模板）',
   'snippet.fieldContent': '内容',
+  'help.title': '用户指南',
 };
 
 export type TranslationKey = keyof typeof zhCN;
