@@ -80,9 +80,7 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
     }
   };
 
-  // [P1-6] Export progress log
   const handleExport = async (format: 'docx' | 'pdf' | 'html') => {
-    console.log(`[export] Starting ${format.toUpperCase()} export...`);
     const tab = getActiveTab();
     if (!tab) return;
     

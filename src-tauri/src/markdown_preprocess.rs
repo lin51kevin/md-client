@@ -35,14 +35,18 @@ fn replace_emoji_shortcodes(text: &str) -> String {
 }
 
 pub fn preprocess_markdown(markdown: &str) -> String {
-    // [P1-1] Strip YAML frontmatter (--- ... ---) at the start of the document
-    // NOTE: starts_with("---") may match an HR line (--- alone on a line).
-    // The subsequent check for a closing "---" mitigates most false positives,
-    // but a document that begins with `---` text followed by `---` elsewhere could
-    // be incorrectly stripped. This is acceptable for typical Markdown documents.
-    let md = if markdown.starts_with("---") {
-        if let Some(end) = markdown[3..].find("\n---") {
-            let after = markdown[3 + end + 4..].trim_start_matches('\n');
+    // [P1-1] Strip YAML frontmatter (--- ... ---) at the start of the document.
+    // Only treat the opening "---" as frontmatter when it is on its own line
+    // (i.e. the document starts with "---\n") to avoid misidentifying a bare
+    // horizontal-rule that happens to be the first line.
+    let md = if markdown.starts_with("---\n") {
+        // Look for the closing delimiter: a line that is exactly "---" (with
+        // optional trailing whitespace) followed by a newline or end-of-string.
+        if let Some(rel) = markdown[4..].find("\n---\n").or_else(|| {
+            // Handle the case where the closing "---" is the very last line.
+            markdown[4..].strip_suffix("\n---").map(|s| s.len())
+        }) {
+            let after = markdown[4 + rel + 5..].trim_start_matches('\n');
             if after.is_empty() { "" } else { after }
         } else {
             markdown

@@ -52,8 +52,8 @@ export function useDragDrop({ isTauri, setIsDragOver, openFileInTab, onImageDrop
                   try {
                     const bytes = await invoke<number[]>('read_file_bytes', { path: imagePath });
                     await handler(ext, new Uint8Array(bytes));
-                  } catch {
-                    // 静默忽略无法读取的文件
+                  } catch (err) {
+                    console.warn(`[useDragDrop] Failed to read image: ${imagePath}`, err);
                   }
                 }
               })();
