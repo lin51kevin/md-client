@@ -37,6 +37,7 @@ export function FileMenuDropdown({
   onExportDocx,
   onExportPdf,
   onExportHtml,
+  onExportEpub,
   onExportPng,
   recentFiles,
   onOpenRecent,
@@ -232,7 +233,7 @@ export function FileMenuDropdown({
     ...(onExportEpub ? [{
       id: 'export-epub',
       icon: <BookOpen size={13} strokeWidth={1.8} />,
-      label: 'EPUB',
+      label: t('file.exportEpub'),
       action: onExportEpub,
     }] : []),
     ...(onExportPng ? [{

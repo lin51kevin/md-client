@@ -276,7 +276,7 @@ impl genpdf::PageDecorator for NumberedPageDecorator {
                 genpdf::Mm::from(0.0),
                 genpdf::Mm::from(0.0),
             );
-            let _ = area.print_str(&context.font_cache, header_pos, &self.title, header_style);
+            let _ = area.print_str(&context.font_cache, header_pos, header_style, &self.title);
         }
 
         // Draw page number text centered in footer area
@@ -284,12 +284,11 @@ impl genpdf::PageDecorator for NumberedPageDecorator {
         let mut footer_style = style.clone();
         footer_style.set_font_size(9);
         footer_style.set_color(genpdf::style::Color::Rgb(128, 128, 128));
-                (area.size().width - genpdf::Mm::from(20.0_f32)) / 2.0,
-                area.size().height - genpdf::Mm::from(6.0_f32),
-            ),
-            footer_style,
-            &footer_text,
+        let footer_pos = genpdf::Position::new(
+            (area.size().width - genpdf::Mm::from(20.0_f32)) / 2.0,
+            area.size().height - genpdf::Mm::from(6.0_f32),
         );
+        let _ = area.print_str(&context.font_cache, footer_pos, footer_style, &footer_text);
 
         Ok(content_area)
     }
@@ -308,8 +307,7 @@ pub fn export_pdf(
     doc.set_minimal_conformance();
 
     // [P1 PDF Header] Use NumberedPageDecorator with title for page headers
-    let mut decorator = NumberedPageDecorator::new(20, doc_title);
-    decorator.set_margins(20);
+    let decorator = NumberedPageDecorator::new(20, doc_title);
     doc.set_page_decorator(decorator);
 
     // Set default font size

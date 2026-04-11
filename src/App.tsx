@@ -2,13 +2,14 @@ import { useState, useRef, useCallback, useEffect, useLayoutEffect, useMemo, laz
 import type { Extension } from '@codemirror/state';
 import CodeMirror, { type EditorState, type ViewUpdate } from '@uiw/react-codemirror';
 import { EditorView } from '@codemirror/view';
+import { undo, redo } from '@codemirror/commands';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { languages } from '@codemirror/language-data';
 import { foldGutter } from '@codemirror/language';
 import Split from 'react-split';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { invoke } from '@tauri-apps/api/core';
-import { confirm } from '@tauri-apps/plugin-dialog';
+import { confirm, message } from '@tauri-apps/plugin-dialog';
 import { X } from 'lucide-react';
 import './App.css';
 
@@ -155,6 +156,41 @@ export default function App() {
     clearRecentFiles();
     setRecentFiles([]);
   }, []);
+
+  // [B1 FIX] Wiki-link navigation: resolve [[target]] → open existing file or offer to create
+  const handleWikiLinkNavigate = useCallback(async (target: string) => {
+    // Determine the current file's directory to search for the linked document
+    const currentDir = getActiveTab()?.filePath?.replace(/[/\\][^/\\]+$/, '') ?? '';
+    // Try potential filenames: exact match, then .md extension
+    const candidates = [`${target}.md`, target];
+    for (const name of candidates) {
+      const candidatePath = currentDir ? `${currentDir}/${name}` : name;
+      try {
+        await invoke<string>('read_file_text', { path: candidatePath });
+        // File exists — open it in a new tab
+        await openFileInTab(candidatePath);
+        return;
+      } catch {
+        // Not found — try next candidate
+      }
+    }
+    // None found — offer to create a new document
+    const filename = `${target}.md`;
+    const yes = await confirm(
+      `文档 "${target}" 未找到，是否创建？`,
+      { title: t('wiki.create', { name: target }), kind: 'warning' }
+    );
+    if (yes) {
+      const newPath = currentDir ? `${currentDir}/${filename}` : filename;
+      try {
+        await invoke('create_file', { path: newPath });
+        await openFileInTab(newPath);
+      } catch (e) {
+        const errMsg = e instanceof Error ? e.message : String(e);
+        await message(errMsg, { title: t('fileOps.error'), kind: 'error' });
+      }
+    }
+  }, [getActiveTab, openFileInTab, t]);
 
   // F001 - 关闭有未保存内容的标签页时弹出确认
   // F013 - 固定标签需先解除固定才能关闭(强制关闭由右键菜单单独处理)
@@ -431,14 +467,8 @@ export default function App() {
     // 编辑
     { id: 'edit.find', label: '查找', labelEn: 'Find', shortcut: 'Ctrl+F', category: 'edit', action: () => setShowSearchPanel(prev => !prev) },
     { id: 'edit.replace', label: '查找替换', labelEn: 'Find & Replace', shortcut: 'Ctrl+H', category: 'edit', action: () => setShowSearchPanel(prev => !prev) },
-    { id: 'edit.undo', label: '撤销', labelEn: 'Undo', shortcut: 'Ctrl+Z', category: 'edit', action: () => {
-      document.execCommand('undo');
-      cmViewRef.current?.dispatch({});
-    }},
-    { id: 'edit.redo', label: '重做', labelEn: 'Redo', shortcut: 'Ctrl+Y', category: 'edit', action: () => {
-      document.execCommand('redo');
-      cmViewRef.current?.dispatch({});
-    }},
+    { id: 'edit.undo', label: '撤销', labelEn: 'Undo', shortcut: 'Ctrl+Z', category: 'edit', action: () => { if (cmViewRef.current) undo(cmViewRef.current); } },
+    { id: 'edit.redo', label: '重做', labelEn: 'Redo', shortcut: 'Ctrl+Y', category: 'edit', action: () => { if (cmViewRef.current) redo(cmViewRef.current); } },
     // 视图
     { id: 'view.editOnly', label: '仅编辑器', labelEn: 'Editor Only', shortcut: 'Ctrl+1', category: 'view', action: () => setViewMode('edit') },
     { id: 'view.split', label: '分栏预览', labelEn: 'Split Preview', shortcut: 'Ctrl+2', category: 'view', action: () => setViewMode('split') },
@@ -607,8 +637,6 @@ export default function App() {
   }, [activeTab.doc, activeTabId]);
 
   const editorExtensions = useMemo(() => [
-    // [P1 spellcheck] Set spellcheck attribute on editor content
-    EditorView.contentAttributes.of({ spellcheck: spellCheck ? 'true' : 'false' }),
     markdown({ base: markdownLanguage, codeLanguages: languages }),
     foldGutter(),
     cursorExtension,
@@ -616,7 +644,14 @@ export default function App() {
     searchHighlightExtension,
     multicursorKeymap(),
     ...(vimMode && vimExtension ? [vimExtension] : []),
-  ], [spellCheck, cursorExtension, vimExtension, vimMode, searchHighlightExtension]);
+  ], [cursorExtension, vimExtension, vimMode, searchHighlightExtension]);
+
+  // [P1 spellcheck] Apply spellcheck directly to contentDOM when the setting
+  // changes — avoids the per-keystroke overhead of an updateListener.
+  useEffect(() => {
+    const dom = cmViewRef.current?.contentDOM;
+    if (dom) dom.spellcheck = spellCheck;
+  }, [spellCheck]);
   const editorSetup = EDITOR_SETUP;
 
   // F011 - 解析 CodeMirror 主题（内置字符串或自定义 Extension）
@@ -835,7 +870,7 @@ export default function App() {
             <div className="h-full overflow-auto border-l" style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--bg-primary)' }} ref={previewRef} onScroll={handlePreviewScroll}>
               <div className="p-8">
                 <Suspense fallback={<div className="p-4 text-sm animate-pulse" style={{ color: 'var(--text-secondary)' }}>正在加载预览引擎...</div>}>
-                  <MarkdownPreview content={debouncedDoc} filePath={activeTab.filePath ?? undefined} onOpenFile={openFileInTab} onContentChange={updateActiveDoc} className={`markdown-preview max-w-full min-h-full ${THEMES[theme].previewClass}`} />
+                  <MarkdownPreview content={debouncedDoc} filePath={activeTab.filePath ?? undefined} onOpenFile={openFileInTab} onContentChange={updateActiveDoc} onWikiLinkNavigate={handleWikiLinkNavigate} className={`markdown-preview max-w-full min-h-full ${THEMES[theme].previewClass}`} />
                 </Suspense>
               </div>
             </div>
@@ -862,7 +897,7 @@ export default function App() {
               <div ref={previewRef} className="w-full h-full overflow-auto" style={{ backgroundColor: 'var(--bg-primary)' }}>
                 <div className="p-8">
                   <Suspense fallback={<div className="p-4 text-sm animate-pulse" style={{ color: 'var(--text-secondary)' }}>正在加载预览引擎...</div>}>
-                    <MarkdownPreview content={debouncedDoc} filePath={activeTab.filePath ?? undefined} onOpenFile={openFileInTab} onContentChange={updateActiveDoc} className={`markdown-preview max-w-full min-h-full ${THEMES[theme].previewClass}`} />
+                    <MarkdownPreview content={debouncedDoc} filePath={activeTab.filePath ?? undefined} onOpenFile={openFileInTab} onContentChange={updateActiveDoc} onWikiLinkNavigate={handleWikiLinkNavigate} className={`markdown-preview max-w-full min-h-full ${THEMES[theme].previewClass}`} />
                   </Suspense>
                 </div>
               </div>

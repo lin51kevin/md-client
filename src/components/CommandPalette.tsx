@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import type { Command } from '../lib/commands';
 import { searchCommands, recordCommandExecution, CATEGORY_LABELS } from '../lib/commands';
 
@@ -39,12 +39,11 @@ export function CommandPalette({ visible, commands, onClose, locale }: CommandPa
   }, [filteredCommands]);
 
   // Reset state on open
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (visible) {
       setQuery('');
       setSelectedIndex(0);
-      // Focus input after a tick to ensure DOM is ready
-      setTimeout(() => inputRef.current?.focus(), 10);
+      inputRef.current?.focus();
     }
   }, [visible]);
 

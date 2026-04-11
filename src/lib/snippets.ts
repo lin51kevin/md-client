@@ -44,9 +44,20 @@ export function getSnippets(): Snippet[] {
   }
 }
 
-/** Persist snippets to localStorage */
-export function saveSnippets(snippets: Snippet[]): void {
-  localStorage.setItem(SNIPPETS_STORAGE_KEY, JSON.stringify(snippets));
+/** Persist snippets to localStorage. Returns true on success, false on quota exceeded. */
+export function saveSnippets(snippets: Snippet[]): boolean {
+  try {
+    const serialized = JSON.stringify(snippets);
+    // localStorage typically has ~5MB limit; guard at 4.5MB to leave buffer
+    if (serialized.length > 4.5 * 1024 * 1024) {
+      return false;
+    }
+    localStorage.setItem(SNIPPETS_STORAGE_KEY, serialized);
+    return true;
+  } catch {
+    // QuotaExceededError or other storage errors — caller checks return value
+    return false;
+  }
 }
 
 /** Factory default snippets */
@@ -80,23 +91,26 @@ export function getDefaultSnippets(): Snippet[] {
  * Resolve snippet content: replace variables with actual values.
  * Returns the resolved text and where cursor should be placed.
  */
+/**
+ * Resolve snippet content: replace variables with actual values.
+ * Uses a placeholder to correctly track ${cursor} position after all other
+ * variable substitutions (which may change text length).
+ */
 export function resolveSnippet(
   content: string,
   context: { filename?: string } = {},
 ): { text: string; cursorPosition: number | null } {
-  let text = content;
-  let cursorPosition: number | null = null;
-
-  // Replace ${cursor} — record position before removal
-  const cursorIdx = text.indexOf('${cursor}');
-  if (cursorIdx !== -1) {
-    cursorPosition = cursorIdx;
-    text = text.replace(/\$\{cursor\}/g, '');
-  }
+  // [B2 FIX] Use a sentinel placeholder so that cursor position is computed
+  // AFTER all other variable substitutions — preventing offset errors when
+  // ${date}/${time} etc. expand to different-length strings.
+  // U+FFFD (REPLACEMENT CHARACTER) is used as delimiters to avoid conflicts
+  // with null bytes or any user content.
+  const CURSOR_SENTINEL = '\uFFFDMARKLITE_CURSOR\uFFFD';
+  let text = content.replace(/\$\{cursor\}/g, CURSOR_SENTINEL);
 
   // Replace predefined variables: ${name} or ${name|fallback}
   for (const variable of PREDEFINED_VARIABLES) {
-    if (variable.name === 'cursor') continue; // already handled
+    if (variable.name === 'cursor') continue; // handled above via sentinel
 
     const pattern = new RegExp(`\\$\\{${variable.name}(?:\\|([^}]*))?\\}`, 'g');
     text = text.replace(pattern, (_match, fallback) => {
@@ -108,5 +122,14 @@ export function resolveSnippet(
     });
   }
 
-  return { text, cursorPosition };
+  // Now that all variables are resolved, find the sentinel and remove it
+  const cursorPosition = text.indexOf(CURSOR_SENTINEL);
+  const finalText = cursorPosition !== -1
+    ? text.slice(0, cursorPosition) + text.slice(cursorPosition + CURSOR_SENTINEL.length)
+    : text;
+
+  return {
+    text: finalText,
+    cursorPosition: cursorPosition !== -1 ? cursorPosition : null,
+  };
 }

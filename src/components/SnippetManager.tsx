@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Trash2, Save, X } from 'lucide-react';
+import { Plus, Trash2, Save, X, AlertCircle } from 'lucide-react';
 import { useI18n } from '../i18n';
 import type { Snippet } from '../lib/snippets';
 import {
@@ -30,6 +30,7 @@ export function SnippetManager({ visible }: SnippetManagerProps) {
   const [snippets, setSnippets] = useState<Snippet[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Snippet & { _isNew?: boolean }>(blankSnippet());
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Load snippets on mount
   useEffect(() => {
@@ -40,9 +41,14 @@ export function SnippetManager({ visible }: SnippetManagerProps) {
   }, [visible]);
 
   const persist = useCallback((updated: Snippet[]) => {
-    saveSnippets(updated);
+    const ok = saveSnippets(updated);
     setSnippets([...updated]);
-  }, []);
+    if (!ok) {
+      setSaveError(t('snippet.saveFailed'));
+    } else {
+      setSaveError(null);
+    }
+  }, [t]);
 
   /** Start editing a snippet (or creating new) */
   const startEdit = useCallback((s?: Snippet) => {
@@ -97,6 +103,12 @@ export function SnippetManager({ visible }: SnippetManagerProps) {
 
   return (
     <div className="snippet-manager">
+      {saveError && (
+        <div className="snippet-manager-error" role="alert">
+          <AlertCircle size={13} />
+          <span>{saveError}</span>
+        </div>
+      )}
       <div className="snippet-manager-header">
         <span className="snippet-manager-title">{t('snippet.manager')}</span>
         <button

@@ -95,6 +95,7 @@ export function Toolbar({
           onExportDocx={onExportDocx}
           onExportPdf={onExportPdf}
           onExportHtml={onExportHtml}
+          onExportEpub={onExportEpub}
           onExportPng={onExportPng}
           recentFiles={recentFiles}
           onOpenRecent={onOpenRecent}

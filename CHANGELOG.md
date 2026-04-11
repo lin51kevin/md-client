@@ -6,6 +6,62 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [v0.5.0] - 2026-04-11
+
+### Added
+
+#### 文档导航与模板 (F017)
+- **Wiki-Link 导航** — `[[target]]` 语法支持文档间快速导航：
+  - 单击或 Ctrl+Click 打开/创建链接文档
+  - 自动识别同文件夹内已存在的文档
+  - 支持创建新文档并立即打开
+  - 链接高亮显示，提升文档发现性
+
+- **命令面板** — `Ctrl+Shift+P` 快速命令执行：
+  - 模糊搜索 20+ 核心操作
+  - 最近命令优先排序
+  - 支持导出、搜索、主题切换、快捷键查看等
+  - 键盘长效交互（无需鼠标）
+
+- **片段管理器** — 支持文本模板与变量替换：
+  - 创建/编辑/删除片段模板
+  - 支持动态变量：`${date}`、`${time}`、`${filename}`、`${cursor}`
+  - 一键快速插入常用内容
+  - 本地 localStorage 持久化（触碰存储空间限制时显示错误提示）
+
+#### 编辑增强 (F018)
+- **多光标编辑** — 协同编辑多个位置：
+  - `Alt+D` 选中当前单词的所有出现
+  - `Alt+Up` 在上一行添加光标
+  - `Alt+Down` 在下一行添加光标
+  - 支持并行输入和删除，提升编辑效率
+
+#### 导出增强
+- **EPUB 电子书导出** — 支持 EPUB2/EPUB3 格式输出：
+  - 动态导入 `epub-gen` 库（按需加载）
+  - 从 YAML Frontmatter 中提取电子书元数据（标题、作者、描述等）
+  - 自动生成目录和页码
+  - 支持嵌入图片和样式表
+
+### Fixed
+- 修复 PDF 导出时页码和页眉/页脚位置错误（`NumberedPageDecorator` 参数顺序）
+- 修复拼写检查性能问题（改用 useEffect 替代 updateListener，减少不必要的 DOM 更新）
+- 修复片段保存时忽略返回值导致的静默失败（存储空间满时现在显示错误提示）
+- 修复 Wiki-Link 路径在 Windows 上混用正反斜杠的问题（后端自动规范化）
+- 修复 CRLF 换行符在某些导出格式中的处理
+
+### Changed
+- 移除死代码 `isEpubAvailable()` 函数（始终返回 true，无实际用途）
+- 移除生产代码中的 `console.warn` 语句（改为静默处理或返回值指示）
+- 优化编辑器扩展依赖数组（移除 spellCheck/activeTabId，避免频繁重建）
+- 更新片段哨兵占位符（`\x00` → Unicode `\uFFFD`，改进兼容性）
+
+### Security
+- 添加 TypeScript 类型定义用于外部 `epub-gen` 包（`src/types/epub-gen.d.ts`）
+- 增强错误处理与用户反馈对话
+
+---
+
 ## [v0.4.0] - 2026-04-10
 
 ### Added

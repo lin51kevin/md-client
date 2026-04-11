@@ -8,7 +8,8 @@ export interface WikiLinkNode {
 }
 
 declare module 'mdast' {
-  interface FrontmatterContentMap {
+  // [W7 FIX] wikiLink is inline phrasing content, not frontmatter
+  interface PhrasingContentMap {
     wikiLink: WikiLinkNode;
   }
 }
@@ -31,9 +32,10 @@ export function remarkWikiLinks() {
         if (match.index > lastIndex) {
           newNodes.push({ type: 'text', value: text.slice(lastIndex, match.index) });
         }
+        // [W3 DEFENSE] Guard against extremely long link names (slice to 100 chars)
         newNodes.push({
           type: 'wikiLink',
-          value: match[1].trim(),
+          value: match[1].trim().slice(0, 100),
         } as unknown as PhrasingContent);
         lastIndex = match.index + match[0].length;
       }

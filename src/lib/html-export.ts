@@ -246,7 +246,10 @@ function extractEpubMetadata(
   const defaultAuthor = 'Unknown Author';
   const defaultLang = 'zh-CN';
 
-  // Try to extract from frontmatter
+  // Try to extract from frontmatter.
+  // NOTE: This is a simplified line-by-line parser that only supports flat
+  // "key: value" pairs. Multi-line values, arrays, and nested objects are
+  // not supported. Use js-yaml if full YAML parsing is needed in the future.
   const frontmatterMatch = markdown.match(
     /^---\r?\n([\s\S]*?)\r?\n---\r?\n/
   );
@@ -295,18 +298,4 @@ async function markdownToHtmlForEpub(markdown: string): Promise<string> {
     return sanitizeJavascriptUris(bodyMatch[1]);
   }
   return sanitizeJavascriptUris(html);
-}
-
-/**
- * [P2 EPUB 导出]
- * 检查 EPUB 导出是否可用（epub-gen 库已安装）
- */
-export function isEpubAvailable(): boolean {
-  try {
-    // Dynamic import check - if the module loads, it's available
-    // In practice, we just return true and let generateEpub fail with a useful message
-    return true;
-  } catch {
-    return false;
-  }
 }

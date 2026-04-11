@@ -14,6 +14,8 @@ import type { Extension } from '@codemirror/state';
 /** 查找文档中所有出现的词，返回 [from, to] 区间数组 */
 function findAllOccurrences(docText: string, word: string): number[][] {
   const ranges: number[][] = [];
+  // [W3 FIX] Guard against ReDoS: reject overly long selections (>100 chars)
+  if (word.length > 100) return [];
   const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const regex = new RegExp(`\\b${escaped}\\b`, 'g');
   let match: RegExpExecArray | null;
