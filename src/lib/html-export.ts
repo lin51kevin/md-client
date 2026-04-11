@@ -15,6 +15,9 @@ import rehypeStringify from 'rehype-stringify';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 
+// Inline KaTeX CSS so exported HTML works offline (no CDN dependency)
+import katexCss from 'katex/dist/katex.min.css?raw';
+
 export interface HtmlExportOptions {
   /** 文档 <title>（默认取第一个 h1 或 "Untitled"） */
   title?: string;
@@ -133,7 +136,7 @@ export async function generateHtmlDocument(
   markdown: string,
   options: HtmlExportOptions = {},
 ): Promise<string> {
-  const bodyHtml = await markdownToHtml(markdown);
+  const bodyHtml = sanitizeJavascriptUris(await markdownToHtml(markdown));
   const title = options.title ?? extractTitle(bodyHtml);
   const customCss = options.css ? `\n${options.css}` : '';
 
@@ -141,10 +144,10 @@ export async function generateHtmlDocument(
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${escapeHtml(title)}</title>
 <style>${DEFAULT_CSS}${customCss}</style>
+<style>${katexCss}</style>
 </head>
 <body>
 ${bodyHtml}
@@ -159,4 +162,12 @@ function escapeHtml(str: string): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+/** 移除危险的 javascript: 协议链接（防御性 XSS 防护） */
+function sanitizeJavascriptUris(html: string): string {
+  return html.replace(
+    /href\s*=\s*["']javascript:[^"']*["']/gi,
+    'href="#javascript-blocked"'
+  );
 }

@@ -120,4 +120,83 @@ describe('F005 — 导出 HTML', () => {
     });
   });
 
+  describe('XSS 防护与安全性', () => {
+    it('应对 <title> 中的 HTML 特殊字符进行转义', async () => {
+      const html = await generateHtmlDocument('<script>alert(1)</script>', { title: '<img src=x onerror=alert(1)>' });
+      // title 应该被转义，不包含原始 HTML 标签
+      expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;');
+      expect(html).not.toContain('<img src=x onerror=alert(1)>');
+    });
+
+    it('应对标题中的 & 和引号进行转义', async () => {
+      const html = await generateHtmlDocument('test', { title: 'Tom & Jerry\'s "Book"' });
+      // escapeHtml converts & < > " to entities
+      expect(html).toContain('&amp;');
+      expect(html).toContain('&quot;');
+      // ' is not escaped by our escapeHtml (not needed in HTML <title>)
+      expect(html).toContain("Jerry");
+    });
+
+    it('body 中不应包含 <script> 标签（remark 默认不允许 raw HTML）', async () => {
+      const html = await generateHtmlDocument('<script>alert("xss")</script>hello');
+      // remark-parse 不处理纯 HTML 标签，但需确认不会被原样注入为可执行 script
+      expect(html).not.toContain('<script>alert');
+    });
+
+    it('不应允许 markdown 中的 onclick 等事件属性泄露到输出', async () => {
+      const html = await generateHtmlDocument('[click](javascript:alert(1))');
+      // href 应保留 javascript: 协议（markdown 转换器行为），但需确保不在事件属性中
+      const bodyMatch = html.match(/<body>([\s\S]*?)<\/body>/);
+      expect(bodyMatch?.[1]).toBeDefined();
+      expect(bodyMatch?.[1]).not.toContain('onclick');
+    });
+
+    it('应阻止 javascript: 协议链接（sanitizeJavascriptUris）', async () => {
+      // 直接使用 sanitizeJavascriptUris 的效果测试
+      const html = await generateHtmlDocument('[click](javascript:alert(1))');
+      expect(html).not.toContain('javascript:alert');
+      expect(html).toContain('href="#javascript-blocked"');
+    });
+  });
+
+  describe('边界条件与特殊字符', () => {
+    it('仅包含空白的文档应生成有效 HTML（body 为空）', async () => {
+      const html = await generateHtmlDocument('   \t\n  ');
+      expect(html).toContain('<!DOCTYPE html>');
+      expect(html).toContain('<body>\n\n</body>');
+    });
+
+    it('应正确处理包含特殊 HTML 字符的标题', async () => {
+      const html = await generateHtmlDocument('# A <B> & "C"');
+      // remark/rehype processes heading: <B> is treated as tag and stripped,
+      // & becomes numeric entity, then escapeHtml encodes the result for <title>
+      const titleMatch = html.match(/<title>(.*?)<\/title>/s);
+      expect(titleMatch?.[1]).toBeDefined();
+      // Must contain escaped versions of dangerous chars
+      expect(titleMatch?.[1]).not.toContain('<B>');
+      expect(titleMatch?.[1]).not.toContain('"C"');
+      expect(titleMatch?.[1]).toContain('&quot;');
+    });
+
+    it('应正确处理含 HTML 实体的 Markdown 内容（rehype 使用数字实体）', async () => {
+      const result = await markdownToHtml('&amp; &lt; &gt;');
+      // In HTML text nodes, only & and < must be escaped; > can stay as literal
+      expect(result).toContain('&#x26;'); // & encoded
+      expect(result).toContain('&#x3C;'); // < encoded
+      // > may or may not be encoded — both are valid
+    });
+
+    it('长文档内容不应截断或丢失数据', async () => {
+      const longText = '# Title\n' + 'p'.repeat(10000);
+      const html = await generateHtmlDocument(longText);
+      expect(html).toContain('<h1>Title</h1>');
+      expect(html.length).toBeGreaterThan(10000);
+    });
+
+    it('generateHtmlDocument 无参数时应默认标题为 Untitled', async () => {
+      const html = await generateHtmlDocument('just content no heading');
+      expect(html).toContain('<title>Untitled</title>');
+    });
+  });
+
 });

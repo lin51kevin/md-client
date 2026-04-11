@@ -35,11 +35,27 @@ fn replace_emoji_shortcodes(text: &str) -> String {
 }
 
 pub fn preprocess_markdown(markdown: &str) -> String {
+    // [P1-1] Strip YAML frontmatter (--- ... ---) at the start of the document
+    // NOTE: starts_with("---") may match an HR line (--- alone on a line).
+    // The subsequent check for a closing "---" mitigates most false positives,
+    // but a document that begins with `---` text followed by `---` elsewhere could
+    // be incorrectly stripped. This is acceptable for typical Markdown documents.
+    let md = if markdown.starts_with("---") {
+        if let Some(end) = markdown[3..].find("\n---") {
+            let after = markdown[3 + end + 4..].trim_start_matches('\n');
+            if after.is_empty() { "" } else { after }
+        } else {
+            markdown
+        }
+    } else {
+        markdown
+    };
+
     let mut in_fenced_code = false;
     let mut result: Vec<String> = Vec::new();
     let mut prev_was_table_row = false;
 
-    for line in markdown.lines() {
+    for line in md.lines() {
         let trimmed = line.trim_start();
 
         // Track fenced code block boundaries

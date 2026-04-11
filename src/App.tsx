@@ -197,8 +197,6 @@ export default function App() {
   const { cursorPos, cursorExtension } = useCursorPosition();
   const { searchHighlightExtension, setMatches, clearMatches } = useSearchHighlight();
 
-  useDragDrop({ isTauri, setIsDragOver, openFileInTab });
-
   // Per-tab EditorState persistence: declared early so all callbacks can close over it
   const cmViewRef = useRef<EditorView | null>(null);
 
@@ -241,11 +239,14 @@ export default function App() {
   const activeTab = getActiveTab();
   useWindowTitle(activeTab, isTauri);
 
-  useImagePaste({
+  const { saveAndInsert: saveAndInsertImage } = useImagePaste({
     docPath: activeTab.filePath,
     insertText: insertImageMarkdown,
     enabled: true,
+    isTauri,
   });
+
+  useDragDrop({ isTauri, setIsDragOver, openFileInTab, onImageDrop: saveAndInsertImage });
 
   // F011 - 主题切换: useLayoutEffect 在浏览器绘制前同步应用 CSS 变量，避免主题切换/模式切换时的短暂色彩不一致
   useLayoutEffect(() => {

@@ -1,8 +1,16 @@
 use std::fs;
 use pulldown_cmark::{Event, Options, Parser, Tag, TagEnd, HeadingLevel, CodeBlockKind};
 use docx_rs::*;
+use image::GenericImageView as _;
 
 use crate::markdown_preprocess::preprocess_markdown;
+
+/// Scale image dimensions to fit within max_width while preserving aspect ratio.
+fn scale_dimensions(w_px: u32, h_px: u32, max_w: u32) -> (u32, u32) {
+    if w_px <= max_w { return (w_px, h_px); }
+    let scale = max_w as f64 / w_px as f64;
+    (max_w, (h_px as f64 * scale).round() as u32)
+}
 
 /// Generate list item prefix (e.g., "1. ", "• ", "◦ ")
 fn list_prefix(list_stack: &[Option<u64>], item_counter: &mut [u64], indent_level: usize) -> String {
@@ -34,6 +42,7 @@ pub fn export_docx(
         | Options::ENABLE_TASKLISTS
         | Options::ENABLE_MATH;
     let preprocessed = preprocess_markdown(markdown);
+
     let parser = Parser::new_ext(&preprocessed, options);
 
     let mut docx = Docx::new();
@@ -45,10 +54,12 @@ pub fn export_docx(
     let mut code_block_text = String::new();
     let mut code_block_lang = String::new();
     let mut mermaid_counter = 0usize;
+    let mut latex_counter = 0usize; // [P0-5] LaTeX pre-rendered image index
     let mut heading_level: Option<HeadingLevel> = None;
     let mut heading_runs: Vec<Run> = Vec::new();
     let mut in_blockquote = false;
     let mut in_link = false;
+    let mut current_link_url: Option<String> = None; // [P1-2]
     let mut in_list_item = false;
     let mut first_block_in_item = false;
     let mut list_stack: Vec<Option<u64>> = Vec::new(); // None = unordered, Some = ordered
@@ -70,6 +81,8 @@ pub fn export_docx(
         if strikethrough { run = run.strike(); }
         if blockquote { run = run.color("666666"); }
         if link { run = run.color("35D7BB"); }
+        // [P1-4] Set CJK fallback font for Chinese/Japanese/Korean characters
+        run = run.fonts(RunFonts::new().east_asia("SimHei"));
         run
     }
 
@@ -129,7 +142,12 @@ pub fn export_docx(
             }
             Event::End(TagEnd::Paragraph) => {
                 if in_table {
-                    // paragraph inside table cell — runs go to cell
+                    // Append a soft line break after this paragraph's runs so that
+                    // multi-paragraph cells render correctly.  The trailing break on
+                    // the last paragraph in a cell is harmless whitespace.
+                    if !current_cell_runs.is_empty() {
+                        current_cell_runs.push(Run::new().add_break(BreakType::TextWrapping));
+                    }
                 } else if !in_code_block {
                     let runs = flush_runs(&mut current_runs);
                     let mut p = Paragraph::new().line_spacing(LineSpacing::new().after(220));
@@ -221,13 +239,7 @@ pub fn export_docx(
                     mermaid_counter += 1;
                     if let Some((png_bytes, w_px, h_px)) = images.get(&key) {
                         // Scale down to fit within ~160mm (600px at 96 DPI) page width
-                        const MAX_W: u32 = 600;
-                        let (display_w, display_h) = if *w_px > MAX_W {
-                            let scale = MAX_W as f64 / *w_px as f64;
-                            (MAX_W, (*h_px as f64 * scale).round() as u32)
-                        } else {
-                            (*w_px, *h_px)
-                        };
+                        let (display_w, display_h) = scale_dimensions(*w_px, *h_px, 600);
                         let pic = Pic::new_with_dimensions(png_bytes.clone(), display_w, display_h);
                         let run = Run::new().add_image(pic);
                         docx = docx.add_paragraph(Paragraph::new().add_run(run));
@@ -414,11 +426,53 @@ pub fn export_docx(
                 current_cell_runs.clear();
             }
 
+            // --- Images [P0-2] ---
+            Event::Start(Tag::Image { dest_url, .. }) => {
+                // Try to embed image in DOCX
+                if let Some((img_bytes, w_px, h_px)) = images.get(dest_url.as_ref()) {
+                    const MAX_W: u32 = 600;
+                    let (dw, dh) = scale_dimensions(*w_px, *h_px, MAX_W);
+                    let pic = Pic::new_with_dimensions(img_bytes.clone(), dw, dh);
+                    let run = Run::new().add_image(pic);
+                    let target = if in_table { &mut current_cell_runs }
+                        else if heading_level.is_some() { &mut heading_runs }
+                        else { &mut current_runs };
+                    target.push(run);
+                } else if std::path::Path::new(dest_url.as_ref()).exists() {
+                    // Local file fallback
+                    if let Ok(img_bytes) = fs::read(dest_url.as_ref()) {
+                        if let Ok(raw_img) = image::load_from_memory(&img_bytes) {
+                            let (w, h) = raw_img.dimensions();
+                            let (dw, dh) = scale_dimensions(w, h, 600);
+                            let pic = Pic::new_with_dimensions(img_bytes, dw, dh);
+                            let run = Run::new().add_image(pic);
+                            let target = if in_table { &mut current_cell_runs }
+                                else if heading_level.is_some() { &mut heading_runs }
+                                else { &mut current_runs };
+                            target.push(run);
+                        }
+                    }
+                }
+            }
+
             // --- Links ---
-            Event::Start(Tag::Link { dest_url: _, .. }) => {
+            Event::Start(Tag::Link { dest_url, .. }) => {
+                // [P1-2] Capture URL for display
                 in_link = true;
+                current_link_url = Some(dest_url.to_string());
             }
             Event::End(TagEnd::Link) => {
+                // [P1-2] Append URL after link text
+                if let Some(url) = current_link_url.take() {
+                    let url_run = Run::new()
+                        .add_text(format!(" ({url})"))
+                        .size(16) // 8pt
+                        .color("888896");
+                    let target = if in_table { &mut current_cell_runs }
+                        else if heading_level.is_some() { &mut heading_runs }
+                        else { &mut current_runs };
+                    target.push(url_run);
+                }
                 in_link = false;
             }
 
@@ -437,9 +491,24 @@ pub fn export_docx(
                 docx = docx.add_paragraph(p);
             }
 
-            // --- Math (requires ENABLE_MATH option) ---
+            // --- Math (requires ENABLE_MATH option) [P0-5] ---
             Event::InlineMath(formula) => {
-                // Show inline math without $ delimiters in blue italic
+                let key = format!("latex_{}", latex_counter);
+                latex_counter += 1;
+                let mut rendered = false;
+                if let Some((img_bytes, w_px, h_px)) = images.get(&key) {
+                    const MAX_W: u32 = 400;
+                    let (dw, dh) = scale_dimensions(*w_px, *h_px, MAX_W);
+                    let pic = Pic::new_with_dimensions(img_bytes.clone(), dw, dh);
+                    let run = Run::new().add_image(pic);
+                    let target = if in_table { &mut current_cell_runs }
+                        else if heading_level.is_some() { &mut heading_runs }
+                        else { &mut current_runs };
+                    target.push(run);
+                    rendered = true;
+                }
+                if !rendered {
+                // Fallback: show inline math without $ delimiters in blue italic
                 let run = Run::new()
                     .add_text(&*formula)
                     .italic()
@@ -449,16 +518,35 @@ pub fn export_docx(
                     else if heading_level.is_some() { &mut heading_runs }
                     else { &mut current_runs };
                 target.push(run);
+                } // end !rendered
             }
             Event::DisplayMath(formula) => {
-                // Flush pending inline text
+                // [P0-5] Try pre-rendered image first
+                let key = format!("latex_{}", latex_counter);
+                latex_counter += 1;
+                let mut rendered = false;
+                if let Some((img_bytes, w_px, h_px)) = images.get(&key) {
+                    const MAX_W: u32 = 600;
+                    let (dw, dh) = scale_dimensions(*w_px, *h_px, MAX_W);
+                    let pic = Pic::new_with_dimensions(img_bytes.clone(), dw, dh);
+                    let run = Run::new().add_image(pic);
+                    if !current_runs.is_empty() {
+                        let runs = flush_runs(&mut current_runs);
+                        let mut p = Paragraph::new().line_spacing(LineSpacing::new().after(220));
+                        for r in runs { p = p.add_run(r); }
+                        docx = docx.add_paragraph(p);
+                    }
+                    docx = docx.add_paragraph(Paragraph::new().add_run(run));
+                    rendered = true;
+                }
+                if !rendered {
+                // Fallback: render display math as shaded block (LaTeX source)
                 if !current_runs.is_empty() {
                     let runs = flush_runs(&mut current_runs);
                     let mut p = Paragraph::new().line_spacing(LineSpacing::new().after(220));
                     for run in runs { p = p.add_run(run); }
                     docx = docx.add_paragraph(p);
                 }
-                // Render display math as a shaded block (LaTeX source without $$ signs)
                 let shading = Shading::new().shd_type(ShdType::Clear).fill("EEF2FF").color("auto");
                 let mut p = Paragraph::new()
                     .indent(Some(360), None, None, None)
@@ -475,6 +563,7 @@ pub fn export_docx(
                     .fonts(RunFonts::new().ascii("Courier New").hi_ansi("Courier New"));
                 p = p.add_run(math_run);
                 docx = docx.add_paragraph(p);
+                } // end !rendered
             }
 
             // --- Text ---
@@ -523,7 +612,7 @@ pub fn export_docx(
     }
 
     // Use unique temp file name to avoid race conditions and symlink attacks
-    let tmp_path = std::env::temp_dir().join(format!("md_client_export_{}.docx", std::process::id()));
+    let tmp_path = std::env::temp_dir().join(format!("md_client_export_{}_{}", std::process::id(), std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis()));
     let tmp_file = fs::File::create(&tmp_path)
         .map_err(|e| format!("创建临时文件失败: {e}"))?;
     docx.build().pack(tmp_file)

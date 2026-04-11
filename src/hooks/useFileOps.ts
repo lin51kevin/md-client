@@ -16,6 +16,22 @@ interface FileOpsParams {
 
 export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markSavedAs, t }: FileOpsParams) {
   const tr = t ?? ((k: string) => k);
+
+  /** Generate a default filename from the active tab (uses file name or first heading) */
+  const getDefaultFileName = (ext: string): string => {
+    const tab = getActiveTab();
+    if (!tab) return `untitled.${ext}`;
+    // If tab has a file path, derive from that
+    if (tab.filePath) {
+      const parts = tab.filePath.replace(/\\/g, '/').split('/');
+      const base = parts[parts.length - 1].replace(/\.(md|markdown|txt)$/i, '');
+      return `${base}.${ext}`;
+    }
+    // Try to extract first heading
+    const h1Match = tab.doc.match(/^#\s+(.+)$/m);
+    const name = h1Match ? h1Match[1].trim().replace(/[:\\/*?"<>|]/g, '').slice(0, 80) : 'untitled';
+    return `${name || 'untitled'}.${ext}`;
+  };
   const handleOpenFile = async () => {
     try {
       const selected = await open({
@@ -64,7 +80,9 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
     }
   };
 
+  // [P1-6] Export progress log
   const handleExport = async (format: 'docx' | 'pdf' | 'html') => {
+    console.log(`[export] Starting ${format.toUpperCase()} export...`);
     const tab = getActiveTab();
     if (!tab) return;
     
@@ -77,6 +95,7 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
     if (format === 'html') {
       const savePath = await save({
         filters: [{ name: 'HTML Document', extensions: ['html'] }],
+        defaultPath: getDefaultFileName('html'),
       });
       if (savePath) {
         const { generateHtmlDocument } = await import('../lib/html-export');
@@ -90,6 +109,7 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
     try {
       const savePath = await save({
         filters: [{ name: filterName, extensions: [format] }],
+        defaultPath: getDefaultFileName(format),
       });
       if (savePath) {
         const { prerenderExportAssets } = await import('../lib/export-prerender');
@@ -125,6 +145,7 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
       });
       const savePath = await save({
         filters: [{ name: 'PNG Image', extensions: ['png'] }],
+        defaultPath: getDefaultFileName('png'),
       });
       if (savePath) {
         const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob((b) => b ? resolve(b) : reject(new Error('toBlob returned null')), 'image/png'));

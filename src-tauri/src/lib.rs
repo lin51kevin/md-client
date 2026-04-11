@@ -102,6 +102,10 @@ async fn export_document(
                 let bytes = base64::engine::general_purpose::STANDARD
                     .decode(&v.data)
                     .ok()?;
+                // [P2-5] Reject images larger than 50MB to prevent OOM
+                if bytes.len() > 50 * 1024 * 1024 {
+                    return None;
+                }
                 Some((k, (bytes, v.width, v.height)))
             })
             .collect();

@@ -20,10 +20,20 @@ export interface ImagePasteOptions {
   docPath?: string | null;
   /** 插入 Markdown 图片语法到编辑器 */
   insertText: (markdown: string) => void;
-  /** 当前编辑器内容 */
   /** 是否启用（可由 Toolbar 开关控制） */
   enabled?: boolean;
+  /** Tauri 环境下由 useDragDrop 的 onDragDropEvent 处理拖拽，禁用 DOM drop 监听以防重复插入 */
+  isTauri?: boolean;
 }
+
+/** 扩展名 → MIME，用于生成 data URL（文档未保存时的回退） */
+const EXT_TO_MIME: Record<string, string> = {
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  webp: 'image/webp',
+  gif: 'image/gif',
+};
 
 /** 支持的图片 MIME 类型 */
 const SUPPORTED_IMAGE_TYPES: Record<string, string> = {
@@ -62,6 +72,7 @@ export function useImagePaste({
   docPath,
   insertText,
   enabled = true,
+  isTauri = false,
 }: ImagePasteOptions) {
 
   const saveAndInsert = useCallback(
@@ -79,13 +90,25 @@ export function useImagePaste({
         actualDir = docDir + 'assets' + '/' + 'images';
       }
 
-      const savePath = actualDir ? `${actualDir}/${fileName}` : fileName;
+      // 没有保存目录也没有文档路径 → 内嵌 base64 data URL
+      // 这样即使文档未保存，预览窗口也能正确显示图片
+      if (!actualDir) {
+        const mime = EXT_TO_MIME[ext] ?? 'image/png';
+        let binary = '';
+        const CHUNK = 32768;
+        for (let i = 0; i < data.length; i += CHUNK) {
+          binary += String.fromCharCode(...data.subarray(i, i + CHUNK));
+        }
+        insertText(`\n![](data:${mime};base64,${btoa(binary)})\n`);
+        return;
+      }
+
+      const savePath = `${actualDir}/${fileName}`;
 
       // 调用 Rust 命令写入文件
       try {
         await invoke('write_image_bytes', { path: savePath, data: Array.from(data) });
-      } catch (err) {
-        // ignore: user will see via UI state
+      } catch {
         return;
       }
 
@@ -119,8 +142,9 @@ export function useImagePaste({
   }, [enabled, saveAndInsert]);
 
   // Drag & Drop 事件处理
+  // Tauri 环境下由 useDragDrop 的 onDragDropEvent 统一处理拖拽图片，跳过 DOM drop 监听以避免重复插入
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || isTauri) return;
 
     const handleDragOver = (e: DragEvent) => {
       // 检查是否有图片被拖入
@@ -152,5 +176,7 @@ export function useImagePaste({
       document.removeEventListener('dragover', handleDragOver);
       document.removeEventListener('drop', handleDrop);
     };
-  }, [enabled, saveAndInsert]);
+  }, [enabled, isTauri, saveAndInsert]);
+
+  return { saveAndInsert };
 }

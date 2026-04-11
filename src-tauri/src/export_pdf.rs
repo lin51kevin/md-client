@@ -7,32 +7,76 @@ use image::GenericImageView as _;
 
 use crate::markdown_preprocess::preprocess_markdown;
 
-/// Replace supplementary-plane characters (U+10000+) that standard CJK fonts
-/// cannot render in PDF.  Known emoji are substituted with their shortcode
-/// notation (:name:); other unrenderable characters are dropped silently.
+/// [P0-2] Try to load an image for PDF embedding.
+/// Checks the pre-rendered images map first, then tries local file system.
+fn load_image_for_pdf(
+    url: &str,
+    images: &std::collections::HashMap<String, (Vec<u8>, u32, u32)>,
+) -> Option<(elements::Image, f64)> {
+    // 1. Try pre-rendered images map (e.g., mermaid_0, latex_0)
+    if let Some((png_bytes, w_px, h_px)) = images.get(url) {
+        return decode_png_for_pdf(png_bytes, *w_px, *h_px);
+    }
+
+    // 2. Try as local file path (relative or absolute)
+    let path = std::path::Path::new(url);
+    if path.exists() && path.is_file() {
+        if let Ok(raw_bytes) = fs::read(path) {
+            // Try to decode to get dimensions
+            if let Ok(raw_img) = image::load_from_memory(&raw_bytes) {
+                let (w, h) = raw_img.dimensions();
+                return decode_png_for_pdf(&raw_bytes, w, h);
+            }
+        }
+    }
+
+    None
+}
+
+/// Decode PNG bytes into a genpdf Image element with appropriate DPI scaling.
+fn decode_png_for_pdf(png_bytes: &[u8], w_px: u32, _h_px: u32) -> Option<(elements::Image, f64)> {
+    match image::load_from_memory(png_bytes) {
+        Ok(raw_img) => {
+            let dpi = (25.4 * w_px as f64 / 170.0).max(72.0);
+            let rgb = image::DynamicImage::ImageRgb8(raw_img.to_rgb8());
+            match elements::Image::from_dynamic_image(rgb) {
+                Ok(img_el) => Some((img_el, dpi)),
+                Err(_) => None,
+            }
+        }
+        Err(_) => None,
+    }
+}
+
+/// Sanitize text for PDF rendering.
+/// System CJK fonts (SimHei, Microsoft YaHei) lack emoji glyphs and genpdf
+/// does not support font fallback.  Strip characters that would render as
+/// blank boxes rather than corrupting the output.
 fn sanitize_text_for_pdf(text: &str) -> String {
     let mut out = String::with_capacity(text.len());
     for c in text.chars() {
-        let cp = c as u32;
-        if cp > 0xFFFF {
-            // Supplementary plane — most common case is emoji
-            let s = c.to_string();
-            if let Some(emoji) = emojis::get(&s) {
-                if let Some(sc) = emoji.shortcode() {
-                    out.push(':');
-                    out.push_str(sc);
-                    out.push(':');
-                }
-                // else: drop (no shortcode available)
-            }
-            // else: drop unknown supplementary-plane char
-        } else if (0xFE00..=0xFE0F).contains(&cp) {
-            // Variation selectors — not renderable, drop
-        } else {
+        if !is_non_renderable_for_pdf(c as u32) {
             out.push(c);
         }
     }
     out
+}
+
+/// Returns `true` for codepoints that CJK system fonts cannot render.
+fn is_non_renderable_for_pdf(cp: u32) -> bool {
+    matches!(cp,
+        0xFE00..=0xFE0F   | // Variation selectors
+        0x200D            | // Zero Width Joiner (emoji sequences)
+        0x20E3            | // Combining Enclosing Keycap
+        0x1F300..=0x1F9FF | // Misc Symbols/Pictographs, Emoticons, Transport, etc.
+        0x1FA00..=0x1FAFF | // Symbols Extended-A
+        0x1F000..=0x1F0FF | // Mahjong / Dominos
+        0x2600..=0x26FF   | // Misc Symbols (☀☁☂★☎♠♣ etc.)
+        0x2700..=0x27BF   | // Dingbats (✂✈✉✌ etc.)
+        0x2300..=0x23FF   | // Misc Technical (⌨⌚ etc.)
+        0x2B50..=0x2B55   | // Stars, circles
+        0xE0020..=0xE007F   // Tag sequences (flag emoji)
+    )
 }
 
 fn find_system_font_dir() -> Result<std::path::PathBuf, String> {
@@ -77,7 +121,15 @@ fn load_font_family() -> Result<genpdf::fonts::FontFamily<genpdf::fonts::FontDat
             ("Arial", "Arial"),
         ]
     } else {
+        // Linux: prioritize CJK fonts, then fallback to Latin fonts
         vec![
+            // [P0-1] CJK font candidates for Chinese/Japanese/Korean rendering
+            ("NotoSansCJK", "Noto Sans CJK SC"),
+            ("NotoSerifCJK", "Noto Serif CJK SC"),
+            ("WenQuanYiMicroHei", "WenQuanYi Micro Hei"),
+            ("SourceHanSansSC", "Source Han Sans SC"),
+            ("simhei", "SimHei"),
+            // Fallback to Latin fonts if no CJK available
             ("DejaVuSans", "DejaVu Sans"),
             ("LiberationSans", "Liberation Sans"),
         ]
@@ -145,6 +197,7 @@ pub fn export_pdf(
     doc.set_title("Exported Document");
     doc.set_minimal_conformance();
 
+    // Use default page decorator with margins
     let mut decorator = genpdf::SimplePageDecorator::new();
     decorator.set_margins(20);
     doc.set_page_decorator(decorator);
@@ -157,15 +210,18 @@ pub fn export_pdf(
         | Options::ENABLE_TASKLISTS
         | Options::ENABLE_MATH;
     let preprocessed = preprocess_markdown(markdown);
+
     let parser = Parser::new_ext(&preprocessed, options);
 
     let mut para_parts: Vec<style::StyledString> = Vec::new();
     let mut is_bold = false;
     let mut is_italic = false;
+    let mut is_strikethrough = false; // [P1-3]
     let mut in_code_block = false;
     let mut code_block_text = String::new();
     let mut code_block_lang = String::new();
     let mut mermaid_counter = 0usize;
+    let mut latex_counter = 0usize; // [P0-5] LaTeX pre-rendered image index
     let mut heading_level: Option<HeadingLevel> = None;
     let mut heading_text = String::new();
     let mut in_blockquote = false;
@@ -174,10 +230,12 @@ pub fn export_pdf(
     let mut in_list_item = false;
     let mut first_block_in_item = false;
     let mut in_table = false;
+    let mut current_link_url: Option<String> = None; // [P1-2]
     let mut table_header: Vec<String> = Vec::new();
     let mut table_rows: Vec<Vec<String>> = Vec::new();
     let mut current_cell_text = String::new();
     let mut current_row: Vec<String> = Vec::new();
+
 
     fn flush_para(parts: &mut Vec<style::StyledString>) -> elements::Paragraph {
         let mut p = elements::Paragraph::new("");
@@ -187,10 +245,11 @@ pub fn export_pdf(
         p
     }
 
-    fn make_style(bold: bool, italic: bool) -> style::Style {
+    fn make_style(bold: bool, italic: bool, _strikethrough: bool) -> style::Style {
         let mut s = style::Style::new();
         if bold { s.set_bold(); }
         if italic { s.set_italic(); }
+        // Note: set_strikethrough() not available in genpdf 0.2
         s
     }
 
@@ -248,7 +307,8 @@ pub fn export_pdf(
                         doc.push(p);
                     }
 
-                    // Add space after heading
+                    // [P1-5] Record heading for TOC
+                // Add space after heading
                     doc.push(elements::Break::new(space_after));
                 }
                 heading_level = None;
@@ -295,6 +355,9 @@ pub fn export_pdf(
             Event::End(TagEnd::Strong) => { is_bold = false; }
             Event::Start(Tag::Emphasis) => { is_italic = true; }
             Event::End(TagEnd::Emphasis) => { is_italic = false; }
+            // [P1-3] Strikethrough
+            Event::Start(Tag::Strikethrough) => { is_strikethrough = true; }
+            Event::End(TagEnd::Strikethrough) => { is_strikethrough = false; }
 
             // --- Lists ---
             Event::Start(Tag::List(start_num)) => {
@@ -422,9 +485,25 @@ pub fn export_pdf(
                 // Build table using TableLayout
                 if !table_header.is_empty() {
                     let num_cols = table_header.len();
-                    let mut table = elements::TableLayout::new(
-                        vec![1; num_cols]
-                    );
+                    // [P2-3] Compute proportional column widths based on content length
+                    let mut col_widths: Vec<u32> = vec![1; num_cols];
+                    // Measure header widths
+                    for (i, cell) in table_header.iter().enumerate() {
+                        if i < num_cols { col_widths[i] = (cell.chars().count() as u32).max(1); }
+                    }
+                    // Measure data row widths
+                    for row in &table_rows {
+                        for (i, cell) in row.iter().enumerate() {
+                            if i < num_cols { col_widths[i] = col_widths[i].max(cell.chars().count() as u32); }
+                        }
+                    }
+                    // Normalize to proportions summing roughly to 100
+                    let total: u32 = col_widths.iter().sum();
+                    let prop_widths: Vec<usize> = col_widths.iter()
+                        .map(|w| if total > 0 { ((*w as f64 / total as f64) * 100.0).round() as usize } else { 100 / num_cols })
+                        .collect();
+                    
+                    let mut table = elements::TableLayout::new(prop_widths);
                     table.set_cell_decorator(elements::FrameCellDecorator::new(true, true, false));
 
                     // Header row
@@ -507,9 +586,25 @@ pub fn export_pdf(
                 doc.push(UnderlineElement.styled(rule_style));
             }
 
-            // --- Math (requires ENABLE_MATH option) ---
+            // --- Images [P0-2] ---
+            Event::Start(Tag::Image { dest_url, .. }) => {
+                // Try to load and embed the image
+                let img_result = load_image_for_pdf(dest_url.as_ref(), images);
+                if let Some((img_el, _dpi)) = img_result {
+                    doc.push(elements::Break::new(1.0));
+                    doc.push(img_el);
+                    doc.push(elements::Break::new(1.0));
+                }
+                // If image loading fails, silently skip (alt text was already collected as Text events)
+            }
+
+            // --- Math (requires ENABLE_MATH option) [P0-5] ---
             Event::InlineMath(formula) => {
-                // Show inline math without $ delimiters in a distinguishable style
+                // Read the key first (matches DOCX convention and frontend index order).
+                // genpdf paragraphs can only hold styled text, not images, so inline math
+                // images cannot be embedded inline — use italic blue text as fallback.
+                let _key = format!("latex_{}", latex_counter);
+                latex_counter += 1;
                 let mut s = style::Style::new();
                 s.set_font_size(10);
                 s.set_italic();
@@ -517,13 +612,30 @@ pub fn export_pdf(
                 para_parts.push(style::StyledString::new(formula.to_string(), s));
             }
             Event::DisplayMath(formula) => {
-                // Flush any pending inline paragraph first
+                // [P0-5] Try pre-rendered image first
+                let key = format!("latex_{}", latex_counter);
+                latex_counter += 1;
+                let mut rendered = false;
+                if let Some((png_bytes, w_px, h_px)) = images.get(&key) {
+                    if let Some((img_el, dpi)) = decode_png_for_pdf(png_bytes, *w_px, *h_px) {
+                        if !para_parts.is_empty() {
+                            let p = flush_para(&mut para_parts);
+                            let padded = elements::PaddedElement::new(p, genpdf::Margins::trbl(0, 0, 1, 0));
+                            doc.push(padded);
+                        }
+                        doc.push(elements::Break::new(1.0));
+                        doc.push(img_el.with_dpi(dpi));
+                        doc.push(elements::Break::new(1.0));
+                        rendered = true;
+                    }
+                }
+                if !rendered {
+                // Fallback: render display math as framed styled block (LaTeX source)
                 if !para_parts.is_empty() {
                     let p = flush_para(&mut para_parts);
                     let padded = elements::PaddedElement::new(p, genpdf::Margins::trbl(0, 0, 1, 0));
                     doc.push(padded);
                 }
-                // Render display math as a framed styled block (LaTeX source, no $ signs)
                 let mut math_style = style::Style::new();
                 math_style.set_font_size(10);
                 math_style.set_italic();
@@ -540,6 +652,7 @@ pub fn export_pdf(
                 frame_style.set_color(style::Color::Rgb(180, 200, 240));
                 let framed = elements::FramedElement::new(inner).styled(frame_style);
                 doc.push(elements::PaddedElement::new(framed, genpdf::Margins::trbl(1, 0, 1, 0)));
+                } // end !rendered
             }
 
             // --- Task lists ---
@@ -553,13 +666,13 @@ pub fn export_pdf(
                 if in_code_block {
                     code_block_text.push_str(&text);
                 } else if heading_level.is_some() {
-                    heading_text.push_str(&text);
+                    heading_text.push_str(&sanitize_text_for_pdf(&text));
                 } else if in_table {
                     current_cell_text.push_str(&sanitize_text_for_pdf(&text));
                 } else {
                     para_parts.push(style::StyledString::new(
                         sanitize_text_for_pdf(&text),
-                        make_style(is_bold, is_italic),
+                        make_style(is_bold, is_italic, is_strikethrough),
                     ));
                 }
             }
@@ -586,7 +699,9 @@ pub fn export_pdf(
             }
 
             // --- Links ---
-            Event::Start(Tag::Link { dest_url: _, .. }) => {
+            Event::Start(Tag::Link { dest_url, .. }) => {
+                // [P1-2] Capture URL for display
+                current_link_url = Some(dest_url.to_string());
                 para_parts.push(style::StyledString::new(
                     "[".to_string(),
                     style::Style::new(),
@@ -597,6 +712,13 @@ pub fn export_pdf(
                     "]".to_string(),
                     style::Style::new(),
                 ));
+                // [P1-2] Append URL in small text after the link
+                if let Some(url) = current_link_url.take() {
+                    let mut url_style = style::Style::new();
+                    url_style.set_font_size(8);
+                    url_style.set_color(style::Color::Rgb(100, 100, 150));
+                    para_parts.push(style::StyledString::new(format!(" ({url})"), url_style));
+                }
             }
 
             _ => {}
@@ -609,7 +731,7 @@ pub fn export_pdf(
     }
 
     // Use unique temp file name to avoid race conditions and symlink attacks
-    let tmp_path = std::env::temp_dir().join(format!("md_client_export_{}.pdf", std::process::id()));
+    let tmp_path = std::env::temp_dir().join(format!("md_client_export_{}_{}", std::process::id(), std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis()));
     doc.render_to_file(&tmp_path)
         .map_err(|e| format!("PDF 渲染失败: {e}"))?;
     fs::copy(&tmp_path, output_path)
