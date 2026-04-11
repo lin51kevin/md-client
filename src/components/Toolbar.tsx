@@ -3,6 +3,7 @@ import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Min
 import { ViewMode, FocusMode } from '../types';
 
 import { FileMenuDropdown } from './FileMenuDropdown';
+import { ToolbarButton } from './ToolbarButton';
 import { useI18n } from '../i18n';
 
 interface ToolbarProps {
@@ -20,8 +21,6 @@ interface ToolbarProps {
   onSetViewMode: (mode: ViewMode) => void;
   onFocusModeChange?: (mode: FocusMode) => void;
   onToggleToc?: () => void;
-  
-  
   /** F013: 拼写检查状态 */
   spellCheck?: boolean;
   /** F013: 拼写检查切换回调 */
@@ -57,31 +56,36 @@ interface ToolbarProps {
   onActivateTab?: (id: string) => void;
 }
 
-export function Toolbar({ viewMode, focusMode, showToc, showFileTree, onNewTab, onOpenFile, onSaveFile, onSaveAsFile, onExportDocx, onExportPdf, onExportHtml, onExportPng, onSetViewMode, onFocusModeChange, onToggleToc, spellCheck, onToggleSpellCheck, onToggleFileTree, onToggleSearch, showSearch, onFormatAction, recentFiles, onOpenRecent, onClearRecent, vimMode, onToggleVimMode, onImageLocal, onOpenSettings, tabs, activeTabId, onActivateTab, onCloseAll }: ToolbarProps & { onImageLocal?: () => void }) {
+const DIVIDER = (
+  <div className="w-px h-5 mx-0.5 shrink-0" style={{ backgroundColor: 'var(--border-color)' }} />
+);
+
+export function Toolbar({
+  viewMode, focusMode, showToc, showFileTree,
+  onNewTab, onOpenFile, onSaveFile, onSaveAsFile,
+  onExportDocx, onExportPdf, onExportHtml, onExportPng,
+  onSetViewMode, onFocusModeChange, onToggleToc,
+  spellCheck, onToggleSpellCheck, onToggleFileTree,
+  onToggleSearch, showSearch, onFormatAction,
+  recentFiles, onOpenRecent, onClearRecent,
+  vimMode, onToggleVimMode, onImageLocal, onOpenSettings,
+  tabs, activeTabId, onActivateTab, onCloseAll,
+}: ToolbarProps & { onImageLocal?: () => void }) {
   const { t } = useI18n();
 
-  // Compute prev/next tab ids for navigation arrows
   const tabList = tabs ?? [];
-  const activeIdx = tabList.findIndex(tab => tab.id === activeTabId);
+  const activeIdx = tabList.findIndex((tab) => tab.id === activeTabId);
   const prevTabId = activeIdx > 0 ? tabList[activeIdx - 1].id : null;
-  const nextTabId = activeIdx >= 0 && activeIdx < tabList.length - 1 ? tabList[activeIdx + 1].id : null;
-  const btnCls = 'flex items-center gap-1.5 px-2.5 py-1 text-xs hover:shadow-sm border border-transparent rounded transition-all';
-  const viewBtnCls = (active: boolean) =>
-    'flex items-center gap-1.5 px-2.5 py-1 text-xs rounded border transition-all ' +
-    (active
-      ? 'shadow-sm font-medium'
-      : 'border-transparent');
-
-  const focusBtnCls = (active: boolean) =>
-    'flex items-center gap-1.5 px-2 py-1 text-xs rounded border transition-all ' +
-    (active
-      ? ''
-      : 'border-transparent');
+  const nextTabId =
+    activeIdx >= 0 && activeIdx < tabList.length - 1 ? tabList[activeIdx + 1].id : null;
 
   return (
-    <div className="relative shrink-0 flex items-center justify-between px-2 py-1" style={{ backgroundColor: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-color)' }}>
+    <div
+      className="relative shrink-0 flex items-center justify-between px-2 py-1"
+      style={{ backgroundColor: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-color)' }}
+    >
+      {/* ── Left: file menu + file ops + formatting ── */}
       <div className="flex items-center">
-        {/* 文件菜单下拉 (方案A) */}
         <FileMenuDropdown
           onNewTab={onNewTab}
           onOpenFile={onOpenFile}
@@ -97,60 +101,65 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, onNewTab, 
           onCloseAll={onCloseAll}
         />
 
-        {/* 文件操作图标按钮 */}
-        <button onClick={onNewTab} title={t('file.new')} className={btnCls}>
+        {/* 文件操作 */}
+        <ToolbarButton onClick={onNewTab} title={t('file.new')} className="px-2.5">
           <FilePlus size={14} strokeWidth={1.8} />
-        </button>
-        <button onClick={onOpenFile} title={t('file.open')} className={btnCls}>
+        </ToolbarButton>
+        <ToolbarButton onClick={onOpenFile} title={t('file.open')} className="px-2.5">
           <FolderOpenIcon size={14} strokeWidth={1.8} />
-        </button>
-        <button onClick={onSaveFile} title={t('file.save')} className={btnCls}>
+        </ToolbarButton>
+        <ToolbarButton onClick={onSaveFile} title={t('file.save')} className="px-2.5">
           <Save size={14} strokeWidth={1.8} />
-        </button>
-        <button onClick={onSaveAsFile} title={t('file.saveAs')} className={btnCls}>
+        </ToolbarButton>
+        <ToolbarButton onClick={onSaveAsFile} title={t('file.saveAs')} className="px-2.5">
           <SaveAll size={14} strokeWidth={1.8} />
-        </button>
+        </ToolbarButton>
 
-        <div className="w-px h-5 mx-1" style={{ backgroundColor: 'var(--border-color)' }} />
-        {/* F014 — 格式化工具栏 */}
-        <button onClick={() => onFormatAction?.('bold')} title={t('toolbar.bold')} className={btnCls}>
+        <div className="w-px h-5 mx-1 shrink-0" style={{ backgroundColor: 'var(--border-color)' }} />
+
+        {/* 格式化 */}
+        <ToolbarButton onClick={() => onFormatAction?.('bold')} title={t('toolbar.bold')}>
           <Bold size={14} strokeWidth={2} />
-        </button>
-        <button onClick={() => onFormatAction?.('italic')} title={t('toolbar.italic')} className={btnCls}>
+        </ToolbarButton>
+        <ToolbarButton onClick={() => onFormatAction?.('italic')} title={t('toolbar.italic')}>
           <Italic size={14} strokeWidth={2} />
-        </button>
-        <button onClick={() => onFormatAction?.('strikethrough')} title={t('toolbar.strikethrough')} className={btnCls}>
+        </ToolbarButton>
+        <ToolbarButton onClick={() => onFormatAction?.('strikethrough')} title={t('toolbar.strikethrough')}>
           <Strikethrough size={14} strokeWidth={2} />
-        </button>
-        <button onClick={() => onFormatAction?.('code')} title={t('toolbar.code')} className={btnCls}>
+        </ToolbarButton>
+        <ToolbarButton onClick={() => onFormatAction?.('code')} title={t('toolbar.code')}>
           <Code size={14} strokeWidth={2} />
-        </button>
-        <div className="w-px h-5 mx-0.5" style={{ backgroundColor: 'var(--border-color)' }} />
-        <button onClick={() => onFormatAction?.('heading')} title={t('toolbar.heading')} className={btnCls}>
+        </ToolbarButton>
+
+        {DIVIDER}
+
+        <ToolbarButton onClick={() => onFormatAction?.('heading')} title={t('toolbar.heading')}>
           <Heading size={14} strokeWidth={2} />
-        </button>
-        <button onClick={() => onFormatAction?.('blockquote')} title={t('toolbar.blockquote')} className={btnCls}>
+        </ToolbarButton>
+        <ToolbarButton onClick={() => onFormatAction?.('blockquote')} title={t('toolbar.blockquote')}>
           <Quote size={14} strokeWidth={2} />
-        </button>
-        <button onClick={() => onFormatAction?.('ul')} title={t('toolbar.ul')} className={btnCls}>
+        </ToolbarButton>
+        <ToolbarButton onClick={() => onFormatAction?.('ul')} title={t('toolbar.ul')}>
           <List size={14} strokeWidth={2} />
-        </button>
-        <button onClick={() => onFormatAction?.('ol')} title={t('toolbar.ol')} className={btnCls}>
+        </ToolbarButton>
+        <ToolbarButton onClick={() => onFormatAction?.('ol')} title={t('toolbar.ol')}>
           <ListOrdered size={14} strokeWidth={2} />
-        </button>
-        <div className="w-px h-5 mx-0.5" style={{ backgroundColor: 'var(--border-color)' }} />
-        <button onClick={() => onFormatAction?.('link')} title={t('toolbar.link')} className={btnCls}>
+        </ToolbarButton>
+
+        {DIVIDER}
+
+        <ToolbarButton onClick={() => onFormatAction?.('link')} title={t('toolbar.link')}>
           <Link size={14} strokeWidth={2} />
-        </button>
-        <button onClick={() => onImageLocal?.()} title={t('toolbar.imageLocal')} className={btnCls}>
+        </ToolbarButton>
+        <ToolbarButton onClick={() => onImageLocal?.()} title={t('toolbar.imageLocal')}>
           <ImagePlus size={14} strokeWidth={2} />
-        </button>
-        <button onClick={() => onFormatAction?.('image-link')} title={t('toolbar.imageLink')} className={btnCls}>
+        </ToolbarButton>
+        <ToolbarButton onClick={() => onFormatAction?.('image-link')} title={t('toolbar.imageLink')}>
           <Link2 size={14} strokeWidth={2} />
-        </button>
+        </ToolbarButton>
       </div>
 
-      {/* ── Centered tab navigation (VS Code title-bar style) ── */}
+      {/* ── Center: tab navigation (VS Code title-bar style) ── */}
       {tabList.length > 1 && (
         <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-0.5 pointer-events-none select-none">
           <button
@@ -159,8 +168,16 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, onNewTab, 
             title={t('toolbar.prevTab')}
             className="pointer-events-auto flex items-center justify-center w-6 h-6 rounded disabled:opacity-25 disabled:cursor-default"
             style={{ color: 'var(--text-secondary)' }}
-            onMouseEnter={(e) => { if (prevTabId) { e.currentTarget.style.backgroundColor = 'var(--hover-bg)'; e.currentTarget.style.color = 'var(--text-primary)'; } }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+            onMouseEnter={(e) => {
+              if (prevTabId) {
+                e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
+                e.currentTarget.style.color = 'var(--text-primary)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '';
+              e.currentTarget.style.color = 'var(--text-secondary)';
+            }}
           >
             <ChevronLeft size={16} strokeWidth={1.8} />
           </button>
@@ -170,355 +187,147 @@ export function Toolbar({ viewMode, focusMode, showToc, showFileTree, onNewTab, 
             title={t('toolbar.nextTab')}
             className="pointer-events-auto flex items-center justify-center w-6 h-6 rounded disabled:opacity-25 disabled:cursor-default"
             style={{ color: 'var(--text-secondary)' }}
-            onMouseEnter={(e) => { if (nextTabId) { e.currentTarget.style.backgroundColor = 'var(--hover-bg)'; e.currentTarget.style.color = 'var(--text-primary)'; } }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+            onMouseEnter={(e) => {
+              if (nextTabId) {
+                e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
+                e.currentTarget.style.color = 'var(--text-primary)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '';
+              e.currentTarget.style.color = 'var(--text-secondary)';
+            }}
           >
             <ChevronRight size={16} strokeWidth={1.8} />
           </button>
         </div>
       )}
 
+      {/* ── Right: toggles + view mode + settings ── */}
       <div className="flex items-center gap-0.5">
-        {/* F014 — 文件树切换 */}
-        <button
+        {/* F014 — 文件树 */}
+        <ToolbarButton
+          variant="toggle"
+          active={!!showFileTree}
           onClick={onToggleFileTree}
           title={t('toolbar.fileTree')}
-          className={focusBtnCls(!!showFileTree)}
-          style={{
-            backgroundColor: showFileTree ? 'var(--accent-bg)' : 'transparent',
-            borderColor: showFileTree ? 'var(--accent-color)' : 'transparent',
-            color: showFileTree ? 'var(--accent-color)' : 'var(--text-secondary)'
-          }}
-          onMouseEnter={(e) => {
-            if (!showFileTree) {
-              e.currentTarget.style.color = 'var(--text-primary)';
-              e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!showFileTree) {
-              e.currentTarget.style.color = 'var(--text-secondary)';
-              e.currentTarget.style.backgroundColor = 'transparent';
-            }
-          }}
         >
           <FolderTree size={14} strokeWidth={1.8} />
-        </button>
+        </ToolbarButton>
 
-        {/* F010 — 大纲导航切换 */}
-        <button
+        {/* F010 — 大纲 */}
+        <ToolbarButton
+          variant="toggle"
+          active={!!showToc}
           onClick={onToggleToc}
           title={t('toolbar.toc')}
-          className={focusBtnCls(!!showToc)}
-          style={{
-            backgroundColor: showToc ? 'var(--accent-bg)' : 'transparent',
-            borderColor: showToc ? 'var(--accent-color)' : 'transparent',
-            color: showToc ? 'var(--accent-color)' : 'var(--text-secondary)'
-          }}
-          onMouseEnter={(e) => {
-            if (!showToc) {
-              e.currentTarget.style.color = 'var(--text-primary)';
-              e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!showToc) {
-              e.currentTarget.style.color = 'var(--text-secondary)';
-              e.currentTarget.style.backgroundColor = 'transparent';
-            }
-          }}
         >
           <List size={14} strokeWidth={1.8} />
-        </button>
+        </ToolbarButton>
 
-        {/* F013 — 拼写检查切换 */}
-        <button
+        {/* F013 — 拼写检查 */}
+        <ToolbarButton
+          variant="toggle"
+          active={!!spellCheck}
           onClick={onToggleSpellCheck}
           title={spellCheck ? t('toolbar.spellCheckOff') : t('toolbar.spellCheckOn')}
-          className={focusBtnCls(!!spellCheck)}
-          style={{
-            backgroundColor: spellCheck ? 'var(--accent-bg)' : 'transparent',
-            borderColor: spellCheck ? 'var(--accent-color)' : 'transparent',
-            color: spellCheck ? 'var(--accent-color)' : 'var(--text-secondary)'
-          }}
-          onMouseEnter={(e) => {
-            if (!spellCheck) {
-              e.currentTarget.style.color = 'var(--text-primary)';
-              e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!spellCheck) {
-              e.currentTarget.style.color = 'var(--text-secondary)';
-              e.currentTarget.style.backgroundColor = 'transparent';
-            }
-          }}
         >
           <SpellCheck size={14} strokeWidth={1.8} />
-        </button>
+        </ToolbarButton>
 
-        {/* F014 — Vim 模式切换 */}
-        <button
+        {/* F014 — Vim 模式 */}
+        <ToolbarButton
+          variant="toggle"
+          active={!!vimMode}
           onClick={onToggleVimMode}
           title={vimMode ? t('toolbar.vimModeOff') : t('toolbar.vimModeOn')}
-          className={focusBtnCls(!!vimMode)}
-          style={{
-            backgroundColor: vimMode ? 'var(--accent-bg)' : 'transparent',
-            borderColor: vimMode ? 'var(--accent-color)' : 'transparent',
-            color: vimMode ? 'var(--accent-color)' : 'var(--text-secondary)'
-          }}
-          onMouseEnter={(e) => {
-            if (!vimMode) {
-              e.currentTarget.style.color = 'var(--text-primary)';
-              e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!vimMode) {
-              e.currentTarget.style.color = 'var(--text-secondary)';
-              e.currentTarget.style.backgroundColor = 'transparent';
-            }
-          }}
         >
           <Terminal size={14} strokeWidth={1.8} />
-        </button>
+        </ToolbarButton>
 
-        {/* 搜索与替换 */}
-        <button
+        {/* 搜索 */}
+        <ToolbarButton
+          variant="toggle"
+          active={!!showSearch}
           onClick={onToggleSearch}
           title={t('toolbar.search')}
-          className={focusBtnCls(!!showSearch)}
-          style={{
-            backgroundColor: showSearch ? 'var(--accent-bg)' : 'transparent',
-            borderColor: showSearch ? 'var(--accent-color)' : 'transparent',
-            color: showSearch ? 'var(--accent-color)' : 'var(--text-secondary)'
-          }}
-          onMouseEnter={(e) => {
-            if (!showSearch) {
-              e.currentTarget.style.color = 'var(--text-primary)';
-              e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!showSearch) {
-              e.currentTarget.style.color = 'var(--text-secondary)';
-              e.currentTarget.style.backgroundColor = 'transparent';
-            }
-          }}
         >
           <Search size={14} strokeWidth={1.8} />
-        </button>
-        <div className="w-px h-5 mx-0.5" style={{ backgroundColor: 'var(--border-color)' }} />
-        {/* F009 — 焦点模式切换 */}
-        <button
+        </ToolbarButton>
+
+        {DIVIDER}
+
+        {/* F009 — 打字机模式 */}
+        <ToolbarButton
+          variant="toggle"
+          active={focusMode === 'typewriter'}
           onClick={() => onFocusModeChange?.('typewriter')}
           title={t('toolbar.typewriter')}
-          className={focusBtnCls(focusMode === 'typewriter')}
-          style={{
-            backgroundColor: focusMode === 'typewriter' ? 'var(--accent-bg)' : 'transparent',
-            borderColor: focusMode === 'typewriter' ? 'var(--accent-color)' : 'transparent',
-            color: focusMode === 'typewriter' ? 'var(--accent-color)' : 'var(--text-secondary)'
-          }}
-          onMouseEnter={(e) => {
-            if (focusMode !== 'typewriter') {
-              e.currentTarget.style.color = 'var(--text-primary)';
-              e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (focusMode !== 'typewriter') {
-              e.currentTarget.style.color = 'var(--text-secondary)';
-              e.currentTarget.style.backgroundColor = 'transparent';
-            }
-          }}
         >
           <Type size={14} strokeWidth={1.8} />
-        </button>
-        <button
+        </ToolbarButton>
+
+        {/* F009 — 焦点模式 */}
+        <ToolbarButton
+          variant="toggle"
+          active={focusMode === 'focus'}
           onClick={() => onFocusModeChange?.('focus')}
           title={t('toolbar.focus')}
-          className={focusBtnCls(focusMode === 'focus')}
-          style={{
-            backgroundColor: focusMode === 'focus' ? 'var(--accent-bg)' : 'transparent',
-            borderColor: focusMode === 'focus' ? 'var(--accent-color)' : 'transparent',
-            color: focusMode === 'focus' ? 'var(--accent-color)' : 'var(--text-secondary)'
-          }}
-          onMouseEnter={(e) => {
-            if (focusMode !== 'focus') {
-              e.currentTarget.style.color = 'var(--text-primary)';
-              e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (focusMode !== 'focus') {
-              e.currentTarget.style.color = 'var(--text-secondary)';
-              e.currentTarget.style.backgroundColor = 'transparent';
-            }
-          }}
         >
           <Monitor size={14} strokeWidth={1.8} />
-        </button>
-        <button
+        </ToolbarButton>
+
+        {/* F009 — 全屏 */}
+        <ToolbarButton
+          variant="toggle"
+          active={focusMode === 'fullscreen'}
           onClick={() => onFocusModeChange?.(focusMode === 'fullscreen' ? 'normal' : 'fullscreen')}
           title={t('toolbar.fullscreen')}
-          className={focusBtnCls(focusMode === 'fullscreen')}
-          style={{
-            backgroundColor: focusMode === 'fullscreen' ? 'var(--accent-bg)' : 'transparent',
-            borderColor: focusMode === 'fullscreen' ? 'var(--accent-color)' : 'transparent',
-            color: focusMode === 'fullscreen' ? 'var(--accent-color)' : 'var(--text-secondary)'
-          }}
-          onMouseEnter={(e) => {
-            if (focusMode !== 'fullscreen') {
-              e.currentTarget.style.color = 'var(--text-primary)';
-              e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (focusMode !== 'fullscreen') {
-              e.currentTarget.style.color = 'var(--text-secondary)';
-              e.currentTarget.style.backgroundColor = 'transparent';
-            }
-          }}
         >
-          {focusMode === 'fullscreen' ? <Minimize size={14} strokeWidth={1.8} /> : <Maximize size={14} strokeWidth={1.8} />}
-        </button>
-        <div className="w-px h-5 mx-1" style={{ backgroundColor: 'var(--border-color)' }} />
-        <button
+          {focusMode === 'fullscreen' ? (
+            <Minimize size={14} strokeWidth={1.8} />
+          ) : (
+            <Maximize size={14} strokeWidth={1.8} />
+          )}
+        </ToolbarButton>
+
+        <div className="w-px h-5 mx-1 shrink-0" style={{ backgroundColor: 'var(--border-color)' }} />
+
+        {/* 视图模式 */}
+        <ToolbarButton
+          variant="view"
+          active={viewMode === 'edit'}
           onClick={() => onSetViewMode('edit')}
           title={t('toolbar.editOnly')}
-          className={viewBtnCls(viewMode === 'edit')}
-          style={{
-            backgroundColor: viewMode === 'edit' ? 'var(--bg-primary)' : 'transparent',
-            borderColor: viewMode === 'edit' ? 'var(--border-color)' : 'transparent',
-            color: viewMode === 'edit' ? 'var(--accent-color)' : 'var(--text-secondary)'
-          }}
-          onMouseEnter={(e) => {
-            if (viewMode !== 'edit') {
-              e.currentTarget.style.backgroundColor = 'var(--bg-primary)';
-              e.currentTarget.style.borderColor = 'var(--border-color)';
-              e.currentTarget.style.color = 'var(--text-primary)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (viewMode !== 'edit') {
-              e.currentTarget.style.backgroundColor = 'transparent';
-              e.currentTarget.style.borderColor = 'transparent';
-              e.currentTarget.style.color = 'var(--text-secondary)';
-            }
-          }}
         >
           <PanelRightClose size={15} strokeWidth={1.8} />
-        </button>
-        <button
+        </ToolbarButton>
+        <ToolbarButton
+          variant="view"
+          active={viewMode === 'split'}
           onClick={() => onSetViewMode('split')}
           title={t('toolbar.split')}
-          className={viewBtnCls(viewMode === 'split')}
-          style={{
-            backgroundColor: viewMode === 'split' ? 'var(--bg-primary)' : 'transparent',
-            borderColor: viewMode === 'split' ? 'var(--border-color)' : 'transparent',
-            color: viewMode === 'split' ? 'var(--accent-color)' : 'var(--text-secondary)'
-          }}
-          onMouseEnter={(e) => {
-            if (viewMode !== 'split') {
-              e.currentTarget.style.backgroundColor = 'var(--bg-primary)';
-              e.currentTarget.style.borderColor = 'var(--border-color)';
-              e.currentTarget.style.color = 'var(--text-primary)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (viewMode !== 'split') {
-              e.currentTarget.style.backgroundColor = 'transparent';
-              e.currentTarget.style.borderColor = 'transparent';
-              e.currentTarget.style.color = 'var(--text-secondary)';
-            }
-          }}
         >
           <Columns2 size={15} strokeWidth={1.8} />
-        </button>
-        <button
+        </ToolbarButton>
+        <ToolbarButton
+          variant="view"
+          active={viewMode === 'preview'}
           onClick={() => onSetViewMode('preview')}
           title={t('toolbar.previewOnly')}
-          className={viewBtnCls(viewMode === 'preview')}
-          style={{
-            backgroundColor: viewMode === 'preview' ? 'var(--bg-primary)' : 'transparent',
-            borderColor: viewMode === 'preview' ? 'var(--border-color)' : 'transparent',
-            color: viewMode === 'preview' ? 'var(--accent-color)' : 'var(--text-secondary)'
-          }}
-          onMouseEnter={(e) => {
-            if (viewMode !== 'preview') {
-              e.currentTarget.style.backgroundColor = 'var(--bg-primary)';
-              e.currentTarget.style.borderColor = 'var(--border-color)';
-              e.currentTarget.style.color = 'var(--text-primary)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (viewMode !== 'preview') {
-              e.currentTarget.style.backgroundColor = 'transparent';
-              e.currentTarget.style.borderColor = 'transparent';
-              e.currentTarget.style.color = 'var(--text-secondary)';
-            }
-          }}
         >
           <PanelLeftClose size={15} strokeWidth={1.8} />
-        </button>
-        <div className="w-px h-5 mx-1" style={{ backgroundColor: 'var(--border-color)' }} />
-        {/* F011 — 主题切换（亮/暗 toggle） */}
-        {/* <button
-          onClick={() => onThemeChange?.(currentTheme === 'dark' ? 'light' : 'dark')}
-          title={currentTheme === 'dark' ? t('toolbar.themeLight') : t('toolbar.themeDark')}
-          className={focusBtnCls(false)}
-          style={{
-            color: 'var(--text-secondary)',
-            borderColor: 'transparent'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = 'var(--text-primary)';
-            e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = 'var(--text-secondary)';
-            e.currentTarget.style.backgroundColor = '';
-          }}
-        >
-          {currentTheme === 'dark' ? '☀️' : '🌙'}
-        </button> */}
+        </ToolbarButton>
 
-        {/* F015 — 设置按钮 */}
-        <button
-          onClick={onOpenSettings}
-          title={t('settings.title')}
-          className={focusBtnCls(false)}
-          style={{ color: 'var(--text-secondary)', borderColor: 'transparent' }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = 'var(--text-primary)';
-            e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = 'var(--text-secondary)';
-            e.currentTarget.style.backgroundColor = 'transparent';
-          }}
-        >
+        <div className="w-px h-5 mx-1 shrink-0" style={{ backgroundColor: 'var(--border-color)' }} />
+
+        {/* F015 — 设置 */}
+        <ToolbarButton onClick={onOpenSettings} title={t('settings.title')}>
           <Settings size={14} strokeWidth={1.8} />
-        </button>
-
-        {/* Language switcher */}
-        {/* <button
-          onClick={() => setLocale(locale === 'zh-CN' ? 'en' : 'zh-CN')}
-          title={locale === 'zh-CN' ? t('app.langSwitchToEn') : t('app.langSwitchToZh')}
-          className={focusBtnCls(false)}
-          style={{ color: 'var(--text-secondary)', borderColor: 'transparent' }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = 'var(--text-primary)';
-            e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = 'var(--text-secondary)';
-            e.currentTarget.style.backgroundColor = '';
-          }}
-        >
-          <Languages size={14} strokeWidth={1.8} />
-        </button> */}
+        </ToolbarButton>
       </div>
     </div>
   );
 }
+
+

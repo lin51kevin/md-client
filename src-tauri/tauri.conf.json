@@ -15,14 +15,6 @@
         "title": "MarkLite",
         "width": 1280,
         "height": 800,
-        "maximized": true
-      }
-    ],
-    "windows": [
-      {
-        "title": "MarkLite",
-        "width": 1280,
-        "height": 800,
         "maximized": true,
         "devtools": false
       }

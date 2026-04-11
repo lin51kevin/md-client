@@ -16,7 +16,7 @@ import { openPath, openUrl } from "@tauri-apps/plugin-opener";
 import { rehypeFilterInvalidElements } from "../lib/rehypeFilterInvalidElements";
 import { initMermaid } from "../lib/mermaid";
 import { parseTable, type TableData } from "../lib/table-parser";
-import { extractFrontmatter, buildFrontmatterHtml } from "../lib/markdown-extensions";
+import { extractFrontmatter, type Frontmatter } from "../lib/markdown-extensions";
 import { TableEditor } from "./TableEditor";
 
 // Stable plugin arrays (module-level) to avoid unnecessary ReactMarkdown re-renders
@@ -192,6 +192,34 @@ function MermaidBlock({ code }: { code: string }) {
 }
 
 /**
+ * FrontmatterPanel — 将 frontmatter 渲染为表格，不使用 dangerouslySetInnerHTML
+ */
+function FrontmatterPanel({ fm }: { fm: Frontmatter }) {
+  const keys = Object.keys(fm);
+  if (keys.length === 0) return null;
+  return (
+    <div className="frontmatter-block" aria-label="Document metadata">
+      <table className="fm-table">
+        <tbody>
+          {keys.map((key) => {
+            const val = fm[key];
+            const display = Array.isArray(val)
+              ? (val as string[]).join(', ')
+              : String(val);
+            return (
+              <tr key={key}>
+                <th className="fm-key">{key}</th>
+                <td className="fm-val">{display}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/**
  * F008 + F007: Markdown 预览组件
  *
  * 渲染管线：
@@ -228,10 +256,7 @@ export const MarkdownPreview = memo(function MarkdownPreview({
   }, [content]);
 
   // Frontmatter 元数据面板（仅在检测到 frontmatter 时显示）
-  const frontmatterHtml = useMemo(() => {
-    const fm = extractFrontmatter(content);
-    return buildFrontmatterHtml(fm);
-  }, [content]);
+  const frontmatter = useMemo(() => extractFrontmatter(content), [content]);
 
   const customComponents = useMemo(() => {
     const components: Record<string, unknown> = {};
@@ -320,12 +345,7 @@ export const MarkdownPreview = memo(function MarkdownPreview({
     <div className={className}>
       {/* Reset table index counter before each ReactMarkdown render pass */}
       {(tableCounterRef.current = 0) === 0 && null}
-      {frontmatterHtml && (
-        <div
-          className="frontmatter-panel"
-          dangerouslySetInnerHTML={{ __html: frontmatterHtml }}
-        />
-      )}
+      {Object.keys(frontmatter).length > 0 && <FrontmatterPanel fm={frontmatter} />}
       <ReactMarkdown
         remarkPlugins={REMARK_PLUGINS}
         rehypePlugins={REHYPE_PLUGINS}

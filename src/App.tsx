@@ -21,6 +21,9 @@ import { useWindowTitle } from './hooks/useWindowTitle';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useCursorPosition } from './hooks/useCursorPosition';
 import { useFocusMode } from './hooks/useFocusMode';
+import { useLocalStorageBool } from './hooks/useLocalStorage';
+import { useWelcome } from './hooks/useWelcome';
+import { useEditorContextActions } from './hooks/useEditorContextActions';
 import { extractToc, type TocEntry } from './lib/toc';
 import { applyTheme, getSavedTheme, saveTheme, THEMES, type ThemeName } from './lib/theme';
 import { sepiaCmTheme, highContrastCmTheme } from './lib/cm-themes';
@@ -34,39 +37,6 @@ import { getSavedSplitSizes, saveSplitSizes } from './lib/split-preference';
 
 /** Stable config - defined outside component to avoid object churn on every render */
 const EDITOR_SETUP = { lineNumbers: true, foldGutter: true, highlightActiveLine: true, tabSize: 2 };
-
-// F013: 拼写检查状态(默认开启)
-const DEFAULT_SPELL_CHECK = true;
-
-function getSavedSpellCheck(): boolean {
-  try {
-    const saved = localStorage.getItem('marklite-spellcheck');
-    return saved === null ? DEFAULT_SPELL_CHECK : saved === 'true';
-  } catch { return DEFAULT_SPELL_CHECK; }
-}
-
-function saveSpellCheck(value: boolean): void {
-  try {
-    localStorage.setItem('marklite-spellcheck', String(value));
-  } catch { /* ignore quota errors */ }
-}
-
-
-// F014: Vim 模式状态管理(默认关闭)
-const DEFAULT_VIM_MODE = false;
-
-function getSavedVimMode(): boolean {
-  try {
-    const saved = localStorage.getItem('marklite-vimmode');
-    return saved === null ? DEFAULT_VIM_MODE : saved === 'true';
-  } catch { return DEFAULT_VIM_MODE; }
-}
-
-function saveVimMode(value: boolean): void {
-  try {
-    localStorage.setItem('marklite-vimmode', String(value));
-  } catch { /* ignore quota errors */ }
-}
 import { Toolbar } from './components/Toolbar';
 import { TabBar } from './components/TabBar';
 import { TabContextMenu } from './components/TabContextMenu';
@@ -84,7 +54,7 @@ import { FileTreeSidebar } from './components/FileTreeSidebar';
 import { useSearchHighlight } from './hooks/useSearchHighlight';
 import { useImagePaste } from './hooks/useImagePaste';
 import { useFormatActions } from './hooks/useFormatActions';
-import { parseTable, serializeTable, type TableData } from './lib/table-parser';
+import { parseTable, type TableData } from './lib/table-parser';
 import { TableEditor } from './components/TableEditor';
 import { InputDialog, type InputDialogConfig } from './components/InputDialog';
 import { WelcomePage, EmptyEditorState } from './components/WelcomePage';
@@ -115,31 +85,18 @@ export default function App() {
   // F014 - 文件树侧边栏
   const [showFileTree, setShowFileTree] = useState(false);
 
-  // F013 - 拼写检查
-  const [spellCheck, setSpellCheck] = useState<boolean>(getSavedSpellCheck);
-  // F014 - Vim 模式
-  const [vimMode, setVimMode] = useState<boolean>(getSavedVimMode);
+  // F013 - 拼写检查（持久化）
+  const [spellCheck, setSpellCheck] = useLocalStorageBool('marklite-spellcheck', true);
+  // F014 - Vim 模式（持久化）
+  const [vimMode, setVimMode] = useLocalStorageBool('marklite-vimmode', false);
   // F015 - 设置面板
   const [showSettings, setShowSettings] = useState(false);
 
   // F011 - 主题系统
   const [theme, setThemeState] = useState<ThemeName>(() => getSavedTheme() || 'light');
 
-  // Welcome page dismissed state – persisted so closing sticks across restarts
-  const [welcomeDismissed, setWelcomeDismissed] = useState<boolean>(() => {
-    try { return localStorage.getItem('marklite-welcome-dismissed') === 'true'; }
-    catch { return false; }
-  });
-
-  const handleDismissWelcome = useCallback(() => {
-    try { localStorage.setItem('marklite-welcome-dismissed', 'true'); } catch { /* ignore */ }
-    setWelcomeDismissed(true);
-  }, []);
-
-  const handleShowWelcome = useCallback(() => {
-    try { localStorage.removeItem('marklite-welcome-dismissed'); } catch { /* ignore */ }
-    setWelcomeDismissed(false);
-  }, []);
+  // 欢迎页状态（持久化）
+  const { welcomeDismissed, handleDismissWelcome, handleShowWelcome } = useWelcome();
 
 
   // F012 - 版本历史
@@ -405,211 +362,17 @@ export default function App() {
   const docRef = useRef(activeTab.doc);
   useEffect(() => { docRef.current = activeTab.doc; }, [activeTab.doc]);
 
-  // F014 — 编辑器右键菜单操作处理
-  const handleEditorCtxAction = useCallback((action: string) => {
-    const view = cmViewRef.current;
-    if (!view) return;
+  // F014 — 用 state 跟踪当前活跃 EditorView，确保 viewMode 切换/welcome 页消失等场景
+  // 也能触发 useEffect 重新绑定监听器（单纯用 ref 不会触发 effect 重跑）
+  const [activeEditorView, setActiveEditorView] = useState<EditorView | null>(null);
 
-    switch (action) {
-      case 'cut': {
-        const cutSel = view.state.selection.main;
-        const cutText = view.state.doc.sliceString(cutSel.from, cutSel.to);
-        navigator.clipboard.writeText(cutText).catch(() => {});
-        if (cutSel.from !== cutSel.to) {
-          view.dispatch({ changes: { from: cutSel.from, to: cutSel.to, insert: '' } });
-        }
-        break;
-      }
-      case 'copy': {
-        const copySel = view.state.selection.main;
-        navigator.clipboard.writeText(view.state.doc.sliceString(copySel.from, copySel.to)).catch(() => {});
-        break;
-      }
-      case 'paste':
-        navigator.clipboard.readText().then(text => {
-          if (!text) return;
-          const sel = view.state.selection.main;
-          view.dispatch({ changes: { from: sel.from, to: sel.to, insert: text } });
-        });
-        break;
-      case 'selectAll':
-        view.dispatch({ selection: { anchor: 0, head: view.state.doc.length } });
-        break;
-      case 'bold': case 'italic': case 'strikethrough': case 'code':
-      case 'heading': case 'blockquote': case 'ul': case 'ol':
-      case 'link': case 'image': case 'image-link':
-        handleFormatAction(action);
-        break;
-      case 'headingPromote': {
-        // Decrease # count (e.g. ## → #)
-        const sel = view.state.selection.main;
-        const line = view.state.doc.lineAt(sel.from);
-        const lineText = line.text.match(/^(#{1,6})/);
-        const level = lineText?.[1]?.length ?? 1;
-        if (level > 1) {
-          view.dispatch({ changes: { from: line.from, to: line.from + level, insert: '#'.repeat(level - 1) + ' ' } });
-        }
-        break;
-      }
-      case 'headingDemote': {
-        const sel = view.state.selection.main;
-        const line = view.state.doc.lineAt(sel.from);
-        const lineText = line.text.match(/^(#{1,6})/);
-        const level = lineText?.[1]?.length ?? 0;
-        if (level >= 1 && level < 6) {
-          view.dispatch({ changes: { from: line.from, to: line.from + level, insert: '#'.repeat(level + 1) + ' ' } });
-        } else if (level === 0 || !lineText) {
-          // No heading → make H2
-          view.dispatch({ changes: { from: line.from, insert: '## ' } });
-        }
-        break;
-      }
-      case 'headingRemove': {
-        const sel = view.state.selection.main;
-        const line = view.state.doc.lineAt(sel.from);
-        const m = line.text.match(/^(#{1,6}\s*)/);
-        if (m) {
-          view.dispatch({ changes: { from: line.from, to: line.from + m[1].length, insert: '' } });
-        }
-        break;
-      }
-      case 'copyCodeBlock': {
-        const doc = view.state.doc.toString();
-        // Find current code block
-        const sel = view.state.selection.main;
-        let start = sel.from; let end = sel.to;
-        while (start > 0 && doc.substring(start - 3, start) !== '```') start--;
-        while (end < doc.length && doc.substring(end, end + 3) !== '```') end++;
-        if (start < end && doc.substring(start, start + 3) === '```' && doc.substring(end, end + 3) === '```') {
-          const codeContent = doc.substring(start + (doc.indexOf('\n', start) + 1), end).trim();
-          navigator.clipboard.writeText(codeContent);
-        } else {
-          navigator.clipboard.writeText(view.state.doc.sliceString(sel.from, sel.to)).catch(() => {});
-        }
-        break;
-      }
-      case 'indent':
-        handleFormatAction('ul'); // reuse list toggle as indent proxy
-        break;
-      case 'outdent':
-        // Remove one level of indentation/list prefix
-        {
-          const sel = view.state.selection.main;
-          const line = view.state.doc.lineAt(sel.from);
-          const lt = line.text;
-          if (/^\s{2}/.test(lt)) {
-            view.dispatch({ changes: { from: line.from, to: line.from + 2, insert: '' } });
-          } else if (/^[-*+] /.test(lt)) {
-            view.dispatch({ changes: { from: line.from, to: line.from + 2, insert: '' } });
-          } else if (/^\d+\. /.test(lt)) {
-            view.dispatch({ changes: { from: line.from, to: lt.indexOf(' ') + 1, insert: '' } });
-          }
-        }
-        break;
-      case 'toggleListType':
-        {
-          const sel = view.state.selection.main;
-          const line = view.state.doc.lineAt(sel.from);
-          const lt = line.text;
-          if (/^[-*+] /.test(lt)) {
-            view.dispatch({ changes: { from: line.from, to: line.from + 2, insert: '1. ' } });
-          } else if (/^\d+\. /.test(lt)) {
-            view.dispatch({ changes: { from: line.from, to: lt.indexOf('.') + 2, insert: '- ' } });
-          }
-        }
-        break;
-      case 'removeBlockquote':
-        handleFormatAction('blockquote'); // toggle removes it
-        break;
-      case 'editTable': {
-        const doc = view.state.doc.toString();
-        const sel = view.state.selection.main;
-        const tableData = parseTable(doc, sel.from);
-        if (tableData) {
-          setEditingTable(tableData);
-        }
-        return;
-      }
-      case 'tableInsertRow': case 'tableDeleteRow':
-      case 'tableInsertCol': case 'tableDeleteCol':
-      case 'alignLeft': case 'alignCenter': case 'alignRight': {
-        const doc = view.state.doc.toString();
-        const sel = view.state.selection.main;
-        const tableData = parseTable(doc, sel.from);
-        if (!tableData) break;
-
-        // Determine data row index: header=line0, separator=line1, data=line2+
-        const textBefore = doc.substring(tableData.rawStart, sel.from);
-        const cursorLineInTable = textBefore.split('\n').length - 1;
-        const rowIdx = Math.max(0, cursorLineInTable - 2);
-
-        // Determine column index from pipe count before cursor
-        const cursorLine = view.state.doc.lineAt(sel.from);
-        const textBeforeCursor = cursorLine.text.substring(0, sel.from - cursorLine.from);
-        const colIdx = Math.max(0, (textBeforeCursor.match(/\|/g) ?? []).length - 1);
-
-        // Immutable copies
-        const headers = [tableData.headers[0]?.map(c => c) ?? []];
-        let rows = tableData.rows.map(r => [...r]);
-        let alignment = [...tableData.alignment];
-        const colCount = headers[0].length;
-
-        switch (action) {
-          case 'tableInsertRow':
-            rows.splice(rowIdx + 1, 0, Array(colCount).fill(''));
-            break;
-          case 'tableDeleteRow':
-            if (rows.length > 1) rows.splice(rowIdx, 1);
-            break;
-          case 'tableInsertCol':
-            headers[0].splice(colIdx + 1, 0, '');
-            rows = rows.map(r => { const nr = [...r]; nr.splice(colIdx + 1, 0, ''); return nr; });
-            alignment.splice(colIdx + 1, 0, 'left' as const);
-            break;
-          case 'tableDeleteCol':
-            if (headers[0].length > 1) {
-              headers[0].splice(colIdx, 1);
-              rows = rows.map(r => { const nr = [...r]; nr.splice(colIdx, 1); return nr; });
-              alignment.splice(colIdx, 1);
-            }
-            break;
-          case 'alignLeft': alignment[colIdx] = 'left'; break;
-          case 'alignCenter': alignment[colIdx] = 'center'; break;
-          case 'alignRight': alignment[colIdx] = 'right'; break;
-        }
-
-        const newTable = serializeTable({ headers, rows, alignment, rawStart: tableData.rawStart, rawEnd: tableData.rawEnd });
-        view.dispatch({ changes: { from: tableData.rawStart, to: tableData.rawEnd - 1, insert: newTable } });
-        break;
-      }
-      case 'copyFormula': {
-        const doc = view.state.doc.toString();
-        const sel = view.state.selection.main;
-        const pos = sel.from;
-        // Try enclosing $$ block first
-        const blockStart = doc.lastIndexOf('$$', pos - 1);
-        const blockEnd = doc.indexOf('$$', pos + 1);
-        if (blockStart !== -1 && blockEnd !== -1 && blockStart !== blockEnd) {
-          navigator.clipboard.writeText(doc.substring(blockStart + 2, blockEnd).trim());
-        } else {
-          // Fallback: inline $ formula on current line
-          const line = view.state.doc.lineAt(pos);
-          const relPos = pos - line.from;
-          for (const m of line.text.matchAll(/\$([^$]+)\$/g)) {
-            if (m.index !== undefined && m.index <= relPos && m.index + m[0].length >= relPos) {
-              navigator.clipboard.writeText(m[1]);
-              break;
-            }
-          }
-        }
-        break;
-      }
-      default:
-        break;
-    }
-    setEditorCtxMenu(null);
-    view.focus();
-  }, [handleFormatAction]);
+  // F014 — 编辑器右键菜单操作处理（提取为独立 hook）
+  const { handleEditorCtxAction } = useEditorContextActions({
+    cmViewRef,
+    handleFormatAction,
+    setEditingTable,
+    setEditorCtxMenu,
+  });
 
   useKeyboardShortcuts({
     createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile,
@@ -624,6 +387,7 @@ export default function App() {
 
   const handleCreateEditor = useCallback((view: EditorView) => {
     cmViewRef.current = view;
+    setActiveEditorView(view); // 触发 useEffect 重新绑定 contextmenu/dblclick 监听器
     const saved = savedStatesRef.current.get(activeTabId);
     if (saved) {
       if (saved.themeKey === theme) {
@@ -640,10 +404,12 @@ export default function App() {
     }
   }, [activeTabId, theme]);
 
-  // F014 — Attach contextmenu + dblclick listeners, with proper cleanup to prevent memory leaks.
-  // Runs whenever cmViewRef.current changes (via activeTabId, which causes CodeMirror remount).
+  // F014 — Attach contextmenu + dblclick listeners whenever a new EditorView is created.
+  // Depends on activeEditorView state (not just activeTabId) so it also re-runs on:
+  //   - viewMode changes (split ↔ edit switches to a different CodeMirror instance)
+  //   - WelcomePage dismiss (CodeMirror was hidden, now mounts for the first time)
   useEffect(() => {
-    const view = cmViewRef.current;
+    const view = activeEditorView;
     if (!view) return;
 
     // F014 — 编辑器右键上下文菜单
@@ -679,7 +445,7 @@ export default function App() {
       view.dom.removeEventListener('contextmenu', handleCtxMenu, { capture: true });
       view.dom.removeEventListener('dblclick', handleDblClick, { capture: true });
     };
-  }, [activeTabId]);
+  }, [activeEditorView]);
 
   // F014 — 表格编辑确认处理
   const handleTableConfirm = useCallback((newTableMarkdown: string) => {
@@ -760,6 +526,7 @@ export default function App() {
     <div
       className="flex flex-col h-screen w-full overflow-hidden"
       data-theme={theme}
+      onContextMenu={(e) => e.preventDefault()}
       style={{
         fontFamily: 'Segoe UI, system-ui, sans-serif',
         backgroundColor: 'var(--bg-primary)',
@@ -843,17 +610,9 @@ export default function App() {
             onFocusModeChange={setFocusMode}
             onToggleToc={() => setShowToc(prev => !prev)}
             spellCheck={spellCheck}
-            onToggleSpellCheck={() => {
-              const next = !spellCheck;
-              setSpellCheck(next);
-              saveSpellCheck(next);
-            }}
+            onToggleSpellCheck={() => setSpellCheck(!spellCheck)}
             vimMode={vimMode}
-            onToggleVimMode={() => {
-              const next = !vimMode;
-              setVimMode(next);
-              saveVimMode(next);
-            }}
+            onToggleVimMode={() => setVimMode(!vimMode)}
             recentFiles={recentFiles}
             onOpenRecent={handleOpenRecent}
             onClearRecent={handleClearRecent}
@@ -874,15 +633,9 @@ export default function App() {
             currentTheme={theme}
             onThemeChange={setThemeState}
             spellCheck={spellCheck}
-            onSpellCheckChange={(enabled) => {
-              setSpellCheck(enabled);
-              saveSpellCheck(enabled);
-            }}
+            onSpellCheckChange={setSpellCheck}
             vimMode={vimMode}
-            onVimModeChange={(enabled) => {
-              setVimMode(enabled);
-              saveVimMode(enabled);
-            }}
+            onVimModeChange={setVimMode}
           />
 
           <TabBar

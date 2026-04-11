@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import type { MutableRefObject } from 'react';
 import { EditorView } from '@codemirror/view';
 import { invoke } from '@tauri-apps/api/core';
+import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import type { Tab } from '../types';
 import {
   wrapSelection,
@@ -137,8 +138,7 @@ export function useFormatActions({ cmViewRef, getActiveTab, promptUser }: UseFor
       case 'image-local': {
         (async () => {
           try {
-            const { open } = await import('@tauri-apps/plugin-dialog');
-            const filePath = await open({
+            const filePath = await openDialog({
               filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'] }],
               multiple: false,
               directory: false,

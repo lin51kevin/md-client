@@ -6,6 +6,7 @@
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { message, open as openDialog } from '@tauri-apps/plugin-dialog';
 import {
   Folder,
   FolderOpen,
@@ -341,7 +342,7 @@ export function FileTreeSidebar({
       // 打开新文件
       onFileOpen?.(fullPath);
     } catch (e) {
-      console.error('创建文件失败:', e);
+      await message(String(e), { title: '创建文件失败', kind: 'error' });
     }
   }, [rootPath, loadRoot, onFileOpen]);
 
@@ -353,7 +354,7 @@ export function FileTreeSidebar({
       setContextMenu(null);
       await loadRoot();
     } catch (e) {
-      console.error('删除文件失败:', e);
+      await message(String(e), { title: '删除文件失败', kind: 'error' });
     }
   }, [loadRoot]);
 
@@ -395,7 +396,7 @@ export function FileTreeSidebar({
     try {
       await invoke('rename_file', { oldPath: renamingPath, newPath });
     } catch (e) {
-      console.error('重命名失败:', e);
+      await message(String(e), { title: '重命名失败', kind: 'error' });
     } finally {
       setRenamingPath(null);
       setRenameValue('');
@@ -423,9 +424,7 @@ export function FileTreeSidebar({
   /** 使用 Tauri 对话框选择新根目录 */
   const pickFolder = useCallback(async () => {
     try {
-      // 动态导入避免非 Tauri 环境报错
-      const { open } = await import('@tauri-apps/plugin-dialog');
-      const selected = await open({ directory: true, multiple: false });
+      const selected = await openDialog({ directory: true, multiple: false });
       if (selected) {
         loadRoot(selected as string);
       }

@@ -42,9 +42,6 @@ export function useKeyboardShortcuts(params: ShortcutsParams) {
   useEffect(() => {
     const custom = getCustomShortcuts();
 
-    // 全局阻止原生右键菜单
-    document.addEventListener('contextmenu', (e) => e.preventDefault());
-
     const handler = (e: KeyboardEvent) => {
       const { createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile, closeTab, setViewMode, activeTabIdRef, toggleFindReplace, setFocusMode, focusMode } = paramsRef.current;
       
