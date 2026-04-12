@@ -30,3 +30,5 @@ dist-ssr
 docs/FEATURE_COMPARISON.md
 docs/ISSUES_TO_FIX.md
 sample.md
+
+ src-tauri/assets/images/*.jpg
