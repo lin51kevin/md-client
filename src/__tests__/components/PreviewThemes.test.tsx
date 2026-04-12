@@ -126,6 +126,10 @@ describe('Unified Theme System', () => {
         onSpellCheckChange={() => {}}
         vimMode={false}
         onVimModeChange={() => {}}
+        autoSave={false}
+        onAutoSaveChange={() => {}}
+        autoSaveDelay={1000}
+        onAutoSaveDelayChange={() => {}}
       />
     );
 
@@ -155,6 +159,10 @@ describe('Unified Theme System', () => {
         onSpellCheckChange={() => {}}
         vimMode={false}
         onVimModeChange={() => {}}
+        autoSave={false}
+        onAutoSaveChange={() => {}}
+        autoSaveDelay={1000}
+        onAutoSaveDelayChange={() => {}}
       />
     );
 

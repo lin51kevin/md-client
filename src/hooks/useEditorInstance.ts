@@ -25,6 +25,8 @@ interface UseEditorInstanceOptions {
   theme: ThemeName;
   vimMode: boolean;
   spellCheck: boolean;
+  autoSave: boolean;
+  autoSaveDelay: number;
   cursorExtension: Extension;
   searchHighlightExtension: Extension;
   activeDoc: string;
@@ -40,6 +42,8 @@ export function useEditorInstance({
   theme,
   vimMode,
   spellCheck,
+  autoSave,
+  autoSaveDelay,
   cursorExtension,
   searchHighlightExtension,
   activeDoc,
@@ -141,12 +145,19 @@ export function useEditorInstance({
   useEffect(() => { rawHandleSaveFileRef.current = rawHandleSaveFile; }, [rawHandleSaveFile]);
   useEffect(() => { getActiveTabRef.current = getActiveTab; }, [getActiveTab]);
 
-  // Auto-save: debounce 1s after editing stops.
+  // Auto-save: debounce after editing stops.
   // Writes to disk only — snapshots are created solely by manual Ctrl+S.
   const autoSaveRef = useRef<ReturnType<typeof createAutoSave> | null>(null);
   useEffect(() => {
+    // Only create auto-save instance if enabled
+    if (!autoSave) {
+      autoSaveRef.current?.dispose();
+      autoSaveRef.current = null;
+      return;
+    }
+    
     autoSaveRef.current = createAutoSave({
-      delay: 1000,
+      delay: autoSaveDelay,
       onSave: async () => {
         const tab = getActiveTabRef.current();
         if (tab.filePath) {
@@ -155,12 +166,14 @@ export function useEditorInstance({
       },
     });
     return () => { autoSaveRef.current?.dispose(); };
-  }, [activeTabId]);
+  }, [activeTabId, autoSave, autoSaveDelay]);
 
-  // Trigger auto-save whenever doc content changes
+  // Trigger auto-save whenever doc content changes (only if auto-save is enabled)
   useEffect(() => {
-    autoSaveRef.current?.schedule(activeDoc);
-  }, [activeDoc, activeTabId]);
+    if (autoSave) {
+      autoSaveRef.current?.schedule(activeDoc);
+    }
+  }, [activeDoc, activeTabId, autoSave]);
 
   const editorExtensions = useMemo(() => [
     markdown({ base: markdownLanguage, codeLanguages: languages }),

@@ -38,6 +38,8 @@ interface FileTreeSidebarProps {
   onFileOpen?: (filePath: string) => void;
   /** 当前选中的文件路径（高亮） */
   activeFilePath?: string | null;
+  /** 关闭侧边栏的回调 */
+  onClose?: () => void;
 }
 
 /** 前端树节点（比后端多一个 expanded 状态） */
@@ -90,6 +92,7 @@ export function FileTreeSidebar({
   visible = true,
   onFileOpen,
   activeFilePath,
+  onClose,
 }: FileTreeSidebarProps) {
   const [rootPath, setRootPath] = useState<string>(() => {
     try { return localStorage.getItem('marklite-filetree-root') || ''; }
@@ -415,6 +418,16 @@ export function FileTreeSidebar({
           >
             <RefreshCw size={12} />
           </button>
+          {onClose && (
+            <button
+              onClick={onClose}
+              title="关闭"
+              className="file-tree-tool-btn"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              <X size={12} />
+            </button>
+          )}
         </span>
       </div>
 

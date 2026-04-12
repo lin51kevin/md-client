@@ -317,4 +317,140 @@ describe('useTabs', () => {
       expect(result.current).toBeDefined();
     });
   });
+
+  describe('Session Persistence', () => {
+    const SESSION_KEY = 'marklite-session-tabs';
+
+    beforeEach(() => {
+      localStorage.clear();
+      vi.clearAllMocks();
+    });
+
+    it('should save session to localStorage when tabs change', async () => {
+      const { invoke } = await import('@tauri-apps/api/core');
+      vi.mocked(invoke).mockResolvedValue('# Content');
+
+      const { result } = renderHook(() => useTabs(mockT));
+
+      // Wait for session restore attempt (no saved session → sets isRestoringSession=false)
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 50));
+      });
+
+      // Open a file to get a non-pristine tab
+      await act(async () => {
+        await result.current.openFileInTab('/path/to/notes.md');
+      });
+
+      // Session should be queued to persist (debounced 500ms)
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 600));
+      });
+
+      const saved = localStorage.getItem(SESSION_KEY);
+      expect(saved).not.toBeNull();
+      const session = JSON.parse(saved!);
+      expect(session.tabs).toHaveLength(1);
+      expect(session.tabs[0].filePath).toBe('/path/to/notes.md');
+      expect(session.activeTabId).toBe(result.current.activeTabId);
+    });
+
+    it('should clear session when returning to pristine state', async () => {
+      localStorage.setItem(SESSION_KEY, JSON.stringify({
+        tabs: [{ id: 'abc', filePath: null }],
+        activeTabId: 'abc',
+      }));
+
+      const { result } = renderHook(() => useTabs(mockT));
+
+      // Wait for restore attempt — no filePath → restored as untitled tab
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 50));
+      });
+
+      // Close any extra tabs until we have only the pristine init tab
+      act(() => {
+        result.current.closeTab(result.current.tabs[0].id);
+      });
+
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 600));
+      });
+
+      // Pristine state should clear localStorage
+      expect(localStorage.getItem(SESSION_KEY)).toBeNull();
+    });
+
+    it('should restore tabs from localStorage on mount', async () => {
+      const { invoke } = await import('@tauri-apps/api/core');
+      vi.mocked(invoke).mockResolvedValue('# Restored Content');
+
+      // Pre-seed session
+      localStorage.setItem(SESSION_KEY, JSON.stringify({
+        tabs: [
+          { id: 'tab-1', filePath: '/docs/file1.md', displayName: undefined, isPinned: false },
+          { id: 'tab-2', filePath: '/docs/file2.md', displayName: undefined, isPinned: true },
+        ],
+        activeTabId: 'tab-2',
+      }));
+
+      const { result } = renderHook(() => useTabs(mockT));
+
+      // Wait for async restore to complete
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      });
+
+      expect(result.current.tabs).toHaveLength(2);
+      expect(result.current.tabs[0].filePath).toBe('/docs/file1.md');
+      expect(result.current.tabs[1].filePath).toBe('/docs/file2.md');
+      expect(result.current.tabs[1].isPinned).toBe(true);
+      expect(result.current.activeTabId).toBe('tab-2');
+    });
+
+    it('should skip tabs whose files cannot be read during restore', async () => {
+      const { invoke } = await import('@tauri-apps/api/core');
+      vi.mocked(invoke)
+        .mockResolvedValueOnce('# Good file')       // first file succeeds
+        .mockRejectedValueOnce(new Error('ENOENT')); // second file missing
+
+      localStorage.setItem(SESSION_KEY, JSON.stringify({
+        tabs: [
+          { id: 'tab-ok', filePath: '/exists.md' },
+          { id: 'tab-missing', filePath: '/deleted.md' },
+        ],
+        activeTabId: 'tab-ok',
+      }));
+
+      const { result } = renderHook(() => useTabs(mockT));
+
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      });
+
+      // Only the successfully read tab should be restored
+      expect(result.current.tabs).toHaveLength(1);
+      expect(result.current.tabs[0].filePath).toBe('/exists.md');
+    });
+
+    it('should fall back to pristine tab when all session files are missing', async () => {
+      const { invoke } = await import('@tauri-apps/api/core');
+      vi.mocked(invoke).mockRejectedValue(new Error('ENOENT'));
+
+      localStorage.setItem(SESSION_KEY, JSON.stringify({
+        tabs: [{ id: 'tab-gone', filePath: '/gone.md' }],
+        activeTabId: 'tab-gone',
+      }));
+
+      const { result } = renderHook(() => useTabs(mockT));
+
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      });
+
+      // Falls back to initial pristine state
+      expect(result.current.tabs).toHaveLength(1);
+      expect(result.current.tabs[0].filePath).toBeNull();
+    });
+  });
 });

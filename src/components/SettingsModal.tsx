@@ -22,6 +22,10 @@ interface SettingsModalProps {
   onSpellCheckChange: (enabled: boolean) => void;
   vimMode: boolean;
   onVimModeChange: (enabled: boolean) => void;
+  autoSave: boolean;
+  onAutoSaveChange: (enabled: boolean) => void;
+  autoSaveDelay: number;
+  onAutoSaveDelayChange: (delay: number) => void;
 }
 
 type TabId = 'general' | 'editor' | 'appearance' | 'files' | 'shortcuts' | 'snippets';
@@ -44,6 +48,10 @@ export function SettingsModal({
   onSpellCheckChange,
   vimMode,
   onVimModeChange,
+  autoSave,
+  onAutoSaveChange,
+  autoSaveDelay,
+  onAutoSaveDelayChange,
 }: SettingsModalProps) {
   const { t, locale, setLocale } = useI18n();
   const [activeTab, setActiveTab] = useState<TabId>('general');
@@ -52,6 +60,7 @@ export function SettingsModal({
   const [themeImportError, setThemeImportError] = useState<string | null>(null);
   const [showThemeFormat, setShowThemeFormat] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [customDelay, setCustomDelay] = useState<string>(String(autoSaveDelay));
 
   const refreshThemes = useCallback(() => {
     setInstalledThemes(getInstalledThemes());
@@ -215,6 +224,69 @@ export function SettingsModal({
                 >
                   <ToggleSwitch checked={vimMode} onChange={onVimModeChange} />
                 </SettingItem>
+
+                <SettingItem
+                  label={t('settings.editor.autoSave')}
+                  description={t('settings.editor.autoSaveDesc')}
+                >
+                  <ToggleSwitch checked={autoSave} onChange={onAutoSaveChange} />
+                </SettingItem>
+
+                {autoSave && (
+                  <SettingItem
+                    label={t('settings.editor.autoSaveDelay')}
+                    description={t('settings.editor.autoSaveDelayDesc')}
+                  >
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={autoSaveDelay === 1000 ? '1000' : autoSaveDelay === 2000 ? '2000' : autoSaveDelay === 5000 ? '5000' : 'custom'}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value === 'custom') {
+                            setCustomDelay(String(autoSaveDelay));
+                          } else {
+                            onAutoSaveDelayChange(parseInt(value, 10));
+                          }
+                        }}
+                        className="text-xs px-2 py-1 rounded outline-none"
+                        style={{
+                          backgroundColor: 'var(--bg-secondary)',
+                          border: '1px solid var(--border-color)',
+                          color: 'var(--text-primary)',
+                        }}
+                      >
+                        <option value="1000">{t('settings.editor.delay1s')}</option>
+                        <option value="2000">{t('settings.editor.delay2s')}</option>
+                        <option value="5000">{t('settings.editor.delay5s')}</option>
+                        <option value="custom">{t('settings.editor.delayCustom')}</option>
+                      </select>
+                      {(autoSaveDelay !== 1000 && autoSaveDelay !== 2000 && autoSaveDelay !== 5000) && (
+                        <input
+                          type="number"
+                          min="100"
+                          max="60000"
+                          step="100"
+                          value={customDelay}
+                          onChange={(e) => setCustomDelay(e.target.value)}
+                          onBlur={(e) => {
+                            const value = parseInt(e.target.value, 10);
+                            if (!isNaN(value) && value >= 100 && value <= 60000) {
+                              onAutoSaveDelayChange(value);
+                            } else {
+                              setCustomDelay(String(autoSaveDelay));
+                            }
+                          }}
+                          className="text-xs px-2 py-1 rounded outline-none w-20"
+                          style={{
+                            backgroundColor: 'var(--bg-secondary)',
+                            border: '1px solid var(--border-color)',
+                            color: 'var(--text-primary)',
+                          }}
+                        />
+                      )}
+                    </div>
+                  </SettingItem>
+                )}
               </div>
             )}
 

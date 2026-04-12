@@ -15,7 +15,7 @@ import { useWindowInit } from './hooks/useWindowInit';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useCursorPosition } from './hooks/useCursorPosition';
 import { useFocusMode } from './hooks/useFocusMode';
-import { useLocalStorageBool } from './hooks/useLocalStorage';
+import { useLocalStorageBool, useLocalStorageNumber } from './hooks/useLocalStorage';
 import { useWelcome } from './hooks/useWelcome';
 import { useEditorContextActions } from './hooks/useEditorContextActions';
 import { useSearchHighlight } from './hooks/useSearchHighlight';
@@ -64,9 +64,9 @@ export default function App() {
   const [isDragOver, setIsDragOver] = useState(false);
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; tabId: string } | null>(null);
   const [editorCtxMenu, setEditorCtxMenu] = useState<{ x: number; y: number; context: import('./lib/context-menu').ContextInfo } | null>(null);
-  const [showToc, setShowToc] = useState(false);
+  const [showToc, setShowToc] = useLocalStorageBool('marklite-show-toc', false);
   const [activeTocId, setActiveTocId] = useState<string | null>(null);
-  const [showFileTree, setShowFileTree] = useState(false);
+  const [showFileTree, setShowFileTree] = useLocalStorageBool('marklite-show-filetree', false);
   const [showSettings, setShowSettings] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
@@ -74,6 +74,8 @@ export default function App() {
   // ── Persisted preferences ────────────────────────────────────────
   const [spellCheck, setSpellCheck] = useLocalStorageBool('marklite-spellcheck', true);
   const [vimMode, setVimMode] = useLocalStorageBool('marklite-vimmode', false);
+  const [autoSave, setAutoSave] = useLocalStorageBool('marklite-autosave', false);
+  const [autoSaveDelay, setAutoSaveDelay] = useLocalStorageNumber('marklite-autosave-delay', 1000);
   const [theme, setThemeState] = useState<ThemeName>(() => getSavedTheme() || 'light');
 
   // ── Core hooks ───────────────────────────────────────────────────
@@ -167,7 +169,7 @@ export default function App() {
 
   // CodeMirror lifecycle: state persistence, event listeners, extensions, auto-save
   const { docRef: _docRef, editorExtensions, editorTheme, handleCreateEditor, handleEditorUpdate, cursorCount } = useEditorInstance({
-    cmViewRef, activeTabId, theme, vimMode, spellCheck,
+    cmViewRef, activeTabId, theme, vimMode, spellCheck, autoSave, autoSaveDelay,
     cursorExtension, searchHighlightExtension,
     activeDoc: activeTab.doc, getActiveTab, rawHandleSaveFile,
     setEditingTable, setEditorCtxMenu,
@@ -199,6 +201,30 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Single-instance: listen for "open-file" event from second instance
+  useEffect(() => {
+    if (!isTauri) return;
+    
+    import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
+      import('@tauri-apps/api/event').then(({ listen }) => {
+        listen('open-file', async (event: { payload: string }) => {
+          const filePath = event.payload;
+          try {
+            const content = await invoke<string>('read_file_text', { path: filePath });
+            openFileWithContent(filePath, content);
+            // Focus the window
+            const window = getCurrentWindow();
+            await window.unminimize();
+            await window.setFocus();
+          } catch (err) {
+            console.error('Failed to open file from second instance:', err);
+          }
+        });
+      });
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // F011 - Theme: apply CSS vars synchronously before paint
   useLayoutEffect(() => {
     applyTheme(theme);
@@ -207,6 +233,43 @@ export default function App() {
 
   // Window initialization + native titlebar theme
   useWindowInit(isTauri, theme);
+
+  // Window close confirmation for unsaved changes
+  useEffect(() => {
+    if (!isTauri) return;
+
+    let unlisten: (() => void) | null = null;
+
+    import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
+      import('@tauri-apps/api/event').then(({ listen }) => {
+        listen('tauri://close-requested', async (event) => {
+          const dirtyTabs = tabs.filter(tab => tab.isDirty);
+          
+          if (dirtyTabs.length > 0) {
+            const shouldClose = await confirm(
+              t('common.unsavedChangesMessage', { count: dirtyTabs.length }),
+              { title: t('common.unsavedChanges'), kind: 'warning' }
+            );
+            
+            if (!shouldClose) {
+              // Prevent the window from closing
+              return;
+            }
+          }
+          
+          // Allow the window to close
+          const window = getCurrentWindow();
+          await window.destroy();
+        }).then(fn => {
+          unlisten = fn;
+        });
+      });
+    });
+
+    return () => {
+      unlisten?.();
+    };
+  }, [isTauri, tabs, t]);
 
   // F010 - Debounced TOC + word count
   const { debouncedDoc, tocEntries, wordCount } = useDocMetrics(activeTab.doc, activeTabId);
@@ -287,6 +350,8 @@ export default function App() {
     toggleFindReplace: () => setShowSearchPanel(prev => !prev),
     focusMode, setFocusMode,
     openSnippetPicker,
+    toggleFileTree: () => setShowFileTree(!showFileTree),
+    toggleToc: () => setShowToc(!showToc),
   });
 
   // ── Command Palette registry ─────────────────────────────────────
@@ -358,14 +423,14 @@ export default function App() {
 
           <Toolbar
             viewMode={viewMode} focusMode={focusMode} showToc={showToc} showFileTree={showFileTree}
-            onToggleFileTree={() => setShowFileTree(prev => !prev)}
+            onToggleFileTree={() => setShowFileTree(!showFileTree)}
             onNewTab={createNewTab} onOpenFile={handleOpenFile}
             onSaveFile={() => handleSaveFile()} onSaveAsFile={() => handleSaveAsFile()}
             onExportDocx={handleExportDocx} onExportPdf={handleExportPdf}
             onExportHtml={handleExportHtml} onExportEpub={handleExportEpub}
             onExportPng={() => handleExportPng(previewRef.current)}
             onSetViewMode={setViewMode} onFocusModeChange={setFocusMode}
-            onToggleToc={() => setShowToc(prev => !prev)}
+            onToggleToc={() => setShowToc(!showToc)}
             spellCheck={spellCheck} onToggleSpellCheck={() => setSpellCheck(!spellCheck)}
             vimMode={vimMode} onToggleVimMode={() => setVimMode(!vimMode)}
             recentFiles={recentFiles} onOpenRecent={handleOpenRecent} onClearRecent={handleClearRecent}
@@ -382,6 +447,8 @@ export default function App() {
             currentTheme={theme} onThemeChange={setThemeState}
             spellCheck={spellCheck} onSpellCheckChange={setSpellCheck}
             vimMode={vimMode} onVimModeChange={setVimMode}
+            autoSave={autoSave} onAutoSaveChange={setAutoSave}
+            autoSaveDelay={autoSaveDelay} onAutoSaveDelayChange={setAutoSaveDelay}
           />
 
           {showHelp && (
@@ -407,8 +474,8 @@ export default function App() {
       )}
 
       <div className="flex-1 overflow-hidden flex">
-        <FileTreeSidebar visible={showFileTree} onFileOpen={(path) => openFileInTab(path)} activeFilePath={activeTab.filePath ?? null} />
-        <TocSidebar key={activeTabId} toc={isPristine ? [] : tocEntries} onNavigate={handleTocNavigate} activeId={activeTocId} visible={showToc} />
+        <FileTreeSidebar visible={showFileTree} onFileOpen={(path) => openFileInTab(path)} activeFilePath={activeTab.filePath ?? null} onClose={() => setShowFileTree(false)} />
+        <TocSidebar key={activeTabId} toc={isPristine ? [] : tocEntries} onNavigate={handleTocNavigate} activeId={activeTocId} visible={showToc} onClose={() => setShowToc(false)} />
 
         <EditorContentArea
           isPristine={isPristine} welcomeDismissed={welcomeDismissed}

@@ -5,7 +5,7 @@
  * 支持点击条目跳转、点击箭头折叠/展开子节点。
  */
 import { useState, useMemo } from 'react';
-import { List, ChevronRight } from 'lucide-react';
+import { List, ChevronRight, X } from 'lucide-react';
 import type { TocEntry } from '../lib/toc';
 import { useI18n } from '../i18n';
 
@@ -18,6 +18,8 @@ interface TocSidebarProps {
   activeId?: string | null;
   /** 是否可见 */
   visible?: boolean;
+  /** 关闭侧边栏的回调 */
+  onClose?: () => void;
 }
 
 /** 展示所有级别 H1-H6 */
@@ -25,7 +27,7 @@ const MAX_TOC_LEVEL = 6;
 
 type FlatItem = TocEntry & { indent: number; hasChildren: boolean };
 
-export function TocSidebar({ toc, onNavigate, activeId, visible = true }: TocSidebarProps) {
+export function TocSidebar({ toc, onNavigate, activeId, visible = true, onClose }: TocSidebarProps) {
   const { t } = useI18n();
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
 
@@ -75,6 +77,16 @@ export function TocSidebar({ toc, onNavigate, activeId, visible = true }: TocSid
         <List size={14} style={{ color: 'var(--text-secondary)' }} />
         <span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{t('toc.title')}</span>
         <span className="text-xs ml-auto" style={{ color: 'var(--text-secondary)' }}>{t('toc.itemCount', { count: items.length })}</span>
+        {onClose && (
+          <button
+            onClick={onClose}
+            title={t('common.close')}
+            className="shrink-0 flex items-center justify-center"
+            style={{ color: 'var(--text-secondary)', padding: 3 }}
+          >
+            <X size={14} strokeWidth={1.8} />
+          </button>
+        )}
       </div>
 
       {items.length === 0 ? (

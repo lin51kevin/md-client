@@ -20,6 +20,10 @@ interface ShortcutsParams {
   focusMode?: FocusMode;
   /** 插入片段浮窗 */
   openSnippetPicker?: () => void;
+  /** 切换文件树侧边栏 */
+  toggleFileTree?: () => void;
+  /** 切换TOC大纲侧边栏 */
+  toggleToc?: () => void;
 }
 
 /** 默认快捷键映射：actionId → 解析后的快捷键 */
@@ -36,6 +40,8 @@ const DEFAULT_PARSED = new Map([
   ['typewriterMode', { ctrl: true, shift: false, alt: false, key: '.' }],
   ['focusMode', { ctrl: true, shift: false, alt: false, key: ',' }],
   ['insertSnippet', { ctrl: true, shift: true, alt: false, key: 'j' }],
+  ['toggleFileTree', { ctrl: false, shift: false, alt: true, key: '1' }],
+  ['toggleToc', { ctrl: false, shift: false, alt: true, key: '2' }],
 ]);
 
 export function useKeyboardShortcuts(params: ShortcutsParams) {
@@ -46,7 +52,7 @@ export function useKeyboardShortcuts(params: ShortcutsParams) {
     const custom = getCustomShortcuts();
 
     const handler = (e: KeyboardEvent) => {
-      const { createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile, closeTab, setViewMode, activeTabIdRef, toggleFindReplace, setFocusMode, focusMode, openSnippetPicker } = paramsRef.current;
+      const { createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile, closeTab, setViewMode, activeTabIdRef, toggleFindReplace, setFocusMode, focusMode, openSnippetPicker, toggleFileTree, toggleToc } = paramsRef.current;
       
       // F009 — ESC 退出任何焦点模式（优先处理，无需 Ctrl）
       if (e.key === 'Escape' && focusMode && focusMode !== 'normal') {
@@ -98,6 +104,8 @@ export function useKeyboardShortcuts(params: ShortcutsParams) {
             case 'focusMode':
               setFocusMode?.(focusMode === 'focus' ? 'normal' : 'focus'); break;
             case 'insertSnippet': openSnippetPicker?.(); break;
+            case 'toggleFileTree': toggleFileTree?.(); break;
+            case 'toggleToc': toggleToc?.(); break;
           }
           return; // 匹配成功，停止继续检查
         }

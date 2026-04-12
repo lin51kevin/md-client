@@ -53,4 +53,26 @@ describe('TocSidebar', () => {
     const button = introItem.closest('div')?.querySelector('button');
     expect(button).toBeTruthy();
   });
+
+  describe('onClose 关闭按钮', () => {
+    it('提供 onClose 时渲染关闭按钮', () => {
+      const onClose = vi.fn();
+      render(<TocSidebar toc={mockToc} visible={true} onClose={onClose} />);
+      // 关闭按钮应存在（title="common.close"）
+      const closeBtn = screen.getByTitle('common.close');
+      expect(closeBtn).toBeTruthy();
+    });
+
+    it('点击关闭按钮调用 onClose', () => {
+      const onClose = vi.fn();
+      render(<TocSidebar toc={mockToc} visible={true} onClose={onClose} />);
+      fireEvent.click(screen.getByTitle('common.close'));
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('未提供 onClose 时不渲染关闭按钮', () => {
+      render(<TocSidebar toc={mockToc} visible={true} />);
+      expect(screen.queryByTitle('common.close')).toBeNull();
+    });
+  });
 });

@@ -13,6 +13,14 @@ export const zhCN = {
   'settings.editor.spellCheckDesc': '启用浏览器内置拼写检查（英文支持较好）',
   'settings.editor.vimMode': 'Vim 模式',
   'settings.editor.vimModeDesc': '使用 Vim 键盘映射（hjkl导航、dd删除行等）',
+  'settings.editor.autoSave': '自动保存',
+  'settings.editor.autoSaveDesc': '停止键入后自动保存文件',
+  'settings.editor.autoSaveDelay': '自动保存延时',
+  'settings.editor.autoSaveDelayDesc': '自动保存前等待的时间（毫秒）',
+  'settings.editor.delay1s': '1 秒',
+  'settings.editor.delay2s': '2 秒',
+  'settings.editor.delay5s': '5 秒',
+  'settings.editor.delayCustom': '自定义',
   'settings.appearance.theme': '主题',
   'settings.appearance.themeDesc': '选择统一主题（同时影响编辑器和预览区域）',
   'settings.appearance.themeLight': '浅色',
@@ -55,6 +63,8 @@ export const zhCN = {
   'common.save': '保存',
   'common.delete': '删除',
   'common.rename': '重命名',
+  'common.unsavedChanges': '未保存的更改',
+  'common.unsavedChangesMessage': '你有 {count} 个未保存的文件。是否不保存直接关闭？',
 
   // ── Toolbar ───────────────────────────────────────────────────────────────
   'toolbar.fileMenu': '文件',

@@ -291,4 +291,28 @@ describe('FileTreeSidebar CRUD', () => {
       expect(screen.queryByText('重命名')).toBeFalsy()
     }, { timeout: 1000 })
   });
+
+  describe('onClose 关闭按钮', () => {
+    it('提供 onClose 时在工具栏渲染关闭按钮', async () => {
+      const onClose = vi.fn();
+      render(<FileTreeSidebar visible={true} onClose={onClose} onFileOpen={vi.fn()} />);
+      await waitFor(() => screen.getByText('文件'));
+      const closeBtn = screen.getByTitle('关闭');
+      expect(closeBtn).toBeTruthy();
+    });
+
+    it('点击关闭按钮调用 onClose', async () => {
+      const onClose = vi.fn();
+      render(<FileTreeSidebar visible={true} onClose={onClose} onFileOpen={vi.fn()} />);
+      await waitFor(() => screen.getByText('文件'));
+      fireEvent.click(screen.getByTitle('关闭'));
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('未提供 onClose 时不渲染关闭按钮', async () => {
+      render(<FileTreeSidebar visible={true} onFileOpen={vi.fn()} />);
+      await waitFor(() => screen.getByText('文件'));
+      expect(screen.queryByTitle('关闭')).toBeNull();
+    });
+  });
 });

@@ -15,6 +15,14 @@ export const en: Record<TranslationKey, string> = {
   'settings.editor.spellCheckDesc': 'Enable browser built-in spell check (better for English)',
   'settings.editor.vimMode': 'Vim Mode',
   'settings.editor.vimModeDesc': 'Use Vim keybindings (hjkl navigation, dd to delete line, etc.)',
+  'settings.editor.autoSave': 'Auto Save',
+  'settings.editor.autoSaveDesc': 'Automatically save files after you stop typing',
+  'settings.editor.autoSaveDelay': 'Auto Save Delay',
+  'settings.editor.autoSaveDelayDesc': 'Time to wait before auto-saving (milliseconds)',
+  'settings.editor.delay1s': '1 second',
+  'settings.editor.delay2s': '2 seconds',
+  'settings.editor.delay5s': '5 seconds',
+  'settings.editor.delayCustom': 'Custom',
   'settings.appearance.theme': 'Theme',
   'settings.appearance.themeDesc': 'Choose unified theme (applies to both editor and preview)',
   'settings.appearance.themeLight': 'Light',
@@ -57,6 +65,8 @@ export const en: Record<TranslationKey, string> = {
   'common.save': 'Save',
   'common.delete': 'Delete',
   'common.rename': 'Rename',
+  'common.unsavedChanges': 'Unsaved Changes',
+  'common.unsavedChangesMessage': 'You have {count} unsaved file(s). Close without saving?',
 
   // ── Toolbar ───────────────────────────────────────────────────────────────
   'toolbar.fileMenu': 'File',

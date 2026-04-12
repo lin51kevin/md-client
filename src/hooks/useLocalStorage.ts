@@ -34,3 +34,40 @@ export function useLocalStorageBool(
 
   return [state, setValue];
 }
+
+/**
+ * 通用持久化数字值 hook。
+ * 读写 localStorage，localStorage 不可用时回退到内存状态。
+ *
+ * @param key        存储键名
+ * @param defaultValue 默认值
+ */
+export function useLocalStorageNumber(
+  key: string,
+  defaultValue: number,
+): [number, (value: number) => void] {
+  const [state, setState] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem(key);
+      if (saved === null) return defaultValue;
+      const parsed = parseInt(saved, 10);
+      return isNaN(parsed) ? defaultValue : parsed;
+    } catch {
+      return defaultValue;
+    }
+  });
+
+  const setValue = useCallback(
+    (value: number) => {
+      setState(value);
+      try {
+        localStorage.setItem(key, String(value));
+      } catch {
+        /* ignore quota errors */
+      }
+    },
+    [key],
+  );
+
+  return [state, setValue];
+}

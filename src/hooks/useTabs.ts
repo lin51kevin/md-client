@@ -9,10 +9,28 @@ import type { TranslationKey } from '../i18n/zh-CN';
 
 type TFn = (key: TranslationKey, params?: Record<string, string | number>) => string;
 
+/** Serialized tab state — only save structure, not content (read from disk on restore) */
+interface SerializedTab {
+  id: string;
+  filePath: string | null;
+  displayName?: string;
+  isPinned?: boolean;
+}
+
+interface SerializedSession {
+  tabs: SerializedTab[];
+  activeTabId: string;
+}
+
+const SESSION_KEY = 'marklite-session-tabs';
+
 export function useTabs(t?: TFn, onRecentChange?: () => void) {
   // Fallback: if no t() provided, use identity (raw key)
   const tr = t ?? ((k: string) => k);
   const notifyRecent = () => onRecentChange?.();
+  
+  // Initialize from session if available
+  const [isRestoringSession, setIsRestoringSession] = useState(true);
   const [tabs, setTabs] = useState<Tab[]>([
     { id: INITIAL_TAB_ID, filePath: null, doc: DEFAULT_MARKDOWN, isDirty: false },
   ]);
@@ -22,6 +40,106 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
     { id: INITIAL_TAB_ID, filePath: null, doc: DEFAULT_MARKDOWN, isDirty: false },
   ]);
   const openingPaths = useRef(new Set<string>());
+
+  // Restore session on mount
+  useEffect(() => {
+    const restoreSession = async () => {
+      try {
+        const saved = localStorage.getItem(SESSION_KEY);
+        if (!saved) {
+          setIsRestoringSession(false);
+          return;
+        }
+        
+        const session: SerializedSession = JSON.parse(saved);
+        if (!session.tabs || session.tabs.length === 0) {
+          setIsRestoringSession(false);
+          return;
+        }
+        
+        // Read file contents for all tabs with filePath
+        const restoredTabs: Tab[] = [];
+        for (const serialized of session.tabs) {
+          if (serialized.filePath) {
+            try {
+              const content = await invoke<string>('read_file_text', { path: serialized.filePath });
+              restoredTabs.push({
+                id: serialized.id,
+                filePath: serialized.filePath,
+                doc: content,
+                isDirty: false,
+                displayName: serialized.displayName,
+                isPinned: serialized.isPinned,
+              });
+            } catch (err) {
+              // File no longer exists or can't be read — skip this tab
+              console.warn(`Failed to restore tab ${serialized.filePath}:`, err);
+            }
+          } else {
+            // Untitled tab — restore with empty content
+            restoredTabs.push({
+              id: serialized.id,
+              filePath: null,
+              doc: '',
+              isDirty: false,
+              displayName: serialized.displayName,
+              isPinned: serialized.isPinned,
+            });
+          }
+        }
+        
+        if (restoredTabs.length > 0) {
+          setTabs(restoredTabs);
+          // Restore activeTabId if it exists in restored tabs
+          const activeExists = restoredTabs.some(t => t.id === session.activeTabId);
+          setActiveTabId(activeExists ? session.activeTabId : restoredTabs[0].id);
+        }
+      } catch (err) {
+        console.warn('Failed to restore session:', err);
+      } finally {
+        setIsRestoringSession(false);
+      }
+    };
+    
+    restoreSession();
+  }, []);
+  
+  // Persist session when tabs or activeTabId changes (debounced)
+  useEffect(() => {
+    // Skip persistence during restoration phase
+    if (isRestoringSession) return;
+    
+    // Check if we have only a pristine tab (welcome state) — clear session
+    const isPristine = tabs.length === 1 && !tabs[0].filePath && !tabs[0].isDirty && !tabs[0].displayName;
+    if (isPristine) {
+      try {
+        localStorage.removeItem(SESSION_KEY);
+      } catch {}
+      return;
+    }
+    
+    // Serialize tabs (don't save dirty state or content)
+    const session: SerializedSession = {
+      tabs: tabs.map(tab => ({
+        id: tab.id,
+        filePath: tab.filePath,
+        displayName: tab.displayName,
+        isPinned: tab.isPinned,
+      })),
+      activeTabId,
+    };
+    
+    // Debounce writes to avoid excessive localStorage writes
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      } catch (err) {
+        console.warn('Failed to persist session:', err);
+      }
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [tabs, activeTabId, isRestoringSession]);
 
   useEffect(() => { activeTabIdRef.current = activeTabId; }, [activeTabId]);
   useEffect(() => { tabsRef.current = tabs; }, [tabs]);

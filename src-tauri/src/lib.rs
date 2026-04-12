@@ -7,6 +7,8 @@ mod export_docx;
 use export_pdf::export_pdf;
 use export_docx::export_docx;
 use base64::Engine as _;
+use tauri::Manager;
+use tauri::Emitter;
 
 /// Validate that a user-supplied path does not escape into sensitive system directories.
 /// This is a defence-in-depth measure for a desktop app that wraps raw std::fs operations.
@@ -635,6 +637,29 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            // When a second instance is launched, extract the file path from args
+            // and emit an event to the existing window
+            let file_path = args.iter().skip(1).find(|a| {
+                !a.starts_with('-') && !a.starts_with("tauri") && !a.contains("://")
+            });
+            
+            if let Some(path) = file_path {
+                // Emit event to frontend with the file path
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.emit("open-file", path.clone());
+                    // Focus and unminimize the window
+                    let _ = window.unminimize();
+                    let _ = window.set_focus();
+                }
+            } else {
+                // No file path — just focus the existing window
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.unminimize();
+                    let _ = window.set_focus();
+                }
+            }
+        }))
         .invoke_handler(tauri::generate_handler![greet, get_open_file, export_document, read_file_text, read_file_bytes, write_file_text, write_image_bytes, create_file, delete_file, rename_file, list_directory, read_dir_recursive, search_files, replace_in_files])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
