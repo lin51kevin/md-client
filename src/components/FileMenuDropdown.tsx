@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { FilePlus, Clock, Save, SaveAll, FileText, FolderOpen, FileCode, Trash2, ChevronRight, Download, BookOpen, Image, X } from 'lucide-react';
+import { FilePlus, Clock, Save, SaveAll, FileText, FolderOpen, FileCode, Trash2, ChevronRight, ArrowUpFromLine, BookMarked, ScrollText, Image, X } from 'lucide-react';
 import type { RecentFile } from '../lib/recent-files';
 import { useI18n } from '../i18n';
 
@@ -49,6 +49,20 @@ export function FileMenuDropdown({
   const [submenu, setSubmenu] = useState<string | null>(null);
   const dropRef = useRef<HTMLDivElement>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const submenuCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearSubmenuCloseTimer = useCallback(() => {
+    if (submenuCloseTimerRef.current) {
+      clearTimeout(submenuCloseTimerRef.current);
+      submenuCloseTimerRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (submenuCloseTimerRef.current) clearTimeout(submenuCloseTimerRef.current);
+    };
+  }, []);
 
   // Click outside to close
   useEffect(() => {
@@ -141,7 +155,14 @@ export function FileMenuDropdown({
           onMouseEnter={(e) => {
             e.currentTarget.style.backgroundColor = isSub ? 'var(--bg-tertiary)' : 'var(--accent-color)';
             e.currentTarget.style.color = isSub ? 'var(--text-primary)' : 'var(--bg-primary)';
-            setSubmenu(item.submenu ? item.id : null);
+            clearSubmenuCloseTimer();
+            if (item.submenu) {
+              setSubmenu(item.id);
+            } else if (!isSub) {
+              // Only top-level non-submenu items should schedule submenu close
+              submenuCloseTimerRef.current = setTimeout(() => setSubmenu(null), 300);
+            }
+            // Sub-items never touch the parent submenu state
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.backgroundColor = '';
@@ -161,6 +182,7 @@ export function FileMenuDropdown({
         {/* Submenu */}
         {item.submenu && isActive && (
           <div
+            onMouseEnter={clearSubmenuCloseTimer}
             className={item.id === 'recent' ? 'file-menu-recent-list' : undefined}
             style={{
               position: 'absolute',
@@ -219,7 +241,7 @@ export function FileMenuDropdown({
     },
     {
       id: 'export-pdf',
-      icon: <BookOpen size={13} strokeWidth={1.8} />,
+      icon: <ScrollText size={13} strokeWidth={1.8} />,
       label: t('file.exportPdf'),
       action: onExportPdf,
     },
@@ -232,7 +254,7 @@ export function FileMenuDropdown({
     // [P2 EPUB 导出]
     ...(onExportEpub ? [{
       id: 'export-epub',
-      icon: <BookOpen size={13} strokeWidth={1.8} />,
+      icon: <BookMarked size={13} strokeWidth={1.8} />,
       label: t('file.exportEpub'),
       action: onExportEpub,
     }] : []),
@@ -283,7 +305,7 @@ export function FileMenuDropdown({
     { id: 'sep2', icon: null, label: '' } as unknown as MenuItem,
     {
       id: 'export',
-      icon: <Download size={13} strokeWidth={1.8} />,
+      icon: <ArrowUpFromLine size={13} strokeWidth={1.8} />,
       label: t('file.export'),
       submenu: exportItems,
     },

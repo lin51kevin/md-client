@@ -40,6 +40,12 @@ vi.mock('../../i18n', () => ({
         'help.title': '帮助',
         'toolbar.prevTab': '上一个标签页',
         'toolbar.nextTab': '下一个标签页',
+        'toolbar.table': '插入表格',
+        'toolbar.codeblock': '代码块',
+        'toolbar.hr': '分割线',
+        'toolbar.task': '任务列表',
+        'toolbar.math': '数学公式',
+        'toolbar.label': '工具栏',
       };
       return map[key] ?? key;
     },
@@ -151,5 +157,259 @@ describe('Toolbar', () => {
     fireEvent.keyDown(toolbar, { key: 'ArrowRight' });
 
     expect(document.activeElement).toBe(firstButton);
+  });
+
+  it('calls onFormatAction("bold") when bold button is clicked', () => {
+    const onFormatAction = vi.fn();
+    render(<Toolbar {...defaultProps} onFormatAction={onFormatAction} />);
+    screen.getByTitle('粗体').click();
+    expect(onFormatAction).toHaveBeenCalledWith('bold');
+  });
+
+  it('calls correct onFormatAction for all inline format buttons', () => {
+    const onFormatAction = vi.fn();
+    render(<Toolbar {...defaultProps} onFormatAction={onFormatAction} />);
+
+    screen.getByTitle('斜体').click();
+    expect(onFormatAction).toHaveBeenLastCalledWith('italic');
+
+    screen.getByTitle('删除线').click();
+    expect(onFormatAction).toHaveBeenLastCalledWith('strikethrough');
+
+    screen.getByTitle('行内代码').click();
+    expect(onFormatAction).toHaveBeenLastCalledWith('code');
+  });
+
+  it('calls correct onFormatAction for block element buttons', () => {
+    const onFormatAction = vi.fn();
+    render(<Toolbar {...defaultProps} onFormatAction={onFormatAction} />);
+
+    screen.getByTitle('标题').click();
+    expect(onFormatAction).toHaveBeenLastCalledWith('heading');
+
+    screen.getByTitle('引用').click();
+    expect(onFormatAction).toHaveBeenLastCalledWith('blockquote');
+
+    screen.getByTitle('无序列表').click();
+    expect(onFormatAction).toHaveBeenLastCalledWith('ul');
+
+    screen.getByTitle('有序列表').click();
+    expect(onFormatAction).toHaveBeenLastCalledWith('ol');
+  });
+
+  it('calls correct onFormatAction for link/image buttons', () => {
+    const onFormatAction = vi.fn();
+    render(<Toolbar {...defaultProps} onFormatAction={onFormatAction} />);
+
+    screen.getByTitle('链接').click();
+    expect(onFormatAction).toHaveBeenLastCalledWith('link');
+
+    screen.getByTitle('插入图片链接').click();
+    expect(onFormatAction).toHaveBeenLastCalledWith('image-link');
+  });
+
+  it('calls correct onFormatAction for extra buttons (codeblock, hr, task, math)', () => {
+    const onFormatAction = vi.fn();
+    render(<Toolbar {...defaultProps} onFormatAction={onFormatAction} />);
+
+    screen.getByTitle('代码块').click();
+    expect(onFormatAction).toHaveBeenLastCalledWith('codeblock');
+
+    screen.getByTitle('分割线').click();
+    expect(onFormatAction).toHaveBeenLastCalledWith('hr');
+
+    screen.getByTitle('任务列表').click();
+    expect(onFormatAction).toHaveBeenLastCalledWith('task');
+
+    screen.getByTitle('数学公式').click();
+    expect(onFormatAction).toHaveBeenLastCalledWith('math');
+  });
+
+  it('calls onImageLocal when image local button is clicked', () => {
+    const onImageLocal = vi.fn();
+    render(<Toolbar {...defaultProps} onImageLocal={onImageLocal} />);
+    screen.getByTitle('插入本地图片').click();
+    expect(onImageLocal).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows table size picker when table button is clicked', () => {
+    const onFormatAction = vi.fn();
+    const { container } = render(<Toolbar {...defaultProps} onFormatAction={onFormatAction} />);
+    fireEvent.click(screen.getByTitle('插入表格'));
+    // TableSizePicker renders a grid of divs inside an absolute container
+    const picker = container.querySelector('.absolute.z-50');
+    expect(picker).toBeInTheDocument();
+  });
+
+  it('hides table size picker on second click of table button', () => {
+    const onFormatAction = vi.fn();
+    const { container } = render(<Toolbar {...defaultProps} onFormatAction={onFormatAction} />);
+    const tableBtn = screen.getByTitle('插入表格');
+    fireEvent.click(tableBtn);
+    fireEvent.click(tableBtn);
+    const picker = container.querySelector('.absolute.z-50');
+    expect(picker).not.toBeInTheDocument();
+  });
+
+  it('calls onToggleFileTree when file tree button is clicked', () => {
+    const onToggleFileTree = vi.fn();
+    render(<Toolbar {...defaultProps} onToggleFileTree={onToggleFileTree} />);
+    screen.getByTitle('文件树').click();
+    expect(onToggleFileTree).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls onToggleToc when toc button is clicked', () => {
+    const onToggleToc = vi.fn();
+    render(<Toolbar {...defaultProps} onToggleToc={onToggleToc} />);
+    screen.getByTitle('大纲').click();
+    expect(onToggleToc).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows "开启拼写检查" title when spellCheck is false', () => {
+    render(<Toolbar {...defaultProps} spellCheck={false} />);
+    expect(screen.getByTitle('开启拼写检查')).toBeInTheDocument();
+  });
+
+  it('shows "关闭拼写检查" title when spellCheck is true', () => {
+    render(<Toolbar {...defaultProps} spellCheck={true} />);
+    expect(screen.getByTitle('关闭拼写检查')).toBeInTheDocument();
+  });
+
+  it('calls onToggleSpellCheck when spell check button is clicked', () => {
+    const onToggleSpellCheck = vi.fn();
+    render(<Toolbar {...defaultProps} spellCheck={false} onToggleSpellCheck={onToggleSpellCheck} />);
+    screen.getByTitle('开启拼写检查').click();
+    expect(onToggleSpellCheck).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows "开启Vim模式" title when vimMode is false', () => {
+    render(<Toolbar {...defaultProps} vimMode={false} />);
+    expect(screen.getByTitle('开启Vim模式')).toBeInTheDocument();
+  });
+
+  it('shows "关闭Vim模式" title when vimMode is true', () => {
+    render(<Toolbar {...defaultProps} vimMode={true} />);
+    expect(screen.getByTitle('关闭Vim模式')).toBeInTheDocument();
+  });
+
+  it('calls onToggleVimMode when vim mode button is clicked', () => {
+    const onToggleVimMode = vi.fn();
+    render(<Toolbar {...defaultProps} vimMode={false} onToggleVimMode={onToggleVimMode} />);
+    screen.getByTitle('开启Vim模式').click();
+    expect(onToggleVimMode).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls onFocusModeChange("typewriter") when typewriter button is clicked', () => {
+    const onFocusModeChange = vi.fn();
+    render(<Toolbar {...defaultProps} onFocusModeChange={onFocusModeChange} />);
+    screen.getByTitle('打字机模式').click();
+    expect(onFocusModeChange).toHaveBeenCalledWith('typewriter');
+  });
+
+  it('calls onFocusModeChange("focus") when focus mode button is clicked', () => {
+    const onFocusModeChange = vi.fn();
+    render(<Toolbar {...defaultProps} onFocusModeChange={onFocusModeChange} />);
+    screen.getByTitle('焦点模式').click();
+    expect(onFocusModeChange).toHaveBeenCalledWith('focus');
+  });
+
+  it('calls onFocusModeChange("fullscreen") when fullscreen is not active', () => {
+    const onFocusModeChange = vi.fn();
+    render(<Toolbar {...defaultProps} focusMode="normal" onFocusModeChange={onFocusModeChange} />);
+    screen.getByTitle('全屏').click();
+    expect(onFocusModeChange).toHaveBeenCalledWith('fullscreen');
+  });
+
+  it('calls onFocusModeChange("normal") when already in fullscreen mode', () => {
+    const onFocusModeChange = vi.fn();
+    render(<Toolbar {...defaultProps} focusMode="fullscreen" onFocusModeChange={onFocusModeChange} />);
+    screen.getByTitle('全屏').click();
+    expect(onFocusModeChange).toHaveBeenCalledWith('normal');
+  });
+
+  it('calls onOpenSettings when settings button is clicked', () => {
+    const onOpenSettings = vi.fn();
+    render(<Toolbar {...defaultProps} onOpenSettings={onOpenSettings} />);
+    screen.getByTitle('设置').click();
+    expect(onOpenSettings).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls onOpenHelp when help button is clicked', () => {
+    const onOpenHelp = vi.fn();
+    render(<Toolbar {...defaultProps} onOpenHelp={onOpenHelp} />);
+    screen.getByTitle('帮助').click();
+    expect(onOpenHelp).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not show tab navigation buttons when fewer than 2 tabs', () => {
+    render(<Toolbar {...defaultProps} tabs={[]} />);
+    expect(screen.queryByTitle('上一个标签页')).not.toBeInTheDocument();
+    expect(screen.queryByTitle('下一个标签页')).not.toBeInTheDocument();
+  });
+
+  it('shows tab navigation buttons when 2+ tabs are provided', () => {
+    const tabs: import('../../types').Tab[] = [
+      { id: '1', filePath: '/a.md', doc: '', isDirty: false },
+      { id: '2', filePath: '/b.md', doc: '', isDirty: false },
+    ];
+    render(<Toolbar {...defaultProps} tabs={tabs} activeTabId="1" />);
+    expect(screen.getByTitle('上一个标签页')).toBeInTheDocument();
+    expect(screen.getByTitle('下一个标签页')).toBeInTheDocument();
+  });
+
+  it('prevTab button is disabled on first tab', () => {
+    const tabs: import('../../types').Tab[] = [
+      { id: '1', filePath: '/a.md', doc: '', isDirty: false },
+      { id: '2', filePath: '/b.md', doc: '', isDirty: false },
+    ];
+    render(<Toolbar {...defaultProps} tabs={tabs} activeTabId="1" onActivateTab={vi.fn()} />);
+    expect(screen.getByTitle('上一个标签页')).toBeDisabled();
+  });
+
+  it('nextTab button is disabled on last tab', () => {
+    const tabs: import('../../types').Tab[] = [
+      { id: '1', filePath: '/a.md', doc: '', isDirty: false },
+      { id: '2', filePath: '/b.md', doc: '', isDirty: false },
+    ];
+    render(<Toolbar {...defaultProps} tabs={tabs} activeTabId="2" onActivateTab={vi.fn()} />);
+    expect(screen.getByTitle('下一个标签页')).toBeDisabled();
+  });
+
+  it('nextTab button calls onActivateTab with the next tab id', () => {
+    const onActivateTab = vi.fn();
+    const tabs: import('../../types').Tab[] = [
+      { id: '1', filePath: '/a.md', doc: '', isDirty: false },
+      { id: '2', filePath: '/b.md', doc: '', isDirty: false },
+    ];
+    render(<Toolbar {...defaultProps} tabs={tabs} activeTabId="1" onActivateTab={onActivateTab} />);
+    fireEvent.click(screen.getByTitle('下一个标签页'));
+    expect(onActivateTab).toHaveBeenCalledWith('2');
+  });
+
+  it('ArrowLeft from a middle button moves focus to the previous button', () => {
+    render(<Toolbar {...defaultProps} />);
+    const toolbar = screen.getByRole('toolbar');
+    const buttons = screen.getAllByRole('button');
+    buttons[1].focus();
+    fireEvent.keyDown(toolbar, { key: 'ArrowLeft' });
+    expect(document.activeElement).toBe(buttons[0]);
+  });
+
+  it('ArrowRight from a middle button moves focus to the next button', () => {
+    render(<Toolbar {...defaultProps} />);
+    const toolbar = screen.getByRole('toolbar');
+    const buttons = screen.getAllByRole('button');
+    buttons[0].focus();
+    fireEvent.keyDown(toolbar, { key: 'ArrowRight' });
+    expect(document.activeElement).toBe(buttons[1]);
+  });
+
+  it('non-arrow keys do not trigger keyboard navigation', () => {
+    render(<Toolbar {...defaultProps} />);
+    const toolbar = screen.getByRole('toolbar');
+    const buttons = screen.getAllByRole('button');
+    buttons[0].focus();
+    fireEvent.keyDown(toolbar, { key: 'Enter' });
+    expect(document.activeElement).toBe(buttons[0]);
   });
 });

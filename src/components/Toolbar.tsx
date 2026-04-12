@@ -1,10 +1,11 @@
 
-import { useRef } from 'react';
-import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, List, SpellCheck, FolderTree, Search, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, Settings, HelpCircle, FilePlus, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, List, SpellCheck, FolderTree, Search, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, Settings, HelpCircle, FilePlus, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight, Table2, FileCode2, Minus, ListChecks, Sigma } from 'lucide-react';
 import { ViewMode, FocusMode } from '../types';
 
 import { FileMenuDropdown } from './FileMenuDropdown';
 import { ToolbarButton } from './ToolbarButton';
+import { TableSizePicker } from './TableSizePicker';
 import { useI18n } from '../i18n';
 
 interface ToolbarProps {
@@ -77,6 +78,7 @@ export function Toolbar({
 }: ToolbarProps & { onImageLocal?: () => void }) {
   const { t } = useI18n();
   const toolbarRef = useRef<HTMLDivElement>(null);
+  const [showTablePicker, setShowTablePicker] = useState(false);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
@@ -184,6 +186,33 @@ export function Toolbar({
         </ToolbarButton>
         <ToolbarButton onClick={() => onFormatAction?.('image-link')} title={t('toolbar.imageLink')}>
           <Link2 size={14} strokeWidth={2} />
+        </ToolbarButton>
+
+        {DIVIDER}
+
+        {/* 插入表格 */}
+        <div className="relative">
+          <ToolbarButton onClick={() => setShowTablePicker(v => !v)} title={t('toolbar.table')}>
+            <Table2 size={14} strokeWidth={2} />
+          </ToolbarButton>
+          {showTablePicker && (
+            <TableSizePicker
+              onSelect={(rows, cols) => onFormatAction?.(`table:${rows}x${cols}`)}
+              onClose={() => setShowTablePicker(false)}
+            />
+          )}
+        </div>
+        <ToolbarButton onClick={() => onFormatAction?.('codeblock')} title={t('toolbar.codeblock')}>
+          <FileCode2 size={14} strokeWidth={2} />
+        </ToolbarButton>
+        <ToolbarButton onClick={() => onFormatAction?.('hr')} title={t('toolbar.hr')}>
+          <Minus size={14} strokeWidth={2} />
+        </ToolbarButton>
+        <ToolbarButton onClick={() => onFormatAction?.('task')} title={t('toolbar.task')}>
+          <ListChecks size={14} strokeWidth={2} />
+        </ToolbarButton>
+        <ToolbarButton onClick={() => onFormatAction?.('math')} title={t('toolbar.math')}>
+          <Sigma size={14} strokeWidth={2} />
         </ToolbarButton>
       </div>
 

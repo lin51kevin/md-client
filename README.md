@@ -32,7 +32,11 @@
 - **Line Numbers & Fold Gutter** — 行号显示与代码折叠
 - **Cursor Position** — 实时显示光标行列位置
 - **📸 Image Paste** — 从剪贴板粘贴图片或拖拽图片，自动保存到本地并插入 Markdown 链接
-- **✏️ Toolbar Formatting** — 加粗、斜体、删除线、代码、标题、引用、列表、链接等一键格式化按钮
+- **✏️ Toolbar Formatting** — 一键格式化工具栏，涵盖：
+  - 加粗、斜体、删除线、行内代码
+  - 标题（循环升级 H1→H6）、引用块、无序/有序列表、任务列表
+  - 代码块、分割线、链接、图片（本地/链接）、数学公式
+  - **表格尺寸选择器** — 悬停 8×8 网格，点击即插入带表头的完整 Markdown 表格
 - **📋 Right-Click Context Menu** — 编辑器内右键菜单，支持上下文感知的操作（20+个菜单项），可在表格内直接编辑
 - **🎯 Writing Statistics** — 实时字数、字符数、句子数、阅读时间统计
 - **⌨️ Custom Shortcuts** — 支持自定义快捷键绑定
@@ -171,7 +175,9 @@ yarn tauri build
 marklite/
 ├── src/                        # React frontend
 │   ├── components/             # UI 组件
-│   │   ├── Toolbar.tsx         # 工具栏（文件菜单/导出/视图切换/主题/焦点模式）
+│   │   ├── Toolbar.tsx         # 工具栏（文件菜单/格式化/切换/视图/标签导航）
+│   │   ├── ToolbarButton.tsx   # 工具栏通用按钮（action/toggle/view 变体）
+│   │   ├── TableSizePicker.tsx # 表格尺寸网格选择器
 │   │   ├── TabBar.tsx          # 标签栏（多标签/拖拽排序/右键菜单/滚动）
 │   │   ├── StatusBar.tsx       # 状态栏（路径/字数统计/行列号/版本历史入口）
 │   │   ├── FindReplaceBar.tsx  # 查找替换栏

@@ -40,6 +40,9 @@ App
 | `MarkdownPreview` | `components/MarkdownPreview.tsx` | ReactMarkdown 渲染管线（GFM + Math + Mermaid + WikiLinks）+ KaTeX 公式渲染 |
 | `TabBar` | `components/TabBar.tsx` | 多标签页管理（打开/关闭/切换/拖拽排序） |
 | `TableEditor` | `components/TableEditor.tsx` | 可视化表格编辑（增删行列、单元格编辑） |
+| `Toolbar` | `components/Toolbar.tsx` | 工具栏：文件操作、格式化按钮、切换按钮、视图模式切换、标签导航；键盘方向键导航 |
+| `ToolbarButton` | `components/ToolbarButton.tsx` | 工具栏通用按钮，封装 action / toggle / view 三种变体样式 |
+| `TableSizePicker` | `components/TableSizePicker.tsx` | 表格尺寸网格选择器（8×8 弹出层）
 
 ### 核心 Hook / State 管理
 

@@ -6,6 +6,44 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [v0.6.0] - 2026-04-12
+
+### Added
+
+#### 工具栏增强 (F019)
+- **扩展格式化按钮** — Toolbar 新增以下操作按钮：
+  - 代码块 (`\`\`\`...```) — 一键插入围栏代码块，有选区时自动包裹
+  - 分割线 (`---`) — 在光标所在行后插入水平分割线
+  - 任务列表 (`- [ ]`) — 切换任务列表前缀，支持多行选区批量处理
+  - 数学公式 (`$...$` / `$$...$$`) — 有选区时插入行内公式；无选区插入块级公式
+
+- **表格尺寸选择器** — 点击工具栏表格按钮弹出 8×8 网格选择器：
+  - 鼠标悬停高亮预览行列数
+  - 点击单元格即时生成带表头的完整 Markdown 表格
+  - 点击外部自动关闭选择器
+
+- **标签页导航按钮** — Toolbar 中部新增上一个/下一个标签页箭头按钮：
+  - 仅在打开 2 个及以上标签页时显示
+  - 在首/末标签页时自动禁用对应方向按钮
+
+#### 可访问性
+- Toolbar 组件添加 `role="toolbar"` 与 `aria-label`
+- 键盘方向键（← →）可在工具栏按钮间导航，从两端可循环跳转
+
+### Changed
+- `ToolbarButton` 提取为独立组件，封装三种变体（action / toggle / view）的悬浮与激活样式
+- 工具栏标题 (heading) 操作行为调整为**循环升级**：H1→H2→…→H6→无前缀，与 GitHub 编辑体验一致
+
+### Tests
+- 测试套件从 700 个用例扩展至 **775 个**（59 个测试文件），新增/完善如下覆盖：
+  - `Toolbar.test.tsx` — 从 9 个扩展到 38 个用例，覆盖所有格式化按钮、切换按钮、焦点模式、标签导航、键盘导航
+  - `useFormatActions.test.ts` — 从 3 个扩展至 30 个用例，使用真实 CodeMirror EditorView 验证每种文档变换
+  - `TableSizePicker.test.tsx` — 新建，10 个用例，覆盖渲染、悬停标签、选择回调、点击外部关闭、网格扩展
+  - `useScrollSync.test.ts` — 从 3 个扩展至 6 个用例，增加真实 DOM 元素的滚动比例计算验证
+  - `useImagePaste.test.ts` — 从 1 个扩展至 5 个用例，覆盖返回值结构与边界场景
+  - `FileMenuDropdown.test.tsx` — 修复子菜单关闭测试（改为 `waitFor` 等待 150ms 超时）
+
+
 ## [v0.5.0] - 2026-04-11
 
 ### Added

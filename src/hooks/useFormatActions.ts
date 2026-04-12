@@ -192,6 +192,114 @@ export function useFormatActions({ cmViewRef, getActiveTab, promptUser }: UseFor
         })();
         break;
       }
+      case 'codeblock': {
+        const selected = docText.substring(sel.from, sel.to);
+        if (selected.length > 0) {
+          const wrapped = '```\n' + selected + '\n```';
+          view.dispatch({
+            changes: { from: sel.from, to: sel.to, insert: wrapped },
+            selection: { anchor: sel.from + 4 },
+          });
+        } else {
+          const block = '```\n\n```';
+          view.dispatch({
+            changes: { from: sel.from, insert: block },
+            selection: { anchor: sel.from + 4 },
+          });
+        }
+        break;
+      }
+      case 'hr': {
+        const line = view.state.doc.lineAt(sel.from);
+        const insert = '\n---\n';
+        view.dispatch({
+          changes: { from: line.to, insert },
+          selection: { anchor: line.to + insert.length },
+        });
+        break;
+      }
+      case 'task': {
+        const prefix = '- [ ] ';
+        const startLine = view.state.doc.lineAt(sel.from);
+        const endLine = view.state.doc.lineAt(sel.to);
+        const isMultiLineSelection = startLine.number !== endLine.number;
+
+        if (!isMultiLineSelection) {
+          const lineStart = startLine.from;
+          const lineEnd = startLine.to;
+          const lineText = docText.substring(lineStart, lineEnd);
+          const hasTaskPrefix = /^- \[[ x]\] /.test(lineText);
+          if (hasTaskPrefix) {
+            const removeLen = lineText.match(/^- \[[ x]\] /)?.[0].length ?? prefix.length;
+            view.dispatch({
+              changes: { from: lineStart, to: lineStart + removeLen, insert: '' },
+              selection: { anchor: lineStart },
+            });
+          } else {
+            view.dispatch({
+              changes: { from: lineStart, to: lineStart, insert: prefix },
+              selection: { anchor: lineStart + prefix.length },
+            });
+          }
+        } else {
+          const changes: { from: number; to: number; insert: string }[] = [];
+          for (let lineNum = endLine.number; lineNum >= startLine.number; lineNum--) {
+            const line = view.state.doc.line(lineNum);
+            const lineText = docText.substring(line.from, line.to);
+            const hasTaskPrefix = /^- \[[ x]\] /.test(lineText);
+            if (hasTaskPrefix) {
+              const removeLen = lineText.match(/^- \[[ x]\] /)?.[0].length ?? prefix.length;
+              changes.push({ from: line.from, to: line.from + removeLen, insert: '' });
+            } else {
+              changes.push({ from: line.from, to: line.from, insert: prefix });
+            }
+          }
+          view.dispatch({ changes, selection: { anchor: sel.from } });
+        }
+        break;
+      }
+      case 'math': {
+        const selected = docText.substring(sel.from, sel.to);
+        if (selected.length > 0) {
+          const wrapped = '$' + selected + '$';
+          view.dispatch({
+            changes: { from: sel.from, to: sel.to, insert: wrapped },
+            selection: { anchor: sel.from + 1 },
+          });
+        } else {
+          const block = '$$\n\n$$';
+          view.dispatch({
+            changes: { from: sel.from, insert: block },
+            selection: { anchor: sel.from + 3 },
+          });
+        }
+        break;
+      }
+      default: {
+        // Handle parameterized actions like "table:3x4"
+        if (action.startsWith('table:')) {
+          const match = action.match(/^table:(\d+)x(\d+)$/);
+          if (!match) break;
+          const rows = parseInt(match[1], 10);
+          const cols = parseInt(match[2], 10);
+          if (rows < 1 || cols < 1 || rows > 20 || cols > 20) break;
+
+          const headerCells = Array.from({ length: cols }, (_, i) => ` Col ${i + 1} `);
+          const headerLine = '|' + headerCells.join('|') + '|';
+          const sepLine = '|' + Array(cols).fill(' --- ').join('|') + '|';
+          const emptyRow = '|' + Array(cols).fill('  ').join('|') + '|';
+          const bodyRows = Array(rows).fill(emptyRow).join('\n');
+          const table = headerLine + '\n' + sepLine + '\n' + bodyRows + '\n';
+
+          // Position cursor at first data cell (after "| " of first body row)
+          const cursorOffset = headerLine.length + 1 + sepLine.length + 1 + 2;
+          view.dispatch({
+            changes: { from: sel.from, insert: table },
+            selection: { anchor: sel.from + cursorOffset },
+          });
+        }
+        break;
+      }
     }
     view.focus();
   }, [getActiveTab]);

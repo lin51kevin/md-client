@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { FileMenuDropdown } from '../../components/FileMenuDropdown';
 
 const defaultProps = {
@@ -68,7 +68,7 @@ describe('FileMenuDropdown', () => {
     expect(screen.getByText('note.md')).toBeInTheDocument();
   });
 
-  it('closes submenu when hovering over an item without submenu (bug fix)', () => {
+  it('closes submenu when hovering over an item without submenu (bug fix)', async () => {
     render(
       <FileMenuDropdown
         {...defaultProps}
@@ -83,9 +83,11 @@ describe('FileMenuDropdown', () => {
     fireEvent.mouseEnter(recentItem);
     expect(screen.getByText('note.md')).toBeInTheDocument();
 
-    // Hover over Save (no submenu) — submenu should close
+    // Hover over Save (no submenu) — closes submenu via a 150ms setTimeout
     const saveItem = screen.getByTitle('保存');
     fireEvent.mouseEnter(saveItem);
-    expect(screen.queryByText('note.md')).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText('note.md')).not.toBeInTheDocument();
+    }, { timeout: 1000 });
   });
 });

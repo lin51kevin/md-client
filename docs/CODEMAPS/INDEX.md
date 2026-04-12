@@ -1,7 +1,7 @@
 # MarkLite 代码映射索引
 
-**最后更新** — 2026-04-11  
-**版本** — v0.5.0  
+**最后更新** — 2026-04-12
+**版本** — v0.6.0
 **项目** — MarkLite 桌面 Markdown 编辑器（Tauri 2 + React 19 + CodeMirror 6）
 
 ---
@@ -28,7 +28,9 @@ md-client/
 │   │   ├── CommandPalette.tsx   # 命令面板（Ctrl+Shift+P）
 │   │   ├── SnippetManager.tsx   # 片段管理器
 │   │   ├── FileMenuDropdown.tsx # 文件菜单
-│   │   ├── Toolbar.tsx          # 工具栏
+│   │   ├── Toolbar.tsx          # 工具栏（含格式化、切换、标签导航）
+│   │   ├── ToolbarButton.tsx    # 工具栏通用按钮（action/toggle/view 变体）
+│   │   ├── TableSizePicker.tsx  # 表格尺寸网格选择器
 │   │   ├── SearchPanel.tsx      # 搜索面板
 │   │   └── ...                  # 其他组件
 │   ├── lib/                     # 工具函数和业务逻辑
@@ -158,6 +160,16 @@ md-client/
 
 ---
 
+## 🚀 新增特性（v0.6.0）
+
+| 特性 | 文件 | 描述 |
+|------|------|------|
+| 表格尺寸选择器 | src/components/TableSizePicker.tsx | 8×8 网格弹出层，鼠标悬停选择表格大小 |
+| 工具栏扩展按钮 | src/components/Toolbar.tsx | 代码块、分割线、任务列表、数学公式按钮 |
+| 标签导航按钮 | src/components/Toolbar.tsx | 工具栏中部的上一个/下一个标签页按钮 |
+| ToolbarButton 组件 | src/components/ToolbarButton.tsx | 提取为独立组件，封装三种变体样式 |
+| 测试套件扩展 | src/__tests__/ | 700 → 775 个测试用例，59 个测试文件 |
+
 ## 🚀 新增特性（v0.5.0）
 
 | 特性 | 文件 | 描述 |
@@ -170,6 +182,11 @@ md-client/
 | i18n 扩展 | src/i18n/ | 新增 snippet.saveFailed 等 |
 
 ---
+
+## 🐛 最近修复（v0.6.0）
+
+- ✅ 修复 FileMenuDropdown 子菜单关闭测试（`waitFor` 等待 150ms 超时触发）
+- ✅ 工具栏键盘导航：非方向键不再触发焦点移动
 
 ## 🐛 最近修复（v0.5.0）
 
