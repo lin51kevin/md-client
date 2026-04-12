@@ -89,6 +89,7 @@ export function useKeyboardShortcuts(params: ShortcutsParams) {
             case 'editMode': setViewMode('edit'); break;
             case 'splitMode': setViewMode('split'); break;
             case 'previewMode': setViewMode('preview'); break;
+            case 'slideMode': setViewMode('slide'); break;
             case 'typewriterMode':
               setFocusMode?.(focusMode === 'typewriter' ? 'normal' : 'typewriter'); break;
             case 'focusMode':

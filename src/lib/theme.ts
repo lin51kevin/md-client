@@ -8,7 +8,12 @@
  *   - high-contrast:  高对比度
  */
 
-export type ThemeName = 'light' | 'dark' | 'sepia' | 'high-contrast';
+import { BUILT_IN_NAMES, BUILT_IN_THEMES_MAP } from './theme-registry';
+
+export type ThemeName = 'light' | 'dark' | 'sepia' | 'high-contrast' | (string & {});
+
+/** 主题名联合类型（运行时用 string 检查，TS 用此类型约束） */
+export type BuiltInThemeName = typeof BUILT_IN_NAMES[number];
 
 /** Legacy types — kept for backward-compat migration only */
 export type PreviewThemeName = 'default' | 'dark' | 'sepia' | 'highContrast';
@@ -58,111 +63,25 @@ export interface ThemeConfig {
   isDark: boolean;
 }
 
-/** 内置主题注册表 */
-export const THEMES: Record<ThemeName, ThemeConfig> = {
-  light: {
-    name: 'light',
-    label: '☀️ 浅色',
-    labelEn: 'Light',
-    cmTheme: 'light',
-    previewClass: '',
-    isDark: false,
-    cssVars: {
-      '--bg-primary': '#ffffff',
-      '--bg-secondary': '#f6f8fa',
-      '--bg-tertiary': '#eaecef',
-      '--text-primary': '#1f2328',
-      '--text-secondary': '#656d76',
-      '--text-tertiary': '#9ca3af',
-      '--border-color': '#d0d7de',
-      '--accent-color': '#0969da',
-      '--accent-hover': '#0550ae',
-      '--accent-bg': '#ddf4ff',
-      '--hover-bg': '#f3f4f6',
-      '--hover-overlay': 'rgba(0, 0, 0, 0.05)',
-      '--warning-color': '#f59e0b',
-      '--warning-bg': '#fef3c7',
-    },
-  },
-  dark: {
-    name: 'dark',
-    label: '🌙 深色',
-    labelEn: 'Dark',
-    cmTheme: 'dark',
-    previewClass: 'markdown-preview-dark',
-    isDark: true,
-    cssVars: {
-      '--bg-primary': '#0d1117',
-      '--bg-secondary': '#161b22',
-      '--bg-tertiary': '#21262d',
-      '--text-primary': '#f0f6fc',
-      '--text-secondary': '#adbac7',
-      '--text-tertiary': '#6e7681',
-      '--border-color': '#30363d',
-      '--accent-color': '#58a6ff',
-      '--accent-hover': '#79c0ff',
-      '--accent-bg': '#1c2d41',
-      '--hover-bg': '#21262d',
-      '--hover-overlay': 'rgba(255, 255, 255, 0.1)',
-      '--warning-color': '#f59e0b',
-      '--warning-bg': '#3e2c0a',
-    },
-  },
-  sepia: {
-    name: 'sepia',
-    label: '📖 护眼',
-    labelEn: 'Sepia (Eye Care)',
-    cmTheme: 'sepia',
-    previewClass: 'markdown-preview-sepia',
-    isDark: false,
-    cssVars: {
-      '--bg-primary': '#f4ecd8',
-      '--bg-secondary': '#efe5cd',
-      '--bg-tertiary': '#e8dcc0',
-      '--text-primary': '#3b3228',
-      '--text-secondary': '#695d4e',
-      '--text-tertiary': '#9a8b75',
-      '--border-color': '#d4c9ab',
-      '--accent-color': '#8b6914',
-      '--accent-hover': '#6b5010',
-      '--accent-bg': '#f9f0d1',
-      '--hover-bg': '#efe5cd',
-      '--hover-overlay': 'rgba(0, 0, 0, 0.05)',
-      '--warning-color': '#b8860b',
-      '--warning-bg': '#f5e6b8',
-    },
-  },
-  'high-contrast': {
-    name: 'high-contrast',
-    label: '◻️ 高对比',
-    labelEn: 'High Contrast',
-    cmTheme: 'high-contrast',
-    previewClass: 'markdown-preview-high-contrast',
-    isDark: false,
-    cssVars: {
-      '--bg-primary': '#ffffff',
-      '--bg-secondary': '#ffffff',
-      '--bg-tertiary': '#eeeeee',
-      '--text-primary': '#000000',
-      '--text-secondary': '#222222',
-      '--text-tertiary': '#444444',
-      '--border-color': '#000000',
-      '--accent-color': '#0000cc',
-      '--accent-hover': '#000099',
-      '--accent-bg': '#eeeeff',
-      '--hover-bg': '#f0f0f0',
-      '--hover-overlay': 'rgba(0, 0, 0, 0.08)',
-      '--warning-color': '#cc5500',
-      '--warning-bg': '#fff0e0',
-    },
-  },
-};
+/** 内置主题注册表（从共享数据导入） */
+export const BUILT_IN_THEMES: Record<string, ThemeConfig> = BUILT_IN_THEMES_MAP;
+
+/** 向后兼容：THEMES = BUILT_IN_THEMES */
+export const THEMES: Record<string, ThemeConfig> = BUILT_IN_THEMES;
 
 /**
  * 将主题 CSS 变量注入到 document.documentElement
  */
-export function applyTheme(theme: ThemeName): void {
-  const config = THEMES[theme];
+/**
+ * 应用主题（支持内置 + 自定义主题）
+ */
+export function applyTheme(theme: string): void {
+  // 内置主题优先查找
+  let config: ThemeConfig | undefined = BUILT_IN_THEMES[theme];
+  if (!config) {
+    // 自定义主题查找
+    config = _getAllThemes().find(t => t.name === theme);
+  }
   if (!config) return;
 
   // 注入 CSS 变量
@@ -177,10 +96,23 @@ export function applyTheme(theme: ThemeName): void {
 /**
  * 从 localStorage 读取已保存的主题偏好
  */
-export function getSavedTheme(): ThemeName | null {
+import { getInstalledThemes as _getAllThemes } from './theme-manager';
+
+/**
+ * 从 localStorage 读取已保存的主题偏好（支持自定义主题）
+ */
+export function getSavedTheme(): string | null {
   try {
     const saved = localStorage.getItem('marklite-theme');
-    if (saved && saved in THEMES) return saved as ThemeName;
+    if (!saved) return null;
+    // 先查内置主题
+    if (saved in BUILT_IN_THEMES) return saved;
+    // 再查已安装的自定义主题
+    const all = _getAllThemes();
+    if (all.some(t => t.name === saved)) return saved;
+    // 无效值 → 清除并返回 null
+    localStorage.removeItem('marklite-theme');
+    return null;
   } catch { /* ignore */ }
   return null;
 }
@@ -188,6 +120,6 @@ export function getSavedTheme(): ThemeName | null {
 /**
  * 保存主题偏好到 localStorage
  */
-export function saveTheme(theme: ThemeName): void {
+export function saveTheme(theme: string): void {
   try { localStorage.setItem('marklite-theme', theme); } catch { /* ignore */ }
 }

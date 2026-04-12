@@ -9,7 +9,7 @@ export interface Tab {
   isDirty: boolean;
 }
 
-export type ViewMode = 'split' | 'edit' | 'preview';
+export type ViewMode = 'split' | 'edit' | 'preview' | 'slide';
 
 /** F009 — 编辑器焦点模式 */
 export type FocusMode = 'normal' | 'typewriter' | 'focus' | 'fullscreen';

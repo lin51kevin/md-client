@@ -20,6 +20,7 @@ export const DEFAULT_SHORTCUTS: ShortcutAction[] = [
   { id: 'editMode', labelKey: 'settings.shortcuts.editMode', defaultKeys: 'Ctrl+1' },
   { id: 'splitMode', labelKey: 'settings.shortcuts.splitMode', defaultKeys: 'Ctrl+2' },
   { id: 'previewMode', labelKey: 'settings.shortcuts.previewMode', defaultKeys: 'Ctrl+3' },
+  { id: 'slideMode', labelKey: 'settings.shortcuts.slideMode', defaultKeys: 'Ctrl+4' },
   { id: 'typewriterMode', labelKey: 'settings.shortcuts.typewriterMode', defaultKeys: 'Ctrl+.' },
   { id: 'focusMode', labelKey: 'settings.shortcuts.focusMode', defaultKeys: 'Ctrl+,' },
   // Multi-cursor

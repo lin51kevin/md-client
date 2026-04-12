@@ -1,6 +1,6 @@
 
 import { useRef, useState } from 'react';
-import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, List, SpellCheck, FolderTree, Search, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, Settings, HelpCircle, FilePlus, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight, Table2, FileCode2, Minus, ListChecks, Sigma } from 'lucide-react';
+import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, List, SpellCheck, FolderTree, Search, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, Settings, HelpCircle, FilePlus, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight, Table2, FileCode2, Minus, ListChecks, Sigma, Presentation } from 'lucide-react';
 import { ViewMode, FocusMode } from '../types';
 
 import { FileMenuDropdown } from './FileMenuDropdown';
@@ -374,6 +374,14 @@ export function Toolbar({
           title={t('toolbar.previewOnly')}
         >
           <PanelLeftClose size={15} strokeWidth={1.8} />
+        </ToolbarButton>
+        <ToolbarButton
+          variant="view"
+          active={viewMode === 'slide'}
+          onClick={() => onSetViewMode('slide')}
+          title={t('toolbar.slideMode') || 'Slide Show (Ctrl+4)'}
+        >
+          <Presentation size={15} strokeWidth={1.8} />
         </ToolbarButton>
 
         <div className="w-px h-5 mx-1 shrink-0" style={{ backgroundColor: 'var(--border-color)' }} />

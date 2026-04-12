@@ -48,6 +48,7 @@ import { CommandPalette } from './components/CommandPalette';
 import { SnippetPicker } from './components/SnippetPicker';
 import { SnippetManager } from './components/SnippetManager';
 const HelpModal = lazy(() => import('./components/HelpModal').then(m => ({ default: m.HelpModal })));
+const SlidePreview = lazy(() => import('./components/SlidePreview').then(m => ({ default: m.SlidePreview })));
 import { EditorContentArea } from './components/EditorContentArea';
 import { createCommandRegistry } from './lib/command-registry';
 import type { SearchResultItem } from './types/search';
@@ -405,7 +406,7 @@ export default function App() {
 
       <div className="flex-1 overflow-hidden flex">
         <FileTreeSidebar visible={showFileTree} onFileOpen={(path) => openFileInTab(path)} activeFilePath={activeTab.filePath ?? null} />
-        <TocSidebar key={activeTabId} toc={tocEntries} onNavigate={handleTocNavigate} activeId={activeTocId} visible={showToc} />
+        <TocSidebar key={activeTabId} toc={isPristine ? [] : tocEntries} onNavigate={handleTocNavigate} activeId={activeTocId} visible={showToc} />
 
         <EditorContentArea
           isPristine={isPristine} welcomeDismissed={welcomeDismissed}
@@ -465,6 +466,13 @@ export default function App() {
       <SnippetPicker visible={showSnippetPicker} onClose={() => setShowSnippetPicker(false)} onSelect={handleSnippetInsert} />
 
       <SnippetManager visible={showSnippetManager} onClose={() => setShowSnippetManager(false)} />
+
+      {viewMode === 'slide' && activeTab && (
+        <SlidePreview
+          markdown={activeTab.doc}
+          onClose={() => setViewMode('split')}
+        />
+      )}
     </div>
     </I18nContext.Provider>
   );
