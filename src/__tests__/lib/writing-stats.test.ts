@@ -26,6 +26,18 @@ describe('writing-stats: countWords', () => {
     expect(countWords('hello    world')).toBe(2);
   });
 
+  it('strips YAML frontmatter before counting words', () => {
+    const doc = '---\ntitle: My Document\nauthor: Alice\n---\n# Heading\nHello world';
+    // Only 'Heading', 'Hello', 'world' should be counted (3 words)
+    // Without the fix, 'title', 'My', 'Document', 'author', 'Alice' would also be counted
+    expect(countWords(doc)).toBe(3);
+  });
+
+  it('counts correctly when document has no frontmatter', () => {
+    const doc = '# Heading\nHello world';
+    expect(countWords(doc)).toBe(3);
+  });
+
   it('returns 0 for empty string', () => {
     expect(countWords('')).toBe(0);
   });

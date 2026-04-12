@@ -3,6 +3,7 @@ import {
   createSnapshot,
   getSnapshots,
   deleteSnapshot,
+  restoreSnapshot,
   clearSnapshots,
   formatSnapshotTime,
 } from '../../lib/version-history';
@@ -80,6 +81,62 @@ describe('F012 — 版本历史（本地快照）', () => {
       createSnapshot(TEST_FILE, 'a');
       const remaining = deleteSnapshot(TEST_FILE, 'non-existent-id');
       expect(remaining).toHaveLength(1);
+    });
+  });
+
+  describe('restoreSnapshot', () => {
+    it('应恢复指定快照的内容', () => {
+      createSnapshot(TEST_FILE, 'version 1');
+      const snaps = getSnapshots(TEST_FILE);
+      const content = restoreSnapshot(TEST_FILE, snaps[0].id);
+      expect(content).toBe('version 1');
+    });
+
+    it('ID 不存在时应返回 null', () => {
+      const content = restoreSnapshot(TEST_FILE, 'nonexistent-id');
+      expect(content).toBeNull();
+    });
+
+    it('应恢复指定版本而不是最新版本', () => {
+      createSnapshot(TEST_FILE, 'v1 content');
+      createSnapshot(TEST_FILE, 'v2 content');
+      const snaps = getSnapshots(TEST_FILE);
+      const content = restoreSnapshot(TEST_FILE, snaps[0].id); // oldest
+      expect(content).toBe('v1 content');
+    });
+  });
+
+  describe('storageKey 碰撞防护', () => {
+    const FILE_WITH_SLASH  = '/foo/bar.md';    // 旧实现 → "_foo-bar_md"
+    const FILE_WITH_HYPHEN = '/foo-bar.md';    // 旧实现 → "_foo-bar_md" (碰撞!)
+
+    afterEach(() => {
+      clearSnapshots(FILE_WITH_SLASH);
+      clearSnapshots(FILE_WITH_HYPHEN);
+    });
+
+    it('路径中含分隔符与含连字符的文件应使用不同的存储 key', () => {
+      createSnapshot(FILE_WITH_SLASH,  'content for foo/bar.md');
+      createSnapshot(FILE_WITH_HYPHEN, 'content for foo-bar.md');
+
+      // 每个文件应独立存储，互不干扰
+      expect(getSnapshots(FILE_WITH_SLASH)).toHaveLength(1);
+      expect(getSnapshots(FILE_WITH_HYPHEN)).toHaveLength(1);
+      expect(getSnapshots(FILE_WITH_SLASH)[0].content).toBe('content for foo/bar.md');
+      expect(getSnapshots(FILE_WITH_HYPHEN)[0].content).toBe('content for foo-bar.md');
+    });
+
+    it('Windows 路径与同名含连字符路径应独立存储', () => {
+      const winPath   = 'C:\\Users\\docs\\my-file.md';
+      const unixStyle = 'C:/Users/docs/my-file.md';
+      createSnapshot(winPath,   'windows content');
+      createSnapshot(unixStyle, 'unix style content');
+
+      expect(getSnapshots(winPath)[0].content).toBe('windows content');
+      expect(getSnapshots(unixStyle)[0].content).toBe('unix style content');
+
+      clearSnapshots(winPath);
+      clearSnapshots(unixStyle);
     });
   });
 

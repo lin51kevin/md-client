@@ -27,15 +27,11 @@ const STORAGE_KEY_PREFIX = 'md-client-snapshot-';
 
 /**
  * 生成快照存储 key
+ * 使用 encodeURIComponent 确保不同路径不会产生相同的 key。
  */
 function storageKey(filePath: string): string {
-  const hash = filePath
-    .split('/')
-    .join('-')
-    .split('\\')
-    .join('-')
-    .replace(/[^a-zA-Z0-9_-]/g, '_');
-  return `${STORAGE_KEY_PREFIX}${hash}`;
+  const encoded = encodeURIComponent(filePath).replace(/%/g, '_');
+  return `${STORAGE_KEY_PREFIX}${encoded}`;
 }
 
 /**
@@ -87,7 +83,7 @@ export function createSnapshot(filePath: string, content: string, maxSnapshots =
 }
 
 /**
- * 删除单个快照
+ * 恢复指定快照的内容
  */
 export function restoreSnapshot(filePath: string, snapshotId: string): string | null {
   const snapshots = getSnapshots(filePath);

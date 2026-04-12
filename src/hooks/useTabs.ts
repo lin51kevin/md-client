@@ -27,7 +27,7 @@ const SESSION_KEY = 'marklite-session-tabs';
 export function useTabs(t?: TFn, onRecentChange?: () => void) {
   // Fallback: if no t() provided, use identity (raw key)
   const tr = t ?? ((k: string) => k);
-  const notifyRecent = () => onRecentChange?.();
+  const notifyRecent = useCallback(() => onRecentChange?.(), [onRecentChange]);
   
   // Initialize from session if available
   const [isRestoringSession, setIsRestoringSession] = useState(true);
@@ -217,7 +217,7 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
       setTabs(prev => prev.map(t => t.id === id ? { ...t, displayName: trimmed } : t));
       return true;
     }
-  }, []);
+  }, [tr, notifyRecent]);
 
   const updateActiveDoc = useCallback((value: string) => {
     setTabs(prev =>
@@ -368,7 +368,7 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
   };
 
   return {
-    tabs, activeTabId, setActiveTabId, activeTabIdRef,
+    tabs, activeTabId, setActiveTabId, activeTabIdRef, tabsRef,
     getActiveTab, getTabTitle, updateActiveDoc, updateTabDoc, openFileInTab, openFileWithContent,
     createNewTab, closeTab, reorderTabs, markSaved, markSavedAs,
     renameTab, setTabDisplayName,

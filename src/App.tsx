@@ -87,7 +87,7 @@ export default function App() {
   const [renamingTabId, setRenamingTabId] = useState<string | null>(null);
 
   const {
-    tabs, activeTabId, setActiveTabId, activeTabIdRef,
+    tabs, activeTabId, setActiveTabId, activeTabIdRef, tabsRef,
     getActiveTab, getTabTitle, updateActiveDoc, updateTabDoc,
     openFileInTab, openFileWithContent, createNewTab, closeTab, reorderTabs,
     markSaved, markSavedAs, renameTab, setTabDisplayName, pinTab, unpinTab,
@@ -126,15 +126,17 @@ export default function App() {
 
   const handleCloseAllTabs = useCallback(async () => {
     const unpinnedTabs = tabs.filter(t => !t.isPinned);
+    const toClose: string[] = [];
     for (const tab of unpinnedTabs) {
       if (tab.isDirty) {
         const name = tab.filePath?.split(/[\\/]/).pop() ?? 'Untitled.md';
         const path = tab.filePath ?? t('app.unsavedPath');
         const yes = await confirm(t('app.closeTabUnsaved', { name, path }), { title: t('app.closeTab'), kind: 'warning' });
-        if (!yes) return;
+        if (!yes) break; // stop asking; close only those already confirmed
       }
+      toClose.push(tab.id);
     }
-    for (const tab of unpinnedTabs) closeTab(tab.id);
+    for (const id of toClose) closeTab(id);
   }, [tabs, closeTab, t]);
 
   // ── File operations ──────────────────────────────────────────────
@@ -235,41 +237,41 @@ export default function App() {
   useWindowInit(isTauri, theme);
 
   // Window close confirmation for unsaved changes
+  // Use tabsRef to avoid re-registering the listener on every edit
   useEffect(() => {
     if (!isTauri) return;
 
+    let cancelled = false;
     let unlisten: (() => void) | null = null;
 
-    import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
-      import('@tauri-apps/api/event').then(({ listen }) => {
-        listen('tauri://close-requested', async (event) => {
-          const dirtyTabs = tabs.filter(tab => tab.isDirty);
-          
-          if (dirtyTabs.length > 0) {
-            const shouldClose = await confirm(
-              t('common.unsavedChangesMessage', { count: dirtyTabs.length }),
-              { title: t('common.unsavedChanges'), kind: 'warning' }
-            );
-            
-            if (!shouldClose) {
-              // Prevent the window from closing
-              return;
-            }
-          }
-          
-          // Allow the window to close
-          const window = getCurrentWindow();
-          await window.destroy();
-        }).then(fn => {
-          unlisten = fn;
-        });
+    (async () => {
+      const { getCurrentWindow } = await import('@tauri-apps/api/window');
+      const { listen } = await import('@tauri-apps/api/event');
+      if (cancelled) return;
+
+      const fn = await listen('tauri://close-requested', async () => {
+        const dirtyTabs = tabsRef.current.filter(tab => tab.isDirty);
+
+        if (dirtyTabs.length > 0) {
+          const shouldClose = await confirm(
+            t('common.unsavedChangesMessage', { count: dirtyTabs.length }),
+            { title: t('common.unsavedChanges'), kind: 'warning' }
+          );
+          if (!shouldClose) return;
+        }
+
+        const win = getCurrentWindow();
+        await win.destroy();
       });
-    });
+
+      if (cancelled) fn(); else unlisten = fn;
+    })();
 
     return () => {
+      cancelled = true;
       unlisten?.();
     };
-  }, [isTauri, tabs, t]);
+  }, [isTauri]); // tabsRef is a stable ref; t is stable for the app lifetime
 
   // F010 - Debounced TOC + word count
   const { debouncedDoc, tocEntries, wordCount } = useDocMetrics(activeTab.doc, activeTabId);

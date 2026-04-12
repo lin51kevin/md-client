@@ -18,7 +18,7 @@ export function parseSlides(markdown: string): string[] {
   let inCodeBlock = false;
 
   for (const line of lines) {
-    if (line.trim().match(/^```/)) {
+    if (line.trim().match(/^(`{3,}|~{3,})/)) {
       inCodeBlock = !inCodeBlock;
     }
     if (!inCodeBlock && line.trim() === '---') {

@@ -297,6 +297,65 @@ describe('useTabs', () => {
     });
   });
 
+  describe('markSavedAs', () => {
+    it('应在另存为后清除 displayName，使标签页显示新文件名', () => {
+      const { result } = renderHook(() => useTabs(mockT));
+
+      // createNewTab 会给新标签设置 displayName (如 'untitled.md')
+      act(() => { result.current.createNewTab(); });
+      const newTab = result.current.tabs.find(t => t.displayName);
+      expect(newTab?.displayName).toBeDefined();
+
+      // 另存为后应清除 displayName，改用 filePath 推导文件名
+      act(() => { result.current.markSavedAs(newTab!.id, '/docs/mynotes.md'); });
+
+      const saved = result.current.tabs.find(t => t.id === newTab!.id);
+      expect(saved?.displayName).toBeUndefined();
+      expect(saved?.filePath).toBe('/docs/mynotes.md');
+      expect(saved?.isDirty).toBe(false);
+    });
+
+    it('另存为后 getTabTitle 应使用新文件名而非旧 displayName', () => {
+      const { result } = renderHook(() => useTabs(mockT));
+
+      act(() => { result.current.createNewTab(); });
+      const newTab = result.current.tabs.find(t => t.displayName)!;
+      const oldTitle = result.current.getTabTitle(newTab);
+
+      act(() => { result.current.markSavedAs(newTab.id, '/docs/renamed.md'); });
+
+      const updatedTab = result.current.tabs.find(t => t.id === newTab.id)!;
+      const newTitle = result.current.getTabTitle(updatedTab);
+      expect(newTitle).not.toBe(oldTitle);
+      expect(newTitle).toBe('renamed.md');
+    });
+  });
+
+  describe('tabsRef', () => {
+    it('应暴露 tabsRef 且始终反映最新 tabs 状态', () => {
+      const { result } = renderHook(() => useTabs(mockT));
+
+      // Initially reflects current tabs
+      expect(result.current.tabsRef.current).toEqual(result.current.tabs);
+
+      act(() => { result.current.updateActiveDoc('updated content'); });
+
+      // After update, ref should reflect new dirty state
+      expect(result.current.tabsRef.current[0].isDirty).toBe(true);
+      expect(result.current.tabsRef.current[0].doc).toBe('updated content');
+    });
+
+    it('tabsRef 在新建标签后应同步更新', () => {
+      const { result } = renderHook(() => useTabs(mockT));
+
+      act(() => { result.current.updateActiveDoc('dirty'); });
+      act(() => { result.current.createNewTab(); });
+
+      expect(result.current.tabsRef.current).toHaveLength(2);
+      expect(result.current.tabsRef.current).toEqual(result.current.tabs);
+    });
+  });
+
   describe('Tab State Management', () => {
     it('should maintain tabs and activeTabId refs', () => {
       const { result } = renderHook(() => useTabs(mockT));

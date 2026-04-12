@@ -145,13 +145,12 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
         defaultPath: getDefaultFileName(format),
       });
       if (savePath) {
-        // [P1-6] Report progress for pre-rendering phase
         onProgress?.('Pre-rendering diagrams and formulas...', 20);
         const { prerenderExportAssets } = await import('../lib/export-prerender');
-        onProgress?.('Exporting document...', 60);
         const preRenderedImages = await prerenderExportAssets(tab.doc);
-        onProgress?.('Generating file...', 80);
+        onProgress?.('Exporting document...', 60);
         await invoke('export_document', { markdown: tab.doc, outputPath: savePath, format, preRenderedImages });
+        onProgress?.('Generating file...', 80);
         onProgress?.('Complete!', 100);
       }
     } catch (err) {

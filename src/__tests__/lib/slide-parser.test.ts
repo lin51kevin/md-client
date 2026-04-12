@@ -40,6 +40,28 @@ describe('slide-parser', () => {
       expect(slides).toHaveLength(2);
     });
 
+    it('应忽略 ~~~ 围栏代码块内的 ---', () => {
+      const md = '# Slide 1\n~~~\n---\ncodeblock content\n~~~\n---\n# Slide 2';
+      const slides = parseSlides(md);
+      expect(slides).toHaveLength(2);
+      expect(slides[0]).toContain('# Slide 1');
+      expect(slides[0]).toContain('codeblock content');
+      expect(slides[1]).toContain('# Slide 2');
+    });
+
+    it('应忽略 ``` 和 ~~~ 混合围栏内的 ---', () => {
+      const md = '# Slide 1\n```\n---\n```\n~~~\n---\n~~~\n---\n# Slide 2';
+      const slides = parseSlides(md);
+      // Only the bare --- outside fences should split
+      expect(slides).toHaveLength(2);
+    });
+
+    it('~~~ 围栏内的 --- 不应被误判为分隔符', () => {
+      const md = '~~~yaml\nkey: value\n---\nother: val\n~~~';
+      const slides = parseSlides(md);
+      expect(slides).toHaveLength(1);
+    });
+
     it('应保留幻灯片内容中的格式化文本', () => {
       const md = '```ts\nconst x = 1;\n```\n---\n**Bold text**';
       const slides = parseSlides(md);

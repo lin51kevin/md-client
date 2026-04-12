@@ -261,8 +261,8 @@ describe('FileTreeSidebar CRUD', () => {
       expect(mockedInvoke).toHaveBeenCalledWith(
         'rename_file',
         expect.objectContaining({
-          oldPath: './README.md',
-          newPath: expect.stringContaining('new-name.md'),
+          old_path: './README.md',
+          new_path: expect.stringContaining('new-name.md'),
         })
       );
     }, { timeout: 2000 });

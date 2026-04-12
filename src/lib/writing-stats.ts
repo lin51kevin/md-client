@@ -108,6 +108,8 @@ export function buildStatsSummary(text: string): WritingStats {
  */
 function stripMarkdown(text: string): string {
   return text
+    // 去掉 YAML frontmatter (--- ... ---)
+    .replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '')
     // 去掉行内代码
     .replace(/`[^`]*`/g, '')
     // 去掉代码块
