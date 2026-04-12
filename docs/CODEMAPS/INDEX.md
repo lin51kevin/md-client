@@ -53,12 +53,12 @@ md-client/
 │   └── Cargo.toml               # Rust 依赖配置
 │
 ├── docs/                         # 文档
-│   ├── USER_GUIDE.md            # 用户手册（v0.5.0）
+│   ├── USER_GUIDE.md            # 用户手册（v0.6.0）
 │   ├── CODEMAPS/                # 代码映射（本目录）
 │   └── screenshot.png           # 界面截图
 │
 ├── public/                       # 静态资源
-├── CHANGELOG.md                 # 版本历史（已更新 v0.5.0）
+├── CHANGELOG.md                 # 版本历史（已更新 v0.6.0）
 ├── README.md                    # 项目首页（已更新）
 ├── package.json                 # Node.js 依赖
 ├── tauri.conf.json              # Tauri 配置
