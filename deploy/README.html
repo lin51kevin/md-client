@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MarkLite - Installation Guide</title>
+  <style>
+    :root {
+      --bg: #1e1e2e;
+      --surface: #282840;
+      --text: #cdd6f4;
+      --text-muted: #9399b2;
+      --accent: #89b4fa;
+      --green: #a6e3a1;
+      --border: #45475a;
+      --radius: 12px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      padding: 40px 20px;
+    }
+    .container { max-width: 680px; margin: 0 auto; }
+    h1 {
+      font-size: 2rem;
+      text-align: center;
+      margin-bottom: 8px;
+      color: var(--accent);
+    }
+    .subtitle { text-align: center; color: var(--text-muted); margin-bottom: 36px; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px 28px;
+      margin-bottom: 20px;
+    }
+    .card h2 {
+      font-size: 1.15rem;
+      color: var(--green);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    ol { padding-left: 22px; }
+    li { margin-bottom: 10px; }
+    code {
+      background: var(--bg);
+      padding: 2px 8px;
+      border-radius: 5px;
+      font-size: 0.9em;
+      color: var(--accent);
+    }
+    pre {
+      background: var(--bg);
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 12px 0;
+      font-size: 0.88em;
+      line-height: 1.55;
+    }
+    pre code { background: none; padding: 0; }
+    .warning {
+      border-left: 4px solid #fab387;
+      padding: 16px 20px;
+      background: rgba(250, 179, 135, 0.08);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      margin: 20px 0;
+    }
+    .warning strong { color: #fab387; }
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>✨ MarkLite</h1>
+    <p class="subtitle">Lightweight Markdown Editor for Windows · Portable Edition</p>
+
+    <div class="card">
+      <h2>📂 Quick Start (Portable)</h2>
+      <ol>
+        <li>Extract the entire ZIP archive to any folder you like.</li>
+        <li><strong>Double-click</strong> <code>marklite.exe</code> to launch MarkLite.</li>
+        <li>No installation required! The app runs entirely from its folder.</li>
+        <li>To uninstall, simply delete this folder.</li>
+      </ol>
+      <div class="warning">
+        <strong>⚠️ Note:</strong> Do not move or rename <code>marklite.exe</code> after extracting.
+        The application expects to run from its extracted directory.
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🔧 Optional Setup</h2>
+      <p>If you used the NSIS installer instead of the ZIP package:</p>
+      <ul style="list-style: none; padding-left: 0;">
+        <li>☑️ Installed to <code>%LOCALAPPDATA%\MarkLite</code></li>
+        <li>☐ Desktop shortcut (optional during install)</li>
+        <li>☐ Start Menu entry (optional during install)</li>
+        <li>☑️ File association for <code>.md</code> / <code>.markdown</code></li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>📌 File Associations</h2>
+      <p>After installing with the NSIS installer, double-clicking any <code>.md</code> file will open it in MarkLite automatically.</p>
+      <p style="margin-top: 10px;">
+        If using the portable ZIP version, you can manually associate files:
+      </p>
+      <pre><code>assoc .md=MarkLite.md
+ftype "MarkLite.md"="C:\path\to\MarkLite\marklite.exe" "%1"</code></pre>
+    </div>
+
+    <footer>
+      <p>MarkLite v0.7.0 · Built with Tauri + React + CodeMirror</p>
+      <p>
+        <a href="https://github.com/lin51kevin/md-client">GitHub</a> · 
+        <a href="https://github.com/lin51kevin/md-client/issues">Issues</a>
+      </p>
+    </footer>
+  </div>
+</body>
+</html>
