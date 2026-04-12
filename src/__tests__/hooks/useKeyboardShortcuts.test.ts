@@ -274,4 +274,56 @@ describe('useKeyboardShortcuts', () => {
       expect(createNewTab).toHaveBeenCalledTimes(1);
     });
   });
+
+  describe('Insert Snippet Shortcut', () => {
+    it('should call openSnippetPicker with Ctrl+Shift+J', () => {
+      const openSnippetPicker = vi.fn();
+      renderHook(() => useKeyboardShortcuts({
+        createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile,
+        closeTab, setViewMode, activeTabIdRef,
+        toggleFindReplace, setFocusMode, focusMode: 'normal',
+        openSnippetPicker,
+      }));
+
+      const event = dispatchKeyEvent('j', { ctrlKey: true, shiftKey: true });
+
+      expect(event.defaultPrevented).toBe(true);
+      expect(openSnippetPicker).toHaveBeenCalledTimes(1);
+    });
+
+    it('should call openSnippetPicker with uppercase J', () => {
+      const openSnippetPicker = vi.fn();
+      renderHook(() => useKeyboardShortcuts({
+        createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile,
+        closeTab, setViewMode, activeTabIdRef,
+        toggleFindReplace, setFocusMode, focusMode: 'normal',
+        openSnippetPicker,
+      }));
+
+      dispatchKeyEvent('J', { ctrlKey: true, shiftKey: true });
+
+      expect(openSnippetPicker).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not call openSnippetPicker without Shift modifier', () => {
+      const openSnippetPicker = vi.fn();
+      renderHook(() => useKeyboardShortcuts({
+        createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile,
+        closeTab, setViewMode, activeTabIdRef,
+        toggleFindReplace, setFocusMode, focusMode: 'normal',
+        openSnippetPicker,
+      }));
+
+      dispatchKeyEvent('j', { ctrlKey: true, shiftKey: false });
+
+      expect(openSnippetPicker).not.toHaveBeenCalled();
+    });
+
+    it('should not throw when openSnippetPicker is not provided', () => {
+      renderShortcuts();
+      expect(() => {
+        dispatchKeyEvent('j', { ctrlKey: true, shiftKey: true });
+      }).not.toThrow();
+    });
+  });
 });

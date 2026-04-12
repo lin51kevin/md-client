@@ -18,6 +18,8 @@ interface ShortcutsParams {
   /** F009 — 焦点模式切换 */
   setFocusMode?: (mode: FocusMode) => void;
   focusMode?: FocusMode;
+  /** 插入片段浮窗 */
+  openSnippetPicker?: () => void;
 }
 
 /** 默认快捷键映射：actionId → 解析后的快捷键 */
@@ -33,6 +35,7 @@ const DEFAULT_PARSED = new Map([
   ['previewMode', { ctrl: true, shift: false, alt: false, key: '3' }],
   ['typewriterMode', { ctrl: true, shift: false, alt: false, key: '.' }],
   ['focusMode', { ctrl: true, shift: false, alt: false, key: ',' }],
+  ['insertSnippet', { ctrl: true, shift: true, alt: false, key: 'j' }],
 ]);
 
 export function useKeyboardShortcuts(params: ShortcutsParams) {
@@ -43,7 +46,7 @@ export function useKeyboardShortcuts(params: ShortcutsParams) {
     const custom = getCustomShortcuts();
 
     const handler = (e: KeyboardEvent) => {
-      const { createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile, closeTab, setViewMode, activeTabIdRef, toggleFindReplace, setFocusMode, focusMode } = paramsRef.current;
+      const { createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile, closeTab, setViewMode, activeTabIdRef, toggleFindReplace, setFocusMode, focusMode, openSnippetPicker } = paramsRef.current;
       
       // F009 — ESC 退出任何焦点模式（优先处理，无需 Ctrl）
       if (e.key === 'Escape' && focusMode && focusMode !== 'normal') {
@@ -64,7 +67,7 @@ export function useKeyboardShortcuts(params: ShortcutsParams) {
       }
 
       // 拦截 DevTools 快捷键
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && ['I', 'J', 'C'].includes(e.key)) {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && ['I', 'C'].includes(e.key)) {
         e.preventDefault();
         return;
       }
@@ -94,6 +97,7 @@ export function useKeyboardShortcuts(params: ShortcutsParams) {
               setFocusMode?.(focusMode === 'typewriter' ? 'normal' : 'typewriter'); break;
             case 'focusMode':
               setFocusMode?.(focusMode === 'focus' ? 'normal' : 'focus'); break;
+            case 'insertSnippet': openSnippetPicker?.(); break;
           }
           return; // 匹配成功，停止继续检查
         }

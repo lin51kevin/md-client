@@ -286,6 +286,7 @@ export default function App() {
     closeTab: handleCloseTab, setViewMode, activeTabIdRef,
     toggleFindReplace: () => setShowSearchPanel(prev => !prev),
     focusMode, setFocusMode,
+    openSnippetPicker,
   });
 
   // ── Command Palette registry ─────────────────────────────────────
@@ -372,6 +373,7 @@ export default function App() {
             onToggleSearch={() => setShowSearchPanel(prev => !prev)} showSearch={showSearchPanel}
             onFormatAction={handleFormatAction} onImageLocal={() => handleFormatAction('image-local')}
             onOpenSettings={() => setShowSettings(true)} onOpenHelp={() => setShowHelp(true)}
+            onInsertSnippet={openSnippetPicker}
             tabs={tabs} activeTabId={activeTabId} onActivateTab={setActiveTabId}
           />
 

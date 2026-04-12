@@ -46,6 +46,7 @@ vi.mock('../../i18n', () => ({
         'toolbar.task': '任务列表',
         'toolbar.math': '数学公式',
         'toolbar.label': '工具栏',
+        'toolbar.insertSnippet': '插入片段',
       };
       return map[key] ?? key;
     },
@@ -411,5 +412,34 @@ describe('Toolbar', () => {
     buttons[0].focus();
     fireEvent.keyDown(toolbar, { key: 'Enter' });
     expect(document.activeElement).toBe(buttons[0]);
+  });
+
+  describe('Insert Snippet Button', () => {
+    it('renders the insert snippet button with correct i18n title', () => {
+      render(<Toolbar {...defaultProps} />);
+      expect(screen.getByTitle('插入片段')).toBeInTheDocument();
+    });
+
+    it('calls onInsertSnippet when snippet button is clicked', () => {
+      const onInsertSnippet = vi.fn();
+      render(<Toolbar {...defaultProps} onInsertSnippet={onInsertSnippet} />);
+      screen.getByTitle('插入片段').click();
+      expect(onInsertSnippet).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not throw when onInsertSnippet is not provided', () => {
+      render(<Toolbar {...defaultProps} />);
+      expect(() => screen.getByTitle('插入片段').click()).not.toThrow();
+    });
+
+    it('snippet button appears directly after the math (Sigma) button', () => {
+      render(<Toolbar {...defaultProps} onInsertSnippet={vi.fn()} />);
+      const mathBtn = screen.getByTitle('数学公式');
+      const snippetBtn = screen.getByTitle('插入片段');
+      const allButtons = screen.getAllByRole('button');
+      const mathIdx = allButtons.indexOf(mathBtn);
+      const snippetIdx = allButtons.indexOf(snippetBtn);
+      expect(snippetIdx).toBe(mathIdx + 1);
+    });
   });
 });

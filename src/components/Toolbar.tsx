@@ -1,6 +1,6 @@
 
 import { useRef, useState } from 'react';
-import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, List, SpellCheck, FolderTree, Search, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, Settings, HelpCircle, FilePlus, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight, Table2, FileCode2, Minus, ListChecks, Sigma, Presentation } from 'lucide-react';
+import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, List, SpellCheck, FolderTree, Search, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, Settings, HelpCircle, FilePlus, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight, Table2, FileCode2, Minus, ListChecks, Sigma, Presentation, Library } from 'lucide-react';
 import { ViewMode, FocusMode } from '../types';
 
 import { FileMenuDropdown } from './FileMenuDropdown';
@@ -59,6 +59,8 @@ interface ToolbarProps {
   activeTabId?: string;
   /** Tab navigation: activate a tab by id */
   onActivateTab?: (id: string) => void;
+  /** 打开片段选择器 */
+  onInsertSnippet?: () => void;
 }
 
 const DIVIDER = (
@@ -74,7 +76,7 @@ export function Toolbar({
   onToggleSearch, showSearch, onFormatAction,
   recentFiles, onOpenRecent, onClearRecent,
   vimMode, onToggleVimMode, onImageLocal, onOpenSettings, onOpenHelp,
-  tabs, activeTabId, onActivateTab, onCloseAll,
+  tabs, activeTabId, onActivateTab, onCloseAll, onInsertSnippet,
 }: ToolbarProps & { onImageLocal?: () => void }) {
   const { t } = useI18n();
   const toolbarRef = useRef<HTMLDivElement>(null);
@@ -213,6 +215,9 @@ export function Toolbar({
         </ToolbarButton>
         <ToolbarButton onClick={() => onFormatAction?.('math')} title={t('toolbar.math')}>
           <Sigma size={14} strokeWidth={2} />
+        </ToolbarButton>
+        <ToolbarButton onClick={onInsertSnippet} title={t('toolbar.insertSnippet')}>
+          <Library size={14} strokeWidth={1.8} />
         </ToolbarButton>
       </div>
 
