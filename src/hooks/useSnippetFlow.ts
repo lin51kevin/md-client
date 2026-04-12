@@ -15,12 +15,12 @@ export function useSnippetFlow({ cmViewRef, updateActiveDoc, setEditorCtxMenu }:
   const handleSnippetInsert = useCallback((_snippetId: string, resolved: { text: string; cursorPosition: number | null }) => {
     const view = cmViewRef.current;
     if (!view) return;
-    const pos = view.state.selection.main.head;
+    const { from, to } = view.state.selection.main;
     view.dispatch({
-      changes: { from: pos, insert: resolved.text },
-      selection: { anchor: resolved.cursorPosition !== null ? pos + resolved.cursorPosition : pos + resolved.text.length },
+      changes: { from, to, insert: resolved.text },
+      selection: { anchor: resolved.cursorPosition !== null ? from + resolved.cursorPosition : from + resolved.text.length },
     });
-    updateActiveDoc(resolved.text);
+    updateActiveDoc(view.state.doc.toString());
     view.focus();
   }, [cmViewRef, updateActiveDoc]);
 

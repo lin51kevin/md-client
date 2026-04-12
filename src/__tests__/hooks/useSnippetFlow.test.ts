@@ -60,13 +60,17 @@ describe('useSnippetFlow', () => {
     expect(updateActiveDoc).not.toHaveBeenCalled();
   });
 
-  it('handleSnippetInsert dispatches and calls updateActiveDoc when view is available', () => {
+  it('handleSnippetInsert dispatches and calls updateActiveDoc with full doc when view is available', () => {
     const dispatch = vi.fn();
     const focus = vi.fn();
     const updateActiveDoc = vi.fn();
+    const fullDoc = 'existing content world';
     const cmViewRef = {
       current: {
-        state: { selection: { main: { head: 5 } } },
+        state: {
+          selection: { main: { from: 17, to: 17, head: 17 } },
+          doc: { toString: () => fullDoc },
+        },
         dispatch,
         focus,
       } as any,
@@ -84,7 +88,38 @@ describe('useSnippetFlow', () => {
     });
 
     expect(dispatch).toHaveBeenCalledOnce();
-    expect(updateActiveDoc).toHaveBeenCalledWith('world');
+    // updateActiveDoc must receive full doc, not just snippet text
+    expect(updateActiveDoc).toHaveBeenCalledWith(fullDoc);
     expect(focus).toHaveBeenCalledOnce();
+  });
+
+  it('handleSnippetInsert replaces selected text (from !== to)', () => {
+    const dispatch = vi.fn();
+    const focus = vi.fn();
+    const updateActiveDoc = vi.fn();
+    const cmViewRef = {
+      current: {
+        state: {
+          selection: { main: { from: 5, to: 10, head: 10 } },
+          doc: { toString: () => 'after insert' },
+        },
+        dispatch,
+        focus,
+      } as any,
+    };
+
+    const { result } = renderHook(() =>
+      useSnippetFlow(makeOptions({ cmViewRef, updateActiveDoc })),
+    );
+
+    act(() => {
+      result.current.handleSnippetInsert('snip-1', {
+        text: 'replacement',
+        cursorPosition: null,
+      });
+    });
+
+    const dispatchArg = dispatch.mock.calls[0][0];
+    expect(dispatchArg.changes).toEqual({ from: 5, to: 10, insert: 'replacement' });
   });
 });
