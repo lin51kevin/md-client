@@ -1,21 +1,8 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useI18n } from '../i18n';
 import { Search, X, CaseSensitive, Regex, FileText } from 'lucide-react';
-import { invoke } from '@tauri-apps/api/core';
-import { searchAll, replaceAll } from '../lib/search';
-
-export interface SearchResultItem {
-  file_path: string;
-  file_name: string;
-  line_number: number;
-  line_content: string;
-  match_start: number;
-  match_end: number;
-  /** Set for in-memory untitled tabs so navigation can switch by tab ID */
-  tab_id?: string;
-}
-
-type SearchOptions = { caseSensitive: boolean; wholeWord: boolean; regex: boolean };
+import { useSearchLogic } from '../hooks/useSearchLogic';
+import type { SearchResultItem } from '../types/search';
 
 interface SearchPanelProps {
   visible: boolean;
@@ -26,57 +13,9 @@ interface SearchPanelProps {
   searchDir: string | null;
   onResultClick: (result: SearchResultItem) => void;
   onClose: () => void;
-  /** ID of the currently active tab */
   currentTabId: string;
-  /** Update any tab doc by ID */
   onAnyTabContentChange: (tabId: string, content: string) => void;
-  /** All open tabs — used to include untitled in-memory files in cross-file search */
   openTabs: { id: string; filePath: string | null; doc: string; displayName?: string }[];
-}
-
-/** Byte-offset of the start of a 1-based line in text */
-function lineStartOffset(text: string, lineNumber: number): number {
-  let pos = 0;
-  for (let i = 1; i < lineNumber; i++) {
-    const nl = text.indexOf('\n', pos);
-    if (nl === -1) return pos;
-    pos = nl + 1;
-  }
-  return pos;
-}
-
-/** Convert searchAll raw results → SearchResultItem list (for current-file display) */
-function toSearchResultItems(
-  content: string,
-  filePath: string | null,
-  query: string,
-  opts: SearchOptions,
-): { items: SearchResultItem[]; rawMatches: { from: number; to: number }[] } {
-  const raw = searchAll(content, query, opts);
-  if (raw.length === 0) return { items: [], rawMatches: [] };
-
-  const lines = content.split('\n');
-  const lineStarts: number[] = [];
-  let off = 0;
-  for (const line of lines) { lineStarts.push(off); off += line.length + 1; }
-
-  const fileName = filePath ? filePath.split(/[/\\]/).pop() ?? '' : '当前文件';
-  const items: SearchResultItem[] = raw.map(r => {
-    let lo = 0, hi = lineStarts.length - 1;
-    while (lo < hi) {
-      const mid = (lo + hi + 1) >> 1;
-      if (lineStarts[mid] <= r.from) lo = mid; else hi = mid - 1;
-    }
-    return {
-      file_path: filePath ?? '',
-      file_name: fileName,
-      line_number: lo + 1,
-      line_content: lines[lo],
-      match_start: r.from - lineStarts[lo],
-      match_end: r.to - lineStarts[lo],
-    };
-  });
-  return { items, rawMatches: raw };
 }
 
 export function SearchPanel({
@@ -84,227 +23,27 @@ export function SearchPanel({
   searchDir, onResultClick, onClose, openTabs, currentTabId, onAnyTabContentChange,
 }: SearchPanelProps) {
   const { t } = useI18n();
-  // ── 搜索输入状态 ──
-  const [query, setQuery] = useState('');
-  const [replacement, setReplacement] = useState('');
 
-  // ── 搜索选项（每个绑定独立 checkbox，保持 useState） ──
-  const [caseSensitive, setCaseSensitive] = useState(false);
-  const [wholeWord, setWholeWord] = useState(false);
-  const [useRegex, setUseRegex] = useState(false);
-  const [crossFile, setCrossFile] = useState(false);
-
-  // ── 搜索结果状态 ──
-  const [searchResults, setSearchResults] = useState<SearchResultItem[]>([]);
-  const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
-
-  // ── 合并状态：loading / error / replaceMessage → searchStatus ──
-  interface SearchStatus {
-    loading: boolean;
-    error: string | null;
-    replaceMessage: string | null;
-  }
-  const [searchStatus, setSearchStatus] = useState<SearchStatus>({
-    loading: false,
-    error: null,
-    replaceMessage: null,
+  const {
+    query, setQuery, replacement, setReplacement,
+    caseSensitive, setCaseSensitive, wholeWord, setWholeWord,
+    useRegex, setUseRegex, crossFile, setCrossFile,
+    searchResults, selectedIdx, setSelectedIdx,
+    searchStatus,
+    doCurrentFileSearch, doSearchAll,
+    handleReplaceSingle, handleReplaceAll,
+  } = useSearchLogic({
+    content, currentFilePath, onContentChange, onMatchChange,
+    searchDir, currentTabId, onAnyTabContentChange, openTabs,
+    t: t as (key: string, vars?: Record<string, string | number>) => string,
   });
 
   const queryInputRef = useRef<HTMLInputElement>(null);
-  const onMatchChangeRef = useRef(onMatchChange);
-  onMatchChangeRef.current = onMatchChange;
-
-  const opts: SearchOptions = { caseSensitive, wholeWord, regex: useRegex };
 
   useEffect(() => {
     if (visible) setTimeout(() => queryInputRef.current?.focus(), 50);
   }, [visible]);
 
-  // ── Current-file search (Enter triggered) ──────────────────────────────────
-  const doCurrentFileSearch = useCallback(() => {
-    if (crossFile) return;
-    if (!query.trim()) {
-      setSearchResults([]);
-      setSelectedIdx(null);
-      setSearchStatus(s => ({ ...s, error: null, replaceMessage: null }));
-      onMatchChangeRef.current?.([], -1);
-      return;
-    }
-    const { items, rawMatches } = toSearchResultItems(content, currentFilePath, query, opts);
-    setSearchResults(items);
-    setSelectedIdx(null);
-    setSearchStatus({ loading: false, error: null, replaceMessage: null });
-    onMatchChangeRef.current?.(rawMatches, rawMatches.length > 0 ? 0 : -1);
-  }, [crossFile, query, content, currentFilePath, caseSensitive, wholeWord, useRegex]);
-
-  // Clear on switch to cross-file
-  useEffect(() => {
-    if (crossFile) {
-      setSearchResults([]);
-      setSelectedIdx(null);
-      setSearchStatus({ loading: false, error: null, replaceMessage: null });
-      onMatchChangeRef.current?.([], -1);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [crossFile]);
-
-  // ── Cross-file search ──────────────────────────────────────────────────────
-  const doSearchAll = useCallback(async () => {
-    if (!query.trim()) return;
-    setSearchStatus({ loading: true, error: null, replaceMessage: null });
-    setSelectedIdx(null);
-    try {
-      // Search in-memory untitled tabs first
-      const untitledResults: SearchResultItem[] = [];
-      for (const tab of openTabs.filter(t => !t.filePath)) {
-        const fileName = tab.displayName ?? 'Untitled.md';
-        const { items } = toSearchResultItems(tab.doc, null, query, opts);
-        for (const item of items) {
-          untitledResults.push({ ...item, file_name: fileName, tab_id: tab.id });
-        }
-      }
-
-      // Search on-disk files (only if searchDir is known)
-      let diskResults: SearchResultItem[] = [];
-      if (searchDir) {
-        diskResults = await invoke('search_files', {
-          directory: searchDir, query: query.trim(), caseSensitive, useRegex, wholeWord,
-        });
-      }
-
-      // No searchable scope at all (no untitled tabs AND no saved file directory)
-      const noUntitled = openTabs.filter(t => !t.filePath).length === 0;
-      if (noUntitled && !searchDir) {
-        setSearchStatus(s => ({ ...s, error: '未找到搜索目录，请先打开或保存一个文件' }));
-        setSearchResults([]);
-        return;
-      }
-      setSearchResults([...untitledResults, ...diskResults]);
-    } catch (e: unknown) {
-      setSearchStatus(s => ({ ...s, error: String(e) }));
-      setSearchResults([]);
-    } finally {
-      setSearchStatus(s => ({ ...s, loading: false }));
-    }
-  // eslint-disable-line react-hooks/exhaustive-deps
-  }, [query, searchDir, caseSensitive, wholeWord, useRegex, openTabs]);
-
-  // ── 防抖跨文件搜索：crossFile 模式下 query 变化时自动防抖执行 ──
-  const crossFileSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    if (!crossFile || !query.trim()) return;
-    if (crossFileSearchTimerRef.current) clearTimeout(crossFileSearchTimerRef.current);
-    crossFileSearchTimerRef.current = setTimeout(() => {
-      doSearchAll();
-    }, 300);
-    return () => { if (crossFileSearchTimerRef.current) clearTimeout(crossFileSearchTimerRef.current); };
-  }, [query, crossFile, caseSensitive, wholeWord, useRegex, doSearchAll]);
-
-  // ── Replace selected ───────────────────────────────────────────
-  const handleReplaceSingle = useCallback(async () => {
-    if (selectedIdx === null || selectedIdx >= searchResults.length) return;
-    const r = searchResults[selectedIdx];
-
-    // Untitled in-memory tab (identified by tab_id)
-    if (r.tab_id) {
-      const tab = openTabs.find(t => t.id === r.tab_id);
-      if (tab == null) return;
-      const lineStart = lineStartOffset(tab.doc, r.line_number);
-      const absFrom = lineStart + r.match_start;
-      const absTo = lineStart + r.match_end;
-      const newContent = tab.doc.slice(0, absFrom) + replacement + tab.doc.slice(absTo);
-      if (r.tab_id === currentTabId) {
-        onContentChange(newContent);
-      } else {
-        onAnyTabContentChange(r.tab_id, newContent);
-      }
-      setSearchResults(prev => prev.filter((_, i) => i !== selectedIdx));
-      setSelectedIdx(null);
-      setSearchStatus(s => ({ ...s, replaceMessage: '已替换 1 处' }));
-      return;
-    }
-
-    if (r.file_path === currentFilePath || (crossFile === false && r.file_path === "")) {
-      // Current file in-memory replace
-      const lineStart = lineStartOffset(content, r.line_number);
-      const absFrom = lineStart + r.match_start;
-      const absTo = lineStart + r.match_end;
-      onContentChange(content.slice(0, absFrom) + replacement + content.slice(absTo));
-      setSearchResults(prev => prev.filter((_, i) => i !== selectedIdx));
-      setSelectedIdx(null);
-    } else {
-      // Cross-file disk replace
-      try {
-        const fileContent = await invoke<string>('read_file_text', { path: r.file_path });
-        const lineStart = lineStartOffset(fileContent, r.line_number);
-        const absFrom = lineStart + r.match_start;
-        const absTo = lineStart + r.match_end;
-        const newContent = fileContent.slice(0, absFrom) + replacement + fileContent.slice(absTo);
-        await invoke('write_file_text', { path: r.file_path, content: newContent });
-        setSearchResults(prev => prev.filter((_, i) => i !== selectedIdx));
-        setSelectedIdx(null);
-        setSearchStatus(s => ({ ...s, replaceMessage: t('search.replaced', { count: 1 }) }));
-      } catch (e) {
-        setSearchStatus(s => ({ ...s, error: String(e) }));
-      }
-    }
-  }, [selectedIdx, searchResults, crossFile, currentFilePath, content, replacement,
-      onContentChange, openTabs, currentTabId, onAnyTabContentChange, t]);
-
-    // ── Replace all ────────────────────────────────────────────────────────────
-  const handleReplaceAll = useCallback(async () => {
-    if (!query.trim()) return;
-    if (!crossFile) {
-      if (searchResults.length === 0) return;
-      onContentChange(replaceAll(content, query, replacement, opts));
-      setSearchStatus(s => ({ ...s, replaceMessage: t('search.replaced', { count: searchResults.length }) }));
-    } else {
-      setSearchStatus({ loading: true, error: null, replaceMessage: null });
-      try {
-        let totalReplaced = 0;
-
-        // Replace in untitled in-memory tabs
-        const tabIdCounts = new Map();
-        for (const r of searchResults) {
-          if (r.tab_id) tabIdCounts.set(r.tab_id, (tabIdCounts.get(r.tab_id) || 0) + 1);
-        }
-        for (const [tabId, count] of tabIdCounts) {
-          const tab = openTabs.find(t => t.id === tabId);
-          if (tab == null) continue;
-          const newDoc = replaceAll(tab.doc, query, replacement, opts);
-          if (tabId === currentTabId) {
-            onContentChange(newDoc);
-          } else {
-            onAnyTabContentChange(tabId, newDoc);
-          }
-          totalReplaced += count;
-        }
-
-        // Replace in disk files
-        let diskReplaced = 0;
-        let filesModified = 0;
-        if (searchDir) {
-          const res = await invoke<{ replaced_count: number; files_modified: string[] }>('replace_in_files', {
-            directory: searchDir, query: query.trim(), replacement, caseSensitive, useRegex, wholeWord,
-          });
-          diskReplaced = res.replaced_count;
-          filesModified = res.files_modified.length;
-        }
-        totalReplaced += diskReplaced;
-        const fileNote = filesModified > 0 ? t('search.filesModified', { count: filesModified }) : '';
-        setSearchStatus(s => ({ ...s, replaceMessage: t('search.replaced', { count: totalReplaced }) + fileNote }));
-        await doSearchAll();
-      } catch (e) {
-        setSearchStatus(s => ({ ...s, error: String(e) }));
-      } finally {
-        setSearchStatus(s => ({ ...s, loading: false }));
-      }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, replacement, crossFile, searchResults, searchDir, content, caseSensitive, useRegex, opts, onContentChange, doSearchAll, t]);
-
-  // ── Keyboard ───────────────────────────────────────────────────────────────
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Escape') { onClose(); }
     else if (e.key === 'Enter') {
@@ -321,7 +60,6 @@ export function SearchPanel({
 
   const hasResults = searchResults.length > 0;
   const singleReplaceDisabled = selectedIdx === null;
-  // cross-file replace all needs at least a searchDir (for disk files) or untitled tabs to replace
   const hasUntitledTabs = openTabs.some(t => !t.filePath);
   const allReplaceDisabled = !query.trim() || searchStatus.loading || (!crossFile ? !hasResults : (!searchDir && !hasUntitledTabs));
 
@@ -351,7 +89,7 @@ export function SearchPanel({
       zIndex: 1000, display: 'flex', flexDirection: 'column',
       boxShadow: '-4px 0 24px rgba(0,0,0,0.12)', animation: 'slideInRight 0.2s ease-out',
     }}>
-      {/* ── Header ── */}
+      {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px 8px',
         borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', flexShrink: 0,
@@ -364,12 +102,11 @@ export function SearchPanel({
         </button>
       </div>
 
-      {/* ── Inputs ── */}
+      {/* Inputs */}
       <div style={{
         padding: '10px 12px 8px', borderBottom: '1px solid var(--border-color)',
         backgroundColor: 'var(--bg-secondary)', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 6,
       }}>
-        {/* Query */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <div style={{ position: 'relative', flex: 1 }}>
             <Search size={11} style={{
@@ -396,7 +133,6 @@ export function SearchPanel({
           </div>
         </div>
 
-        {/* Replace */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <input
             value={replacement}
@@ -443,11 +179,11 @@ export function SearchPanel({
         </div>
       </div>
 
-      {/* ── Status ── */}
+      {/* Status */}
       {searchStatus.error && <div style={{ padding: '6px 12px', color: '#e53e3e', fontSize: 12, flexShrink: 0 }}>{searchStatus.error}</div>}
       {searchStatus.replaceMessage && <div style={{ padding: '6px 12px', color: 'var(--accent-color)', fontSize: 12, flexShrink: 0 }}>{searchStatus.replaceMessage}</div>}
 
-      {/* ── Results ── */}
+      {/* Results */}
       {hasResults && (
         <div style={{
           padding: '5px 12px', fontSize: 11, flexShrink: 0,

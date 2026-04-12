@@ -1,6 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useLayoutEffect, useMemo, lazy, Suspense } from 'react';
 import { EditorView } from '@codemirror/view';
-import { getCurrentWindow } from '@tauri-apps/api/window';
 import { invoke } from '@tauri-apps/api/core';
 import { confirm, message } from '@tauri-apps/plugin-dialog';
 import './App.css';
@@ -12,6 +11,7 @@ import { useFileOps } from './hooks/useFileOps';
 import { useScrollSync } from './hooks/useScrollSync';
 import { useDragDrop } from './hooks/useDragDrop';
 import { useWindowTitle } from './hooks/useWindowTitle';
+import { useWindowInit } from './hooks/useWindowInit';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useCursorPosition } from './hooks/useCursorPosition';
 import { useFocusMode } from './hooks/useFocusMode';
@@ -27,7 +27,7 @@ import { useVersionHistory } from './hooks/useVersionHistory';
 import { useTableEditor } from './hooks/useTableEditor';
 import { useSnippetFlow } from './hooks/useSnippetFlow';
 import { useEditorInstance } from './hooks/useEditorInstance';
-import { applyTheme, getSavedTheme, saveTheme, THEMES, type ThemeName } from './lib/theme';
+import { applyTheme, getSavedTheme, saveTheme, type ThemeName } from './lib/theme';
 import { getRecentFiles, clearRecentFiles, type RecentFile } from './lib/recent-files';
 import { restoreSnapshot } from './lib/version-history';
 import { getSavedSplitSizes } from './lib/split-preference';
@@ -39,7 +39,7 @@ import { EditorContextMenu } from './components/EditorContextMenu';
 import { StatusBar } from './components/StatusBar';
 import { SettingsModal } from './components/SettingsModal';
 import { DragOverlay } from './components/DragOverlay';
-import { SearchPanel, type SearchResultItem } from './components/SearchPanel';
+import { SearchPanel } from './components/SearchPanel';
 import { TocSidebar } from './components/TocSidebar';
 import { FileTreeSidebar } from './components/FileTreeSidebar';
 import { TableEditor } from './components/TableEditor';
@@ -50,6 +50,7 @@ import { SnippetManager } from './components/SnippetManager';
 const HelpModal = lazy(() => import('./components/HelpModal').then(m => ({ default: m.HelpModal })));
 import { EditorContentArea } from './components/EditorContentArea';
 import { createCommandRegistry } from './lib/command-registry';
+import type { SearchResultItem } from './types/search';
 
 
 export default function App() {
@@ -203,27 +204,8 @@ export default function App() {
     saveTheme(theme);
   }, [theme]);
 
-  // Window initialization: show and maximize once on mount
-  useLayoutEffect(() => {
-    if (isTauri) {
-      const win = getCurrentWindow();
-      win.maximize()
-        .catch((err) => console.error('Failed to maximize window:', err))
-        .finally(() => {
-          win.show().catch((err) => console.error('Failed to show window:', err));
-        });
-    }
-  }, [isTauri]);
-
-  // Set native titlebar theme
-  useEffect(() => {
-    if (isTauri) {
-      const nativeTheme = THEMES[theme].isDark ? 'dark' as const : 'light' as const;
-      getCurrentWindow().setTheme(nativeTheme).catch((err) => {
-        console.error('Failed to set window theme:', err);
-      });
-    }
-  }, [theme, isTauri]);
+  // Window initialization + native titlebar theme
+  useWindowInit(isTauri, theme);
 
   // F010 - Debounced TOC + word count
   const { debouncedDoc, tocEntries, wordCount } = useDocMetrics(activeTab.doc, activeTabId);

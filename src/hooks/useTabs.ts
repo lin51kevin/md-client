@@ -244,7 +244,7 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
   };
 
   const markSavedAs = (id: string, filePath: string) => {
-    setTabs(prev => prev.map(t => t.id === id ? { ...t, filePath, isDirty: false } : t));
+    setTabs(prev => prev.map(t => t.id === id ? { ...t, filePath, isDirty: false, displayName: undefined } : t));
     addRecentFile(filePath);
     notifyRecent();
   };
