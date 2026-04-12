@@ -197,12 +197,31 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // F011 - Theme: apply CSS vars synchronously before paint, native titlebar asynchronously
-  useLayoutEffect(() => { applyTheme(theme); saveTheme(theme); }, [theme]);
+  // F011 - Theme: apply CSS vars synchronously before paint
+  useLayoutEffect(() => {
+    applyTheme(theme);
+    saveTheme(theme);
+  }, [theme]);
+
+  // Window initialization: show and maximize once on mount
+  useLayoutEffect(() => {
+    if (isTauri) {
+      const win = getCurrentWindow();
+      win.maximize()
+        .catch((err) => console.error('Failed to maximize window:', err))
+        .finally(() => {
+          win.show().catch((err) => console.error('Failed to show window:', err));
+        });
+    }
+  }, [isTauri]);
+
+  // Set native titlebar theme
   useEffect(() => {
     if (isTauri) {
       const nativeTheme = THEMES[theme].isDark ? 'dark' as const : 'light' as const;
-      getCurrentWindow().setTheme(nativeTheme).catch(() => {});
+      getCurrentWindow().setTheme(nativeTheme).catch((err) => {
+        console.error('Failed to set window theme:', err);
+      });
     }
   }, [theme, isTauri]);
 

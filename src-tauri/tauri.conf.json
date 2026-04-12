@@ -15,8 +15,9 @@
         "title": "MarkLite",
         "width": 1280,
         "height": 800,
-        "maximized": true,
-        "devtools": false
+        "visible": false,
+        "devtools": false,
+        "backgroundColor": "#0d1117"
       }
     ],
     "security": {

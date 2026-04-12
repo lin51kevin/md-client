@@ -8,6 +8,21 @@
   </head>
 
   <body>
+    <script>
+      // Pre-render theme background to prevent white flash on startup
+      // NOTE: Colors must match THEMES constant in src/theme.ts
+      (function() {
+        var colors = { light: ['#ffffff','#1f2328'], dark: ['#0d1117','#f0f6fc'], sepia: ['#f4ecd8','#433422'], 'high-contrast': ['#ffffff','#000000'] };
+        var theme;
+        try { theme = localStorage.getItem('marklite-theme'); } catch(e) {}
+        if (!theme || !colors[theme]) {
+          theme = window.matchMedia && window.matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light';
+        }
+        var c = colors[theme];
+        document.documentElement.style.backgroundColor = c[0];
+        document.documentElement.style.color = c[1];
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
