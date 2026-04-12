@@ -47,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **内置用户手册** — 工具栏 `?` 按钮打开帮助弹窗，内嵌完整 USER_GUIDE.md，提供可折叠 TOC 侧边栏和标题快速跳转
 
 ### Fixed
+- 修复应用启动时的白屏闪烁问题（添加主题预渲染脚本，窗口初始隐藏直到主题加载完成）
 - 修复 PDF 导出时页码和页眉/页脚位置错误（`NumberedPageDecorator` 参数顺序）
 - 修复拼写检查性能问题（改用 useEffect 替代 updateListener，减少不必要的 DOM 更新）
 - 修复片段保存时忽略返回值导致的静默失败（存储空间满时现在显示错误提示）
