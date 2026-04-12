@@ -191,31 +191,30 @@ interface EpubOptions {
 }
 
 /**
- * Generate an EPUB e-book file from Markdown via epub-gen.
+ * Generate an EPUB e-book file from Markdown via epub-gen-memory.
+ * Returns the EPUB as a Uint8Array so the caller can write it to disk.
  */
 export async function generateEpub(
   markdown: string,
-  outputPath: string,
   options?: EpubOptions,
-): Promise<void> {
-  const { default: EpubGen } = await import('epub-gen');
+): Promise<Uint8Array> {
+  const { default: epub } = await import('epub-gen-memory');
   const metadata = extractEpubMetadata(markdown, options);
   const htmlContent = await markdownToHtmlForEpub(markdown);
 
-  const book = new EpubGen(
+  const buffer = await epub(
     {
       title: metadata.title,
       author: metadata.author,
-      language: metadata.language,
+      lang: metadata.language,
       publisher: metadata.publisher,
       description: metadata.description,
       cover: metadata.coverImage,
-      content: [{ title: metadata.title, data: `<div class="epub-chapter">${htmlContent}</div>` }],
     },
-    outputPath,
+    [{ title: metadata.title, content: `<div class="epub-chapter">${htmlContent}</div>` }],
   );
 
-  await book.generate();
+  return new Uint8Array(buffer);
 }
 
 /** Extract EPUB metadata from markdown frontmatter or headings */

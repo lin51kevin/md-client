@@ -16,6 +16,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 
 vi.mock('../../lib/html-export', () => ({
   generateHtmlDocument: vi.fn(() => Promise.resolve('<html></html>')),
+  generateEpub: vi.fn(() => Promise.resolve(new Uint8Array([0x50, 0x4b, 0x03, 0x04]))),
 }));
 
 vi.mock('../../lib/export-prerender', () => ({
@@ -405,6 +406,71 @@ describe('useFileOps', () => {
         format: 'pdf',
         preRenderedImages: {},
       });
+    });
+
+    it('should export to EPUB', async () => {
+      const { save } = await import('@tauri-apps/plugin-dialog');
+      const { invoke } = await import('@tauri-apps/api/core');
+      const { generateEpub } = await import('../../lib/html-export');
+
+      vi.mocked(save).mockResolvedValue('/export.epub');
+      vi.mocked(invoke).mockResolvedValue(undefined);
+      vi.mocked(generateEpub).mockResolvedValue(new Uint8Array([0x50, 0x4b, 0x03, 0x04]));
+
+      const { result } = renderFileOps();
+
+      await act(async () => {
+        await result.current.handleExportEpub();
+      });
+
+      expect(save).toHaveBeenCalledWith({
+        filters: [{ name: 'EPUB Document', extensions: ['epub'] }],
+        defaultPath: 'file1.epub',
+      });
+      expect(generateEpub).toHaveBeenCalledWith('# Content 1');
+      expect(invoke).toHaveBeenCalledWith('write_image_bytes', {
+        path: '/export.epub',
+        data: [0x50, 0x4b, 0x03, 0x04],
+      });
+    });
+
+    it('should handle EPUB export cancellation', async () => {
+      const { save } = await import('@tauri-apps/plugin-dialog');
+      const { invoke } = await import('@tauri-apps/api/core');
+      const { generateEpub } = await import('../../lib/html-export');
+
+      vi.mocked(save).mockResolvedValue(null);
+
+      const { result } = renderFileOps();
+
+      await act(async () => {
+        await result.current.handleExportEpub();
+      });
+
+      expect(generateEpub).not.toHaveBeenCalled();
+      expect(invoke).not.toHaveBeenCalled();
+    });
+
+    it('should show error on EPUB export failure', async () => {
+      const { save } = await import('@tauri-apps/plugin-dialog');
+      const { invoke } = await import('@tauri-apps/api/core');
+      const { message } = await import('@tauri-apps/plugin-dialog');
+      const { generateEpub } = await import('../../lib/html-export');
+
+      vi.mocked(save).mockResolvedValue('/export.epub');
+      vi.mocked(generateEpub).mockRejectedValue(new Error('EPUB error'));
+
+      const { result } = renderFileOps();
+
+      await act(async () => {
+        await result.current.handleExportEpub();
+      });
+
+      expect(invoke).not.toHaveBeenCalled();
+      expect(message).toHaveBeenCalledWith(
+        'EPUB error',
+        { title: '导出失败', kind: 'error' },
+      );
     });
   });
 

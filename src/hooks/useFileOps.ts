@@ -132,7 +132,8 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
         if (savePath) {
           onProgress?.('Converting content...', 50);
           const { generateEpub } = await import('../lib/html-export');
-          await generateEpub(tab.doc, savePath);
+          const epubData = await generateEpub(tab.doc);
+          await invoke('write_image_bytes', { path: savePath, data: Array.from(epubData) });
           onProgress?.('Complete!', 100);
         }
         return;

@@ -55,7 +55,7 @@
     "@uiw/react-codemirror": "^4.25.7",
     "codemirror": "^6.0.2",
     "dompurify": "^3.2.4",
-    "epub-gen": "^0.1.0",
+    "epub-gen-memory": "^1.1.2",
     "highlight.js": "^11.11.1",
     "html2canvas": "^1.4.1",
     "js-yaml": "^4.1.0",

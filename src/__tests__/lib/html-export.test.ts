@@ -1,5 +1,10 @@
-import { describe, it, expect } from 'vitest';
-import { markdownToHtml, generateHtmlDocument } from '../../lib/html-export';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { markdownToHtml, generateHtmlDocument, generateEpub } from '../../lib/html-export';
+import epubGen from 'epub-gen-memory';
+
+vi.mock('epub-gen-memory', () => ({
+  default: vi.fn().mockResolvedValue(Buffer.from([0x50, 0x4b, 0x03, 0x04])),
+}));
 
 describe('F005 — 导出 HTML', () => {
 
@@ -194,6 +199,87 @@ describe('F005 — 导出 HTML', () => {
     it('generateHtmlDocument 无参数时应默认标题为 Untitled', async () => {
       const html = await generateHtmlDocument('just content no heading');
       expect(html).toContain('<title>Untitled</title>');
+    });
+  });
+
+  describe('generateEpub — EPUB 电子书生成', () => {
+    beforeEach(() => {
+      vi.mocked(epubGen).mockResolvedValue(Buffer.from([0x50, 0x4b, 0x03, 0x04]));
+      vi.clearAllMocks();
+    });
+
+    it('应返回 Uint8Array 类型', async () => {
+      const result = await generateEpub('# My Book\nSome content.');
+      expect(result).toBeInstanceOf(Uint8Array);
+      expect(result.length).toBeGreaterThan(0);
+    });
+
+    it('应将第一个 H1 作为书名传入 epub-gen-memory', async () => {
+      await generateEpub('# My Great Book\nSome content.');
+      expect(vi.mocked(epubGen)).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'My Great Book' }),
+        expect.any(Array),
+      );
+    });
+
+    it('无标题时书名应为 "Untitled Document"', async () => {
+      await generateEpub('Just plain text with no heading.');
+      expect(vi.mocked(epubGen)).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'Untitled Document' }),
+        expect.any(Array),
+      );
+    });
+
+    it('应优先从 frontmatter 读取 title 和 author', async () => {
+      const md = `---\ntitle: FM Title\nauthor: FM Author\n---\n# H1 Title\nContent.`;
+      await generateEpub(md);
+      expect(vi.mocked(epubGen)).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'FM Title', author: 'FM Author' }),
+        expect.any(Array),
+      );
+    });
+
+    it('options 参数应覆盖 frontmatter 值', async () => {
+      const md = `---\ntitle: FM Title\nauthor: FM Author\n---\nContent.`;
+      await generateEpub(md, { title: 'Override Title', author: 'Override Author' });
+      expect(vi.mocked(epubGen)).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'Override Title', author: 'Override Author' }),
+        expect.any(Array),
+      );
+    });
+
+    it('无 frontmatter 时 author 应为 "Unknown Author"', async () => {
+      await generateEpub('# A Title\nSome content.');
+      expect(vi.mocked(epubGen)).toHaveBeenCalledWith(
+        expect.objectContaining({ author: 'Unknown Author' }),
+        expect.any(Array),
+      );
+    });
+
+    it('默认语言应为 zh-CN（lang 字段）', async () => {
+      await generateEpub('# Book');
+      expect(vi.mocked(epubGen)).toHaveBeenCalledWith(
+        expect.objectContaining({ lang: 'zh-CN' }),
+        expect.any(Array),
+      );
+    });
+
+    it('应将 HTML 内容放入章节 content 字段并包含 epub-chapter 类', async () => {
+      await generateEpub('# Chapter\nContent here.');
+      const chapters = vi.mocked(epubGen).mock.calls[0][1];
+      expect(chapters).toHaveLength(1);
+      expect(chapters[0].content).toContain('epub-chapter');
+    });
+
+    it('chapter title 应与书名一致', async () => {
+      await generateEpub('# My Novel\nContent.');
+      const chapters = vi.mocked(epubGen).mock.calls[0][1];
+      expect(chapters[0].title).toBe('My Novel');
+    });
+
+    it('epub-gen-memory 抛出错误时应向上传播', async () => {
+      vi.mocked(epubGen).mockRejectedValueOnce(new Error('EPUB generation failed'));
+      await expect(generateEpub('# Test')).rejects.toThrow('EPUB generation failed');
     });
   });
 

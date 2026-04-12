@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect, useLayoutEffect, useMemo } from 'react';
+import { useState, useRef, useCallback, useEffect, useLayoutEffect, useMemo, lazy, Suspense } from 'react';
 import { EditorView } from '@codemirror/view';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { invoke } from '@tauri-apps/api/core';
@@ -47,7 +47,7 @@ import { InputDialog } from './components/InputDialog';
 import { CommandPalette } from './components/CommandPalette';
 import { SnippetPicker } from './components/SnippetPicker';
 import { SnippetManager } from './components/SnippetManager';
-import { HelpModal } from './components/HelpModal';
+const HelpModal = lazy(() => import('./components/HelpModal').then(m => ({ default: m.HelpModal })));
 import { EditorContentArea } from './components/EditorContentArea';
 import { createCommandRegistry } from './lib/command-registry';
 
@@ -380,7 +380,11 @@ export default function App() {
             vimMode={vimMode} onVimModeChange={setVimMode}
           />
 
-          <HelpModal visible={showHelp} onClose={() => setShowHelp(false)} />
+          {showHelp && (
+            <Suspense fallback={null}>
+              <HelpModal visible={showHelp} onClose={() => setShowHelp(false)} />
+            </Suspense>
+          )}
 
           <TabBar
             tabs={isPristine ? [] : tabs} activeTabId={activeTabId}
