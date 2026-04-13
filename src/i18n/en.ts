@@ -388,4 +388,9 @@ export const en: Record<TranslationKey, string> = {
   'plugins.permissions': 'Permissions',
   'plugins.version': 'Version',
   'plugins.author': 'Author',
+  'plugins.install': 'Install',
+  'plugins.uninstall': 'Uninstall',
+  'plugins.detail': 'Detail',
+  'plugins.settings': 'Settings',
+  'plugins.removeConfirm': 'Are you sure to remove plugin "{name}"?',
 };

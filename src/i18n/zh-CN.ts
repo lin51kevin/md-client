@@ -385,6 +385,11 @@ export const zhCN = {
   'plugins.permissions': '权限',
   'plugins.version': '版本',
   'plugins.author': '作者',
+  'plugins.install': '安装',
+  'plugins.uninstall': '卸载',
+  'plugins.detail': '详情',
+  'plugins.settings': '设置',
+  'plugins.removeConfirm': '确定要移除插件「{name}」吗？',
 };
 
 export type TranslationKey = keyof typeof zhCN;
