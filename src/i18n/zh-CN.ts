@@ -16,7 +16,7 @@ export const zhCN = {
   'settings.editor.autoSave': '自动保存',
   'settings.editor.autoSaveDesc': '停止键入后自动保存文件',
   'settings.editor.autoSaveDelay': '自动保存延时',
-  'settings.editor.autoSaveDelayDesc': '自动保存前等待的时间（毫秒）',
+  'settings.editor.autoSaveDelayDesc': '自动保存前等待的时间（秒）',
   'settings.editor.delay1s': '1 秒',
   'settings.editor.delay2s': '2 秒',
   'settings.editor.delay5s': '5 秒',

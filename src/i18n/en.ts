@@ -18,7 +18,7 @@ export const en: Record<TranslationKey, string> = {
   'settings.editor.autoSave': 'Auto Save',
   'settings.editor.autoSaveDesc': 'Automatically save files after you stop typing',
   'settings.editor.autoSaveDelay': 'Auto Save Delay',
-  'settings.editor.autoSaveDelayDesc': 'Time to wait before auto-saving (milliseconds)',
+  'settings.editor.autoSaveDelayDesc': 'Time to wait before auto-saving (seconds)',
   'settings.editor.delay1s': '1 second',
   'settings.editor.delay2s': '2 seconds',
   'settings.editor.delay5s': '5 seconds',

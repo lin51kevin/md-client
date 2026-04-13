@@ -61,7 +61,12 @@ export function SettingsModal({
   const [themeImportError, setThemeImportError] = useState<string | null>(null);
   const [showThemeFormat, setShowThemeFormat] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [customDelay, setCustomDelay] = useState<string>(String(autoSaveDelay));
+  const [customDelaySec, setCustomDelaySec] = useState<string>(String(Math.round(autoSaveDelay / 1000)));
+
+  // Sync custom delay input when prop changes externally
+  useEffect(() => {
+    setCustomDelaySec(String(Math.round(autoSaveDelay / 1000)));
+  }, [autoSaveDelay]);
 
   const refreshThemes = useCallback(() => {
     setInstalledThemes(getInstalledThemes());
@@ -239,52 +244,28 @@ export function SettingsModal({
                     description={t('settings.editor.autoSaveDelayDesc')}
                   >
                     <div className="flex items-center gap-2">
-                      <select
-                        value={autoSaveDelay === 1000 ? '1000' : autoSaveDelay === 2000 ? '2000' : autoSaveDelay === 5000 ? '5000' : 'custom'}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (value === 'custom') {
-                            setCustomDelay(String(autoSaveDelay));
+                      <input
+                        type="number"
+                        min="1"
+                        max="60"
+                        step="1"
+                        value={customDelaySec}
+                        onChange={(e) => setCustomDelaySec(e.target.value)}
+                        onBlur={(e) => {
+                          const sec = parseInt(e.target.value, 10);
+                          if (!isNaN(sec) && sec >= 1 && sec <= 60) {
+                            onAutoSaveDelayChange(sec * 1000);
                           } else {
-                            onAutoSaveDelayChange(parseInt(value, 10));
+                            setCustomDelaySec(String(Math.round(autoSaveDelay / 1000)));
                           }
                         }}
-                        className="text-xs px-2 py-1 rounded outline-none"
+                        className="text-xs px-2 py-1 rounded outline-none w-20"
                         style={{
                           backgroundColor: 'var(--bg-secondary)',
                           border: '1px solid var(--border-color)',
                           color: 'var(--text-primary)',
                         }}
-                      >
-                        <option value="1000">{t('settings.editor.delay1s')}</option>
-                        <option value="2000">{t('settings.editor.delay2s')}</option>
-                        <option value="5000">{t('settings.editor.delay5s')}</option>
-                        <option value="custom">{t('settings.editor.delayCustom')}</option>
-                      </select>
-                      {(autoSaveDelay !== 1000 && autoSaveDelay !== 2000 && autoSaveDelay !== 5000) && (
-                        <input
-                          type="number"
-                          min="100"
-                          max="60000"
-                          step="100"
-                          value={customDelay}
-                          onChange={(e) => setCustomDelay(e.target.value)}
-                          onBlur={(e) => {
-                            const value = parseInt(e.target.value, 10);
-                            if (!isNaN(value) && value >= 100 && value <= 60000) {
-                              onAutoSaveDelayChange(value);
-                            } else {
-                              setCustomDelay(String(autoSaveDelay));
-                            }
-                          }}
-                          className="text-xs px-2 py-1 rounded outline-none w-20"
-                          style={{
-                            backgroundColor: 'var(--bg-secondary)',
-                            border: '1px solid var(--border-color)',
-                            color: 'var(--text-primary)',
-                          }}
-                        />
-                      )}
+                      />
                     </div>
                   </SettingItem>
                 )}
