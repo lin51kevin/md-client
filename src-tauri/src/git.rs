@@ -32,9 +32,12 @@ fn cleanup_stale_lock(dir: &str) {
 /// Run a git command in the given directory and return stdout as String.
 /// Errors include stderr when the process exits non-zero.
 fn run_git(dir: &str, args: &[&str]) -> Result<String, String> {
-    // Basic path validation — reject traversal attempts
-    if dir.contains("..") {
-        return Err("路径不允许包含 '..'".to_string());
+    // Segment-by-segment path validation — consistent with validate_user_path in lib.rs
+    let normalized = dir.replace('\\', "/");
+    for segment in normalized.split('/') {
+        if segment == ".." {
+            return Err("路径不允许包含 '..'".to_string());
+        }
     }
 
     let output = Command::new("git")
@@ -57,8 +60,11 @@ fn run_git(dir: &str, args: &[&str]) -> Result<String, String> {
 
 /// Like run_git but truncates stdout instead of erroring when it exceeds the limit.
 fn run_git_truncate(dir: &str, args: &[&str]) -> Result<String, String> {
-    if dir.contains("..") {
-        return Err("路径不允许包含 '..'".to_string());
+    let normalized = dir.replace('\\', "/");
+    for segment in normalized.split('/') {
+        if segment == ".." {
+            return Err("路径不允许包含 '..'".to_string());
+        }
     }
 
     let output = Command::new("git")

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import DOMPurify from 'dompurify';
 import { X, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import { useI18n } from '../i18n';
 import { extractToc, type TocEntry } from '../lib/toc';
@@ -35,7 +36,11 @@ export function MindmapView({ markdown, onClose, onNavigate }: MindmapViewProps)
       return mermaid.render(diagramId.current, mermaidSyntax);
     }).then(({ svg }) => {
       if (!cancelled && canvasRef.current) {
-        canvasRef.current.innerHTML = svg;
+        canvasRef.current.innerHTML = DOMPurify.sanitize(svg, {
+          USE_PROFILES: { svg: true, svgFilters: true },
+          FORBID_TAGS: ['script'],
+          FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover'],
+        });
 
         // Auto-fit: make SVG fill the container using viewBox + width/height
         const svgEl = canvasRef.current.querySelector('svg');

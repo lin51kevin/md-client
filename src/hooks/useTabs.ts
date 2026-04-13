@@ -232,20 +232,23 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
   }, []);
 
   const openFileInTab = useCallback(async (filePath: string) => {
-    const existing = tabsRef.current.find(t => t.filePath === filePath);
+    // Normalize separators for cross-platform path comparison
+    const normPath = (p: string) => p.replace(/[\\/]+/g, '/');
+    const normalized = normPath(filePath);
+    const existing = tabsRef.current.find(t => t.filePath && normPath(t.filePath) === normalized);
     if (existing) {
       setActiveTabId(existing.id);
       return;
     }
 
     // Guard against concurrent opens of the same file (e.g. duplicate drop events)
-    if (openingPaths.current.has(filePath)) return;
-    openingPaths.current.add(filePath);
+    if (openingPaths.current.has(normalized)) return;
+    openingPaths.current.add(normalized);
 
     try {
       const content = await invoke<string>('read_file_text', { path: filePath });
       // Re-check after async operation to handle concurrent calls with the same file
-      const duplicate = tabsRef.current.find(t => t.filePath === filePath);
+      const duplicate = tabsRef.current.find(t => t.filePath && normPath(t.filePath) === normalized);
       if (duplicate) {
         setActiveTabId(duplicate.id);
         return;
@@ -267,7 +270,7 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
       const errMsg = err instanceof Error ? err.message : String(err);
       await message(tr('rename.cannotRead', { error: errMsg }), { title: tr('rename.openFileFailed'), kind: 'error' });
     } finally {
-      openingPaths.current.delete(filePath);
+      openingPaths.current.delete(normalized);
     }
   }, []);
 

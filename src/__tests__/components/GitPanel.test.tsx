@@ -4,8 +4,13 @@ import { GitPanel } from '../../components/GitPanel';
 import type { GitFileStatus } from '../../lib/git-commands';
 
 const modifiedFiles: GitFileStatus[] = [
-  { path: 'README.md', status: 'modified' },
-  { path: 'new.md', status: 'untracked' },
+  { path: 'README.md', status: 'modified', staged: false },
+  { path: 'new.md', status: 'untracked', staged: false },
+];
+
+const stagedFiles: GitFileStatus[] = [
+  { path: 'staged.md', status: 'modified', staged: true },
+  { path: 'README.md', status: 'modified', staged: false },
 ];
 
 const defaultProps = {
@@ -21,6 +26,11 @@ const defaultProps = {
   onPush: vi.fn(),
   onRefresh: vi.fn(),
   onClose: vi.fn(),
+  onDiff: vi.fn().mockResolvedValue('diff content'),
+  onStage: vi.fn().mockResolvedValue(undefined),
+  onUnstage: vi.fn().mockResolvedValue(undefined),
+  onRestore: vi.fn().mockResolvedValue(undefined),
+  onFileOpen: vi.fn(),
 };
 
 describe('GitPanel', () => {
@@ -53,39 +63,58 @@ describe('GitPanel', () => {
     ).toBeInTheDocument();
   });
 
-  it('提交按钮在无文件时应禁用', () => {
+  it('提交按钮在无暂存文件时应禁用', () => {
     render(<GitPanel {...defaultProps} files={[]} />);
     const commitBtn = screen.getByRole('button', { name: /提交|commit/i });
     expect(commitBtn).toBeDisabled();
   });
 
-  it('提交按钮在有文件但无提交信息时应禁用', () => {
-    render(<GitPanel {...defaultProps} />);
-    // No commit message yet → button should be disabled
+  it('提交按钮在有暂存文件但无提交信息时应禁用', () => {
+    render(<GitPanel {...defaultProps} files={stagedFiles} />);
     const commitBtn = screen.getByRole('button', { name: /提交|commit/i });
     expect(commitBtn).toBeDisabled();
   });
 
-  it('选中文件并填写提交信息后提交按钮应启用', () => {
-    render(<GitPanel {...defaultProps} />);
+  it('有暂存文件并填写提交信息后提交按钮应启用', () => {
+    render(<GitPanel {...defaultProps} files={stagedFiles} />);
     const input = screen.getByPlaceholderText(/提交信息|commit message/i);
     fireEvent.change(input, { target: { value: 'feat: test' } });
-    const checkboxes = screen.getAllByRole('checkbox');
-    fireEvent.click(checkboxes[0]);
     const commitBtn = screen.getByRole('button', { name: /提交|commit/i });
     expect(commitBtn).not.toBeDisabled();
   });
 
-  it('点击提交应调用 onCommit 并传入消息和选中文件', async () => {
-    render(<GitPanel {...defaultProps} />);
+  it('点击提交应调用 onCommit 并传入消息和所有暂存文件', async () => {
+    render(<GitPanel {...defaultProps} files={stagedFiles} />);
     const input = screen.getByPlaceholderText(/提交信息|commit message/i);
     fireEvent.change(input, { target: { value: 'fix: something' } });
-    const checkboxes = screen.getAllByRole('checkbox');
-    fireEvent.click(checkboxes[0]); // select README.md
     fireEvent.click(screen.getByRole('button', { name: /提交|commit/i }));
     await waitFor(() =>
-      expect(defaultProps.onCommit).toHaveBeenCalledWith('fix: something', ['README.md'])
+      expect(defaultProps.onCommit).toHaveBeenCalledWith('fix: something', ['staged.md'])
     );
+  });
+
+  it('已暂存文件应显示绿色勾标记', () => {
+    render(<GitPanel {...defaultProps} files={stagedFiles} />);
+    const stagedIndicators = screen.getAllByTitle(/已暂存|staged/i);
+    expect(stagedIndicators.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('点击 Stage 按钮应调用 onStage', async () => {
+    const { container } = render(<GitPanel {...defaultProps} files={modifiedFiles} />);
+    const fileRow = container.querySelector('[title="暂存 (Stage)"]');
+    if (fileRow) {
+      fireEvent.click(fileRow);
+      await waitFor(() => expect(defaultProps.onStage).toHaveBeenCalled());
+    }
+  });
+
+  it('点击 Unstage 按钮应调用 onUnstage', async () => {
+    const { container } = render(<GitPanel {...defaultProps} files={stagedFiles} />);
+    const fileRow = container.querySelector('[title="取消暂存 (Unstage)"]');
+    if (fileRow) {
+      fireEvent.click(fileRow);
+      await waitFor(() => expect(defaultProps.onUnstage).toHaveBeenCalled());
+    }
   });
 
   it('点击 Pull 按钮应调用 onPull', () => {

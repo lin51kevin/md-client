@@ -8,6 +8,9 @@ vi.mock('../../lib/git-commands', () => ({
   gitCommit: vi.fn(),
   gitPull: vi.fn(),
   gitPush: vi.fn(),
+  gitStage: vi.fn(),
+  gitUnstage: vi.fn(),
+  gitRestore: vi.fn(),
 }));
 
 import {
@@ -16,6 +19,9 @@ import {
   gitCommit,
   gitPull,
   gitPush,
+  gitStage,
+  gitUnstage,
+  gitRestore,
 } from '../../lib/git-commands';
 import { useGit } from '../../hooks/useGit';
 
@@ -24,6 +30,9 @@ const mockGetStatus = vi.mocked(gitGetStatus);
 const mockCommit = vi.mocked(gitCommit);
 const mockPull = vi.mocked(gitPull);
 const mockPush = vi.mocked(gitPush);
+const mockStage = vi.mocked(gitStage);
+const mockUnstage = vi.mocked(gitUnstage);
+const mockRestore = vi.mocked(gitRestore);
 
 describe('useGit', () => {
   beforeEach(() => {
@@ -137,6 +146,60 @@ describe('useGit', () => {
 
     await act(async () => { await result.current.push(); });
     expect(mockPush).toHaveBeenCalledWith('/repo');
+  });
+
+  it('stage 应调用 gitStage 并刷新状态', async () => {
+    mockGetRepo.mockResolvedValue({
+      path: '/repo',
+      branch: 'main',
+      ahead: 0,
+      behind: 0,
+    });
+    mockGetStatus.mockResolvedValue([{ path: 'a.md', status: 'modified', staged: false }]);
+    mockStage.mockResolvedValueOnce(undefined);
+
+    const { result } = renderHook(() => useGit('/repo'));
+    await waitFor(() => expect(result.current.isRepo).toBe(true));
+
+    await act(async () => { await result.current.stage(['a.md']); });
+    expect(mockStage).toHaveBeenCalledWith('/repo', ['a.md']);
+    expect(mockGetStatus).toHaveBeenCalledTimes(2);
+  });
+
+  it('unstage 应调用 gitUnstage 并刷新状态', async () => {
+    mockGetRepo.mockResolvedValue({
+      path: '/repo',
+      branch: 'main',
+      ahead: 0,
+      behind: 0,
+    });
+    mockGetStatus.mockResolvedValue([{ path: 'a.md', status: 'modified', staged: true }]);
+    mockUnstage.mockResolvedValueOnce(undefined);
+
+    const { result } = renderHook(() => useGit('/repo'));
+    await waitFor(() => expect(result.current.isRepo).toBe(true));
+
+    await act(async () => { await result.current.unstage(['a.md']); });
+    expect(mockUnstage).toHaveBeenCalledWith('/repo', ['a.md']);
+    expect(mockGetStatus).toHaveBeenCalledTimes(2);
+  });
+
+  it('restore 应调用 gitRestore 并刷新状态', async () => {
+    mockGetRepo.mockResolvedValue({
+      path: '/repo',
+      branch: 'main',
+      ahead: 0,
+      behind: 0,
+    });
+    mockGetStatus.mockResolvedValue([{ path: 'a.md', status: 'modified', staged: false }]);
+    mockRestore.mockResolvedValueOnce(undefined);
+
+    const { result } = renderHook(() => useGit('/repo'));
+    await waitFor(() => expect(result.current.isRepo).toBe(true));
+
+    await act(async () => { await result.current.restore('a.md'); });
+    expect(mockRestore).toHaveBeenCalledWith('/repo', 'a.md');
+    expect(mockGetStatus).toHaveBeenCalledTimes(2);
   });
 
   it('git 操作出错时应设置 error 状态', async () => {

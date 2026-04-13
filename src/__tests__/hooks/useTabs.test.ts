@@ -512,4 +512,81 @@ describe('useTabs', () => {
       expect(result.current.tabs[0].filePath).toBeNull();
     });
   });
+
+  describe('Path Normalization', () => {
+    it('should normalize mixed separators when checking for existing tabs', async () => {
+      const { result } = renderHook(() => useTabs(mockT));
+      const { invoke } = await import('@tauri-apps/api/core');
+      
+      vi.mocked(invoke).mockResolvedValue('# Content');
+
+      // Open a file with backslashes
+      await act(async () => {
+        await result.current.openFileInTab('C:\\Users\\docs\\file.md');
+      });
+
+      expect(result.current.tabs).toHaveLength(1);
+      expect(result.current.tabs[0].filePath).toBe('C:\\Users\\docs\\file.md');
+
+      // Try to open same file with forward slashes
+      await act(async () => {
+        await result.current.openFileInTab('C:/Users/docs/file.md');
+      });
+
+      // Should not create a new tab (same file, just different separators)
+      expect(result.current.tabs).toHaveLength(1);
+      expect(result.current.tabs[0].filePath).toBe('C:\\Users\\docs\\file.md');
+    });
+
+    it('should normalize paths with multiple consecutive slashes', async () => {
+      const { result } = renderHook(() => useTabs(mockT));
+      const { invoke } = await import('@tauri-apps/api/core');
+      
+      vi.mocked(invoke).mockResolvedValue('# Content');
+
+      await act(async () => {
+        await result.current.openFileInTab('/home/user//docs///file.md');
+      });
+
+      expect(result.current.tabs).toHaveLength(1);
+
+      // Same file with normal separators
+      await act(async () => {
+        await result.current.openFileInTab('/home/user/docs/file.md');
+      });
+
+      // Should recognize as same file
+      expect(result.current.tabs).toHaveLength(1);
+    });
+
+    it('should activate existing tab with normalized path match', async () => {
+      const { result } = renderHook(() => useTabs(mockT));
+      const { invoke } = await import('@tauri-apps/api/core');
+      
+      vi.mocked(invoke)
+        .mockResolvedValueOnce('# File 1')
+        .mockResolvedValueOnce('# File 2');
+
+      // Open two files
+      await act(async () => {
+        await result.current.openFileInTab('F:\\md-client\\README.md');
+      });
+      await act(async () => {
+        await result.current.openFileInTab('F:\\md-client\\src\\App.tsx');
+      });
+
+      expect(result.current.tabs).toHaveLength(2);
+      const secondTabId = result.current.tabs[1].id;
+      expect(result.current.activeTabId).toBe(secondTabId);
+
+      // Try to open first file again with forward slashes
+      await act(async () => {
+        await result.current.openFileInTab('F:/md-client/README.md');
+      });
+
+      // Should activate the existing first tab, not create new
+      expect(result.current.tabs).toHaveLength(2);
+      expect(result.current.activeTabId).toBe(result.current.tabs[0].id);
+    });
+  });
 });

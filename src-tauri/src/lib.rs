@@ -79,6 +79,9 @@ fn get_open_file() -> Option<OpenFileResult> {
         !a.starts_with('-') && !a.starts_with("tauri") && !a.contains("://")
     });
     if let Some(path) = file_path {
+        if validate_user_path(path).is_err() {
+            return None;
+        }
         match std::fs::read_to_string(path) {
             Ok(content) => Some(OpenFileResult { path: path.clone(), content }),
             Err(_) => None,

@@ -171,6 +171,7 @@ export function ActivityBar({ activePanel, onPanelChange, onOpenSettings }: Acti
               if (!isActive) e.currentTarget.style.color = 'var(--text-tertiary)';
               hideTooltip();
             }}
+            title={t(titleKey)}
             className="flex items-center justify-center"
             style={{
               width: 44,
@@ -193,6 +194,7 @@ export function ActivityBar({ activePanel, onPanelChange, onOpenSettings }: Acti
       <div className="mt-auto mb-1">
         <button
           onClick={onOpenSettings}
+          title={t('settings.title')}
           onMouseEnter={(e) => {
             e.currentTarget.style.color = 'var(--text-secondary)';
             showTooltip(e, t('settings.title'));

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef, useId, memo } from "react";
+import DOMPurify from "dompurify";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkDirective from "remark-directive";
@@ -174,7 +175,11 @@ function MermaidBlock({ code }: { code: string }) {
       return mermaid.render(id, code);
     }).then(({ svg }) => {
       if (!cancelled && divRef.current) {
-        divRef.current.innerHTML = svg;
+        divRef.current.innerHTML = DOMPurify.sanitize(svg, {
+          USE_PROFILES: { svg: true, svgFilters: true },
+          FORBID_TAGS: ['script'],
+          FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover'],
+        });
       }
     }).catch((err) => {
       if (!cancelled) {
@@ -190,7 +195,7 @@ function MermaidBlock({ code }: { code: string }) {
         className="mermaid-error"
         style={{ color: 'red', padding: '8px', border: '1px solid red', borderRadius: '4px' }}
       >
-        ⚠️ Mermaid render error: {error}
+        Mermaid render error: {error}
       </div>
     );
   }

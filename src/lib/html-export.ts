@@ -160,7 +160,7 @@ export async function generateHtmlDocument(
 ): Promise<string> {
   const bodyHtml = await markdownToHtml(markdown);
   const title = options.title ?? extractTitle(bodyHtml);
-  const customCss = options.css ? `\n${options.css}` : '';
+  const customCss = options.css ? `\n${options.css.replace(/<\/style\s*>/gi, '/* </style> removed */')}` : '';
 
   return `<!DOCTYPE html>
 <html lang="en">

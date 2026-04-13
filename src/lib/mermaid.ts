@@ -5,6 +5,8 @@
  * 使用 mermaid.js 进行服务端/客户端渲染。
  */
 
+import { escapeHtml } from './utils/html-safety';
+
 let mermaidInitialized = false;
 /** Module-level counter ensures globally unique DOM IDs across repeated renderMermaid calls */
 let mermaidIdCounter = 0;
@@ -26,7 +28,7 @@ export async function initMermaid(): Promise<typeof import('mermaid')> {
     m.default.initialize({
       startOnLoad: false,
       theme: 'default',
-      securityLevel: 'loose',
+      securityLevel: 'strict',
       fontFamily: 'monospace',
       suppressErrorRendering: false,
     });
@@ -62,7 +64,7 @@ export async function renderMermaid(text: string): Promise<string> {
         // 渲染失败时返回带错误信息的占位符
         return {
           fullMatch: match[0],
-          replacement: `<div class="mermaid-error" style="color:red;padding:8px;border:1px solid red;">⚠️ Mermaid render error: ${err instanceof Error ? err.message : String(err)}</div>`,
+          replacement: `<div class="mermaid-error" style="color:red;padding:8px;border:1px solid red;">Mermaid render error: ${escapeHtml(err instanceof Error ? err.message : String(err))}</div>`,
         };
       }
     })

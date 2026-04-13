@@ -12,6 +12,9 @@ import {
   gitCommit,
   gitPull,
   gitPush,
+  gitStage,
+  gitUnstage,
+  gitRestore,
 } from '../../lib/git-commands';
 
 const mockInvoke = vi.mocked(invoke);
@@ -128,6 +131,39 @@ describe('git-commands', () => {
     it('远端未配置时应抛出错误', async () => {
       mockInvoke.mockRejectedValueOnce(new Error('No remote configured'));
       await expect(gitPush('/repo')).rejects.toThrow('No remote configured');
+    });
+  });
+
+  describe('gitStage', () => {
+    it('应调用 git_stage 并传入文件列表', async () => {
+      mockInvoke.mockResolvedValueOnce(undefined);
+      await expect(gitStage('/repo', ['file1.md', 'file2.md'])).resolves.not.toThrow();
+      expect(mockInvoke).toHaveBeenCalledWith('git_stage', {
+        path: '/repo',
+        files: ['file1.md', 'file2.md'],
+      });
+    });
+  });
+
+  describe('gitUnstage', () => {
+    it('should调用 git_unstage 并传入文件列表', async () => {
+      mockInvoke.mockResolvedValueOnce(undefined);
+      await expect(gitUnstage('/repo', ['file1.md'])).resolves.not.toThrow();
+      expect(mockInvoke).toHaveBeenCalledWith('git_unstage', {
+        path: '/repo',
+        files: ['file1.md'],
+      });
+    });
+  });
+
+  describe('gitRestore', () => {
+    it('应调用 git_restore 并传入文件路径', async () => {
+      mockInvoke.mockResolvedValueOnce(undefined);
+      await expect(gitRestore('/repo', 'file.md')).resolves.not.toThrow();
+      expect(mockInvoke).toHaveBeenCalledWith('git_restore', {
+        path: '/repo',
+        filePath: 'file.md',
+      });
     });
   });
 });
