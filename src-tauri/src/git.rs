@@ -20,12 +20,76 @@ static GIT_LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
 /// Remove stale `.git/index.lock` if it exists.
 /// This file is left behind when a git process crashes or is killed mid-operation.
 /// Without cleanup, all subsequent git index operations will fail.
+/// 
+/// SAFETY: This function now uses `cleanup_stale_lock_safe` which checks
+/// the lock file age before removal to avoid data corruption.
 fn cleanup_stale_lock(dir: &str) {
+    // Delegate to the safe implementation
+    let _ = cleanup_stale_lock_safe(dir);
+}
+
+/// Safely remove stale `.git/index.lock` if it is truly stale.
+/// 
+/// A lock file is considered "stale" if:
+/// - It is older than 30 minutes (1,800 seconds)
+/// - This provides a safety window in case a git process is still active
+/// 
+/// Returns `true` if a stale lock was removed, `false` otherwise.
+fn cleanup_stale_lock_safe(dir: &str) -> bool {
+    use std::time::{SystemTime, Duration};
+    
+    // Validate path - reject paths containing '..'
+    let normalized = dir.replace('\\', "/");
+    for segment in normalized.split('/') {
+        if segment == ".." {
+            return false; // Invalid path, don't attempt cleanup
+        }
+    }
+    
     let lock_path = std::path::Path::new(dir).join(".git").join("index.lock");
-    if lock_path.exists() {
-        // Try to remove it — if another process truly holds it, the next git
-        // command will fail with a clear error anyway.
-        let _ = std::fs::remove_file(&lock_path);
+    
+    // If lock file doesn't exist, nothing to do
+    if !lock_path.exists() {
+        return false;
+    }
+    
+    // Get lock file metadata
+    let metadata = match std::fs::metadata(&lock_path) {
+        Ok(m) => m,
+        Err(_) => return false, // Can't read metadata, don't risk it
+    };
+    
+    // Get modification time
+    let modified = match metadata.modified() {
+        Ok(t) => t,
+        Err(_) => return false, // Can't get modification time, don't risk it
+    };
+    
+    // Calculate age
+    let now = SystemTime::now();
+    let age = match now.duration_since(modified) {
+        Ok(d) => d,
+        Err(_) => return false, // Clock skew or other issue
+    };
+    
+    // Stale threshold: 30 minutes
+    const STALE_THRESHOLD: Duration = Duration::from_secs(30 * 60);
+    
+    // Only remove if the lock is truly stale (older than threshold)
+    if age >= STALE_THRESHOLD {
+        // Attempt to remove the stale lock
+        match std::fs::remove_file(&lock_path) {
+            Ok(_) => {
+                eprintln!("[git] Removed stale lock file (age: {}s)", age.as_secs());
+                true
+            }
+            Err(_) => false, // Failed to remove, but don't panic
+        }
+    } else {
+        // Lock is too fresh, might be active - don't touch it
+        eprintln!("[git] Lock file is active (age: {}s < {}s), skipping cleanup", 
+                  age.as_secs(), STALE_THRESHOLD.as_secs());
+        false
     }
 }
 
@@ -36,7 +100,7 @@ fn run_git(dir: &str, args: &[&str]) -> Result<String, String> {
     let normalized = dir.replace('\\', "/");
     for segment in normalized.split('/') {
         if segment == ".." {
-            return Err("路径不允许包含 '..'".to_string());
+            return Err("ERR_PATH_TRAVERSAL: Path must not contain '..'".to_string());
         }
     }
 
@@ -44,10 +108,10 @@ fn run_git(dir: &str, args: &[&str]) -> Result<String, String> {
         .current_dir(dir)
         .args(args)
         .output()
-        .map_err(|e| format!("无法执行 git: {}", e))?;
+        .map_err(|e| format!("ERR_GIT_EXEC_FAILED: Failed to execute git: {}", e))?;
 
     if output.stdout.len() > MAX_OUTPUT_BYTES {
-        return Err("git 输出过大，已截断".to_string());
+        return Err("ERR_OUTPUT_TOO_LARGE: Git output exceeded 1MB limit".to_string());
     }
 
     if output.status.success() {
@@ -63,7 +127,7 @@ fn run_git_truncate(dir: &str, args: &[&str]) -> Result<String, String> {
     let normalized = dir.replace('\\', "/");
     for segment in normalized.split('/') {
         if segment == ".." {
-            return Err("路径不允许包含 '..'".to_string());
+            return Err("ERR_PATH_TRAVERSAL: Path must not contain '..'".to_string());
         }
     }
 
@@ -71,13 +135,13 @@ fn run_git_truncate(dir: &str, args: &[&str]) -> Result<String, String> {
         .current_dir(dir)
         .args(args)
         .output()
-        .map_err(|e| format!("无法执行 git: {}", e))?;
+        .map_err(|e| format!("ERR_GIT_EXEC_FAILED: Failed to execute git: {}", e))?;
 
     if output.status.success() {
         let raw = &output.stdout;
         if raw.len() > MAX_OUTPUT_BYTES {
             let truncated = String::from_utf8_lossy(&raw[..MAX_OUTPUT_BYTES]).to_string();
-            Ok(format!("{}\n\n… (输出过大，已截断，仅显示前 1 MB)", truncated))
+            Ok(format!("{}\n\n… (output truncated, showing first 1 MB)", truncated))
         } else {
             Ok(String::from_utf8_lossy(raw).to_string())
         }
@@ -125,12 +189,12 @@ fn porcelain_status_to_string(xy: &str) -> &'static str {
 #[tauri::command]
 pub async fn git_get_repo(path: String) -> Result<GitRepo, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let _lock = GIT_LOCK.lock().map_err(|e| format!("锁获取失败: {}", e))?;
+        let _lock = GIT_LOCK.lock().map_err(|e| format!("ERR_LOCK_FAILED: Failed to acquire git lock: {}", e))?;
         cleanup_stale_lock(&path);
         // Only accept if .git exists directly in this directory (no upward search)
         let git_dir = std::path::Path::new(&path).join(".git");
         if !git_dir.exists() {
-            return Err("该目录不是 Git 仓库根目录".to_string());
+            return Err("ERR_NOT_GIT_ROOT: The directory is not a git repository root".to_string());
         }
 
         run_git(&path, &["rev-parse", "--git-dir"])?;
@@ -154,14 +218,14 @@ pub async fn git_get_repo(path: String) -> Result<GitRepo, String> {
         Ok(GitRepo { path, branch, ahead, behind })
     })
     .await
-    .map_err(|e| format!("任务执行失败: {}", e))?
+    .map_err(|e| format!("ERR_TASK_FAILED: Task execution failed: {}", e))?
 }
 
 /// Return the list of modified/untracked/etc. files in the working tree.
 #[tauri::command]
 pub async fn git_get_status(path: String) -> Result<Vec<GitFileStatus>, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let _lock = GIT_LOCK.lock().map_err(|e| format!("锁获取失败: {}", e))?;
+        let _lock = GIT_LOCK.lock().map_err(|e| format!("ERR_LOCK_FAILED: Failed to acquire git lock: {}", e))?;
         cleanup_stale_lock(&path);
         let out = run_git(&path, &["status", "--porcelain", "-u"])?;
         let files = out
@@ -183,32 +247,32 @@ pub async fn git_get_status(path: String) -> Result<Vec<GitFileStatus>, String> 
         Ok(files)
     })
     .await
-    .map_err(|e| format!("任务执行失败: {}", e))?
+    .map_err(|e| format!("ERR_TASK_FAILED: Task execution failed: {}", e))?
 }
 
 /// Return the unified diff for a single file.
 #[tauri::command]
 pub async fn git_diff(path: String, file_path: String) -> Result<String, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let _lock = GIT_LOCK.lock().map_err(|e| format!("锁获取失败: {}", e))?;
+        let _lock = GIT_LOCK.lock().map_err(|e| format!("ERR_LOCK_FAILED: Failed to acquire git lock: {}", e))?;
         let diff = run_git_truncate(&path, &["diff", "HEAD", "--", &file_path])?;
         Ok(diff)
     })
     .await
-    .map_err(|e| format!("任务执行失败: {}", e))?
+    .map_err(|e| format!("ERR_TASK_FAILED: Task execution failed: {}", e))?
 }
 
 /// Stage the given files and create a commit with the supplied message.
 #[tauri::command]
 pub async fn git_commit(path: String, message: String, files: Vec<String>) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || -> Result<(), String> {
-        let _lock = GIT_LOCK.lock().map_err(|e| format!("锁获取失败: {}", e))?;
+        let _lock = GIT_LOCK.lock().map_err(|e| format!("ERR_LOCK_FAILED: Failed to acquire git lock: {}", e))?;
         cleanup_stale_lock(&path);
         if message.trim().is_empty() {
-            return Err("提交信息不能为空".to_string());
+            return Err("ERR_EMPTY_MESSAGE: Commit message cannot be empty".to_string());
         }
         if files.is_empty() {
-            return Err("未选择任何文件".to_string());
+            return Err("ERR_NO_FILES_SELECTED: No files selected for commit".to_string());
         }
 
         for f in &files {
@@ -219,43 +283,43 @@ pub async fn git_commit(path: String, message: String, files: Vec<String>) -> Re
         Ok(())
     })
     .await
-    .map_err(|e| format!("任务执行失败: {}", e))?
+    .map_err(|e| format!("ERR_TASK_FAILED: Task execution failed: {}", e))?
 }
 
 /// Pull from the default upstream.
 #[tauri::command]
 pub async fn git_pull(path: String) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || -> Result<(), String> {
-        let _lock = GIT_LOCK.lock().map_err(|e| format!("锁获取失败: {}", e))?;
+        let _lock = GIT_LOCK.lock().map_err(|e| format!("ERR_LOCK_FAILED: Failed to acquire git lock: {}", e))?;
         cleanup_stale_lock(&path);
         run_git(&path, &["pull"])?;
         Ok(())
     })
     .await
-    .map_err(|e| format!("任务执行失败: {}", e))?
+    .map_err(|e| format!("ERR_TASK_FAILED: Task execution failed: {}", e))?
 }
 
 /// Push to the default upstream.
 #[tauri::command]
 pub async fn git_push(path: String) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || -> Result<(), String> {
-        let _lock = GIT_LOCK.lock().map_err(|e| format!("锁获取失败: {}", e))?;
+        let _lock = GIT_LOCK.lock().map_err(|e| format!("ERR_LOCK_FAILED: Failed to acquire git lock: {}", e))?;
         cleanup_stale_lock(&path);
         run_git(&path, &["push"])?;
         Ok(())
     })
     .await
-    .map_err(|e| format!("任务执行失败: {}", e))?
+    .map_err(|e| format!("ERR_TASK_FAILED: Task execution failed: {}", e))?
 }
 
 /// Stage (git add) the given files.
 #[tauri::command]
 pub async fn git_stage(path: String, files: Vec<String>) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || -> Result<(), String> {
-        let _lock = GIT_LOCK.lock().map_err(|e| format!("锁获取失败: {}", e))?;
+        let _lock = GIT_LOCK.lock().map_err(|e| format!("ERR_LOCK_FAILED: Failed to acquire git lock: {}", e))?;
         cleanup_stale_lock(&path);
         if files.is_empty() {
-            return Err("未选择任何文件".to_string());
+            return Err("ERR_NO_FILES_SELECTED: No files selected for staging".to_string());
         }
         for f in &files {
             run_git(&path, &["add", "--", f])?;
@@ -263,14 +327,14 @@ pub async fn git_stage(path: String, files: Vec<String>) -> Result<(), String> {
         Ok(())
     })
     .await
-    .map_err(|e| format!("任务执行失败: {}", e))?
+    .map_err(|e| format!("ERR_TASK_FAILED: Task execution failed: {}", e))?
 }
 
 /// Restore (discard changes) for the given file.
 #[tauri::command]
 pub async fn git_restore(path: String, file_path: String) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || -> Result<(), String> {
-        let _lock = GIT_LOCK.lock().map_err(|e| format!("锁获取失败: {}", e))?;
+        let _lock = GIT_LOCK.lock().map_err(|e| format!("ERR_LOCK_FAILED: Failed to acquire git lock: {}", e))?;
         cleanup_stale_lock(&path);
         let status_out = run_git(&path, &["status", "--porcelain", "--", &file_path])?;
         let is_untracked = status_out.trim().starts_with("??");
@@ -282,17 +346,17 @@ pub async fn git_restore(path: String, file_path: String) -> Result<(), String> 
         Ok(())
     })
     .await
-    .map_err(|e| format!("任务执行失败: {}", e))?
+    .map_err(|e| format!("ERR_TASK_FAILED: Task execution failed: {}", e))?
 }
 
 /// Unstage the given files (git reset HEAD -- <files>).
 #[tauri::command]
 pub async fn git_unstage(path: String, files: Vec<String>) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || -> Result<(), String> {
-        let _lock = GIT_LOCK.lock().map_err(|e| format!("锁获取失败: {}", e))?;
+        let _lock = GIT_LOCK.lock().map_err(|e| format!("ERR_LOCK_FAILED: Failed to acquire git lock: {}", e))?;
         cleanup_stale_lock(&path);
         if files.is_empty() {
-            return Err("未选择任何文件".to_string());
+            return Err("ERR_NO_FILES_SELECTED: No files selected for unstaging".to_string());
         }
         for f in &files {
             run_git(&path, &["reset", "HEAD", "--", f])?;
@@ -300,5 +364,5 @@ pub async fn git_unstage(path: String, files: Vec<String>) -> Result<(), String>
         Ok(())
     })
     .await
-    .map_err(|e| format!("任务执行失败: {}", e))?
+    .map_err(|e| format!("ERR_TASK_FAILED: Task execution failed: {}", e))?
 }
