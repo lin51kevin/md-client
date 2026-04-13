@@ -122,6 +122,16 @@ export function useSearchLogic({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [crossFile]);
 
+  // Clear results immediately when query is emptied
+  useEffect(() => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      setSelectedIdx(null);
+      setSearchStatus(s => ({ ...s, error: null, replaceMessage: null }));
+      onMatchChangeRef.current?.([], -1);
+    }
+  }, [query]);
+
   // Cross-file search
   const doSearchAll = useCallback(async () => {
     if (!query.trim()) return;

@@ -1430,12 +1430,13 @@ body {
 }
 
 .slide-content {
-  max-width: 90vw;
+  width: 90vw;
   max-height: 80vh;
   overflow: auto;
   padding: 48px 64px;
   font-size: 28px;
   line-height: 1.6;
+  box-sizing: border-box;
 }
 
 .slide-content h1 { font-size: 3em; margin-bottom: 0.4em; }

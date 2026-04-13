@@ -114,6 +114,7 @@ export const zhCN = {
   'toolbar.split': '分栏视图 (Ctrl+2)',
   'toolbar.previewOnly': '仅预览 (Ctrl+3)',
   'toolbar.slideMode': '幻灯片放映 (Ctrl+4)',
+  'toolbar.mindmapMode': '思维导图 (Ctrl+5)',
   'toolbar.insertSnippet': '插入片段 (Ctrl+Shift+J)',
   'toolbar.prevTab': '上一个标签页',
   'toolbar.nextTab': '下一个标签页',
@@ -347,6 +348,16 @@ export const zhCN = {
   'snippet.fieldDescPlaceholder': '可选描述（如：会议纪要模板）',
   'snippet.fieldContent': '内容',
   'help.title': '用户指南',
+
+  // ── Mindmap ──────────────────────────────────────────────────────────────────────────
+  'mindmap.title': '思维导图',
+  'mindmap.empty': '未找到标题',
+  'mindmap.emptyHint': '在文档中添加 # 标题以生成思维导图',
+  'mindmap.nodeCount': '{count} 个节点',
+  'mindmap.zoomIn': '放大',
+  'mindmap.zoomOut': '缩小',
+  'mindmap.zoomReset': '重置缩放',
+  'mindmap.renderError': '渲染错误',
 };
 
 export type TranslationKey = keyof typeof zhCN;

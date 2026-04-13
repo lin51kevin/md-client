@@ -1,6 +1,6 @@
 
 import { useRef, useState } from 'react';
-import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, SpellCheck, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, HelpCircle, FilePlus, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight, Table2, FileCode2, Minus, ListChecks, Sigma, Presentation, Library, List } from 'lucide-react';
+import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, SpellCheck, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, HelpCircle, FilePlus, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight, Table2, FileCode2, Minus, ListChecks, Sigma, Presentation, Library, List, Brain } from 'lucide-react';
 import { ViewMode, FocusMode } from '../types';
 
 import { FileMenuDropdown } from './FileMenuDropdown';
@@ -346,6 +346,14 @@ export function Toolbar({
           title={t('toolbar.slideMode') || 'Slide Show (Ctrl+4)'}
         >
           <Presentation size={15} strokeWidth={1.8} />
+        </ToolbarButton>
+        <ToolbarButton
+          variant="view"
+          active={viewMode === 'mindmap'}
+          onClick={() => onSetViewMode('mindmap')}
+          title={t('toolbar.mindmapMode') || 'Mindmap (Ctrl+5)'}
+        >
+          <Brain size={15} strokeWidth={1.8} />
         </ToolbarButton>
 
         <div className="w-px h-5 mx-1 shrink-0" style={{ backgroundColor: 'var(--border-color)' }} />

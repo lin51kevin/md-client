@@ -233,7 +233,7 @@ describe('FileTreeSidebar CRUD', () => {
     fireEvent.click(screen.getByText('重命名'))
 
     await waitFor(() => {
-      const input = document.querySelector('.file-tree-nav input') as HTMLInputElement | null;
+      const input = document.querySelector('nav input') as HTMLInputElement | null;
       expect(input).toBeTruthy();
       expect(input?.value).toBe('README');
     }, { timeout: 2000 });
@@ -253,7 +253,7 @@ describe('FileTreeSidebar CRUD', () => {
     await waitFor(() => screen.getByText('重命名'))
     fireEvent.click(screen.getByText('重命名'))
 
-    const input = await waitFor(() => document.querySelector('.file-tree-nav input') as HTMLInputElement)
+    const input = await waitFor(() => document.querySelector('nav input') as HTMLInputElement)
     fireEvent.change(input, { target: { value: 'new-name' } })
     fireEvent.keyDown(input, { key: 'Enter' })
 
@@ -284,7 +284,7 @@ describe('FileTreeSidebar CRUD', () => {
     fireEvent.contextMenu(screen.getByText('README.md'))
     await waitFor(() => screen.getByText('重命名'))
 
-    const nav = document.querySelector('.file-tree-nav')!
+    const nav = document.querySelector('nav')!
     fireEvent.click(nav)
 
     await waitFor(() => {

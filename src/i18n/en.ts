@@ -116,6 +116,7 @@ export const en: Record<TranslationKey, string> = {
   'toolbar.split': 'Split View (Ctrl+2)',
   'toolbar.previewOnly': 'Preview Only (Ctrl+3)',
   'toolbar.slideMode': 'Slide Show (Ctrl+4)',
+  'toolbar.mindmapMode': 'Mindmap (Ctrl+5)',
   'toolbar.insertSnippet': 'Insert Snippet (Ctrl+Shift+J)',
   'toolbar.prevTab': 'Previous Tab',
   'toolbar.nextTab': 'Next Tab',
@@ -350,4 +351,14 @@ export const en: Record<TranslationKey, string> = {
   'snippet.fieldDescPlaceholder': 'Optional description (e.g., meeting template)',
   'snippet.fieldContent': 'Content',
   'help.title': 'User Guide',
+
+  // ── Mindmap ──────────────────────────────────────────────────────────────────────────
+  'mindmap.title': 'Mindmap',
+  'mindmap.empty': 'No headings found',
+  'mindmap.emptyHint': 'Add # headings to your document to generate a mindmap',
+  'mindmap.nodeCount': '{count} nodes',
+  'mindmap.zoomIn': 'Zoom In',
+  'mindmap.zoomOut': 'Zoom Out',
+  'mindmap.zoomReset': 'Reset Zoom',
+  'mindmap.renderError': 'Render error',
 };

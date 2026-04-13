@@ -37,6 +37,7 @@ const DEFAULT_PARSED = new Map([
   ['editMode', { ctrl: true, shift: false, alt: false, key: '1' }],
   ['splitMode', { ctrl: true, shift: false, alt: false, key: '2' }],
   ['previewMode', { ctrl: true, shift: false, alt: false, key: '3' }],
+  ['mindmapMode', { ctrl: true, shift: false, alt: false, key: '5' }],
   ['typewriterMode', { ctrl: true, shift: false, alt: false, key: '.' }],
   ['focusMode', { ctrl: true, shift: false, alt: false, key: ',' }],
   ['insertSnippet', { ctrl: true, shift: true, alt: false, key: 'j' }],
@@ -99,6 +100,7 @@ export function useKeyboardShortcuts(params: ShortcutsParams) {
             case 'splitMode': setViewMode('split'); break;
             case 'previewMode': setViewMode('preview'); break;
             case 'slideMode': setViewMode('slide'); break;
+            case 'mindmapMode': setViewMode('mindmap'); break;
             case 'typewriterMode':
               setFocusMode?.(focusMode === 'typewriter' ? 'normal' : 'typewriter'); break;
             case 'focusMode':

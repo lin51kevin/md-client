@@ -53,6 +53,7 @@ import { ActivityBar, PANEL_ITEMS, type PanelId } from './components/ActivityBar
 import { useGit } from './hooks/useGit';
 const HelpModal = lazy(() => import('./components/HelpModal').then(m => ({ default: m.HelpModal })));
 const SlidePreview = lazy(() => import('./components/SlidePreview').then(m => ({ default: m.SlidePreview })));
+const MindmapView = lazy(() => import('./components/MindmapView').then(m => ({ default: m.MindmapView })));
 import { EditorContentArea } from './components/EditorContentArea';
 import { createCommandRegistry } from './lib/command-registry';
 import type { SearchResultItem } from './types/search';
@@ -599,6 +600,16 @@ export default function App() {
           markdown={activeTab.doc}
           onClose={() => setViewMode('split')}
         />
+      )}
+
+      {viewMode === 'mindmap' && activeTab && (
+        <Suspense fallback={null}>
+          <MindmapView
+            markdown={activeTab.doc}
+            onClose={() => setViewMode('split')}
+            onNavigate={handleTocNavigate}
+          />
+        </Suspense>
       )}
     </div>
     </I18nContext.Provider>

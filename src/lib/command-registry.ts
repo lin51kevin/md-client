@@ -43,6 +43,7 @@ export function createCommandRegistry(deps: CommandRegistryDeps): Command[] {
     { id: 'view.editOnly', label: '仅编辑器', labelEn: 'Editor Only', shortcut: 'Ctrl+1', category: 'view', action: () => setViewMode('edit') },
     { id: 'view.split', label: '分栏预览', labelEn: 'Split Preview', shortcut: 'Ctrl+2', category: 'view', action: () => setViewMode('split') },
     { id: 'view.previewOnly', label: '仅预览', labelEn: 'Preview Only', shortcut: 'Ctrl+3', category: 'view', action: () => setViewMode('preview') },
+    { id: 'view.mindmap', label: '思维导图', labelEn: 'Mindmap', shortcut: 'Ctrl+5', category: 'view', action: () => setViewMode('mindmap') },
     { id: 'view.focusTypewriter', label: '打字机模式', labelEn: 'Typewriter Mode', shortcut: 'Ctrl+.', category: 'view', action: () => setFocusMode(focusMode === 'typewriter' ? 'normal' : 'typewriter') },
     { id: 'view.focusMode', label: '专注模式', labelEn: 'Focus Mode', shortcut: 'Ctrl+,', category: 'view', action: () => setFocusMode(focusMode === 'focus' ? 'normal' : 'focus') },
     { id: 'view.fullscreen', label: '全屏模式', labelEn: 'Fullscreen', shortcut: 'F11', category: 'view', action: async () => {
