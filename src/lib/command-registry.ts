@@ -1,6 +1,18 @@
 import { undo, redo } from '@codemirror/commands';
 import type { Command } from './commands';
 
+/** Custom commands registered by plugins */
+export const customCommands: Command[] = [];
+
+export function registerCustomCommand(cmd: Command): void {
+  customCommands.push(cmd);
+}
+
+export function unregisterCustomCommand(id: string): void {
+  const idx = customCommands.findIndex(c => c.id === id);
+  if (idx !== -1) customCommands.splice(idx, 1);
+}
+
 export interface CommandRegistryDeps {
   createNewTab: () => void;
   handleOpenFile: () => void;
@@ -31,7 +43,7 @@ export function createCommandRegistry(deps: CommandRegistryDeps): Command[] {
     toggleSearchPanel, cmViewRef, isTauri,
   } = deps;
 
-  return [
+  const builtInCommands: Command[] = [
     { id: 'file.new', label: '新建标签页', labelEn: 'New Tab', shortcut: 'Ctrl+N', category: 'file', action: () => createNewTab() },
     { id: 'file.open', label: '打开文件', labelEn: 'Open File', shortcut: 'Ctrl+O', category: 'file', action: () => handleOpenFile() },
     { id: 'file.save', label: '保存', labelEn: 'Save', shortcut: 'Ctrl+S', category: 'file', action: () => handleSaveFile() },
@@ -63,4 +75,9 @@ export function createCommandRegistry(deps: CommandRegistryDeps): Command[] {
     { id: 'snippet.insert', label: '插入片段', labelEn: 'Insert Snippet', shortcut: '', category: 'custom', action: () => setShowSnippetPicker(true) },
     { id: 'snippet.manager', label: '片段管理', labelEn: 'Snippet Manager', shortcut: '', category: 'custom', action: () => setShowSnippetManager(true) },
   ];
+
+  return [...builtInCommands, ...customCommands];
 }
+
+/** Alias for type consumers that import from command-registry */
+export type { Command } from './commands';
