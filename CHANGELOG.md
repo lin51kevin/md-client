@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [v0.7.0] - TBD
+
+### Planned Features
+
+#### 文档与代码映射 (Docs)
+- **完整代码映射文档** — 生成前端 (frontend.md)、后端 (backend.md)、集成 (integrations.md) 三个完整代码映射
+  - 前端：30+ 组件、23个 Hooks、42个工具库详细清单
+  - 后端：14 个 Rust 命令、导出流水线、IPC 通讯协议
+  - 集成：完整依赖矩阵、权限模型、部署清单
+- **文档现代化** — 更新 README/USER_GUIDE/FEATURE_COMPARISON 至 v0.7.0
+- **版本管理** — 统一版本到 0.7.0 (package.json + tauri.conf.json)
+
+#### 规划中的功能
+- **流式导出** — 支持大文件分段处理
+- **并行搜索** — 多线程跨文件搜索优化
+- **Git 集成** — 后端 Git 命令封装（历史/diff）
+- **主题编辑** — 自定义主题 CSS 编辑器增强
+- **插件系统** — 轻量级插件架构（待设计）
+
+### Changed
+- 版本升级至 v0.7.0 (规划版本)
+- 所有文档日期更新至 2026-04-13
+
+---
+
 ## [v0.6.0] - 2026-04-12
 
 ### Added
