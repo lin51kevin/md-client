@@ -76,15 +76,8 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
               console.warn(`Failed to restore tab ${serialized.filePath}:`, err);
             }
           } else {
-            // Untitled tab — restore with empty content
-            restoredTabs.push({
-              id: serialized.id,
-              filePath: null,
-              doc: '',
-              isDirty: false,
-              displayName: serialized.displayName,
-              isPinned: serialized.isPinned,
-            });
+            // Untitled tab (no filePath) — skip; these are transient welcome-page
+            // tabs that were mistakenly saved by an older version of the app.
           }
         }
         
@@ -109,9 +102,10 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
     // Skip persistence during restoration phase
     if (isRestoringSession) return;
     
-    // Check if we have only a pristine tab (welcome state) — clear session
-    const isPristine = tabs.length === 1 && !tabs[0].filePath && !tabs[0].isDirty && !tabs[0].displayName;
-    if (isPristine) {
+    // Only save tabs that have a real file on disk — untitled tabs (sample.md welcome
+    // state included) cannot be meaningfully restored and must never pollute the session.
+    const tabsToSave = tabs.filter(tab => tab.filePath !== null);
+    if (tabsToSave.length === 0) {
       try {
         localStorage.removeItem(SESSION_KEY);
       } catch {}
@@ -120,7 +114,7 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
     
     // Serialize tabs (don't save dirty state or content)
     const session: SerializedSession = {
-      tabs: tabs.map(tab => ({
+      tabs: tabsToSave.map(tab => ({
         id: tab.id,
         filePath: tab.filePath,
         displayName: tab.displayName,

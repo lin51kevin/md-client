@@ -175,10 +175,12 @@ function MermaidBlock({ code }: { code: string }) {
       return mermaid.render(id, code);
     }).then(({ svg }) => {
       if (!cancelled && divRef.current) {
+        // DOMPurify v3 disallows foreignObject/use by default;
+        // re-add them so Mermaid's node labels and edge arrows render correctly.
+        // Event handlers and <script> tags are still stripped by DOMPurify.
         divRef.current.innerHTML = DOMPurify.sanitize(svg, {
-          USE_PROFILES: { svg: true, svgFilters: true },
-          FORBID_TAGS: ['script'],
-          FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover'],
+          ADD_TAGS: ['foreignObject', 'use'],
+          FORCE_BODY: false,
         });
       }
     }).catch((err) => {
