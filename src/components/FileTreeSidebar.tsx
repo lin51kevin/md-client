@@ -366,10 +366,9 @@ export function FileTreeSidebar({
 
   return (
     <div
-      className="w-60 shrink-0 h-full flex flex-col overflow-hidden"
+      className="w-full h-full flex flex-col overflow-hidden"
       style={{
         backgroundColor: 'var(--bg-secondary)',
-        borderRight: '1px solid var(--border-color)',
       }}
     >
       {/* 头部：工具栏 */}
