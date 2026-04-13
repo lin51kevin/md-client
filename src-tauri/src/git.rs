@@ -9,13 +9,14 @@
 /// so the Tauri main thread (and UI) stays responsive.
 
 use std::process::Command;
-use std::sync::{LazyLock, Mutex};
+use std::sync::{LazyLock, RwLock};
 
 const MAX_OUTPUT_BYTES: usize = 1 * 1024 * 1024; // 1 MB
+const STALE_LOCK_THRESHOLD_SECS: u64 = 30 * 60;
 
-/// Global mutex to serialize all git operations, preventing index.lock conflicts
-/// when multiple commands (stage, status, etc.) run concurrently.
-static GIT_LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
+/// Global RW lock to optimize concurrent git operations.
+/// Read operations may run concurrently while write operations stay exclusive.
+static GIT_RW_LOCK: LazyLock<RwLock<()>> = LazyLock::new(|| RwLock::new(()));
 
 /// Remove stale `.git/index.lock` if it exists.
 /// This file is left behind when a git process crashes or is killed mid-operation.
@@ -73,10 +74,10 @@ fn cleanup_stale_lock_safe(dir: &str) -> bool {
     };
     
     // Stale threshold: 30 minutes
-    const STALE_THRESHOLD: Duration = Duration::from_secs(30 * 60);
+    const STALE_THRESHOLD: Duration = Duration::from_secs(STALE_LOCK_THRESHOLD_SECS);
     
     // Only remove if the lock is truly stale (older than threshold)
-    if age >= STALE_THRESHOLD {
+    if is_lock_stale(age) {
         // Attempt to remove the stale lock
         match std::fs::remove_file(&lock_path) {
             Ok(_) => {
@@ -95,6 +96,10 @@ fn cleanup_stale_lock_safe(dir: &str) -> bool {
 
 /// Run a git command in the given directory and return stdout as String.
 /// Errors include stderr when the process exits non-zero.
+fn is_lock_stale(age: std::time::Duration) -> bool {
+    age.as_secs() >= STALE_LOCK_THRESHOLD_SECS
+}
+
 fn run_git(dir: &str, args: &[&str]) -> Result<String, String> {
     // Segment-by-segment path validation — consistent with validate_user_path in lib.rs
     let normalized = dir.replace('\\', "/");
@@ -189,7 +194,7 @@ fn porcelain_status_to_string(xy: &str) -> &'static str {
 #[tauri::command]
 pub async fn git_get_repo(path: String) -> Result<GitRepo, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let _lock = GIT_LOCK.lock().map_err(|e| format!("ERR_LOCK_FAILED: Failed to acquire git lock: {}", e))?;
+        let _lock = GIT_RW_LOCK.read().map_err(|e| format!("ERR_LOCK_FAILED: Failed to acquire git lock: {}", e))?;
         cleanup_stale_lock(&path);
         // Only accept if .git exists directly in this directory (no upward search)
         let git_dir = std::path::Path::new(&path).join(".git");
@@ -225,7 +230,7 @@ pub async fn git_get_repo(path: String) -> Result<GitRepo, String> {
 #[tauri::command]
 pub async fn git_get_status(path: String) -> Result<Vec<GitFileStatus>, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let _lock = GIT_LOCK.lock().map_err(|e| format!("ERR_LOCK_FAILED: Failed to acquire git lock: {}", e))?;
+        let _lock = GIT_RW_LOCK.read().map_err(|e| format!("ERR_LOCK_FAILED: Failed to acquire git lock: {}", e))?;
         cleanup_stale_lock(&path);
         let out = run_git(&path, &["status", "--porcelain", "-u"])?;
         let files = out
@@ -254,7 +259,7 @@ pub async fn git_get_status(path: String) -> Result<Vec<GitFileStatus>, String> 
 #[tauri::command]
 pub async fn git_diff(path: String, file_path: String) -> Result<String, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let _lock = GIT_LOCK.lock().map_err(|e| format!("ERR_LOCK_FAILED: Failed to acquire git lock: {}", e))?;
+        let _lock = GIT_RW_LOCK.read().map_err(|e| format!("ERR_LOCK_FAILED: Failed to acquire git lock: {}", e))?;
         let diff = run_git_truncate(&path, &["diff", "HEAD", "--", &file_path])?;
         Ok(diff)
     })
@@ -266,7 +271,7 @@ pub async fn git_diff(path: String, file_path: String) -> Result<String, String>
 #[tauri::command]
 pub async fn git_commit(path: String, message: String, files: Vec<String>) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || -> Result<(), String> {
-        let _lock = GIT_LOCK.lock().map_err(|e| format!("ERR_LOCK_FAILED: Failed to acquire git lock: {}", e))?;
+        let _lock = GIT_RW_LOCK.write().map_err(|e| format!("ERR_LOCK_FAILED: Failed to acquire git lock: {}", e))?;
         cleanup_stale_lock(&path);
         if message.trim().is_empty() {
             return Err("ERR_EMPTY_MESSAGE: Commit message cannot be empty".to_string());
@@ -290,7 +295,7 @@ pub async fn git_commit(path: String, message: String, files: Vec<String>) -> Re
 #[tauri::command]
 pub async fn git_pull(path: String) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || -> Result<(), String> {
-        let _lock = GIT_LOCK.lock().map_err(|e| format!("ERR_LOCK_FAILED: Failed to acquire git lock: {}", e))?;
+        let _lock = GIT_RW_LOCK.write().map_err(|e| format!("ERR_LOCK_FAILED: Failed to acquire git lock: {}", e))?;
         cleanup_stale_lock(&path);
         run_git(&path, &["pull"])?;
         Ok(())
@@ -303,7 +308,7 @@ pub async fn git_pull(path: String) -> Result<(), String> {
 #[tauri::command]
 pub async fn git_push(path: String) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || -> Result<(), String> {
-        let _lock = GIT_LOCK.lock().map_err(|e| format!("ERR_LOCK_FAILED: Failed to acquire git lock: {}", e))?;
+        let _lock = GIT_RW_LOCK.write().map_err(|e| format!("ERR_LOCK_FAILED: Failed to acquire git lock: {}", e))?;
         cleanup_stale_lock(&path);
         run_git(&path, &["push"])?;
         Ok(())
@@ -316,7 +321,7 @@ pub async fn git_push(path: String) -> Result<(), String> {
 #[tauri::command]
 pub async fn git_stage(path: String, files: Vec<String>) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || -> Result<(), String> {
-        let _lock = GIT_LOCK.lock().map_err(|e| format!("ERR_LOCK_FAILED: Failed to acquire git lock: {}", e))?;
+        let _lock = GIT_RW_LOCK.write().map_err(|e| format!("ERR_LOCK_FAILED: Failed to acquire git lock: {}", e))?;
         cleanup_stale_lock(&path);
         if files.is_empty() {
             return Err("ERR_NO_FILES_SELECTED: No files selected for staging".to_string());
@@ -330,12 +335,17 @@ pub async fn git_stage(path: String, files: Vec<String>) -> Result<(), String> {
     .map_err(|e| format!("ERR_TASK_FAILED: Task execution failed: {}", e))?
 }
 
-/// Restore (discard changes) for the given file.
 #[tauri::command]
 pub async fn git_restore(path: String, file_path: String) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || -> Result<(), String> {
-        let _lock = GIT_LOCK.lock().map_err(|e| format!("ERR_LOCK_FAILED: Failed to acquire git lock: {}", e))?;
+        let _lock = GIT_RW_LOCK.write().map_err(|e| format!("ERR_LOCK_FAILED: Failed to acquire git lock: {}", e))?;
         cleanup_stale_lock(&path);
+        let normalized_fp = file_path.replace("\\", "/");
+        for segment in normalized_fp.split("/") {
+            if segment == ".." {
+                return Err("ERR_PATH_TRAVERSAL: file_path must not contain ..".to_string());
+            }
+        }
         let status_out = run_git(&path, &["status", "--porcelain", "--", &file_path])?;
         let is_untracked = status_out.trim().starts_with("??");
         if is_untracked {
@@ -353,7 +363,7 @@ pub async fn git_restore(path: String, file_path: String) -> Result<(), String> 
 #[tauri::command]
 pub async fn git_unstage(path: String, files: Vec<String>) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || -> Result<(), String> {
-        let _lock = GIT_LOCK.lock().map_err(|e| format!("ERR_LOCK_FAILED: Failed to acquire git lock: {}", e))?;
+        let _lock = GIT_RW_LOCK.write().map_err(|e| format!("ERR_LOCK_FAILED: Failed to acquire git lock: {}", e))?;
         cleanup_stale_lock(&path);
         if files.is_empty() {
             return Err("ERR_NO_FILES_SELECTED: No files selected for unstaging".to_string());
@@ -365,4 +375,44 @@ pub async fn git_unstage(path: String, files: Vec<String>) -> Result<(), String>
     })
     .await
     .map_err(|e| format!("ERR_TASK_FAILED: Task execution failed: {}", e))?
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{cleanup_stale_lock_safe, is_lock_stale, STALE_LOCK_THRESHOLD_SECS};
+    use std::fs;
+    use std::time::Duration;
+    use tempfile::TempDir;
+
+    #[test]
+    fn cleanup_returns_false_when_lock_file_does_not_exist() {
+        let temp_dir = TempDir::new().unwrap();
+        let removed = cleanup_stale_lock_safe(temp_dir.path().to_str().unwrap());
+        assert!(!removed);
+    }
+
+    #[test]
+    fn cleanup_keeps_active_lock_files() {
+        let temp_dir = TempDir::new().unwrap();
+        let git_dir = temp_dir.path().join(".git");
+        fs::create_dir(&git_dir).unwrap();
+        let lock_path = git_dir.join("index.lock");
+        fs::write(&lock_path, b"active lock").unwrap();
+        let removed = cleanup_stale_lock_safe(temp_dir.path().to_str().unwrap());
+        assert!(!removed);
+        assert!(lock_path.exists());
+    }
+
+    #[test]
+    fn cleanup_rejects_parent_directory_segments() {
+        let removed = cleanup_stale_lock_safe("/some/path/../other");
+        assert!(!removed);
+    }
+
+    #[test]
+    fn stale_threshold_matches_spec() {
+        assert!(!is_lock_stale(Duration::from_secs(STALE_LOCK_THRESHOLD_SECS - 1)));
+        assert!(is_lock_stale(Duration::from_secs(STALE_LOCK_THRESHOLD_SECS)));
+        assert!(is_lock_stale(Duration::from_secs(STALE_LOCK_THRESHOLD_SECS + 1)));
+    }
 }

@@ -32,3 +32,6 @@ base64 = "0.22"
 image = { version = "0.23", default-features = false, features = ["png", "jpeg"] }
 emojis = "0.8.0"
 regex = "1"
+
+[dev-dependencies]
+tempfile = "3"

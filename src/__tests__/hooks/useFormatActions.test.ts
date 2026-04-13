@@ -89,6 +89,15 @@ describe('useFormatActions', () => {
     action('bold');
     expect(view.state.doc.toString()).toBe('hello world');
   });
+  it('bold — 多行选区时每一行都包装且光标停在首行包装内', () => {
+    const doc = 'line1\nline2';
+    const view = createView(doc, 0, doc.length);
+    const { action } = buildHook(view);
+    action('bold');
+    expect(view.state.doc.toString()).toBe('**line1**\n**line2**');
+    expect(view.state.selection.main.anchor).toBe(2);
+  });
+
 
   // ── Italic ────────────────────────────────────────────────────────────────
 

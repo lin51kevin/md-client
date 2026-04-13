@@ -24,7 +24,6 @@ function getSavedWidth(): number {
         // 迁移到新key
         localStorage.setItem(STORAGE_KEY, legacyRaw);
         localStorage.removeItem(LEGACY_KEY);
-        console.info('[SidebarContainer] Migrated legacy storage:', n);
         return n;
       }
       localStorage.removeItem(LEGACY_KEY); // 清理无效数据
@@ -58,15 +57,14 @@ export function SidebarContainer({ activePanel, children }: SidebarContainerProp
     try {
       localStorage.setItem(STORAGE_KEY, String(w));
     } catch (e) {
-      // W2: 记录警告
       console.warn('[SidebarContainer] Failed to persist sidebar width:', e);
-      // 降级方案：尝试sessionStorage
       try {
         sessionStorage.setItem(STORAGE_KEY, String(w));
       } catch (sessionError) {
-        // sessionStorage也失败，静默处理
+        console.warn('[SidebarContainer] Failed to persist sidebar width in sessionStorage:', sessionError);
       }
     }
+    // localStorage 不可用时宽度仍保留在内存中，页面关闭前有效
   }, []);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {

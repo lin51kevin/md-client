@@ -59,7 +59,7 @@ export function useFormatActions({ cmViewRef, getActiveTab, promptUser }: UseFor
           });
           view.dispatch({
             changes: { from: sel.from, to: sel.to, insert: wrappedLines.join('\n') },
-            selection: { anchor: sel.from + wrappedLines[0].length > 0 ? wrapper.length : 0 },
+            selection: { anchor: sel.from + (wrappedLines[0].length > 0 ? wrapper.length : 0) },
           });
         }
         break;
@@ -148,17 +148,31 @@ export function useFormatActions({ cmViewRef, getActiveTab, promptUser }: UseFor
             // 使用 invoke 读取字节，避免 asset:// 协议的 CSP 限制
             const bytes = await invoke<number[]>('read_file_bytes', { path: filePath });
             const data = new Uint8Array(bytes);
-
             const ext = filePath.split('.').pop()?.toLowerCase() || 'png';
-            const timestamp = Date.now();
-            const fileName = `img-${timestamp}.${ext}`;
+
             const docPath = getActiveTab().filePath;
-            const saveDir = docPath ? `${docPath.replace(/[\/\\][^\/\\]+$/, '')}/assets/images` : './assets/images';
-            const savePath = `${saveDir}/${fileName}`;
 
-            await invoke('write_image_bytes', { path: savePath, data: Array.from(data) });
+            let mdSyntax: string;
+            if (docPath) {
+              // 已保存文档 → 写入 assets/images/ 并用相对路径
+              const timestamp = Date.now();
+              const fileName = `img-${timestamp}.${ext}`;
+              const saveDir = `${docPath.replace(/[\/\\][^\/\\]+$/, '')}/assets/images`;
+              const savePath = `${saveDir}/${fileName}`;
+              await invoke('write_image_bytes', { path: savePath, data: Array.from(data) });
+              mdSyntax = `![](assets/images/${fileName})`;
+            } else {
+              // 未保存文档 → 嵌入 base64 data URL（WebView 无法访问相对磁盘路径）
+              const MIME: Record<string, string> = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp', bmp: 'image/bmp' };
+              const mime = MIME[ext] ?? 'image/png';
+              let binary = '';
+              const CHUNK = 32768;
+              for (let i = 0; i < data.length; i += CHUNK) {
+                binary += String.fromCharCode(...data.subarray(i, i + CHUNK));
+              }
+              mdSyntax = `![](data:${mime};base64,${btoa(binary)})`;
+            }
 
-            const mdSyntax = `![](assets/images/${fileName})`;
             view.dispatch({
               changes: { from: sel.from, to: sel.to, insert: mdSyntax },
               selection: { anchor: sel.from + mdSyntax.length },

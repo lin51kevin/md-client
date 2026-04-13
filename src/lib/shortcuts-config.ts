@@ -24,11 +24,10 @@ export const DEFAULT_SHORTCUTS: ShortcutAction[] = [
   { id: 'slideMode', labelKey: 'settings.shortcuts.slideMode', defaultKeys: 'Ctrl+4' },
   { id: 'typewriterMode', labelKey: 'settings.shortcuts.typewriterMode', defaultKeys: 'Ctrl+.' },
   { id: 'focusMode', labelKey: 'settings.shortcuts.focusMode', defaultKeys: 'Ctrl+,' },
-  { id: 'insertSnippet', labelKey: 'settings.shortcuts.insertSnippet', defaultKeys: 'Ctrl+Shift+J' },
-  // Multi-cursor
   { id: 'multicursor.selectAllOccurrences', labelKey: 'settings.shortcuts.selectAllOccurrences', defaultKeys: 'Alt+D' },
   { id: 'multicursor.addCursorAbove', labelKey: 'settings.shortcuts.addCursorAbove', defaultKeys: 'Alt+Up' },
   { id: 'multicursor.addCursorBelow', labelKey: 'settings.shortcuts.addCursorBelow', defaultKeys: 'Alt+Down' },
+  { id: 'insertSnippet', labelKey: 'settings.shortcuts.insertSnippet', defaultKeys: 'Ctrl+Shift+J' },
 ];
 
 const STORAGE_KEY = 'marklite-custom-shortcuts';
