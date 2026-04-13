@@ -1,6 +1,6 @@
 
 import { useRef, useState } from 'react';
-import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, List, SpellCheck, FolderTree, Search, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, Settings, HelpCircle, FilePlus, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight, Table2, FileCode2, Minus, ListChecks, Sigma, Presentation, Library, GitBranch } from 'lucide-react';
+import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, SpellCheck, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, HelpCircle, FilePlus, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight, Table2, FileCode2, Minus, ListChecks, Sigma, Presentation, Library, List } from 'lucide-react';
 import { ViewMode, FocusMode } from '../types';
 
 import { FileMenuDropdown } from './FileMenuDropdown';
@@ -11,7 +11,6 @@ import { useI18n } from '../i18n';
 interface ToolbarProps {
   viewMode: ViewMode;
   focusMode: FocusMode;
-  showToc?: boolean;
   onNewTab: () => void;
   onOpenFile: () => void;
   onSaveFile: () => void;
@@ -23,26 +22,16 @@ interface ToolbarProps {
   onExportPng?: () => void;
   onSetViewMode: (mode: ViewMode) => void;
   onFocusModeChange?: (mode: FocusMode) => void;
-  onToggleToc?: () => void;
   /** F013: 拼写检查状态 */
   spellCheck?: boolean;
   /** F013: 拼写检查切换回调 */
   onToggleSpellCheck?: () => void;
-  /** F014: 文件树显示状态 */
-  showFileTree?: boolean;
-  /** F014: 文件树切换回调 */
-  onToggleFileTree?: () => void;
-  /** 搜索与替换面板按鈕回调 */
-  onToggleSearch?: () => void;
-  showSearch?: boolean;
   /** F014: 格式化操作回调 */
   onFormatAction?: (action: string) => void;
   /** F014: Vim 模式状态 */
   vimMode?: boolean;
   /** F014: Vim 模式切换回调 */
   onToggleVimMode?: () => void;
-  /** F015: 打开设置面板回调 */
-  onOpenSettings?: () => void;
   /** 打开帮助/用户指南 */
   onOpenHelp?: () => void;
   /** F013: 最近文件列表 */
@@ -61,10 +50,6 @@ interface ToolbarProps {
   onActivateTab?: (id: string) => void;
   /** 打开片段选择器 */
   onInsertSnippet?: () => void;
-  /** Git 面板状态 */
-  showGitPanel?: boolean;
-  /** Git 面板切换回调 */
-  onToggleGitPanel?: () => void;
 }
 
 const DIVIDER = (
@@ -72,16 +57,15 @@ const DIVIDER = (
 );
 
 export function Toolbar({
-  viewMode, focusMode, showToc, showFileTree,
+  viewMode, focusMode,
   onNewTab, onOpenFile, onSaveFile, onSaveAsFile,
   onExportDocx, onExportPdf, onExportHtml, onExportEpub, onExportPng,
-  onSetViewMode, onFocusModeChange, onToggleToc,
-  spellCheck, onToggleSpellCheck, onToggleFileTree,
-  onToggleSearch, showSearch, onFormatAction,
+  onSetViewMode, onFocusModeChange,
+  spellCheck, onToggleSpellCheck,
+  onFormatAction,
   recentFiles, onOpenRecent, onClearRecent,
-  vimMode, onToggleVimMode, onImageLocal, onOpenSettings, onOpenHelp,
+  vimMode, onToggleVimMode, onImageLocal, onOpenHelp,
   tabs, activeTabId, onActivateTab, onCloseAll, onInsertSnippet,
-  showGitPanel, onToggleGitPanel,
 }: ToolbarProps & { onImageLocal?: () => void }) {
   const { t } = useI18n();
   const toolbarRef = useRef<HTMLDivElement>(null);
@@ -272,26 +256,6 @@ export function Toolbar({
 
       {/* ── Right: toggles + view mode + settings ── */}
       <div className="flex items-center gap-0.5">
-        {/* F014 — 文件树 */}
-        <ToolbarButton
-          variant="toggle"
-          active={!!showFileTree}
-          onClick={onToggleFileTree}
-          title={t('toolbar.fileTree')}
-        >
-          <FolderTree size={14} strokeWidth={1.8} />
-        </ToolbarButton>
-
-        {/* F010 — 大纲 */}
-        <ToolbarButton
-          variant="toggle"
-          active={!!showToc}
-          onClick={onToggleToc}
-          title={t('toolbar.toc')}
-        >
-          <List size={14} strokeWidth={1.8} />
-        </ToolbarButton>
-
         {/* F013 — 拼写检查 */}
         <ToolbarButton
           variant="toggle"
@@ -310,16 +274,6 @@ export function Toolbar({
           title={vimMode ? t('toolbar.vimModeOff') : t('toolbar.vimModeOn')}
         >
           <Terminal size={14} strokeWidth={1.8} />
-        </ToolbarButton>
-
-        {/* 搜索 */}
-        <ToolbarButton
-          variant="toggle"
-          active={!!showSearch}
-          onClick={onToggleSearch}
-          title={t('toolbar.search')}
-        >
-          <Search size={14} strokeWidth={1.8} />
         </ToolbarButton>
 
         {DIVIDER}
@@ -395,20 +349,6 @@ export function Toolbar({
         </ToolbarButton>
 
         <div className="w-px h-5 mx-1 shrink-0" style={{ backgroundColor: 'var(--border-color)' }} />
-
-        {/* F015 — 设置 */}
-        <ToolbarButton onClick={onOpenSettings} title={t('settings.title')}>
-          <Settings size={14} strokeWidth={1.8} />
-        </ToolbarButton>
-
-        {/* Git 面板 */}
-        <ToolbarButton
-          active={showGitPanel}
-          onClick={onToggleGitPanel}
-          title="Source Control (Git)"
-        >
-          <GitBranch size={14} strokeWidth={1.8} />
-        </ToolbarButton>
 
         {/* 帮助 — 用户指南 */}
         <ToolbarButton onClick={onOpenHelp} title={t('help.title')}>

@@ -183,7 +183,7 @@ export function FileMenuDropdown({
         {item.submenu && isActive && (
           <div
             onMouseEnter={clearSubmenuCloseTimer}
-            className={item.id === 'recent' ? 'file-menu-recent-list' : undefined}
+            className={undefined}
             style={{
               position: 'absolute',
               left: '100%',

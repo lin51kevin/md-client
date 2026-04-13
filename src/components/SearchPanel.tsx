@@ -83,22 +83,15 @@ export function SearchPanel({
   });
 
   return (
-    <div style={{
-      position: 'fixed', top: 44, bottom: 26, right: 0, width: 420,
-      backgroundColor: 'var(--bg-primary)', borderLeft: '1px solid var(--border-color)',
-      zIndex: 1000, display: 'flex', flexDirection: 'column',
-      boxShadow: '-4px 0 24px rgba(0,0,0,0.12)', animation: 'slideInRight 0.2s ease-out',
-    }}>
+    <div className="w-60 shrink-0 h-full flex flex-col overflow-hidden" style={{ backgroundColor: 'var(--bg-secondary)', borderRight: '1px solid var(--border-color)' }}>
       {/* Header */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px 8px',
-        borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', flexShrink: 0,
-      }}>
-        <Search size={14} strokeWidth={1.8} style={{ color: 'var(--accent-color)', flexShrink: 0 }} />
-        <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' }}>{t('toolbar.search')}</span>
+      <div className="shrink-0 flex items-center gap-1.5 px-3 py-2" style={{ backgroundColor: 'var(--bg-tertiary)', borderBottom: '1px solid var(--border-color)' }}>
+        <Search size={14} strokeWidth={1.8} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />
+        <span className="text-xs font-medium" style={{ color: 'var(--text-primary)', flex: 1 }}>{t('toolbar.search')}</span>
         <button onClick={onClose} title={`${t('common.close')} (Esc)`}
-          style={{ color: 'var(--text-secondary)', flexShrink: 0, padding: 3 }}>
-          <X size={15} strokeWidth={1.8} />
+          className="shrink-0 flex items-center justify-center"
+          style={{ color: 'var(--text-secondary)', padding: 3 }}>
+          <X size={14} strokeWidth={1.8} />
         </button>
       </div>
 

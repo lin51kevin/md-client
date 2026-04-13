@@ -117,16 +117,7 @@ describe('Toolbar', () => {
     expect(screen.getByTitle('保存')).toBeInTheDocument();
     expect(screen.getByTitle('另存为')).toBeInTheDocument();
     expect(screen.getByTitle('粗体')).toBeInTheDocument();
-    expect(screen.getByTitle('搜索与替换')).toBeInTheDocument();
-    expect(screen.getByTitle('设置')).toBeInTheDocument();
     expect(screen.getByTitle('帮助')).toBeInTheDocument();
-  });
-
-  it('search toggle button calls onToggleSearch', () => {
-    const onToggleSearch = vi.fn();
-    render(<Toolbar {...defaultProps} onToggleSearch={onToggleSearch} showSearch={false} />);
-    screen.getByTitle('搜索与替换').click();
-    expect(onToggleSearch).toHaveBeenCalledTimes(1);
   });
 
   it('displays Chinese labels by default (i18n zh-CN)', () => {
@@ -252,19 +243,6 @@ describe('Toolbar', () => {
     expect(picker).not.toBeInTheDocument();
   });
 
-  it('calls onToggleFileTree when file tree button is clicked', () => {
-    const onToggleFileTree = vi.fn();
-    render(<Toolbar {...defaultProps} onToggleFileTree={onToggleFileTree} />);
-    screen.getByTitle('文件树').click();
-    expect(onToggleFileTree).toHaveBeenCalledTimes(1);
-  });
-
-  it('calls onToggleToc when toc button is clicked', () => {
-    const onToggleToc = vi.fn();
-    render(<Toolbar {...defaultProps} onToggleToc={onToggleToc} />);
-    screen.getByTitle('大纲').click();
-    expect(onToggleToc).toHaveBeenCalledTimes(1);
-  });
 
   it('shows "开启拼写检查" title when spellCheck is false', () => {
     render(<Toolbar {...defaultProps} spellCheck={false} />);
@@ -326,13 +304,6 @@ describe('Toolbar', () => {
     render(<Toolbar {...defaultProps} focusMode="fullscreen" onFocusModeChange={onFocusModeChange} />);
     screen.getByTitle('全屏').click();
     expect(onFocusModeChange).toHaveBeenCalledWith('normal');
-  });
-
-  it('calls onOpenSettings when settings button is clicked', () => {
-    const onOpenSettings = vi.fn();
-    render(<Toolbar {...defaultProps} onOpenSettings={onOpenSettings} />);
-    screen.getByTitle('设置').click();
-    expect(onOpenSettings).toHaveBeenCalledTimes(1);
   });
 
   it('calls onOpenHelp when help button is clicked', () => {

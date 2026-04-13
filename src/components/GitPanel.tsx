@@ -66,31 +66,25 @@ export function GitPanel({
 
   return (
     <div
-      className="flex flex-col h-full text-xs select-none"
+      className="w-60 shrink-0 h-full flex flex-col overflow-hidden text-xs select-none"
       style={{
-        backgroundColor: 'var(--bg-primary)',
-        borderLeft: '1px solid var(--border-color)',
-        width: 240,
-        minWidth: 200,
+        backgroundColor: 'var(--bg-secondary)',
+        borderRight: '1px solid var(--border-color)',
       }}
     >
       {/* Header */}
       <div
-        className="flex items-center justify-between px-3 py-2 shrink-0"
-        style={{ borderBottom: '1px solid var(--border-color)' }}
+        className="shrink-0 flex items-center gap-1.5 px-3 py-2"
+        style={{ backgroundColor: 'var(--bg-tertiary)', borderBottom: '1px solid var(--border-color)' }}
       >
-        <div className="flex items-center gap-1.5 font-medium" style={{ color: 'var(--text-primary)' }}>
-          <GitBranch size={13} />
-          <span>Source Control</span>
-        </div>
-        <div className="flex items-center gap-1">
+        <GitBranch size={14} style={{ color: 'var(--text-secondary)' }} />
+        <span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>Source Control</span>
+        <span className="ml-auto flex items-center gap-0.5">
           <button
             onClick={onRefresh}
             title="刷新"
-            className="p-1 rounded transition-colors"
-            style={{ color: 'var(--text-tertiary)' }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--hover-bg)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+            className="shrink-0 flex items-center justify-center"
+            style={{ color: 'var(--text-secondary)', padding: 3 }}
           >
             <RefreshCw size={12} className={isLoading ? 'animate-spin' : ''} />
           </button>
@@ -98,14 +92,12 @@ export function GitPanel({
             onClick={onClose}
             title="关闭"
             aria-label="关闭"
-            className="p-1 rounded transition-colors"
-            style={{ color: 'var(--text-tertiary)' }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--hover-bg)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+            className="shrink-0 flex items-center justify-center"
+            style={{ color: 'var(--text-secondary)', padding: 3 }}
           >
-            <X size={12} />
+            <X size={14} strokeWidth={1.8} />
           </button>
-        </div>
+        </span>
       </div>
 
       {/* Not a git repo */}

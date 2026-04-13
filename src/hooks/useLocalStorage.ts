@@ -71,3 +71,38 @@ export function useLocalStorageNumber(
 
   return [state, setValue];
 }
+
+/**
+ * 通用持久化字符串值 hook。
+ * 读写 localStorage，localStorage 不可用时回退到内存状态。
+ *
+ * @param key        存储键名
+ * @param defaultValue 默认值
+ */
+export function useLocalStorageString(
+  key: string,
+  defaultValue: string,
+): [string, (value: string) => void] {
+  const [state, setState] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem(key);
+      return saved === null ? defaultValue : saved;
+    } catch {
+      return defaultValue;
+    }
+  });
+
+  const setValue = useCallback(
+    (value: string) => {
+      setState(value);
+      try {
+        localStorage.setItem(key, value);
+      } catch {
+        /* ignore quota errors */
+      }
+    },
+    [key],
+  );
+
+  return [state, setValue];
+}

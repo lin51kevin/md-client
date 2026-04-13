@@ -73,7 +73,7 @@ export function TocSidebar({ toc, onNavigate, activeId, visible = true, onClose 
 
   return (
     <div className="w-60 shrink-0 h-full flex flex-col overflow-hidden" style={{ backgroundColor: 'var(--bg-secondary)', borderRight: '1px solid var(--border-color)' }}>
-      <div className="shrink-0 flex items-center gap-2 px-3 py-2" style={{ backgroundColor: 'var(--bg-tertiary)', borderBottom: '1px solid var(--border-color)' }}>
+      <div className="shrink-0 flex items-center gap-1.5 px-3 py-2" style={{ backgroundColor: 'var(--bg-tertiary)', borderBottom: '1px solid var(--border-color)' }}>
         <List size={14} style={{ color: 'var(--text-secondary)' }} />
         <span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{t('toc.title')}</span>
         <span className="text-xs ml-auto" style={{ color: 'var(--text-secondary)' }}>{t('toc.itemCount', { count: items.length })}</span>

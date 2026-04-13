@@ -17,7 +17,7 @@ export interface CommandRegistryDeps {
   previewRef: React.RefObject<HTMLElement | null>;
   setShowSnippetPicker: (v: boolean) => void;
   setShowSnippetManager: (v: boolean) => void;
-  setShowSearchPanel: (updater: (prev: boolean) => boolean) => void;
+  toggleSearchPanel: () => void;
   cmViewRef: React.RefObject<import('@codemirror/view').EditorView | null>;
   isTauri: boolean;
 }
@@ -28,7 +28,7 @@ export function createCommandRegistry(deps: CommandRegistryDeps): Command[] {
     setViewMode, focusMode, setFocusMode,
     handleFormatAction, handleExportDocx, handleExportPdf, handleExportHtml,
     handleExportPng, previewRef, setShowSnippetPicker, setShowSnippetManager,
-    setShowSearchPanel, cmViewRef, isTauri,
+    toggleSearchPanel, cmViewRef, isTauri,
   } = deps;
 
   return [
@@ -36,8 +36,8 @@ export function createCommandRegistry(deps: CommandRegistryDeps): Command[] {
     { id: 'file.open', label: '打开文件', labelEn: 'Open File', shortcut: 'Ctrl+O', category: 'file', action: () => handleOpenFile() },
     { id: 'file.save', label: '保存', labelEn: 'Save', shortcut: 'Ctrl+S', category: 'file', action: () => handleSaveFile() },
     { id: 'file.saveAs', label: '另存为', labelEn: 'Save As', shortcut: 'Ctrl+Shift+S', category: 'file', action: () => handleSaveAsFile() },
-    { id: 'edit.find', label: '查找', labelEn: 'Find', shortcut: 'Ctrl+F', category: 'edit', action: () => setShowSearchPanel(p => !p) },
-    { id: 'edit.replace', label: '查找替换', labelEn: 'Find & Replace', shortcut: 'Ctrl+H', category: 'edit', action: () => setShowSearchPanel(p => !p) },
+    { id: 'edit.find', label: '查找', labelEn: 'Find', shortcut: 'Ctrl+F', category: 'edit', action: () => toggleSearchPanel() },
+    { id: 'edit.replace', label: '查找替换', labelEn: 'Find & Replace', shortcut: 'Ctrl+H', category: 'edit', action: () => toggleSearchPanel() },
     { id: 'edit.undo', label: '撤销', labelEn: 'Undo', shortcut: 'Ctrl+Z', category: 'edit', action: () => { if (cmViewRef.current) undo(cmViewRef.current); } },
     { id: 'edit.redo', label: '重做', labelEn: 'Redo', shortcut: 'Ctrl+Y', category: 'edit', action: () => { if (cmViewRef.current) redo(cmViewRef.current); } },
     { id: 'view.editOnly', label: '仅编辑器', labelEn: 'Editor Only', shortcut: 'Ctrl+1', category: 'view', action: () => setViewMode('edit') },

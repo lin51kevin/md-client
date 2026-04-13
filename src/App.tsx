@@ -15,7 +15,7 @@ import { useWindowInit } from './hooks/useWindowInit';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useCursorPosition } from './hooks/useCursorPosition';
 import { useFocusMode } from './hooks/useFocusMode';
-import { useLocalStorageBool, useLocalStorageNumber } from './hooks/useLocalStorage';
+import { useLocalStorageBool, useLocalStorageNumber, useLocalStorageString } from './hooks/useLocalStorage';
 import { useWelcome } from './hooks/useWelcome';
 import { useEditorContextActions } from './hooks/useEditorContextActions';
 import { useSearchHighlight } from './hooks/useSearchHighlight';
@@ -49,6 +49,7 @@ import { CommandPalette } from './components/CommandPalette';
 import { SnippetPicker } from './components/SnippetPicker';
 import { SnippetManager } from './components/SnippetManager';
 import { GitPanel } from './components/GitPanel';
+import { ActivityBar, PANEL_ITEMS, type PanelId } from './components/ActivityBar';
 import { useGit } from './hooks/useGit';
 const HelpModal = lazy(() => import('./components/HelpModal').then(m => ({ default: m.HelpModal })));
 const SlidePreview = lazy(() => import('./components/SlidePreview').then(m => ({ default: m.SlidePreview })));
@@ -63,17 +64,28 @@ export default function App() {
 
   // ── UI visibility state ──────────────────────────────────────────
   const [viewMode, setViewMode] = useState<ViewMode>('split');
-  const [showSearchPanel, setShowSearchPanel] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; tabId: string } | null>(null);
   const [editorCtxMenu, setEditorCtxMenu] = useState<{ x: number; y: number; context: import('./lib/context-menu').ContextInfo } | null>(null);
-  const [showToc, setShowToc] = useLocalStorageBool('marklite-show-toc', false);
   const [activeTocId, setActiveTocId] = useState<string | null>(null);
-  const [showFileTree, setShowFileTree] = useLocalStorageBool('marklite-show-filetree', false);
   const [showSettings, setShowSettings] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
-  const [showGitPanel, setShowGitPanel] = useLocalStorageBool('marklite-show-git', false);
+
+  // ── Unified sidebar panel state (Activity Bar) ───────────────────
+  const [activePanelRaw, setActivePanelRaw] = useLocalStorageString('marklite-active-panel', '');
+  const VALID_PANELS = PANEL_ITEMS.map(item => item.id);
+  const activePanel: PanelId | null =
+    activePanelRaw && (VALID_PANELS as readonly string[]).includes(activePanelRaw)
+      ? (activePanelRaw as PanelId)
+      : null;
+  const setActivePanel = useCallback((panel: PanelId | null) => {
+    setActivePanelRaw(panel ?? '');
+  }, [setActivePanelRaw]);
+  const showFileTree = activePanel === 'filetree';
+  const showToc = activePanel === 'toc';
+  const showSearchPanel = activePanel === 'search';
+  const showGitPanel = activePanel === 'git';
 
   // ── Persisted preferences ────────────────────────────────────────
   const [spellCheck, setSpellCheck] = useLocalStorageBool('marklite-spellcheck', true);
@@ -366,11 +378,11 @@ export default function App() {
   useKeyboardShortcuts({
     createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile,
     closeTab: handleCloseTab, setViewMode, activeTabIdRef,
-    toggleFindReplace: () => setShowSearchPanel(prev => !prev),
+    toggleFindReplace: () => setActivePanel(activePanel === 'search' ? null : 'search'),
     focusMode, setFocusMode,
     openSnippetPicker,
-    toggleFileTree: () => setShowFileTree(!showFileTree),
-    toggleToc: () => setShowToc(!showToc),
+    toggleFileTree: () => setActivePanel(activePanel === 'filetree' ? null : 'filetree'),
+    toggleToc: () => setActivePanel(activePanel === 'toc' ? null : 'toc'),
   });
 
   // ── Command Palette registry ─────────────────────────────────────
@@ -379,8 +391,9 @@ export default function App() {
     setViewMode, focusMode, setFocusMode,
     handleFormatAction, handleExportDocx, handleExportPdf, handleExportHtml,
     handleExportPng, previewRef, setShowSnippetPicker, setShowSnippetManager,
-    setShowSearchPanel, cmViewRef, isTauri,
-  }), [createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile, setViewMode, focusMode, setFocusMode, handleFormatAction, handleExportDocx, handleExportPdf, handleExportHtml, handleExportPng, previewRef, setShowSnippetPicker, setShowSnippetManager, setShowSearchPanel, cmViewRef, isTauri]);
+    toggleSearchPanel: () => setActivePanel(activePanel === 'search' ? null : 'search'),
+    cmViewRef, isTauri,
+  }), [createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile, setViewMode, focusMode, setFocusMode, handleFormatAction, handleExportDocx, handleExportPdf, handleExportHtml, handleExportPng, previewRef, setShowSnippetPicker, setShowSnippetManager, activePanel, setActivePanel, cmViewRef, isTauri]);
 
 
   useEffect(() => {
@@ -441,24 +454,20 @@ export default function App() {
           )}
 
           <Toolbar
-            viewMode={viewMode} focusMode={focusMode} showToc={showToc} showFileTree={showFileTree}
-            onToggleFileTree={() => setShowFileTree(!showFileTree)}
+            viewMode={viewMode} focusMode={focusMode}
             onNewTab={createNewTab} onOpenFile={handleOpenFile}
             onSaveFile={() => handleSaveFile()} onSaveAsFile={() => handleSaveAsFile()}
             onExportDocx={handleExportDocx} onExportPdf={handleExportPdf}
             onExportHtml={handleExportHtml} onExportEpub={handleExportEpub}
             onExportPng={() => handleExportPng(previewRef.current)}
             onSetViewMode={setViewMode} onFocusModeChange={setFocusMode}
-            onToggleToc={() => setShowToc(!showToc)}
             spellCheck={spellCheck} onToggleSpellCheck={() => setSpellCheck(!spellCheck)}
             vimMode={vimMode} onToggleVimMode={() => setVimMode(!vimMode)}
             recentFiles={recentFiles} onOpenRecent={handleOpenRecent} onClearRecent={handleClearRecent}
             onCloseAll={handleCloseAllTabs}
-            onToggleSearch={() => setShowSearchPanel(prev => !prev)} showSearch={showSearchPanel}
             onFormatAction={handleFormatAction} onImageLocal={() => handleFormatAction('image-local')}
-            onOpenSettings={() => setShowSettings(true)} onOpenHelp={() => setShowHelp(true)}
+            onOpenHelp={() => setShowHelp(true)}
             onInsertSnippet={openSnippetPicker}
-            showGitPanel={showGitPanel} onToggleGitPanel={() => setShowGitPanel(!showGitPanel)}
             tabs={tabs} activeTabId={activeTabId} onActivateTab={setActiveTabId}
           />
 
@@ -493,10 +502,54 @@ export default function App() {
         </>
       )}
 
+      {/* ── Main body: ActivityBar + panels + editor ──────────────── */}
       <div className="flex-1 overflow-hidden flex">
-        <FileTreeSidebar visible={showFileTree} onFileOpen={(path) => openFileInTab(path)} activeFilePath={activeTab.filePath ?? null} onClose={() => setShowFileTree(false)} />
-        <TocSidebar key={activeTabId} toc={isPristine ? [] : tocEntries} onNavigate={handleTocNavigate} activeId={activeTocId} visible={showToc} onClose={() => setShowToc(false)} />
+        {/* Activity Bar (VS Code style) */}
+        {!isChromeless && (
+          <ActivityBar
+            activePanel={activePanel}
+            onPanelChange={setActivePanel}
+            onOpenSettings={() => setShowSettings(true)}
+          />
+        )}
 
+        {/* Left sidebar panel (mutually exclusive) */}
+        <FileTreeSidebar visible={showFileTree} onFileOpen={(path) => openFileInTab(path)} activeFilePath={activeTab.filePath ?? null} onClose={() => setActivePanel(null)} />
+        <TocSidebar key={activeTabId} toc={isPristine ? [] : tocEntries} onNavigate={handleTocNavigate} activeId={activeTocId} visible={showToc} onClose={() => setActivePanel(null)} />
+
+        <SearchPanel
+          visible={showSearchPanel} content={activeTab.doc}
+          currentFilePath={activeTab.filePath ?? null}
+          onContentChange={(newContent) => updateActiveDoc(newContent)}
+          onMatchChange={setMatches}
+          searchDir={(() => {
+            if (activeTab.filePath) return activeTab.filePath.replace(/[/\\][^/\\]+$/, '');
+            const fallback = tabs.find(t => t.filePath)?.filePath;
+            return fallback ? fallback.replace(/[/\\][^/\\]+$/, '') : null;
+          })()}
+          onResultClick={handleSearchResultClick}
+          onClose={() => { clearMatches(); setActivePanel(null); }}
+          openTabs={tabs} currentTabId={activeTabId} onAnyTabContentChange={updateTabDoc}
+        />
+
+        {showGitPanel && (
+          <GitPanel
+            isRepo={git.isRepo}
+            branch={git.branch}
+            ahead={git.ahead}
+            behind={git.behind}
+            files={git.files}
+            isLoading={git.isLoading}
+            error={git.error}
+            onCommit={git.commit}
+            onPull={git.pull}
+            onPush={git.push}
+            onRefresh={git.refresh}
+            onClose={() => setActivePanel(null)}
+          />
+        )}
+
+        {/* Editor content area */}
         <EditorContentArea
           isPristine={isPristine} welcomeDismissed={welcomeDismissed}
           viewMode={viewMode} activeTabId={activeTabId} activeTab={activeTab}
@@ -528,21 +581,6 @@ export default function App() {
         />
       )}
 
-      <SearchPanel
-        visible={showSearchPanel} content={activeTab.doc}
-        currentFilePath={activeTab.filePath ?? null}
-        onContentChange={(newContent) => updateActiveDoc(newContent)}
-        onMatchChange={setMatches}
-        searchDir={(() => {
-          if (activeTab.filePath) return activeTab.filePath.replace(/[/\\][^/\\]+$/, '');
-          const fallback = tabs.find(t => t.filePath)?.filePath;
-          return fallback ? fallback.replace(/[/\\][^/\\]+$/, '') : null;
-        })()}
-        onResultClick={handleSearchResultClick}
-        onClose={() => { clearMatches(); setShowSearchPanel(false); }}
-        openTabs={tabs} currentTabId={activeTabId} onAnyTabContentChange={updateTabDoc}
-      />
-
       {exporting && (
         <div className="export-loading-indicator">
           <span className="export-spinner" />
@@ -555,25 +593,6 @@ export default function App() {
       <SnippetPicker visible={showSnippetPicker} onClose={() => setShowSnippetPicker(false)} onSelect={handleSnippetInsert} />
 
       <SnippetManager visible={showSnippetManager} onClose={() => setShowSnippetManager(false)} />
-
-      {showGitPanel && (
-        <div className="fixed right-0 top-0 bottom-0 z-[500] shadow-xl" style={{ paddingTop: 36 }}>
-          <GitPanel
-            isRepo={git.isRepo}
-            branch={git.branch}
-            ahead={git.ahead}
-            behind={git.behind}
-            files={git.files}
-            isLoading={git.isLoading}
-            error={git.error}
-            onCommit={git.commit}
-            onPull={git.pull}
-            onPush={git.push}
-            onRefresh={git.refresh}
-            onClose={() => setShowGitPanel(false)}
-          />
-        </div>
-      )}
 
       {viewMode === 'slide' && activeTab && (
         <SlidePreview

@@ -2,6 +2,8 @@ import { useState, useCallback, createContext, useContext } from 'react';
 import { zhCN, type TranslationKey } from './zh-CN';
 import { en } from './en';
 
+export type { TranslationKey };
+
 export type Locale = 'zh-CN' | 'en';
 
 const STORAGE_KEY = 'marklite-locale';

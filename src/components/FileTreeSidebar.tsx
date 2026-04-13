@@ -425,7 +425,7 @@ export function FileTreeSidebar({
               className="file-tree-tool-btn"
               style={{ color: 'var(--text-secondary)' }}
             >
-              <X size={12} />
+              <X size={14} strokeWidth={1.8} />
             </button>
           )}
         </span>
@@ -485,7 +485,7 @@ export function FileTreeSidebar({
           </p>
         </div>
       ) : (
-        <nav className="flex-1 py-1 overflow-y-auto file-tree-nav" onClick={() => setContextMenu(null)}>
+        <nav className="flex-1 py-1 overflow-y-auto" onClick={() => setContextMenu(null)}>
           {filteredEntries.map((node) => (
             <TreeNodeView
               key={node.path}
