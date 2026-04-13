@@ -184,6 +184,40 @@ describe('MarkdownPreview – 图片渲染', () => {
     // Note: jsdom may normalize data URIs differently
     expect(img.getAttribute('src') ?? img.src).toBeDefined();
   });
+
+  it('renders absolute path image via LocalImage even without filePath', () => {
+    // 绝对路径图片应通过 LocalImage 组件渲染（Tauri read_file_bytes）
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    renderPreview('![abs](/tmp/marklite-images/img-123.png)');
+    // img element should exist (LocalImage renders <img> with async loading)
+    const img = screen.getByAltText('abs') as HTMLImageElement;
+    expect(img).toBeInTheDocument();
+    warnSpy.mockRestore();
+    errSpy.mockRestore();
+  });
+
+  it('renders Windows absolute path image via LocalImage even without filePath', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    renderPreview('![win](C:/Users/test/marklite-images/img-456.png)');
+    const img = screen.getByAltText('win') as HTMLImageElement;
+    expect(img).toBeInTheDocument();
+    // urlTransform 应保留 Windows 绝对路径（不被 react-markdown 默认的 URL 清理删除）
+    // LocalImage 初始 src 为 undefined，后续异步加载；但不应为空字符串（那意味着路径被清除了）
+    expect(img.getAttribute('src')).not.toBe('');
+    warnSpy.mockRestore();
+    errSpy.mockRestore();
+  });
+
+  it('strips dangerous javascript: URLs from images', () => {
+    renderPreview('![xss](javascript:alert(1))');
+    const img = screen.queryByAltText('xss');
+    // 即便元素存在，src 也应为空（被 safeUrlTransform 清除）
+    if (img) {
+      expect(img.getAttribute('src') ?? '').toBe('');
+    }
+  });
 });
 
 describe('MarkdownPreview – Wiki链接', () => {

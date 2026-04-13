@@ -93,8 +93,8 @@ interface MarkdownPreviewProps {
 function isAbsolutePath(p: string): boolean {
   // Unix absolute path
   if (p.startsWith('/')) return true;
-  // Windows absolute path (C:\, D:\, etc.)
-  if (/^[a-zA-Z]:[\/]/.test(p)) return true;
+  // Windows absolute path (C:\, D:\, C:/, etc.)
+  if (/^[a-zA-Z]:[/\\]/.test(p)) return true;
   return false;
 }
 
@@ -239,6 +239,38 @@ function FrontmatterPanel({ fm }: { fm: Frontmatter }) {
  *   1. mermaid 代码块 → MermaidBlock 组件（直接设置 innerHTML，跳过 markdown 解析器）
  *   2. 其余内容经 react-markdown 管线（GFM + Math + 高亮）
  */
+/**
+ * Custom URL transform for ReactMarkdown.
+ *
+ * The default sanitizer strips URLs whose "scheme" is not in a small allow-list
+ * (http, https, mailto …). Windows absolute paths like `C:/Users/…` are
+ * interpreted as having scheme `C:` and get removed → src="".
+ *
+ * This transform preserves:
+ *  - Standard web URLs (http:, https:, mailto:, tel:)
+ *  - Data URIs (data:)
+ *  - Fragment anchors (#...)
+ *  - Relative paths (no colon before first slash)
+ *  - Windows absolute paths (single letter + colon + slash)
+ *  - Unix absolute paths (leading /)
+ *
+ * It still rejects dangerous schemes like javascript:.
+ */
+const SAFE_URL_RE = /^(https?:|mailto:|tel:|data:|blob:|#)/i;
+function safeUrlTransform(url: string): string {
+  // Allow standard safe schemes
+  if (SAFE_URL_RE.test(url)) return url;
+  // Allow absolute paths: Unix (/...) or Windows (C:/... or C:\...)
+  if (isAbsolutePath(url)) return url;
+  // Allow relative paths — no colon at all, or colon appears after first /
+  const colonIdx = url.indexOf(':');
+  const slashIdx = url.indexOf('/');
+  if (colonIdx < 0) return url;
+  if (slashIdx >= 0 && slashIdx < colonIdx) return url;
+  // Reject everything else (e.g. javascript:, vbscript:, unknown schemes)
+  return '';
+}
+
 export const MarkdownPreview = memo(function MarkdownPreview({
   content,
   className,
@@ -283,6 +315,10 @@ export const MarkdownPreview = memo(function MarkdownPreview({
     }: React.ComponentPropsWithoutRef<"img">) => {
       if (!src || /^(https?:|data:|blob:)/.test(src)) {
         return <img src={src} alt={alt} {...props} />;
+      }
+      // 绝对路径始终通过 Tauri read_file_bytes 加载（支持未保存标签页中的图片）
+      if (isAbsolutePath(src)) {
+        return <LocalImage docFilePath="" src={src} alt={alt} {...props} />;
       }
       if (!filePath) return <img src={src} alt={alt} {...props} />;
       return (
@@ -371,6 +407,7 @@ export const MarkdownPreview = memo(function MarkdownPreview({
       <ReactMarkdown
         remarkPlugins={REMARK_PLUGINS}
         rehypePlugins={REHYPE_PLUGINS}
+        urlTransform={safeUrlTransform}
         components={customComponents}
       >
         {content}

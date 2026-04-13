@@ -12,6 +12,8 @@ import {
   type SelectionInfo,
   type FormatResult,
 } from '../lib/text-format';
+import { getImageSaveDir, generateImageFileName } from '../lib/image-paste';
+import { addPendingImage } from '../lib/pending-images';
 
 import type { InputDialogConfig } from '../components/InputDialog';
 
@@ -20,9 +22,11 @@ interface UseFormatActionsParams {
   getActiveTab: () => Tab;
   /** Promise-based user-input callback replacing window.prompt */
   promptUser: (config: InputDialogConfig) => Promise<string | null>;
+  /** 是否处于 Tauri 环境 */
+  isTauri?: boolean;
 }
 
-export function useFormatActions({ cmViewRef, getActiveTab, promptUser }: UseFormatActionsParams) {
+export function useFormatActions({ cmViewRef, getActiveTab, promptUser, isTauri = false }: UseFormatActionsParams) {
   const handleFormatAction = useCallback((action: string) => {
     const view = cmViewRef.current;
     if (!view) return;
@@ -162,15 +166,43 @@ export function useFormatActions({ cmViewRef, getActiveTab, promptUser }: UseFor
               await invoke('write_image_bytes', { path: savePath, data: Array.from(data) });
               mdSyntax = `![](assets/images/${fileName})`;
             } else {
-              // 未保存文档 → 嵌入 base64 data URL（WebView 无法访问相对磁盘路径）
-              const MIME: Record<string, string> = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp', bmp: 'image/bmp' };
-              const mime = MIME[ext] ?? 'image/png';
-              let binary = '';
-              const CHUNK = 32768;
-              for (let i = 0; i < data.length; i += CHUNK) {
-                binary += String.fromCharCode(...data.subarray(i, i + CHUNK));
+              // 未保存文档 → 保存到设置目录或临时目录，插入绝对路径
+              const fileName = generateImageFileName(ext);
+              let saveDir = getImageSaveDir();
+              let isTemp = false;
+
+              if (!saveDir && isTauri) {
+                try {
+                  const { tempDir } = await import('@tauri-apps/api/path');
+                  const tmp = (await tempDir()).replace(/[\\/]+$/, '');
+                  saveDir = `${tmp}/marklite-images`;
+                  isTemp = true;
+                } catch {
+                  // 获取临时目录失败 → 回退 base64
+                }
               }
-              mdSyntax = `![](data:${mime};base64,${btoa(binary)})`;
+
+              if (saveDir) {
+                // 标准化路径分隔符
+                const normalizedDir = saveDir.replace(/\\/g, '/');
+                const savePath = `${normalizedDir}/${fileName}`;
+                await invoke('write_image_bytes', { path: savePath, data: Array.from(data) });
+                const activeTab = getActiveTab();
+                if (activeTab.id) {
+                  addPendingImage(activeTab.id, { absolutePath: savePath, fileName, isTemp });
+                }
+                mdSyntax = `![](${savePath})`;
+              } else {
+                // 最终回退：base64
+                const MIME: Record<string, string> = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp', bmp: 'image/bmp' };
+                const mime = MIME[ext] ?? 'image/png';
+                let binary = '';
+                const CHUNK = 32768;
+                for (let i = 0; i < data.length; i += CHUNK) {
+                  binary += String.fromCharCode(...data.subarray(i, i + CHUNK));
+                }
+                mdSyntax = `![](data:${mime};base64,${btoa(binary)})`;
+              }
             }
 
             view.dispatch({

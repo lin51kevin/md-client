@@ -1,7 +1,5 @@
-import { useState, useRef, useCallback, useEffect, useLayoutEffect, useMemo, lazy, Suspense } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo, lazy, Suspense } from 'react';
 import { EditorView } from '@codemirror/view';
-import { invoke } from '@tauri-apps/api/core';
-import { confirm, message } from '@tauri-apps/plugin-dialog';
 import './App.css';
 
 import { I18nContext, useI18nProvider } from './i18n';
@@ -15,7 +13,6 @@ import { useWindowInit } from './hooks/useWindowInit';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useCursorPosition } from './hooks/useCursorPosition';
 import { useFocusMode } from './hooks/useFocusMode';
-import { useLocalStorageBool, useLocalStorageNumber, useLocalStorageString } from './hooks/useLocalStorage';
 import { useWelcome } from './hooks/useWelcome';
 import { useEditorContextActions } from './hooks/useEditorContextActions';
 import { useSearchHighlight } from './hooks/useSearchHighlight';
@@ -27,9 +24,13 @@ import { useVersionHistory } from './hooks/useVersionHistory';
 import { useTableEditor } from './hooks/useTableEditor';
 import { useSnippetFlow } from './hooks/useSnippetFlow';
 import { useEditorInstance } from './hooks/useEditorInstance';
-import { applyTheme, getSavedTheme, saveTheme, type ThemeName } from './lib/theme';
-import { getCustomCss, applyCustomCss } from './lib/custom-css';
-import { getRecentFiles, clearRecentFiles, removeRecentFile, type RecentFile } from './lib/recent-files';
+import { usePreferences } from './hooks/usePreferences';
+import { useSidebarPanel } from './hooks/useSidebarPanel';
+import { useRecentFiles } from './hooks/useRecentFiles';
+import { useTabActions } from './hooks/useTabActions';
+import { useNavigation } from './hooks/useNavigation';
+import { useAppLifecycle } from './hooks/useAppLifecycle';
+import { usePendingImageMigration } from './hooks/usePendingImageMigration';
 import { restoreSnapshot } from './lib/version-history';
 import { getSavedSplitSizes } from './lib/split-preference';
 
@@ -49,7 +50,7 @@ import { CommandPalette } from './components/CommandPalette';
 import { SnippetPicker } from './components/SnippetPicker';
 import { SnippetManager } from './components/SnippetManager';
 import { GitPanel } from './components/GitPanel';
-import { ActivityBar, PANEL_ITEMS, type PanelId } from './components/ActivityBar';
+import { ActivityBar } from './components/ActivityBar';
 import { SidebarContainer } from './components/SidebarContainer';
 import { useGit } from './hooks/useGit';
 const HelpModal = lazy(() => import('./components/HelpModal').then(m => ({ default: m.HelpModal })));
@@ -57,7 +58,6 @@ const SlidePreview = lazy(() => import('./components/SlidePreview').then(m => ({
 const MindmapView = lazy(() => import('./components/MindmapView').then(m => ({ default: m.MindmapView })));
 import { EditorContentArea } from './components/EditorContentArea';
 import { createCommandRegistry } from './lib/command-registry';
-import type { SearchResultItem } from './types/search';
 
 
 export default function App() {
@@ -69,51 +69,39 @@ export default function App() {
   const [isDragOver, setIsDragOver] = useState(false);
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; tabId: string } | null>(null);
   const [editorCtxMenu, setEditorCtxMenu] = useState<{ x: number; y: number; context: import('./lib/context-menu').ContextInfo } | null>(null);
-  const [activeTocId, setActiveTocId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
 
-  // ── Unified sidebar panel state (Activity Bar) ───────────────────
-  const [activePanelRaw, setActivePanelRaw] = useLocalStorageString('marklite-active-panel', '');
-  const VALID_PANELS = PANEL_ITEMS.map(item => item.id);
-  const activePanel: PanelId | null =
-    activePanelRaw && (VALID_PANELS as readonly string[]).includes(activePanelRaw)
-      ? (activePanelRaw as PanelId)
-      : null;
-  const setActivePanel = useCallback((panel: PanelId | null) => {
-    setActivePanelRaw(panel ?? '');
-  }, [setActivePanelRaw]);
-  const showFileTree = activePanel === 'filetree';
-  const showToc = activePanel === 'toc';
-  const showSearchPanel = activePanel === 'search';
-  const showGitPanel = activePanel === 'git';
-
-  // ── Persisted preferences ────────────────────────────────────────
-  const [spellCheck, setSpellCheck] = useLocalStorageBool('marklite-spellcheck', true);
-  const [vimMode, setVimMode] = useLocalStorageBool('marklite-vimmode', false);
-  const [autoSave, setAutoSave] = useLocalStorageBool('marklite-autosave', false);
-  const [autoSaveDelay, setAutoSaveDelay] = useLocalStorageNumber('marklite-autosave-delay', 1000);
-  const [gitMdOnly, setGitMdOnly] = useLocalStorageBool('marklite-git-md-only', false);
-  const [theme, setThemeState] = useState<ThemeName>(() => getSavedTheme() || 'light');
+  // ── Extracted state hooks ────────────────────────────────────────
+  const { activePanel, setActivePanel, showFileTree, showToc, showSearchPanel, showGitPanel } = useSidebarPanel();
+  const { spellCheck, setSpellCheck, vimMode, setVimMode, autoSave, setAutoSave, autoSaveDelay, setAutoSaveDelay, gitMdOnly, setGitMdOnly, theme, setThemeState } = usePreferences();
 
   // ── Core hooks ───────────────────────────────────────────────────
   const { focusMode, setFocusMode, isChromeless, hideStatusBar } = useFocusMode();
   const { welcomeDismissed, handleDismissWelcome, handleShowWelcome } = useWelcome();
   const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
-  const [recentFiles, setRecentFiles] = useState<RecentFile[]>(getRecentFiles());
   const [splitSizes, setSplitSizes] = useState<[number, number]>(() => getSavedSplitSizes());
-  const [renamingTabId, setRenamingTabId] = useState<string | null>(null);
 
   const {
     tabs, activeTabId, setActiveTabId, activeTabIdRef, tabsRef,
     getActiveTab, getTabTitle, updateActiveDoc, updateTabDoc,
     openFileInTab, openFileWithContent, createNewTab, closeTab, closeMultipleTabs, reorderTabs,
     markSaved, markSavedAs, renameTab, setTabDisplayName, pinTab, unpinTab,
-  } = useTabs(t, () => setRecentFiles(getRecentFiles()));
+  } = useTabs(t, () => recentFilesHook.refreshRecentFiles());
 
   const isPristine = tabs.length === 1 && !tabs[0].filePath && !tabs[0].isDirty && !tabs[0].displayName;
   const activeTab = getActiveTab();
+
+  // ── Extracted hooks (depend on useTabs) ──────────────────────────
+  const recentFilesHook = useRecentFiles({ openFileInTab });
+  const { recentFiles, handleOpenRecent, handleClearRecent, handleRemoveRecent } = recentFilesHook;
+
+  const { handleCloseTab, handleCloseAllTabs, renamingTabId, setRenamingTabId, handleOpenSample } = useTabActions({
+    tabs, closeTab, closeMultipleTabs, setTabDisplayName, handleDismissWelcome, t,
+  });
+
+  const { handleFirstSave } = usePendingImageMigration({ tabs, updateTabDoc, markSaved });
 
   // ── Git state (based on opened folder) ──
   const [fileTreeRoot, setFileTreeRoot] = useState<string>(() => {
@@ -122,57 +110,9 @@ export default function App() {
   const gitRepoPath = fileTreeRoot || null;
   const git = useGit(showGitPanel ? gitRepoPath : null);
 
-  const handleOpenSample = useCallback(() => {
-    setTabDisplayName(tabs[0].id, 'sample.md');
-    handleDismissWelcome();
-  }, [tabs, setTabDisplayName, handleDismissWelcome]);
-
-  const handleOpenRecent = useCallback(async (filePath: string) => {
-    await openFileInTab(filePath);
-    setRecentFiles(getRecentFiles());
-  }, [openFileInTab]);
-
-  const handleClearRecent = useCallback(() => {
-    clearRecentFiles();
-    setRecentFiles([]);
-  }, []);
-
-  const handleRemoveRecent = useCallback((filePath: string) => {
-    const updated = removeRecentFile(filePath);
-    setRecentFiles(updated);
-  }, []);
-
-  // F001 - Confirm close on unsaved changes; F013 - pinned tabs block normal close
-  const handleCloseTab = useCallback(async (id: string) => {
-    const tab = tabs.find(t => t.id === id);
-    if (tab?.isPinned) return;
-    if (tab?.isDirty) {
-      const name = tab.filePath?.split(/[\\/]/).pop() ?? 'Untitled.md';
-      const path = tab.filePath ?? t('app.unsavedPath');
-      const yes = await confirm(t('app.closeTabUnsaved', { name, path }), { title: t('app.closeTab'), kind: 'warning' });
-      if (!yes) return;
-    }
-    closeTab(id);
-  }, [tabs, closeTab, t]);
-
-  const handleCloseAllTabs = useCallback(async () => {
-    const unpinnedTabs = tabs.filter(t => !t.isPinned);
-    const toClose: string[] = [];
-    for (const tab of unpinnedTabs) {
-      if (tab.isDirty) {
-        const name = tab.filePath?.split(/[\\/]/).pop() ?? 'Untitled.md';
-        const path = tab.filePath ?? t('app.unsavedPath');
-        const yes = await confirm(t('app.closeTabUnsaved', { name, path }), { title: t('app.closeTab'), kind: 'warning' });
-        if (!yes) break; // stop asking; close only those already confirmed
-      }
-      toClose.push(tab.id);
-    }
-    if (toClose.length > 0) closeMultipleTabs(toClose);
-  }, [tabs, closeMultipleTabs, t]);
-
   // ── File operations ──────────────────────────────────────────────
   const { handleOpenFile, handleSaveFile: rawHandleSaveFile, handleSaveAsFile, handleExportDocx, handleExportPdf, handleExportHtml, handleExportEpub, handleExportPng, exporting } = useFileOps({
-    getActiveTab, tabs, openFileInTab, markSaved, markSavedAs, t,
+    getActiveTab, tabs, openFileInTab, markSaved, markSavedAs, t, onFirstSave: handleFirstSave,
   });
 
   // F012 - Version history wraps rawHandleSaveFile to create snapshots on manual save
@@ -186,28 +126,24 @@ export default function App() {
   const { cursorPos, cursorExtension } = useCursorPosition();
   const { searchHighlightExtension, setMatches, clearMatches } = useSearchHighlight();
 
-  // InputDialog replaces window.prompt for link/image URL input
   const { inputDialogState, setInputDialogState, promptUser } = useInputDialog();
-  const { handleFormatAction } = useFormatActions({ cmViewRef, getActiveTab, promptUser });
+  const { handleFormatAction } = useFormatActions({ cmViewRef, getActiveTab, promptUser, isTauri });
 
-  // Table editor modal
   const { editingTable, setEditingTable, handleTableConfirm } = useTableEditor({ cmViewRef, updateActiveDoc });
 
-  // Snippet picker/manager + insertion
   const {
     showSnippetPicker, setShowSnippetPicker,
     showSnippetManager, setShowSnippetManager,
     handleSnippetInsert, openSnippetPicker,
   } = useSnippetFlow({ cmViewRef, updateActiveDoc, setEditorCtxMenu });
 
-  // CodeMirror lifecycle: state persistence, event listeners, extensions, auto-save
   const { docRef: _docRef, editorExtensions, editorTheme, handleCreateEditor, handleEditorUpdate, cursorCount } = useEditorInstance({
     cmViewRef, activeTabId, theme, vimMode, spellCheck, autoSave, autoSaveDelay,
     cursorExtension, searchHighlightExtension,
     activeDoc: activeTab.doc, getActiveTab, rawHandleSaveFile,
     setEditingTable, setEditorCtxMenu,
   });
-  void _docRef; // used internally by useEditorInstance
+  void _docRef;
 
   // F014 — Image paste/drop insertion
   const insertImageMarkdown = useCallback((mdText: string) => {
@@ -220,159 +156,23 @@ export default function App() {
 
   const { saveAndInsert: saveAndInsertImage } = useImagePaste({
     docPath: activeTab.filePath, insertText: insertImageMarkdown, enabled: true, isTauri,
+    tabId: activeTabId,
   });
 
   useDragDrop({ isTauri, setIsDragOver, openFileInTab, onImageDrop: saveAndInsertImage });
   useWindowTitle(activeTab, isTauri);
-
-  // CLI file open (double-click from file explorer)
-  useEffect(() => {
-    if (!isTauri) return;
-    invoke<{ path: string; content: string } | null>('get_open_file')
-      .then((result) => { if (result) openFileWithContent(result.path, result.content); })
-      .catch(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Single-instance: listen for "open-file" event from second instance
-  useEffect(() => {
-    if (!isTauri) return;
-    
-    import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
-      import('@tauri-apps/api/event').then(({ listen }) => {
-        listen('open-file', async (event: { payload: string }) => {
-          const filePath = event.payload;
-          try {
-            const content = await invoke<string>('read_file_text', { path: filePath });
-            openFileWithContent(filePath, content);
-            // Focus the window
-            const window = getCurrentWindow();
-            await window.unminimize();
-            await window.setFocus();
-          } catch (err) {
-            console.error('Failed to open file from second instance:', err);
-          }
-        });
-      });
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // F011 - Theme: apply CSS vars synchronously before paint
-  useLayoutEffect(() => {
-    applyTheme(theme);
-    saveTheme(theme);
-  }, [theme]);
-
-  // Apply saved custom CSS on mount
-  useEffect(() => {
-    const css = getCustomCss();
-    if (css) applyCustomCss(css);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Window initialization + native titlebar theme
   useWindowInit(isTauri, theme);
 
-  // Window close confirmation for unsaved changes
-  // Use tabsRef to avoid re-registering the listener on every edit
-  useEffect(() => {
-    if (!isTauri) return;
+  // ── App lifecycle effects ────────────────────────────────────────
+  useAppLifecycle({ isTauri, openFileWithContent, tabsRef, t });
 
-    let cancelled = false;
-    let unlisten: (() => void) | null = null;
-
-    (async () => {
-      const { getCurrentWindow } = await import('@tauri-apps/api/window');
-      const { listen } = await import('@tauri-apps/api/event');
-      if (cancelled) return;
-
-      const fn = await listen('tauri://close-requested', async () => {
-        const dirtyTabs = tabsRef.current.filter(tab => tab.isDirty);
-
-        if (dirtyTabs.length > 0) {
-          const shouldClose = await confirm(
-            t('common.unsavedChangesMessage', { count: dirtyTabs.length }),
-            { title: t('common.unsavedChanges'), kind: 'warning' }
-          );
-          if (!shouldClose) return;
-        }
-
-        const win = getCurrentWindow();
-        await win.destroy();
-      });
-
-      if (cancelled) fn(); else unlisten = fn;
-    })();
-
-    return () => {
-      cancelled = true;
-      unlisten?.();
-    };
-  }, [isTauri]); // tabsRef is a stable ref; t is stable for the app lifetime
-
-  // F010 - Debounced TOC + word count
+  // ── Navigation ───────────────────────────────────────────────────
   const { debouncedDoc, tocEntries, wordCount } = useDocMetrics(activeTab.doc, activeTabId);
 
-  const handleTocNavigate = useCallback((entry: import('./hooks/useDocMetrics').TocEntry) => {
-    setActiveTocId(entry.id);
-    const view = cmViewRef.current;
-    if (view) {
-      const pos = Math.min(entry.position, view.state.doc.length);
-      view.dispatch({ selection: { anchor: pos }, effects: EditorView.scrollIntoView(pos, { y: 'start', yMargin: 40 }) });
-    }
-    const previewEl = previewRef.current;
-    if (previewEl) {
-      const heading = previewEl.querySelector(`[id="${CSS.escape(entry.id)}"]`) as HTMLElement | null;
-      if (heading) {
-        const offset = heading.getBoundingClientRect().top - previewEl.getBoundingClientRect().top + previewEl.scrollTop;
-        previewEl.scrollTo({ top: Math.max(0, offset - 40), behavior: 'smooth' });
-      } else {
-        const docLen = activeTab.doc.length;
-        const ratio = docLen > 0 ? entry.position / docLen : 0;
-        previewEl.scrollTo({ top: Math.max(0, ratio * (previewEl.scrollHeight - previewEl.clientHeight) - 40), behavior: 'smooth' });
-      }
-    }
-  }, [previewRef, activeTab.doc]);
-
-  // [B1 FIX] Wiki-link navigation
-  const handleWikiLinkNavigate = useCallback(async (target: string) => {
-    const currentDir = getActiveTab()?.filePath?.replace(/[/\\][^/\\]+$/, '') ?? '';
-    for (const name of [`${target}.md`, target]) {
-      const candidatePath = currentDir ? `${currentDir}/${name}` : name;
-      try { await invoke<string>('read_file_text', { path: candidatePath }); await openFileInTab(candidatePath); return; }
-      catch { /* try next */ }
-    }
-    const yes = await confirm(`文档 "${target}" 未找到，是否创建？`, { title: t('wiki.create', { name: target }), kind: 'warning' });
-    if (yes) {
-      const newPath = currentDir ? `${currentDir}/${target}.md` : `${target}.md`;
-      try { await invoke('create_file', { path: newPath }); await openFileInTab(newPath); }
-      catch (e) { await message(e instanceof Error ? e.message : String(e), { title: t('fileOps.error'), kind: 'error' }); }
-    }
-  }, [getActiveTab, openFileInTab, t]);
-
-  // Search result navigation
-  const handleSearchResultClick = useCallback(async (result: SearchResultItem) => {
-    const scrollTo = (sameTab: boolean) => {
-      setTimeout(() => {
-        const view = cmViewRef.current;
-        if (!view) return;
-        const lineInfo = view.state.doc.line(Math.max(0, result.line_number - 1) + 1);
-        const anchor = lineInfo.from + result.match_start;
-        view.dispatch({ selection: { anchor, head: lineInfo.from + result.match_end }, effects: EditorView.scrollIntoView(anchor, { y: 'center', yMargin: 40 }) });
-        view.focus();
-      }, sameTab ? 0 : 200);
-    };
-    if (result.tab_id) {
-      const same = result.tab_id === activeTabId;
-      if (!same) setActiveTabId(result.tab_id);
-      scrollTo(same);
-      return;
-    }
-    const isCurrentFile = !result.file_path || result.file_path === activeTab.filePath;
-    if (!isCurrentFile) await openFileInTab(result.file_path);
-    scrollTo(isCurrentFile);
-  }, [openFileInTab, activeTab.filePath, activeTabId, setActiveTabId]);
+  const { activeTocId, handleTocNavigate, handleWikiLinkNavigate, handleSearchResultClick } = useNavigation({
+    cmViewRef, previewRef, activeTab, activeTabId, setActiveTabId,
+    getActiveTab, openFileInTab, t,
+  });
 
   // F014 — Editor right-click actions
   const { handleEditorCtxAction: _baseCtxAction } = useEditorContextActions({
@@ -403,7 +203,6 @@ export default function App() {
     toggleSearchPanel: () => setActivePanel(activePanel === 'search' ? null : 'search'),
     cmViewRef, isTauri,
   }), [createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile, setViewMode, focusMode, setFocusMode, handleFormatAction, handleExportDocx, handleExportPdf, handleExportHtml, handleExportPng, previewRef, setShowSnippetPicker, setShowSnippetManager, activePanel, setActivePanel, cmViewRef, isTauri]);
-
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {

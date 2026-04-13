@@ -78,6 +78,14 @@ export function SidebarContainer({ activePanel, children }: SidebarContainerProp
     if (!dragging) return;
 
     const onMove = (e: MouseEvent) => {
+      // If no mouse button is pressed (e.g., released outside window), end drag
+      if (e.buttons === 0) {
+        const final = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, dragStartW.current));
+        setWidth(final);
+        saveWidth(final);
+        setDragging(false);
+        return;
+      }
       const delta = e.clientX - dragStartX.current;
       const next = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, dragStartW.current + delta));
       setWidth(next);

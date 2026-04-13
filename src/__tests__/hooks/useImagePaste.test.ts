@@ -13,6 +13,10 @@ vi.mock('../../lib/image-paste', () => ({
   buildImageMarkdownPath: vi.fn((_dir: string, file: string) => file),
 }));
 
+vi.mock('../../lib/pending-images', () => ({
+  addPendingImage: vi.fn(),
+}));
+
 describe('useImagePaste', () => {
   beforeEach(() => {
     vi.clearAllMocks();

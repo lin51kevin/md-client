@@ -13,9 +13,11 @@ interface FileOpsParams {
   markSaved: (id: string) => void;
   markSavedAs: (id: string, filePath: string) => void;
   t?: TFn;
+  /** 首次保存（Save As）完成后的回调，用于转存待处理图片 */
+  onFirstSave?: (tabId: string, savedPath: string) => Promise<void>;
 }
 
-export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markSavedAs, t }: FileOpsParams) {
+export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markSavedAs, t, onFirstSave }: FileOpsParams) {
   const tr = t ?? ((k: string) => k);
   const [exporting, setExporting] = useState<string | null>(null);
 
@@ -61,7 +63,12 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
       });
       if (savePath) {
         await invoke('write_file_text', { path: savePath, content: tab.doc });
+        const wasUnsaved = !tab.filePath;
         markSavedAs(tab.id, savePath);
+        // 首次保存：转存待处理图片并重写路径
+        if (wasUnsaved && onFirstSave) {
+          await onFirstSave(tab.id, savePath);
+        }
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);

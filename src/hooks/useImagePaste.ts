@@ -14,6 +14,7 @@
 import { useEffect, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { getImageSaveDir, generateImageFileName, buildImageMarkdownPath } from '../lib/image-paste';
+import { addPendingImage } from '../lib/pending-images';
 
 export interface ImagePasteOptions {
   /** 当前 Markdown 文档路径（用于计算相对路径） */
@@ -24,6 +25,8 @@ export interface ImagePasteOptions {
   enabled?: boolean;
   /** Tauri 环境下由 useDragDrop 的 onDragDropEvent 处理拖拽，禁用 DOM drop 监听以防重复插入 */
   isTauri?: boolean;
+  /** 标签页 ID（用于追踪未保存标签页中插入的图片） */
+  tabId?: string;
 }
 
 /** 扩展名 → MIME，用于生成 data URL（文档未保存时的回退） */
@@ -68,11 +71,26 @@ async function readImageFromItem(item: DataTransferItem): Promise<{ ext: string;
   return { ext, data: new Uint8Array(buffer) };
 }
 
+/** 缓存的临时目录路径，避免多次调用 Tauri API */
+let cachedTempDir: string | null = null;
+
+/** 获取系统临时目录下的 marklite 子目录 */
+async function getTempImageDir(): Promise<string> {
+  if (cachedTempDir) return cachedTempDir;
+  const { tempDir } = await import('@tauri-apps/api/path');
+  const tmp = await tempDir();
+  // 标准化路径：反斜杠→正斜杠，去掉尾部分隔符
+  const normalized = tmp.replace(/\\/g, '/').replace(/\/+$/, '');
+  cachedTempDir = `${normalized}/marklite-images`;
+  return cachedTempDir;
+}
+
 export function useImagePaste({
   docPath,
   insertText,
   enabled = true,
   isTauri = false,
+  tabId,
 }: ImagePasteOptions) {
 
   const saveAndInsert = useCallback(
@@ -81,17 +99,27 @@ export function useImagePaste({
       const saveDir = getImageSaveDir();
 
       // 确定实际保存目录
-      // 如果没有设置保存目录，且有 docPath → 使用 doc 所在目录 + "assets/images/"
-      // 否则使用设置的目录或当前目录
+      // 优先级：设置面板目录 > 文档同级 assets/images/ > 系统临时目录 > base64 回退
       let actualDir = saveDir;
+      let isTemp = false;
+
       if (!actualDir && docPath) {
         const sepIdx = Math.max(docPath!.lastIndexOf('/'), docPath!.lastIndexOf('\\'));
         const docDir = docPath!.substring(0, sepIdx + 1);
         actualDir = docDir + 'assets' + '/' + 'images';
       }
 
-      // 没有保存目录也没有文档路径 → 内嵌 base64 data URL
-      // 这样即使文档未保存，预览窗口也能正确显示图片
+      // 文档未保存 且 没有设置目录 → 尝试使用系统临时目录（仅 Tauri 环境）
+      if (!actualDir && isTauri) {
+        try {
+          actualDir = await getTempImageDir();
+          isTemp = true;
+        } catch {
+          // 获取临时目录失败，继续到 base64 回退
+        }
+      }
+
+      // 没有保存目录 → 内嵌 base64 data URL（非 Tauri 环境的最终回退）
       if (!actualDir) {
         const mime = EXT_TO_MIME[ext] ?? 'image/png';
         let binary = '';
@@ -112,11 +140,22 @@ export function useImagePaste({
         return;
       }
 
-      // 构建 Markdown 图片路径
+      // 未保存文档 → 图片用绝对路径并跟踪待转存
+      if (!docPath) {
+        // 标准化路径分隔符，避免 Windows 反斜杠被 Markdown 解析器误解
+        const normalizedPath = savePath.replace(/\\/g, '/');
+        if (tabId) {
+          addPendingImage(tabId, { absolutePath: normalizedPath, fileName, isTemp });
+        }
+        insertText(`\n![](${normalizedPath})\n`);
+        return;
+      }
+
+      // 构建 Markdown 图片路径（已保存文档 → 相对路径）
       const mdPath = buildImageMarkdownPath(actualDir, fileName, docPath ?? undefined);
       insertText(`\n![](${mdPath})\n`);
     },
-    [docPath, insertText],
+    [docPath, insertText, isTauri, tabId],
   );
 
   // Paste 事件处理
