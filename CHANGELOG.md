@@ -6,7 +6,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [v0.7.0] - 2026-04-13
+## [v0.7.1] - 2026-04-13
+
+### Fixed
+
+#### Git Panel Improvements
+- Fixed stage/unstage operations in Rust backend (`git.rs`)
+- Added title attributes to ActivityBar buttons for accessibility
+- Fixed duplicate tab opening from git panel with cross-platform path normalization
+- Added status badges (M/A/D/R/?) to distinguish staged vs unstaged files
+
+#### Session Management
+- Fixed welcome page sample.md being saved to session and reappearing on restart
+- Only serialize tabs with actual file paths; exclude transient untitled tabs
+- Skip untitled tabs from legacy session restore
+
+#### Settings & Editor
+- Improved auto-save delay selector with preset values (1s/2s/5s) and custom input
+- Better UX for delay configuration
+
+### Added
+
+#### Test Coverage
+- Added comprehensive tests for GitPanel component  
+- Added useGit hook tests for git operations
+- Added useTabs hook tests for session persistence and path normalization
+- Added git-commands utility tests
+- All tests passing: 956 tests across 73 test files (80%+ coverage)
+
+#### Code Quality
+- Cross-platform path comparison for tab deduplication
+- Fixed mermaid/mindmap rendering
+- Fixed html-export functionality
+
+---
+
+## [v0.7.0] - 2026-04-12
 
 ### Added
 
