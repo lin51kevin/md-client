@@ -280,7 +280,7 @@ export function FileTreeSidebar({
     }
 
     try {
-      await invoke('rename_file', { old_path: renamingPath, new_path: newPath });
+      await invoke('rename_file', { oldPath: renamingPath, newPath: newPath });
     } catch (e) {
       await message(String(e), { title: '重命名失败', kind: 'error' });
     } finally {

@@ -29,7 +29,7 @@ import { useSnippetFlow } from './hooks/useSnippetFlow';
 import { useEditorInstance } from './hooks/useEditorInstance';
 import { applyTheme, getSavedTheme, saveTheme, type ThemeName } from './lib/theme';
 import { getCustomCss, applyCustomCss } from './lib/custom-css';
-import { getRecentFiles, clearRecentFiles, type RecentFile } from './lib/recent-files';
+import { getRecentFiles, clearRecentFiles, removeRecentFile, type RecentFile } from './lib/recent-files';
 import { restoreSnapshot } from './lib/version-history';
 import { getSavedSplitSizes } from './lib/split-preference';
 
@@ -108,7 +108,7 @@ export default function App() {
   const {
     tabs, activeTabId, setActiveTabId, activeTabIdRef, tabsRef,
     getActiveTab, getTabTitle, updateActiveDoc, updateTabDoc,
-    openFileInTab, openFileWithContent, createNewTab, closeTab, reorderTabs,
+    openFileInTab, openFileWithContent, createNewTab, closeTab, closeMultipleTabs, reorderTabs,
     markSaved, markSavedAs, renameTab, setTabDisplayName, pinTab, unpinTab,
   } = useTabs(t, () => setRecentFiles(getRecentFiles()));
 
@@ -137,6 +137,11 @@ export default function App() {
     setRecentFiles([]);
   }, []);
 
+  const handleRemoveRecent = useCallback((filePath: string) => {
+    const updated = removeRecentFile(filePath);
+    setRecentFiles(updated);
+  }, []);
+
   // F001 - Confirm close on unsaved changes; F013 - pinned tabs block normal close
   const handleCloseTab = useCallback(async (id: string) => {
     const tab = tabs.find(t => t.id === id);
@@ -162,8 +167,8 @@ export default function App() {
       }
       toClose.push(tab.id);
     }
-    for (const id of toClose) closeTab(id);
-  }, [tabs, closeTab, t]);
+    if (toClose.length > 0) closeMultipleTabs(toClose);
+  }, [tabs, closeMultipleTabs, t]);
 
   // ── File operations ──────────────────────────────────────────────
   const { handleOpenFile, handleSaveFile: rawHandleSaveFile, handleSaveAsFile, handleExportDocx, handleExportPdf, handleExportHtml, handleExportEpub, handleExportPng, exporting } = useFileOps({
@@ -467,7 +472,7 @@ export default function App() {
             onSetViewMode={setViewMode} onFocusModeChange={setFocusMode}
             spellCheck={spellCheck} onToggleSpellCheck={() => setSpellCheck(!spellCheck)}
             vimMode={vimMode} onToggleVimMode={() => setVimMode(!vimMode)}
-            recentFiles={recentFiles} onOpenRecent={handleOpenRecent} onClearRecent={handleClearRecent}
+            recentFiles={recentFiles} onOpenRecent={handleOpenRecent} onClearRecent={handleClearRecent} onRemoveRecent={handleRemoveRecent}
             onCloseAll={handleCloseAllTabs}
             onFormatAction={handleFormatAction} onImageLocal={() => handleFormatAction('image-local')}
             onOpenHelp={() => setShowHelp(true)}
@@ -607,10 +612,12 @@ export default function App() {
       <SnippetManager visible={showSnippetManager} onClose={() => setShowSnippetManager(false)} />
 
       {viewMode === 'slide' && activeTab && (
-        <SlidePreview
-          markdown={activeTab.doc}
-          onClose={() => setViewMode('split')}
-        />
+        <Suspense fallback={null}>
+          <SlidePreview
+            markdown={activeTab.doc}
+            onClose={() => setViewMode('split')}
+          />
+        </Suspense>
       )}
 
       {viewMode === 'mindmap' && activeTab && (

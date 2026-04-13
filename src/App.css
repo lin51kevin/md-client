@@ -909,11 +909,6 @@ body {
   animation: spin 1s linear infinite;
 }
 
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-
 /* 导出进度指示器 */
 .export-loading-indicator {
   position: fixed;
@@ -1264,6 +1259,16 @@ body {
 .snippet-manager-footer {
   margin-top: 8px;
   text-align: right;
+}
+
+/* ── Recent file remove button ──────────────────────────────────── */
+button:hover .recent-remove-btn,
+button:focus .recent-remove-btn {
+  opacity: 1 !important;
+}
+.recent-remove-btn:hover {
+  color: #ef4444 !important;
+  background: rgba(239, 68, 68, 0.12);
 }
 
 /* ── Snippet Editor Modal ───────────────────────────────────────── */

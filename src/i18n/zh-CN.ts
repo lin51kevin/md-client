@@ -157,6 +157,8 @@ export const zhCN = {
   'file.noRecent': '暂无最近文件',
   'file.clearRecent': '清空记录',
   'file.closeAll': '关闭所有标签页',
+  'file.openFileFailed': '打开文件失败',
+  'file.cannotRead': '无法读取文件: {error}',
 
   // ── Tab Bar ───────────────────────────────────────────────────────────────
   'tab.newTab': '新建标签页',

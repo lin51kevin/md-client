@@ -16,6 +16,7 @@ export interface FileMenuDropdownProps {
   recentFiles?: RecentFile[];
   onOpenRecent?: (path: string) => void;
   onClearRecent?: () => void;
+  onRemoveRecent?: (path: string) => void;
   onCloseAll?: () => void;
 }
 
@@ -25,6 +26,7 @@ interface MenuItem {
   label: string;
   shortcut?: string;
   action?: () => void;
+  removeAction?: () => void;
   submenu?: MenuItem[];
   danger?: boolean;
 }
@@ -42,6 +44,7 @@ export function FileMenuDropdown({
   recentFiles,
   onOpenRecent,
   onClearRecent,
+  onRemoveRecent,
   onCloseAll,
 }: FileMenuDropdownProps) {
   const { t } = useI18n();
@@ -177,6 +180,29 @@ export function FileMenuDropdown({
             <span style={shortcutStyle}>{item.shortcut}</span>
           )}
           {item.submenu && <ChevronRight size={12} style={arrowStyle} />}
+          {item.removeAction && (
+            <span
+              role="button"
+              title="从列表移除"
+              onClick={(e) => {
+                e.stopPropagation();
+                item.removeAction?.();
+              }}
+              style={{
+                marginLeft: 'auto',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '2px 2px',
+                borderRadius: 3,
+                opacity: 0,
+                transition: 'opacity 0.15s',
+                color: 'var(--text-secondary)',
+              }}
+              className="recent-remove-btn"
+            >
+              <X size={11} />
+            </span>
+          )}
         </button>
 
         {/* Submenu */}
@@ -210,9 +236,9 @@ export function FileMenuDropdown({
     ? [
         ...recentFiles.slice(0, 10).map((f) => ({
           id: `recent-${f.path}`,
-          
           label: f.name,
           action: () => { onOpenRecent?.(f.path); },
+          removeAction: () => { onRemoveRecent?.(f.path); },
         })),
         { id: 'sep-recent', icon: null, label: '' } as unknown as MenuItem,
         {

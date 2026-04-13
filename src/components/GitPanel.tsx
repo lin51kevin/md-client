@@ -224,6 +224,7 @@ export function GitPanel({
                       onMouseLeave={(e) => {
                         e.currentTarget.style.backgroundColor = 'transparent';
                       }}
+                      onDoubleClick={() => { if (f.status !== 'deleted') onFileOpen(f.path); }}
                     >
                       {/* Status badge */}
                       <span

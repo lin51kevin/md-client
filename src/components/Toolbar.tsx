@@ -40,6 +40,8 @@ interface ToolbarProps {
   onOpenRecent?: (filePath: string) => void;
   /** F013: 清空最近文件 */
   onClearRecent?: () => void;
+  /** F013: 移除单个最近文件 */
+  onRemoveRecent?: (filePath: string) => void;
   /** 关闭所有非固定标签页 */
   onCloseAll?: () => void;
   /** Tab navigation: list of open tabs */
@@ -63,7 +65,7 @@ export function Toolbar({
   onSetViewMode, onFocusModeChange,
   spellCheck, onToggleSpellCheck,
   onFormatAction,
-  recentFiles, onOpenRecent, onClearRecent,
+  recentFiles, onOpenRecent, onClearRecent, onRemoveRecent,
   vimMode, onToggleVimMode, onImageLocal, onOpenHelp,
   tabs, activeTabId, onActivateTab, onCloseAll, onInsertSnippet,
 }: ToolbarProps & { onImageLocal?: () => void }) {
@@ -119,6 +121,7 @@ export function Toolbar({
           recentFiles={recentFiles}
           onOpenRecent={onOpenRecent}
           onClearRecent={onClearRecent}
+          onRemoveRecent={onRemoveRecent}
           onCloseAll={onCloseAll}
         />
 

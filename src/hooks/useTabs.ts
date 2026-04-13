@@ -166,7 +166,7 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
       await message(tr('rename.illegalChars'), { title: tr('rename.title'), kind: 'warning' });
       return false;
     }
-    if (/^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\.||$)/i.test(trimmed)) {
+    if (/^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\.|$)/i.test(trimmed)) {
       await message(tr('rename.reserved', { name: trimmed }), { title: tr('rename.title'), kind: 'warning' });
       return false;
     }
@@ -187,7 +187,7 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
       const sep = tab.filePath[lastSep];
       const newPath = dir + sep + trimmed;
       try {
-        await invoke('rename_file', { old_path: tab.filePath, new_path: newPath });
+        await invoke('rename_file', { oldPath: tab.filePath, newPath: newPath });
         moveSnapshots(tab.filePath, newPath);
         setTabs(prev => prev.map(t =>
           t.id === id ? { ...t, filePath: newPath, displayName: undefined } : t
@@ -262,11 +262,11 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
       notifyRecent();
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      await message(tr('rename.cannotRead', { error: errMsg }), { title: tr('rename.openFileFailed'), kind: 'error' });
+      await message(tr('file.cannotRead', { error: errMsg }), { title: tr('file.openFileFailed'), kind: 'error' });
     } finally {
       openingPaths.current.delete(normalized);
     }
-  }, []);
+  }, [tr, notifyRecent]);
 
   const createNewTab = () => {
     const current = tabsRef.current;
@@ -310,6 +310,26 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
     }
   };
 
+  /** Atomically close multiple tabs at once (avoids stale-ref overwrite when closing in a loop) */
+  const closeMultipleTabs = (idsToClose: string[]) => {
+    const current = tabsRef.current;
+    const idsSet = new Set(idsToClose);
+    // Exclude pinned tabs from closing
+    const next = current.filter(t => !idsSet.has(t.id) || t.isPinned);
+    if (next.length === 0) {
+      // All tabs were closed: reset to a single blank tab
+      const newTab: Tab = { id: genTabId(), filePath: null, doc: DEFAULT_MARKDOWN, isDirty: false };
+      setTabs([newTab]);
+      setActiveTabId(newTab.id);
+    } else {
+      setTabs(next);
+      if (idsSet.has(activeTabIdRef.current)) {
+        const idx = current.findIndex(t => t.id === activeTabIdRef.current);
+        setActiveTabId(next[Math.min(idx, next.length - 1)].id);
+      }
+    }
+  };
+
   /** F013: 固定标签页 */
   const pinTab = (id: string) => {
     setTabs(prev => prev.map(t => t.id === id ? { ...t, isPinned: true } : t));
@@ -335,7 +355,9 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
   };
 
   const openFileWithContent = useCallback((filePath: string, content: string) => {
-    const existing = tabsRef.current.find(t => t.filePath === filePath);
+    const normPath = (p: string) => p.replace(/[\\/]+/g, '/');
+    const normalized = normPath(filePath);
+    const existing = tabsRef.current.find(t => t.filePath && normPath(t.filePath) === normalized);
     if (existing) {
       setActiveTabId(existing.id);
       return;
@@ -352,7 +374,7 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
     }
     addRecentFile(filePath);
     notifyRecent();
-  }, []);
+  }, [notifyRecent]);
 
   const markSaved = (id: string) => {
     setTabs(prev => prev.map(t => t.id === id ? { ...t, isDirty: false } : t));
@@ -367,7 +389,7 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
   return {
     tabs, activeTabId, setActiveTabId, activeTabIdRef, tabsRef,
     getActiveTab, getTabTitle, updateActiveDoc, updateTabDoc, openFileInTab, openFileWithContent,
-    createNewTab, closeTab, reorderTabs, markSaved, markSavedAs,
+    createNewTab, closeTab, closeMultipleTabs, reorderTabs, markSaved, markSavedAs,
     renameTab, setTabDisplayName,
     pinTab, unpinTab,
   };

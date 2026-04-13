@@ -159,6 +159,8 @@ export const en: Record<TranslationKey, string> = {
   'file.noRecent': 'No recent files',
   'file.clearRecent': 'Clear History',
   'file.closeAll': 'Close All Tabs',
+  'file.openFileFailed': 'Failed to open file',
+  'file.cannotRead': 'Cannot read file: {error}',
 
   // ── Tab Bar ───────────────────────────────────────────────────────────────
   'tab.newTab': 'New Tab',

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Trash2, Save, X, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Save, X, AlertCircle, RotateCcw } from 'lucide-react';
 import { useI18n } from '../i18n';
 import type { Snippet } from '../lib/snippets';
 import {
@@ -68,17 +68,15 @@ export function SnippetManager({ visible, onClose }: SnippetManagerProps) {
 
     let updated: Snippet[];
     if (editForm._isNew || !editingId || editingId === '__new__') {
-      const newSnippet: Snippet = {
-        ...editForm,
-        id: generateSnippetId(),
-        createdAt: Date.now(),
-      };
-      delete (newSnippet as any)._isNew;
+      const { _isNew: _, ...snippetData } = { ...editForm, id: generateSnippetId(), createdAt: Date.now() };
+      const newSnippet: Snippet = snippetData;
       updated = [...snippets, newSnippet];
     } else {
-      updated = snippets.map((s) =>
-        s.id === editingId ? { ...editForm, _isNew: undefined as unknown as undefined } : s,
-      );
+      updated = snippets.map((s) => {
+        if (s.id !== editingId) return s;
+        const { _isNew: _, ...snippetData } = editForm;
+        return snippetData;
+      });
     }
     persist(updated);
     setEditingId(null);
@@ -157,9 +155,10 @@ export function SnippetManager({ visible, onClose }: SnippetManagerProps) {
       {/* Restore defaults */}
       <div className="snippet-manager-footer">
         <button
-          className="snippet-manager-btn-text"
+          className="snippet-manager-btn snippet-manager-btn-danger"
           onClick={handleRestoreDefaults}
         >
+          <RotateCcw size={12} />
           {t('snippet.restoreDefaults')}
         </button>
       </div>
