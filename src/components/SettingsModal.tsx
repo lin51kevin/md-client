@@ -27,6 +27,8 @@ interface SettingsModalProps {
   onAutoSaveChange: (enabled: boolean) => void;
   autoSaveDelay: number;
   onAutoSaveDelayChange: (delay: number) => void;
+  gitMdOnly: boolean;
+  onGitMdOnlyChange: (enabled: boolean) => void;
 }
 
 type TabId = 'general' | 'editor' | 'appearance' | 'files' | 'shortcuts' | 'snippets';
@@ -53,6 +55,8 @@ export function SettingsModal({
   onAutoSaveChange,
   autoSaveDelay,
   onAutoSaveDelayChange,
+  gitMdOnly,
+  onGitMdOnlyChange,
 }: SettingsModalProps) {
   const { t, locale, setLocale } = useI18n();
   const [activeTab, setActiveTab] = useState<TabId>('general');
@@ -61,12 +65,19 @@ export function SettingsModal({
   const [themeImportError, setThemeImportError] = useState<string | null>(null);
   const [showThemeFormat, setShowThemeFormat] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [customDelaySec, setCustomDelaySec] = useState<string>(String(Math.round(autoSaveDelay / 1000)));
+  const PRESET_DELAYS = [1000, 2000, 5000];
+  const [isCustomDelay, setIsCustomDelay] = useState(!PRESET_DELAYS.includes(autoSaveDelay));
+  const [customDelayMs, setCustomDelayMs] = useState<string>(String(autoSaveDelay));
 
   // Sync custom delay input when prop changes externally
   useEffect(() => {
-    setCustomDelaySec(String(Math.round(autoSaveDelay / 1000)));
-  }, [autoSaveDelay]);
+    if (!PRESET_DELAYS.includes(autoSaveDelay)) {
+      setIsCustomDelay(true);
+      setCustomDelayMs(String(autoSaveDelay));
+    } else {
+      setIsCustomDelay(false);
+    }
+  }, [autoSaveDelay]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const refreshThemes = useCallback(() => {
     setInstalledThemes(getInstalledThemes());
@@ -244,28 +255,52 @@ export function SettingsModal({
                     description={t('settings.editor.autoSaveDelayDesc')}
                   >
                     <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        min="1"
-                        max="60"
-                        step="1"
-                        value={customDelaySec}
-                        onChange={(e) => setCustomDelaySec(e.target.value)}
-                        onBlur={(e) => {
-                          const sec = parseInt(e.target.value, 10);
-                          if (!isNaN(sec) && sec >= 1 && sec <= 60) {
-                            onAutoSaveDelayChange(sec * 1000);
+                      <select
+                        value={isCustomDelay ? 'custom' : String(autoSaveDelay)}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === 'custom') {
+                            setIsCustomDelay(true);
                           } else {
-                            setCustomDelaySec(String(Math.round(autoSaveDelay / 1000)));
+                            setIsCustomDelay(false);
+                            onAutoSaveDelayChange(Number(val));
                           }
                         }}
-                        className="text-xs px-2 py-1 rounded outline-none w-20"
+                        className="text-xs px-2 py-1 rounded outline-none"
                         style={{
                           backgroundColor: 'var(--bg-secondary)',
                           border: '1px solid var(--border-color)',
                           color: 'var(--text-primary)',
                         }}
-                      />
+                      >
+                        <option value="1000">1s</option>
+                        <option value="2000">2s</option>
+                        <option value="5000">5s</option>
+                        <option value="custom">{t('settings.editor.delayCustom')}</option>
+                      </select>
+                      {isCustomDelay && (
+                        <input
+                          type="number"
+                          min="100"
+                          max="60000"
+                          value={customDelayMs}
+                          onChange={(e) => setCustomDelayMs(e.target.value)}
+                          onBlur={(e) => {
+                            const ms = parseInt(e.target.value, 10);
+                            if (!isNaN(ms) && ms >= 100) {
+                              onAutoSaveDelayChange(ms);
+                            } else {
+                              setCustomDelayMs(String(autoSaveDelay));
+                            }
+                          }}
+                          className="text-xs px-2 py-1 rounded outline-none w-20"
+                          style={{
+                            backgroundColor: 'var(--bg-secondary)',
+                            border: '1px solid var(--border-color)',
+                            color: 'var(--text-primary)',
+                          }}
+                        />
+                      )}
                     </div>
                   </SettingItem>
                 )}
@@ -447,6 +482,13 @@ export function SettingsModal({
                       color: 'var(--text-primary)',
                     }}
                   />
+                </SettingItem>
+
+                <SettingItem
+                  label={t('settings.files.gitMdOnly' as TranslationKey)}
+                  description={t('settings.files.gitMdOnlyDesc' as TranslationKey)}
+                >
+                  <ToggleSwitch checked={gitMdOnly} onChange={onGitMdOnlyChange} />
                 </SettingItem>
               </div>
             )}

@@ -17,6 +17,7 @@ export type GitFileStatusType =
 export interface GitFileStatus {
   path: string;
   status: GitFileStatusType;
+  staged: boolean;
 }
 
 export interface GitRepo {
@@ -84,4 +85,25 @@ export async function gitPull(path: string): Promise<void> {
  */
 export async function gitPush(path: string): Promise<void> {
   return invoke<void>('git_push', { path });
+}
+
+/**
+ * 暂存指定文件（git add）。
+ */
+export async function gitStage(path: string, files: string[]): Promise<void> {
+  return invoke<void>('git_stage', { path, files });
+}
+
+/**
+ * 取消暂存指定文件（git reset HEAD）。
+ */
+export async function gitUnstage(path: string, files: string[]): Promise<void> {
+  return invoke<void>('git_unstage', { path, files });
+}
+
+/**
+ * 丢弃指定文件的更改（git checkout / clean）。
+ */
+export async function gitRestore(path: string, filePath: string): Promise<void> {
+  return invoke<void>('git_restore', { path, filePath });
 }

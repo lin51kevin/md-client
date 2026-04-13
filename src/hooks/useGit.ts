@@ -5,6 +5,10 @@ import {
   gitCommit,
   gitPull,
   gitPush,
+  gitDiff,
+  gitStage,
+  gitUnstage,
+  gitRestore,
   type GitFileStatus,
   type GitRepo,
 } from '../lib/git-commands';
@@ -24,6 +28,10 @@ export interface UseGitReturn extends GitState {
   commit: (message: string, files: string[]) => Promise<void>;
   pull: () => Promise<void>;
   push: () => Promise<void>;
+  getDiff: (filePath: string) => Promise<string>;
+  stage: (files: string[]) => Promise<void>;
+  unstage: (files: string[]) => Promise<void>;
+  restore: (filePath: string) => Promise<void>;
 }
 
 export function useGit(repoPath: string | null): UseGitReturn {
@@ -100,6 +108,56 @@ export function useGit(repoPath: string | null): UseGitReturn {
     }
   }, [repoPath, loadStatus]);
 
+  const getDiff = useCallback(
+    async (filePath: string): Promise<string> => {
+      if (!repoPath) return '';
+      return gitDiff(repoPath, filePath);
+    },
+    [repoPath]
+  );
+
+  const stage = useCallback(
+    async (selectedFiles: string[]) => {
+      if (!repoPath) return;
+      try {
+        setError(null);
+        await gitStage(repoPath, selectedFiles);
+        await loadStatus(repoPath);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      }
+    },
+    [repoPath, loadStatus]
+  );
+
+  const unstage = useCallback(
+    async (selectedFiles: string[]) => {
+      if (!repoPath) return;
+      try {
+        setError(null);
+        await gitUnstage(repoPath, selectedFiles);
+        await loadStatus(repoPath);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      }
+    },
+    [repoPath, loadStatus]
+  );
+
+  const restore = useCallback(
+    async (filePath: string) => {
+      if (!repoPath) return;
+      try {
+        setError(null);
+        await gitRestore(repoPath, filePath);
+        await loadStatus(repoPath);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      }
+    },
+    [repoPath, loadStatus]
+  );
+
   return {
     isRepo: repo !== null,
     branch: repo?.branch ?? '',
@@ -112,5 +170,9 @@ export function useGit(repoPath: string | null): UseGitReturn {
     commit,
     pull,
     push,
+    getDiff,
+    stage,
+    unstage,
+    restore,
   };
 }

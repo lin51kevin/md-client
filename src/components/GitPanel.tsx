@@ -1,6 +1,8 @@
-import { useState, useCallback } from 'react';
-import { X, GitBranch, RefreshCw, ArrowUp, ArrowDown, AlertCircle, GitCommit } from 'lucide-react';
+import { useState, useCallback, useEffect } from 'react';
+import { X, GitBranch, RefreshCw, ArrowUp, ArrowDown, AlertCircle, GitCommit, FileDiff, Plus, Minus, Undo2, ExternalLink, Check } from 'lucide-react';
 import type { GitFileStatus, GitFileStatusType } from '../lib/git-commands';
+import { DiffViewer } from './DiffViewer';
+import { useI18n } from '../i18n';
 
 interface GitPanelProps {
   isRepo: boolean;
@@ -15,6 +17,11 @@ interface GitPanelProps {
   onPush: () => void;
   onRefresh: () => void;
   onClose: () => void;
+  onDiff: (filePath: string) => Promise<string>;
+  onStage: (files: string[]) => Promise<void>;
+  onUnstage: (files: string[]) => Promise<void>;
+  onRestore: (filePath: string) => Promise<void>;
+  onFileOpen: (filePath: string) => void;
 }
 
 const STATUS_LABELS: Record<GitFileStatusType, { label: string; color: string }> = {
@@ -25,6 +32,22 @@ const STATUS_LABELS: Record<GitFileStatusType, { label: string; color: string }>
   renamed:    { label: 'R', color: '#0969da' },
   conflicted: { label: '!', color: '#ef4444' },
 };
+
+/** Tiny icon button that only shows on hover of parent row */
+function ActionBtn({ title, onClick, children }: { title: string; onClick: (e: React.MouseEvent) => void; children: React.ReactNode }) {
+  return (
+    <button
+      title={title}
+      onClick={(e) => { e.stopPropagation(); onClick(e); }}
+      className="shrink-0 flex items-center justify-center rounded opacity-0 group-hover:opacity-100 transition-opacity"
+      style={{ color: 'var(--text-secondary)', padding: 2 }}
+      onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text-primary)'; }}
+      onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; }}
+    >
+      {children}
+    </button>
+  );
+}
 
 export function GitPanel({
   isRepo,
@@ -39,30 +62,50 @@ export function GitPanel({
   onPush,
   onRefresh,
   onClose,
+  onDiff,
+  onStage,
+  onUnstage,
+  onRestore,
+  onFileOpen,
 }: GitPanelProps) {
+  const { t } = useI18n();
   const [commitMsg, setCommitMsg] = useState('');
-  const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  const [diffModal, setDiffModal] = useState<{ filePath: string; content: string } | null>(null);
+  const [diffLoading, setDiffLoading] = useState(false);
 
-  const toggleSelect = useCallback((path: string) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(path)) {
-        next.delete(path);
-      } else {
-        next.add(path);
-      }
-      return next;
-    });
-  }, []);
+  // ── Diff modal ──
+  const openDiff = useCallback(async (path: string) => {
+    setDiffLoading(true);
+    setDiffModal({ filePath: path, content: '' });
+    try {
+      const result = await onDiff(path);
+      setDiffModal({ filePath: path, content: result });
+    } catch {
+      setDiffModal({ filePath: path, content: '' });
+    } finally {
+      setDiffLoading(false);
+    }
+  }, [onDiff]);
 
+  const closeDiff = useCallback(() => { setDiffModal(null); }, []);
+
+  // Esc to close modal
+  useEffect(() => {
+    if (!diffModal) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') closeDiff(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [diffModal, closeDiff]);
+
+  // ── Commit ──
+  const stagedFiles = files.filter(f => f.staged);
   const handleCommit = useCallback(() => {
-    if (!commitMsg.trim() || selected.size === 0) return;
-    onCommit(commitMsg.trim(), Array.from(selected));
+    if (!commitMsg.trim() || stagedFiles.length === 0) return;
+    onCommit(commitMsg.trim(), stagedFiles.map(f => f.path));
     setCommitMsg('');
-    setSelected(new Set());
-  }, [commitMsg, selected, onCommit]);
+  }, [commitMsg, stagedFiles, onCommit]);
 
-  const canCommit = commitMsg.trim().length > 0 && selected.size > 0 && files.length > 0;
+  const canCommit = commitMsg.trim().length > 0 && stagedFiles.length > 0;
 
   return (
     <div
@@ -78,11 +121,11 @@ export function GitPanel({
         style={{ backgroundColor: 'var(--bg-tertiary)', borderBottom: '1px solid var(--border-color)' }}
       >
         <GitBranch size={14} style={{ color: 'var(--text-secondary)' }} />
-        <span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>Source Control</span>
+        <span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{t('git.panel')}</span>
         <span className="ml-auto flex items-center gap-0.5">
           <button
             onClick={onRefresh}
-            title="刷新"
+            title={t('git.refresh')}
             className="shrink-0 flex items-center justify-center"
             style={{ color: 'var(--text-secondary)', padding: 3 }}
           >
@@ -90,8 +133,8 @@ export function GitPanel({
           </button>
           <button
             onClick={onClose}
-            title="关闭"
-            aria-label="关闭"
+            title={t('common.close')}
+            aria-label={t('common.close')}
             className="shrink-0 flex items-center justify-center"
             style={{ color: 'var(--text-secondary)', padding: 3 }}
           >
@@ -107,9 +150,9 @@ export function GitPanel({
           style={{ color: 'var(--text-tertiary)' }}
         >
           <GitBranch size={28} strokeWidth={1.2} />
-          <span>不是 Git 仓库</span>
+          <span>{ t('git.noRepo') }</span>
           <span style={{ color: 'var(--text-tertiary)', fontSize: 10 }}>
-            请在已初始化 git 的文件夹中打开文件
+            { t('git.noRepoHint') }
           </span>
         </div>
       ) : (
@@ -154,7 +197,7 @@ export function GitPanel({
               className="px-3 py-1.5 text-[10px]"
               style={{ color: 'var(--text-tertiary)' }}
             >
-              加载中…
+            { t('git.loading') }
             </div>
           )}
 
@@ -165,45 +208,76 @@ export function GitPanel({
                 className="px-3 py-4 text-center text-[10px]"
                 style={{ color: 'var(--text-tertiary)' }}
               >
-                工作区无变更
+                { t('git.noChanges') }
               </div>
             ) : (
               <div className="py-1">
                 {files.map((f) => {
                   const { label, color } = STATUS_LABELS[f.status] ?? { label: '?', color: 'var(--text-tertiary)' };
-                  const isChecked = selected.has(f.path);
                   return (
-                    <label
+                    <div
                       key={f.path}
-                      className="flex items-center gap-2 px-3 py-1 cursor-pointer transition-colors"
-                      style={{ backgroundColor: isChecked ? 'var(--accent-bg)' : 'transparent' }}
+                      className="group flex items-center gap-1.5 px-3 py-1 transition-colors"
+                      style={{ backgroundColor: 'transparent' }}
                       onMouseEnter={(e) => {
-                        if (!isChecked) e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
+                        e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
                       }}
                       onMouseLeave={(e) => {
-                        if (!isChecked) e.currentTarget.style.backgroundColor = 'transparent';
+                        e.currentTarget.style.backgroundColor = 'transparent';
                       }}
                     >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => toggleSelect(f.path)}
-                        className="shrink-0"
-                      />
+                      {/* Status badge */}
                       <span
                         className="shrink-0 font-bold text-[10px] w-3 text-center"
                         style={{ color }}
                       >
                         {label}
                       </span>
+                      {/* Staged indicator */}
+                      {f.staged && (
+                        <span
+                          className="shrink-0 flex items-center justify-center rounded text-[8px]"
+                          style={{
+                            color: '#22863a',
+                            width: 14,
+                            height: 14,
+                            backgroundColor: 'rgba(34,134,58,0.12)',
+                          }}
+                          title={t('git.staged')}
+                        >
+                          <Check size={9} strokeWidth={3} />
+                        </span>
+                      )}
+                      {/* File name */}
                       <span
-                        className="truncate min-w-0"
+                        className="truncate min-w-0 flex-1 text-xs"
                         style={{ color: 'var(--text-primary)' }}
                         title={f.path}
                       >
                         {f.path.split('/').pop() ?? f.path}
                       </span>
-                    </label>
+                      {/* Action buttons (visible on hover) */}
+                      <span className="shrink-0 flex items-center gap-0.5">
+                        {f.status !== 'deleted' && (
+                          <ActionBtn title={t('git.openFile')} onClick={() => onFileOpen(f.path)}>
+                            <ExternalLink size={11} />
+                          </ActionBtn>
+                        )}
+                        <ActionBtn title={t('git.viewDiff')} onClick={() => openDiff(f.path)}>
+                          <FileDiff size={11} />
+                        </ActionBtn>
+                        <ActionBtn title={f.staged ? t('git.unstage') : t('git.stage')} onClick={() => f.staged ? onUnstage([f.path]) : onStage([f.path])}>
+                          {f.staged ? <Minus size={11} /> : <Plus size={11} />}
+                        </ActionBtn>
+                        <ActionBtn title={t('git.discard')} onClick={() => {
+                          if (window.confirm(t('git.discardConfirm', { path: f.path }))) {
+                            onRestore(f.path);
+                          }
+                        }}>
+                          <Undo2 size={11} />
+                        </ActionBtn>
+                      </span>
+                    </div>
                   );
                 })}
               </div>
@@ -219,7 +293,7 @@ export function GitPanel({
               type="text"
               value={commitMsg}
               onChange={(e) => setCommitMsg(e.target.value)}
-              placeholder="提交信息…"
+              placeholder={t('git.commitPlaceholder')}
               className="w-full text-xs px-2 py-1 rounded outline-none"
               style={{
                 backgroundColor: 'var(--bg-secondary)',
@@ -241,7 +315,7 @@ export function GitPanel({
                 }}
               >
                 <GitCommit size={11} />
-                提交
+                {t('git.commit')}
               </button>
               <button
                 onClick={onPull}
@@ -251,9 +325,9 @@ export function GitPanel({
                   border: '1px solid var(--border-color)',
                   color: 'var(--text-secondary)',
                 }}
-                title="Pull"
+                title={t('git.pull')}
               >
-                Pull
+                {t('git.pull')}
               </button>
               <button
                 onClick={onPush}
@@ -263,13 +337,63 @@ export function GitPanel({
                   border: '1px solid var(--border-color)',
                   color: 'var(--text-secondary)',
                 }}
-                title="Push"
+                title={t('git.push')}
               >
-                Push
+                {t('git.push')}
               </button>
             </div>
           </div>
         </>
+      )}
+
+      {/* Diff modal overlay */}
+      {diffModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+          onClick={closeDiff}
+        >
+          <div
+            className="relative flex flex-col rounded-lg shadow-xl overflow-hidden"
+            style={{
+              backgroundColor: 'var(--bg-primary)',
+              border: '1px solid var(--border-color)',
+              width: '80vw',
+              maxWidth: 900,
+              maxHeight: '80vh',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal header */}
+            <div
+              className="flex items-center gap-2 px-4 py-2 shrink-0"
+              style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)' }}
+            >
+              <FileDiff size={14} style={{ color: 'var(--text-secondary)' }} />
+              <span className="text-xs font-mono truncate flex-1" style={{ color: 'var(--text-primary)' }}>
+                {diffModal.filePath}
+              </span>
+              <button
+                onClick={closeDiff}
+                className="shrink-0 flex items-center justify-center"
+                style={{ color: 'var(--text-secondary)', padding: 3 }}
+                title={t('common.close')}
+              >
+                <X size={16} strokeWidth={1.8} />
+              </button>
+            </div>
+            {/* Modal body */}
+            <div className="flex-1 overflow-auto p-4">
+              {diffLoading ? (
+                <div className="text-xs py-8 text-center" style={{ color: 'var(--text-tertiary)' }}>
+                  {t('git.loadingDiff')}
+                </div>
+              ) : (
+                <DiffViewer diff={diffModal.content} />
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

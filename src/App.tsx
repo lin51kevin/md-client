@@ -93,6 +93,7 @@ export default function App() {
   const [vimMode, setVimMode] = useLocalStorageBool('marklite-vimmode', false);
   const [autoSave, setAutoSave] = useLocalStorageBool('marklite-autosave', false);
   const [autoSaveDelay, setAutoSaveDelay] = useLocalStorageNumber('marklite-autosave-delay', 1000);
+  const [gitMdOnly, setGitMdOnly] = useLocalStorageBool('marklite-git-md-only', false);
   const [theme, setThemeState] = useState<ThemeName>(() => getSavedTheme() || 'light');
 
   // ── Core hooks ───────────────────────────────────────────────────
@@ -113,10 +114,11 @@ export default function App() {
   const isPristine = tabs.length === 1 && !tabs[0].filePath && !tabs[0].isDirty && !tabs[0].displayName;
   const activeTab = getActiveTab();
 
-  // ── Git state (derived from active file's parent directory) ──────
-  const gitRepoPath = activeTab?.filePath
-    ? activeTab.filePath.replace(/[/\\][^/\\]+$/, '')
-    : null;
+  // ── Git state (based on opened folder) ──
+  const [fileTreeRoot, setFileTreeRoot] = useState<string>(() => {
+    try { return localStorage.getItem('marklite-filetree-root') || ''; } catch { return ''; }
+  });
+  const gitRepoPath = fileTreeRoot || null;
   const git = useGit(showGitPanel ? gitRepoPath : null);
 
   const handleOpenSample = useCallback(() => {
@@ -479,6 +481,7 @@ export default function App() {
             vimMode={vimMode} onVimModeChange={setVimMode}
             autoSave={autoSave} onAutoSaveChange={setAutoSave}
             autoSaveDelay={autoSaveDelay} onAutoSaveDelayChange={setAutoSaveDelay}
+            gitMdOnly={gitMdOnly} onGitMdOnlyChange={setGitMdOnly}
           />
 
           {showHelp && (
@@ -515,7 +518,7 @@ export default function App() {
         )}
 
         {/* Left sidebar panel (mutually exclusive) */}
-        <FileTreeSidebar visible={showFileTree} onFileOpen={(path) => openFileInTab(path)} activeFilePath={activeTab.filePath ?? null} onClose={() => setActivePanel(null)} />
+        <FileTreeSidebar visible={showFileTree} onFileOpen={(path) => openFileInTab(path)} activeFilePath={activeTab.filePath ?? null} onClose={() => setActivePanel(null)} onRootChange={setFileTreeRoot} />
         <TocSidebar key={activeTabId} toc={isPristine ? [] : tocEntries} onNavigate={handleTocNavigate} activeId={activeTocId} visible={showToc} onClose={() => setActivePanel(null)} />
 
         <SearchPanel
@@ -539,7 +542,7 @@ export default function App() {
             branch={git.branch}
             ahead={git.ahead}
             behind={git.behind}
-            files={git.files}
+            files={gitMdOnly ? git.files.filter(f => /\.(md|mdx|markdown|mdown|mkd|mkdn|txt|rst|adoc|org)$/i.test(f.path)) : git.files}
             isLoading={git.isLoading}
             error={git.error}
             onCommit={git.commit}
@@ -547,6 +550,11 @@ export default function App() {
             onPush={git.push}
             onRefresh={git.refresh}
             onClose={() => setActivePanel(null)}
+            onDiff={git.getDiff}
+            onStage={git.stage}
+            onUnstage={git.unstage}
+            onRestore={git.restore}
+            onFileOpen={(path) => openFileInTab(gitRepoPath ? `${gitRepoPath}/${path}` : path)}
           />
         )}
 

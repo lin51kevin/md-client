@@ -661,7 +661,7 @@ pub fn run() {
                 }
             }
         }))
-        .invoke_handler(tauri::generate_handler![greet, get_open_file, export_document, read_file_text, read_file_bytes, write_file_text, write_image_bytes, create_file, delete_file, rename_file, list_directory, read_dir_recursive, search_files, replace_in_files, git::git_get_repo, git::git_get_status, git::git_diff, git::git_commit, git::git_pull, git::git_push])
+        .invoke_handler(tauri::generate_handler![greet, get_open_file, export_document, read_file_text, read_file_bytes, write_file_text, write_image_bytes, create_file, delete_file, rename_file, list_directory, read_dir_recursive, search_files, replace_in_files, git::git_get_repo, git::git_get_status, git::git_diff, git::git_commit, git::git_pull, git::git_push, git::git_stage, git::git_unstage, git::git_restore])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

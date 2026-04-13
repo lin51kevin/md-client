@@ -40,6 +40,8 @@ interface FileTreeSidebarProps {
   activeFilePath?: string | null;
   /** 关闭侧边栏的回调 */
   onClose?: () => void;
+  /** 根目录变更回调 — 通知 App 更新 gitRepoPath 等 */
+  onRootChange?: (rootPath: string) => void;
 }
 
 /** 前端树节点（比后端多一个 expanded 状态） */
@@ -93,6 +95,7 @@ export function FileTreeSidebar({
   onFileOpen,
   activeFilePath,
   onClose,
+  onRootChange,
 }: FileTreeSidebarProps) {
   const [rootPath, setRootPath] = useState<string>(() => {
     try { return localStorage.getItem('marklite-filetree-root') || ''; }
@@ -196,12 +199,13 @@ export function FileTreeSidebar({
       setRootPath(target);
       setRootName(displayName(target));
       try { localStorage.setItem('marklite-filetree-root', target); } catch { /* ignore */ }
+      onRootChange?.(target);
     } catch (e) {
       setError(String(e));
     } finally {
       setLoading(false);
     }
-  }, [rootPath]);
+  }, [rootPath, onRootChange]);
 
   /** 切换到父目录 */
   const goParent = useCallback(() => {
