@@ -2,10 +2,11 @@
  * 快捷键配置管理模块
  * 支持用户自定义快捷键，持久化到 localStorage
  */
+import type { TranslationKey } from '../i18n/zh-CN';
 
 export interface ShortcutAction {
   id: string;
-  labelKey: string;
+  labelKey: TranslationKey;
   defaultKeys: string;
 }
 

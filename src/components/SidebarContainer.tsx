@@ -8,19 +8,36 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { PanelId } from './ActivityBar';
 
-const STORAGE_KEY = 'marklite-sidebar-width';
+const STORAGE_KEY = 'marklite.sidebar-width.v1';
+const LEGACY_KEY = 'marklite-sidebar-width'; // 旧key用于迁移
 const DEFAULT_WIDTH = 240;
 const MIN_WIDTH = 160;
 const MAX_WIDTH = 480;
 
 function getSavedWidth(): number {
   try {
+    // W1: 版本迁移 - 先检查旧key
+    const legacyRaw = localStorage.getItem(LEGACY_KEY);
+    if (legacyRaw) {
+      const n = Number(legacyRaw);
+      if (Number.isFinite(n) && n >= MIN_WIDTH && n <= MAX_WIDTH) {
+        // 迁移到新key
+        localStorage.setItem(STORAGE_KEY, legacyRaw);
+        localStorage.removeItem(LEGACY_KEY);
+        console.info('[SidebarContainer] Migrated legacy storage:', n);
+        return n;
+      }
+      localStorage.removeItem(LEGACY_KEY); // 清理无效数据
+    }
+    
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_WIDTH;
     const n = Number(raw);
     if (!Number.isFinite(n) || n < MIN_WIDTH || n > MAX_WIDTH) return DEFAULT_WIDTH;
     return n;
-  } catch {
+  } catch (e) {
+    // W2: 记录警告而不是静默忽略
+    console.warn('[SidebarContainer] Failed to load saved width:', e);
     return DEFAULT_WIDTH;
   }
 }
@@ -38,7 +55,18 @@ export function SidebarContainer({ activePanel, children }: SidebarContainerProp
   const dragStartW = useRef<number>(0);
 
   const saveWidth = useCallback((w: number) => {
-    try { localStorage.setItem(STORAGE_KEY, String(w)); } catch { /* ignore */ }
+    try {
+      localStorage.setItem(STORAGE_KEY, String(w));
+    } catch (e) {
+      // W2: 记录警告
+      console.warn('[SidebarContainer] Failed to persist sidebar width:', e);
+      // 降级方案：尝试sessionStorage
+      try {
+        sessionStorage.setItem(STORAGE_KEY, String(w));
+      } catch (sessionError) {
+        // sessionStorage也失败，静默处理
+      }
+    }
   }, []);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {

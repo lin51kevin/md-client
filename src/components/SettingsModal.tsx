@@ -33,7 +33,7 @@ interface SettingsModalProps {
 
 type TabId = 'general' | 'editor' | 'appearance' | 'files' | 'shortcuts' | 'snippets';
 
-const TABS: { id: TabId; icon: React.ReactNode; labelKey: string }[] = [
+const TABS: { id: TabId; icon: React.ReactNode; labelKey: TranslationKey }[] = [
   { id: 'general', icon: <Settings size={14} />, labelKey: 'settings.tabs.general' },
   { id: 'editor', icon: <Type size={14} />, labelKey: 'settings.tabs.editor' },
   { id: 'appearance', icon: <Palette size={14} />, labelKey: 'settings.tabs.appearance' },
@@ -172,7 +172,7 @@ export function SettingsModal({
               }}
             >
               {tab.icon}
-              <span>{t(tab.labelKey as TranslationKey)}</span>
+              <span>{t(tab.labelKey)}</span>
             </button>
           ))}
         </div>
@@ -182,7 +182,7 @@ export function SettingsModal({
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--border-color)' }}>
             <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-              {t((TABS.find((t) => t.id === activeTab)?.labelKey ?? 'settings.title') as TranslationKey)}
+              {t(TABS.find((t) => t.id === activeTab)?.labelKey ?? 'settings.title')}
             </span>
             <button
               onClick={onClose}
@@ -454,10 +454,10 @@ export function SettingsModal({
                 {/* Custom CSS */}
                 <div>
                   <div className="text-xs font-medium mb-1" style={{ color: 'var(--text-primary)' }}>
-                    {t('settings.appearance.customCss' as TranslationKey)}
+                    {t('settings.appearance.customCss')}
                   </div>
                   <div className="text-xs mb-2" style={{ color: 'var(--text-secondary)' }}>
-                    {t('settings.appearance.customCssDesc' as TranslationKey)}
+                    {t('settings.appearance.customCssDesc')}
                   </div>
                   <CustomCssEditor />
                 </div>
@@ -485,8 +485,8 @@ export function SettingsModal({
                 </SettingItem>
 
                 <SettingItem
-                  label={t('settings.files.gitMdOnly' as TranslationKey)}
-                  description={t('settings.files.gitMdOnlyDesc' as TranslationKey)}
+                  label={t('settings.files.gitMdOnly')}
+                  description={t('settings.files.gitMdOnlyDesc')}
                 >
                   <ToggleSwitch checked={gitMdOnly} onChange={onGitMdOnlyChange} />
                 </SettingItem>
@@ -618,7 +618,7 @@ function EditableShortcuts() {
               border: isEditing ? '1px solid var(--accent-color)' : 'none',
             }}
           >
-            <span style={{ color: 'var(--text-primary)' }}>{t(sc.labelKey as TranslationKey)}</span>
+            <span style={{ color: 'var(--text-primary)' }}>{t(sc.labelKey)}</span>
             <div className="flex items-center gap-2">
               <kbd
                 onClick={() => !isEditing && setEditingId(sc.id)}
