@@ -38,12 +38,18 @@ function reorder<T>(arr: T[], from: number, to: number): T[] {
   return next;
 }
 
+interface TooltipState {
+  label: string;
+  y: number; // viewport Y center of the hovered button
+}
+
 export function ActivityBar({ activePanel, onPanelChange, onOpenSettings }: ActivityBarProps) {
   const { t } = useI18n();
   const [orderRaw, setOrderRaw] = useLocalStorageString('marklite-panel-order', DEFAULT_ORDER);
   const [orderedIds, setOrderedIds] = useState<PanelId[]>(() => parseOrder(orderRaw));
   const [draggingFrom, setDraggingFrom] = useState<number | null>(null);
   const [insertAt, setInsertAt] = useState<number | null>(null);
+  const [tooltip, setTooltip] = useState<TooltipState | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   /** Tracks the current mouse-down gesture; null when idle */
@@ -125,6 +131,14 @@ export function ActivityBar({ activePanel, onPanelChange, onOpenSettings }: Acti
     };
   }, [setOrderRaw]);
 
+  const showTooltip = useCallback((e: React.MouseEvent, label: string) => {
+    if (draggingFrom !== null) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    setTooltip({ label, y: rect.top + rect.height / 2 });
+  }, [draggingFrom]);
+
+  const hideTooltip = useCallback(() => setTooltip(null), []);
+
   return (
     <div
       ref={containerRef}
@@ -147,9 +161,16 @@ export function ActivityBar({ activePanel, onPanelChange, onOpenSettings }: Acti
         return (
           <button
             key={id}
-            title={t(titleKey)}
             onMouseDown={(e) => handleMouseDown(e, id, orderedIds.indexOf(id))}
             onClick={() => { if (!didDragRef.current) onPanelChange(activePanel === id ? null : id); }}
+            onMouseEnter={(e) => {
+              if (!isActive && draggingFrom === null) e.currentTarget.style.color = 'var(--text-secondary)';
+              showTooltip(e, t(titleKey));
+            }}
+            onMouseLeave={(e) => {
+              if (!isActive) e.currentTarget.style.color = 'var(--text-tertiary)';
+              hideTooltip();
+            }}
             className="flex items-center justify-center"
             style={{
               width: 44,
@@ -162,12 +183,6 @@ export function ActivityBar({ activePanel, onPanelChange, onOpenSettings }: Acti
               opacity: isDraggingThis ? 0.6 : 1,
               userSelect: 'none',
             }}
-            onMouseEnter={(e) => {
-              if (!isActive && draggingFrom === null) e.currentTarget.style.color = 'var(--text-secondary)';
-            }}
-            onMouseLeave={(e) => {
-              if (!isActive) e.currentTarget.style.color = 'var(--text-tertiary)';
-            }}
           >
             <Icon size={20} strokeWidth={1.6} />
           </button>
@@ -177,8 +192,15 @@ export function ActivityBar({ activePanel, onPanelChange, onOpenSettings }: Acti
       {/* Bottom spacer + Settings */}
       <div className="mt-auto mb-1">
         <button
-          title={t('settings.title')}
           onClick={onOpenSettings}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'var(--text-secondary)';
+            showTooltip(e, t('settings.title'));
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'var(--text-tertiary)';
+            hideTooltip();
+          }}
           className="flex items-center justify-center transition-colors"
           style={{
             width: 44,
@@ -189,15 +211,35 @@ export function ActivityBar({ activePanel, onPanelChange, onOpenSettings }: Acti
             borderLeft: '2px solid transparent',
             cursor: 'pointer',
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-tertiary)'; }}
         >
           <Settings size={20} strokeWidth={1.6} />
         </button>
       </div>
+
+      {/* Floating tooltip — rendered via fixed positioning to escape overflow:hidden */}
+      {tooltip && (
+        <div
+          style={{
+            position: 'fixed',
+            left: 50,
+            top: tooltip.y,
+            transform: 'translateY(-50%)',
+            pointerEvents: 'none',
+            whiteSpace: 'nowrap',
+            background: 'var(--bg-secondary)',
+            color: 'var(--text-primary)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 5,
+            padding: '4px 9px',
+            fontSize: 12,
+            lineHeight: 1.4,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            zIndex: 99999,
+          }}
+        >
+          {tooltip.label}
+        </div>
+      )}
     </div>
   );
 }
-
-
-
