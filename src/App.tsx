@@ -28,6 +28,7 @@ import { useTableEditor } from './hooks/useTableEditor';
 import { useSnippetFlow } from './hooks/useSnippetFlow';
 import { useEditorInstance } from './hooks/useEditorInstance';
 import { applyTheme, getSavedTheme, saveTheme, type ThemeName } from './lib/theme';
+import { getCustomCss, applyCustomCss } from './lib/custom-css';
 import { getRecentFiles, clearRecentFiles, type RecentFile } from './lib/recent-files';
 import { restoreSnapshot } from './lib/version-history';
 import { getSavedSplitSizes } from './lib/split-preference';
@@ -47,6 +48,8 @@ import { InputDialog } from './components/InputDialog';
 import { CommandPalette } from './components/CommandPalette';
 import { SnippetPicker } from './components/SnippetPicker';
 import { SnippetManager } from './components/SnippetManager';
+import { GitPanel } from './components/GitPanel';
+import { useGit } from './hooks/useGit';
 const HelpModal = lazy(() => import('./components/HelpModal').then(m => ({ default: m.HelpModal })));
 const SlidePreview = lazy(() => import('./components/SlidePreview').then(m => ({ default: m.SlidePreview })));
 import { EditorContentArea } from './components/EditorContentArea';
@@ -70,6 +73,7 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [showGitPanel, setShowGitPanel] = useLocalStorageBool('marklite-show-git', false);
 
   // ── Persisted preferences ────────────────────────────────────────
   const [spellCheck, setSpellCheck] = useLocalStorageBool('marklite-spellcheck', true);
@@ -95,6 +99,12 @@ export default function App() {
 
   const isPristine = tabs.length === 1 && !tabs[0].filePath && !tabs[0].isDirty && !tabs[0].displayName;
   const activeTab = getActiveTab();
+
+  // ── Git state (derived from active file's parent directory) ──────
+  const gitRepoPath = activeTab?.filePath
+    ? activeTab.filePath.replace(/[/\\][^/\\]+$/, '')
+    : null;
+  const git = useGit(showGitPanel ? gitRepoPath : null);
 
   const handleOpenSample = useCallback(() => {
     setTabDisplayName(tabs[0].id, 'sample.md');
@@ -232,6 +242,13 @@ export default function App() {
     applyTheme(theme);
     saveTheme(theme);
   }, [theme]);
+
+  // Apply saved custom CSS on mount
+  useEffect(() => {
+    const css = getCustomCss();
+    if (css) applyCustomCss(css);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Window initialization + native titlebar theme
   useWindowInit(isTauri, theme);
@@ -441,6 +458,7 @@ export default function App() {
             onFormatAction={handleFormatAction} onImageLocal={() => handleFormatAction('image-local')}
             onOpenSettings={() => setShowSettings(true)} onOpenHelp={() => setShowHelp(true)}
             onInsertSnippet={openSnippetPicker}
+            showGitPanel={showGitPanel} onToggleGitPanel={() => setShowGitPanel(!showGitPanel)}
             tabs={tabs} activeTabId={activeTabId} onActivateTab={setActiveTabId}
           />
 
@@ -537,6 +555,25 @@ export default function App() {
       <SnippetPicker visible={showSnippetPicker} onClose={() => setShowSnippetPicker(false)} onSelect={handleSnippetInsert} />
 
       <SnippetManager visible={showSnippetManager} onClose={() => setShowSnippetManager(false)} />
+
+      {showGitPanel && (
+        <div className="fixed right-0 top-0 bottom-0 z-[500] shadow-xl" style={{ paddingTop: 36 }}>
+          <GitPanel
+            isRepo={git.isRepo}
+            branch={git.branch}
+            ahead={git.ahead}
+            behind={git.behind}
+            files={git.files}
+            isLoading={git.isLoading}
+            error={git.error}
+            onCommit={git.commit}
+            onPull={git.pull}
+            onPush={git.push}
+            onRefresh={git.refresh}
+            onClose={() => setShowGitPanel(false)}
+          />
+        </div>
+      )}
 
       {viewMode === 'slide' && activeTab && (
         <SlidePreview

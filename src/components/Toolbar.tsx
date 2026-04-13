@@ -1,6 +1,6 @@
 
 import { useRef, useState } from 'react';
-import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, List, SpellCheck, FolderTree, Search, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, Settings, HelpCircle, FilePlus, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight, Table2, FileCode2, Minus, ListChecks, Sigma, Presentation, Library } from 'lucide-react';
+import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, List, SpellCheck, FolderTree, Search, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, Settings, HelpCircle, FilePlus, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight, Table2, FileCode2, Minus, ListChecks, Sigma, Presentation, Library, GitBranch } from 'lucide-react';
 import { ViewMode, FocusMode } from '../types';
 
 import { FileMenuDropdown } from './FileMenuDropdown';
@@ -61,6 +61,10 @@ interface ToolbarProps {
   onActivateTab?: (id: string) => void;
   /** 打开片段选择器 */
   onInsertSnippet?: () => void;
+  /** Git 面板状态 */
+  showGitPanel?: boolean;
+  /** Git 面板切换回调 */
+  onToggleGitPanel?: () => void;
 }
 
 const DIVIDER = (
@@ -77,6 +81,7 @@ export function Toolbar({
   recentFiles, onOpenRecent, onClearRecent,
   vimMode, onToggleVimMode, onImageLocal, onOpenSettings, onOpenHelp,
   tabs, activeTabId, onActivateTab, onCloseAll, onInsertSnippet,
+  showGitPanel, onToggleGitPanel,
 }: ToolbarProps & { onImageLocal?: () => void }) {
   const { t } = useI18n();
   const toolbarRef = useRef<HTMLDivElement>(null);
@@ -394,6 +399,15 @@ export function Toolbar({
         {/* F015 — 设置 */}
         <ToolbarButton onClick={onOpenSettings} title={t('settings.title')}>
           <Settings size={14} strokeWidth={1.8} />
+        </ToolbarButton>
+
+        {/* Git 面板 */}
+        <ToolbarButton
+          active={showGitPanel}
+          onClick={onToggleGitPanel}
+          title="Source Control (Git)"
+        >
+          <GitBranch size={14} strokeWidth={1.8} />
         </ToolbarButton>
 
         {/* 帮助 — 用户指南 */}

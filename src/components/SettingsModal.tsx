@@ -4,6 +4,7 @@ import { useI18n, type Locale } from '../i18n';
 import type { TranslationKey } from '../i18n/zh-CN';
 import type { ThemeName } from '../lib/theme';
 import { getInstalledThemes, loadThemeFromJson, installTheme, removeTheme, isBuiltInTheme } from '../lib/theme-manager';
+import { CustomCssEditor } from './CustomCssEditor';
 import { getImageSaveDir, setImageSaveDir } from '../lib/image-paste';
 import {
   DEFAULT_SHORTCUTS,
@@ -432,6 +433,17 @@ export function SettingsModal({
 }`}</pre>
                     )}
                   </div>
+                </div>
+
+                {/* Custom CSS */}
+                <div>
+                  <div className="text-xs font-medium mb-1" style={{ color: 'var(--text-primary)' }}>
+                    {t('settings.appearance.customCss' as TranslationKey)}
+                  </div>
+                  <div className="text-xs mb-2" style={{ color: 'var(--text-secondary)' }}>
+                    {t('settings.appearance.customCssDesc' as TranslationKey)}
+                  </div>
+                  <CustomCssEditor />
                 </div>
               </div>
             )}
