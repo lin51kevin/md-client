@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [v0.7.2] - 2026-04-14
+
+### Fixed
+
+#### Settings UI
+- Fixed keyboard shortcuts being intercepted in Custom CSS editor textarea (e.g., Ctrl+S, Ctrl+W now work normally in text input)
+- Fixed Escape key closing Settings modal when focus is inside input/textarea fields
+- Removed placeholder text from Custom CSS editor (now uses copy-friendly "Insert Example" button)
+
+#### Custom CSS Editor UX
+- Added "Insert Example" button to easily populate template CSS code
+- Added visual feedback to "Apply" button (shows "✓ Applied" for 1.5 seconds after click)
+- Improved user awareness of CSS application success
+
+---
+
 ## [v0.7.1] - 2026-04-13
 
 ### Fixed
