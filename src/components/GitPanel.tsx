@@ -109,10 +109,9 @@ export function GitPanel({
 
   return (
     <div
-      className="w-60 shrink-0 h-full flex flex-col overflow-hidden text-xs select-none"
+      className="w-full h-full flex flex-col overflow-hidden text-xs select-none"
       style={{
         backgroundColor: 'var(--bg-secondary)',
-        borderRight: '1px solid var(--border-color)',
       }}
     >
       {/* Header */}

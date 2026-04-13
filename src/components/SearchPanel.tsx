@@ -83,7 +83,7 @@ export function SearchPanel({
   });
 
   return (
-    <div className="w-60 shrink-0 h-full flex flex-col overflow-hidden" style={{ backgroundColor: 'var(--bg-secondary)', borderRight: '1px solid var(--border-color)' }}>
+    <div className="w-full h-full flex flex-col overflow-hidden" style={{ backgroundColor: 'var(--bg-secondary)' }}>
       {/* Header */}
       <div className="shrink-0 flex items-center gap-1.5 px-3 py-2" style={{ backgroundColor: 'var(--bg-tertiary)', borderBottom: '1px solid var(--border-color)' }}>
         <Search size={14} strokeWidth={1.8} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />

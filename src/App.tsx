@@ -50,6 +50,7 @@ import { SnippetPicker } from './components/SnippetPicker';
 import { SnippetManager } from './components/SnippetManager';
 import { GitPanel } from './components/GitPanel';
 import { ActivityBar, PANEL_ITEMS, type PanelId } from './components/ActivityBar';
+import { SidebarContainer } from './components/SidebarContainer';
 import { useGit } from './hooks/useGit';
 const HelpModal = lazy(() => import('./components/HelpModal').then(m => ({ default: m.HelpModal })));
 const SlidePreview = lazy(() => import('./components/SlidePreview').then(m => ({ default: m.SlidePreview })));
@@ -517,46 +518,48 @@ export default function App() {
           />
         )}
 
-        {/* Left sidebar panel (mutually exclusive) */}
-        <FileTreeSidebar visible={showFileTree} onFileOpen={(path) => openFileInTab(path)} activeFilePath={activeTab.filePath ?? null} onClose={() => setActivePanel(null)} onRootChange={setFileTreeRoot} />
-        <TocSidebar key={activeTabId} toc={isPristine ? [] : tocEntries} onNavigate={handleTocNavigate} activeId={activeTocId} visible={showToc} onClose={() => setActivePanel(null)} />
+        {/* Left sidebar panels — wrapped in resizable container */}
+        <SidebarContainer activePanel={activePanel}>
+          <FileTreeSidebar visible={showFileTree} onFileOpen={(path) => openFileInTab(path)} activeFilePath={activeTab.filePath ?? null} onClose={() => setActivePanel(null)} onRootChange={setFileTreeRoot} />
+          <TocSidebar key={activeTabId} toc={isPristine ? [] : tocEntries} onNavigate={handleTocNavigate} activeId={activeTocId} visible={showToc} onClose={() => setActivePanel(null)} />
 
-        <SearchPanel
-          visible={showSearchPanel} content={activeTab.doc}
-          currentFilePath={activeTab.filePath ?? null}
-          onContentChange={(newContent) => updateActiveDoc(newContent)}
-          onMatchChange={setMatches}
-          searchDir={(() => {
-            if (activeTab.filePath) return activeTab.filePath.replace(/[/\\][^/\\]+$/, '');
-            const fallback = tabs.find(t => t.filePath)?.filePath;
-            return fallback ? fallback.replace(/[/\\][^/\\]+$/, '') : null;
-          })()}
-          onResultClick={handleSearchResultClick}
-          onClose={() => { clearMatches(); setActivePanel(null); }}
-          openTabs={tabs} currentTabId={activeTabId} onAnyTabContentChange={updateTabDoc}
-        />
-
-        {showGitPanel && (
-          <GitPanel
-            isRepo={git.isRepo}
-            branch={git.branch}
-            ahead={git.ahead}
-            behind={git.behind}
-            files={gitMdOnly ? git.files.filter(f => /\.(md|mdx|markdown|mdown|mkd|mkdn|txt|rst|adoc|org)$/i.test(f.path)) : git.files}
-            isLoading={git.isLoading}
-            error={git.error}
-            onCommit={git.commit}
-            onPull={git.pull}
-            onPush={git.push}
-            onRefresh={git.refresh}
-            onClose={() => setActivePanel(null)}
-            onDiff={git.getDiff}
-            onStage={git.stage}
-            onUnstage={git.unstage}
-            onRestore={git.restore}
-            onFileOpen={(path) => openFileInTab(gitRepoPath ? `${gitRepoPath}/${path}` : path)}
+          <SearchPanel
+            visible={showSearchPanel} content={activeTab.doc}
+            currentFilePath={activeTab.filePath ?? null}
+            onContentChange={(newContent) => updateActiveDoc(newContent)}
+            onMatchChange={setMatches}
+            searchDir={(() => {
+              if (activeTab.filePath) return activeTab.filePath.replace(/[/\\][^/\\]+$/, '');
+              const fallback = tabs.find(t => t.filePath)?.filePath;
+              return fallback ? fallback.replace(/[/\\][^/\\]+$/, '') : null;
+            })()}
+            onResultClick={handleSearchResultClick}
+            onClose={() => { clearMatches(); setActivePanel(null); }}
+            openTabs={tabs} currentTabId={activeTabId} onAnyTabContentChange={updateTabDoc}
           />
-        )}
+
+          {showGitPanel && (
+            <GitPanel
+              isRepo={git.isRepo}
+              branch={git.branch}
+              ahead={git.ahead}
+              behind={git.behind}
+              files={gitMdOnly ? git.files.filter(f => /\.(md|mdx|markdown|mdown|mkd|mkdn|txt|rst|adoc|org)$/i.test(f.path)) : git.files}
+              isLoading={git.isLoading}
+              error={git.error}
+              onCommit={git.commit}
+              onPull={git.pull}
+              onPush={git.push}
+              onRefresh={git.refresh}
+              onClose={() => setActivePanel(null)}
+              onDiff={git.getDiff}
+              onStage={git.stage}
+              onUnstage={git.unstage}
+              onRestore={git.restore}
+              onFileOpen={(path) => openFileInTab(gitRepoPath ? `${gitRepoPath}/${path}` : path)}
+            />
+          )}
+        </SidebarContainer>
 
         {/* Editor content area */}
         <EditorContentArea

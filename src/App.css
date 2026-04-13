@@ -37,6 +37,15 @@ body {
   display: none;
 }
 
+/* ═══════════════ 侧边栏 Resize Handle ═══════════════ */
+.sidebar-resize-handle {
+  transition: background-color 0.15s ease;
+}
+.sidebar-resize-handle:hover {
+  background-color: var(--accent-color, #4f8cf7);
+  opacity: 0.35;
+}
+
 /* React Split Pane Styles */
 .gutter {
   background-color: var(--bg-secondary);
