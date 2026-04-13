@@ -6,28 +6,123 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [v0.7.0] - TBD
+## [v0.7.0] - 2026-04-13
 
-### Planned Features
+### Added
 
-#### 文档与代码映射 (Docs)
-- **完整代码映射文档** — 生成前端 (frontend.md)、后端 (backend.md)、集成 (integrations.md) 三个完整代码映射
-  - 前端：30+ 组件、23个 Hooks、42个工具库详细清单
-  - 后端：14 个 Rust 命令、导出流水线、IPC 通讯协议
-  - 集成：完整依赖矩阵、权限模型、部署清单
-- **文档现代化** — 更新 README/USER_GUIDE/FEATURE_COMPARISON 至 v0.7.0
-- **版本管理** — 统一版本到 0.7.0 (package.json + tauri.conf.json)
+#### 幻灯片演示模式 (Slide Mode)
+- **SlidePreview 组件** — 将 Markdown 按 `---` 分隔符（代码块内除外）解析为幻灯片页面：
+  - 键盘导航：方向键 / Space / Home / End / Escape
+  - 点击左右半区翻页
+  - 全屏支持（最大化/还原图标）
+  - 进度条与页码浮层
+- **快捷键 `Ctrl+4`** — 一键切换幻灯片模式，工具栏同步新增演示按钮
+- 按需懒加载，与 HelpModal 模式一致，不影响首屏性能
 
-#### 规划中的功能
-- **流式导出** — 支持大文件分段处理
-- **并行搜索** — 多线程跨文件搜索优化
-- **Git 集成** — 后端 Git 命令封装（历史/diff）
-- **主题编辑** — 自定义主题 CSS 编辑器增强
-- **插件系统** — 轻量级插件架构（待设计）
+#### 自定义主题管理 (Custom Theme Management)
+- **外部主题导入** — 设置 > Appearance > 通过文件选择器导入 JSON 主题：
+  - 校验必填的 14 个 CSS 变量，缺失时报错
+  - 安装后立即应用并持久化
+- **主题架构重构**：
+  - `theme-registry.ts` — 内置主题数据（杜绝循环依赖）
+  - `theme-manager.ts` — 外部主题的加载 / 安装 / 删除逻辑
+  - `theme-storage.ts` — 自定义主题 localStorage 持久化
+- **折叠式 JSON 示例** — 设置面板展开查看 14 个 CSS 变量的完整格式
+
+#### 自定义 CSS 注入 (Custom CSS Editor)
+- **CustomCssEditor 组件** — 设置 > Appearance > 自定义 CSS 选项卡：
+  - textarea 输入任意 CSS，实时注入全局 `<style>` 标签
+  - Apply / Clear 按钮，Clear 同时移除已注入样式
+  - 应用启动时自动读取并重新应用保存的 CSS
+- `custom-css.ts` 工具模块：`getCustomCss / setCustomCss / clearCustomCss / applyCustomCss`
+
+#### Git 集成 (Git Integration)
+- **GitPanel 侧边栏** — 工具栏 `GitBranch` 按钮打开 Git 面板：
+  - 当前分支与仓库路径显示
+  - 变更文件勾选列表（staged / unstaged）
+  - commit 输入框 + 提交按钮
+  - Pull / Push 操作按钮
+- **DiffViewer 组件** — 统一差异渲染，+/- 行着色
+- **Rust 后端 `git.rs`** — 通过系统 `git` CLI 封装 6 个命令：
+  `git_get_repo` / `git_get_status` / `git_diff` / `git_commit` / `git_pull` / `git_push`
+- `git-commands.ts` — 类型化 Tauri invoke 封装，含前端入参校验
+- `useGit` Hook — 管理 repo / branch / files / loading / error 响应式状态
+
+#### 片段管理增强 (Snippet Enhancement)
+- **工具栏片段按钮** — Library 图标按钮，位于数学公式（Σ）按钮之后，一键打开片段选择器
+- **快捷键 `Ctrl+Shift+J`** — 触发片段选择器（可在设置中自定义）
+- i18n 新增：`settings.shortcuts.insertSnippet`、`toolbar.insertSnippet`
+
+#### 思维导图视图 (Mindmap View)
+- **MindmapView 组件** — 将文档标题层级（H1–H6）渲染为 Mermaid mindmap：
+  - 点击节点滚动至对应标题位置（含括号等特殊字符兼容）
+  - `Ctrl+滚轮` 缩放（范围 0.3×–3×）
+  - 通过独立递增 ID 避免并发渲染冲突
+- **快捷键 `Ctrl+5`** — 工具栏按钮 + 命令面板入口三路触发
+- 导出 `sanitizeText` 供 mindmap 节点匹配与标题跳转复用
+
+#### Activity Bar
+- **ActivityBar 组件** — VS Code 风格左侧活动栏：
+  - 4 个面板图标（文件树 / 大纲 / 搜索 / Git）
+  - 底部设置入口
+  - 激活态高亮，点击可切换/折叠对应侧边栏
+
+#### UX 体验改善
+- **侧边栏关闭按钮** — TocSidebar 与 FileTreeSidebar 右上角新增 × 关闭按钮
+- **侧边栏状态持久化** — 展开/折叠状态写入 localStorage（`marklite-show-toc` / `marklite-show-filetree`）
+- **会话恢复** — 启动时自动恢复上次打开的标签页（`marklite-session-tabs`）
+- **自动保存设置** — 设置 > 编辑器 新增：
+  - 自动保存开关（默认关闭，`marklite-autosave`）
+  - 延迟档位选择：1s / 2s / 5s / 自定义（`marklite-autosave-delay`）
+- **未保存确认** — 关闭应用时若有未保存内容弹出确认对话框
+- **单实例模式** — 集成 `tauri-plugin-single-instance`，双击打开文件时聚焦已有窗口而非新开实例
+- **侧边栏快捷键** — `Alt+1` 切换文件树，`Alt+2` 切换大纲
+
+#### 视觉统一
+- **全局统一滚动条样式** — 将散落各处的 `::-webkit-scrollbar` 规则合并为统一全局规则块：
+  - 宽度 6px、圆角、主题色填充、透明轨道
+  - Firefox `scrollbar-width: thin` + `scrollbar-color` 全局覆盖
+  - 编辑器 / 预览 / 文件树 / Git / TOC / 搜索面板及所有弹窗滚动条样式完全一致
+  - 唯一例外：`tabbar-scroll` 保留隐藏滚动条行为
+
+### Fixed
+- 修复片段插入时替换整个文档的问题 — 改用 `selection.main.from/to` 定位光标，选区文本被片段内容替换
+- 修复搜索面板清空关键词后仍显示旧结果的问题 — 清空时同时清除 `error` 与 `replaceMessage` 状态
+- 修复思维导图节点含括号时点击跳转无效 — 改用 `sanitizeText` 比较原始标题
+- 修复 `FileTreeSidebar` rename_file invoke 参数名与 Rust 端不匹配（camelCase → snake_case）
+- 修复 `version-history` storageKey 路径碰撞 — 改用 `encodeURIComponent` 编码
+- 修复 `App.handleCloseAllTabs` 使用 accumulator 模式（替换 break 逻辑）
+- 修复窗口关闭监听器使用 `tabsRef` + async/await，避免 stale closure
+- 修复 `useFileOps` 导出进度顺序（`prerenderExportAssets` 移至 60% 回调之前）
+- 修复 `useTabs.markSavedAs` 未清除 `displayName`，导致标签标题不更新
+- 修复 `slide-parser` fence 正则，现支持 `~~~{3,}` 代码块（与 `\`\`\`{3,}` 等价）
+- 修复 `writing-stats` 在统计字数前未剥离 YAML frontmatter，导致元数据被计入字数
 
 ### Changed
-- 版本升级至 v0.7.0 (规划版本)
-- 所有文档日期更新至 2026-04-13
+- `useTabs` 暴露 `tabsRef`，供窗口关闭事件处理器读取最新 tab 状态
+- `useTabs.notifyRecent` 包裹 `useCallback`，修正 `renameTab` 依赖数组
+- `useLocalStorage` 新增 `useLocalStorageNumber` Hook
+- Mermaid render ID 改为全局递增整数，避免并发渲染产生 ID 冲突
+- 错误提示文本改用 i18n key + CSS 变量颜色渲染
+
+### Tests
+- 测试套件从 **775 个**（v0.6.0）增长至 **944 个用例**（73 个测试文件），新增/完善覆盖：
+  - `ActivityBar.test.tsx` — 18 个用例，覆盖面板按钮、活动状态、设置入口
+  - `MindmapView.test.tsx` — 7 个用例，覆盖渲染、缩放、节点跳转、CSS 变量
+  - `mindmap-converter.test.ts` — 9 个用例，覆盖标题解析、缩进层级、特殊字符
+  - `GitPanel.test.tsx` — 15 个用例，覆盖仓库状态、提交表单、pull/push 操作
+  - `DiffViewer.test.tsx` — 6 个用例，覆盖 +/- 行渲染、空 diff
+  - `useGit.test.ts` — 9 个用例，覆盖初始化、状态刷新、错误处理
+  - `git-commands.test.ts` — 13 个用例，覆盖所有 invoke 封装与入参校验
+  - `CustomCssEditor.test.tsx` — 7 个用例，覆盖 apply / clear / 持久化
+  - `custom-css.test.ts` — 6 个用例，覆盖 get / set / clear / apply 工具函数
+  - `SlidePreview.test.tsx` — 6 个用例，覆盖解析、翻页、全屏
+  - `slide-parser.test.ts` — 13 个用例，覆盖 `---` 与 `~~~` fence 边界
+  - `theme-manager.test.ts` — 9 个用例，覆盖安装 / 删除 / 校验
+  - `ShortcutSettings.test.tsx` — 10 个用例，覆盖自定义快捷键 UI
+  - `useTabs.test.ts` — 26 个用例（新增 `markSavedAs` / `tabsRef` / session restore）
+  - `version-history.test.ts` — 18 个用例（新增 storageKey 碰撞防护）
+  - `writing-stats.test.ts` — 18 个用例（新增 frontmatter 排除）
 
 ---
 
