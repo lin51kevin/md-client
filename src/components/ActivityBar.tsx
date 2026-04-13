@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FolderTree, Search, List, GitBranch, Settings } from 'lucide-react';
+import { FolderTree, Search, List, GitBranch, Settings, Package } from 'lucide-react';
 import { useI18n, type TranslationKey } from '../i18n';
 import { useLocalStorageString } from '../hooks/useLocalStorage';
 
-export type PanelId = 'filetree' | 'search' | 'toc' | 'git';
+export type PanelId = 'filetree' | 'search' | 'toc' | 'plugins' | 'git';
 
 interface ActivityBarProps {
   activePanel: PanelId | null;
@@ -17,6 +17,7 @@ export const PANEL_ITEMS: PanelItem[] = [
   { id: 'filetree', icon: FolderTree, titleKey: 'toolbar.fileTree' },
   { id: 'toc',      icon: List,       titleKey: 'toolbar.toc' },
   { id: 'search',   icon: Search,     titleKey: 'toolbar.search' },
+  { id: 'plugins', icon: Package,    titleKey: 'plugins.panel' },
   { id: 'git',      icon: GitBranch,  titleKey: 'git.panel' },
 ];
 

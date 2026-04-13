@@ -50,6 +50,7 @@ import { CommandPalette } from './components/CommandPalette';
 import { SnippetPicker } from './components/SnippetPicker';
 import { SnippetManager } from './components/SnippetManager';
 import { GitPanel } from './components/GitPanel';
+import { PluginPanel } from './components/PluginPanel';
 import { ActivityBar } from './components/ActivityBar';
 import { SidebarContainer } from './components/SidebarContainer';
 import { useGit } from './hooks/useGit';
@@ -74,7 +75,7 @@ export default function App() {
   const [showHelp, setShowHelp] = useState(false);
 
   // ── Extracted state hooks ────────────────────────────────────────
-  const { activePanel, setActivePanel, showFileTree, showToc, showSearchPanel, showGitPanel } = useSidebarPanel();
+  const { activePanel, setActivePanel, showFileTree, showToc, showSearchPanel, showGitPanel, showPluginsPanel } = useSidebarPanel();
   const { spellCheck, setSpellCheck, vimMode, setVimMode, autoSave, setAutoSave, autoSaveDelay, setAutoSaveDelay, gitMdOnly, setGitMdOnly, theme, setThemeState } = usePreferences();
 
   // ── Core hooks ───────────────────────────────────────────────────
@@ -341,6 +342,13 @@ export default function App() {
             onClose={() => { clearMatches(); setActivePanel(null); }}
             openTabs={tabs} currentTabId={activeTabId} onAnyTabContentChange={updateTabDoc}
           />
+
+          {showPluginsPanel && (
+            <PluginPanel
+              visible={showPluginsPanel}
+              onClose={() => setActivePanel(null)}
+            />
+          )}
 
           {showGitPanel && (
             <GitPanel

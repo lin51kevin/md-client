@@ -373,4 +373,19 @@ export const en: Record<TranslationKey, string> = {
   'mindmap.zoomOut': 'Zoom Out',
   'mindmap.zoomReset': 'Reset Zoom',
   'mindmap.renderError': 'Render error',
+
+  // ── Plugins ────────────────────────────────────────────────────────
+  'plugins.panel': 'Extensions',
+  'plugins.search': 'Search extensions...',
+  'plugins.installed': 'Installed',
+  'plugins.recommended': 'Recommended',
+  'plugins.enabled': 'Enabled',
+  'plugins.disabled': 'Disabled',
+  'plugins.enable': 'Enable',
+  'plugins.disable': 'Disable',
+  'plugins.installFromFile': 'Install from file...',
+  'plugins.noPlugins': 'No extensions installed',
+  'plugins.permissions': 'Permissions',
+  'plugins.version': 'Version',
+  'plugins.author': 'Author',
 };

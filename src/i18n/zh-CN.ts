@@ -370,6 +370,21 @@ export const zhCN = {
   'mindmap.zoomOut': '缩小',
   'mindmap.zoomReset': '重置缩放',
   'mindmap.renderError': '渲染错误',
+
+  // ── Plugins ────────────────────────────────────────────────────────
+  'plugins.panel': '扩展',
+  'plugins.search': '搜索插件...',
+  'plugins.installed': '已安装',
+  'plugins.recommended': '推荐',
+  'plugins.enabled': '已启用',
+  'plugins.disabled': '已禁用',
+  'plugins.enable': '启用',
+  'plugins.disable': '禁用',
+  'plugins.installFromFile': '从文件安装...',
+  'plugins.noPlugins': '暂无已安装的插件',
+  'plugins.permissions': '权限',
+  'plugins.version': '版本',
+  'plugins.author': '作者',
 };
 
 export type TranslationKey = keyof typeof zhCN;
