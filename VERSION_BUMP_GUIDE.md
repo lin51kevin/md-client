@@ -11,9 +11,10 @@
 
 ### ✅ 已完成的文档更新
 
-#### 配置文件更新（2个）
-- [x] `package.json` — 版本 0.6.0 → 0.7.0
-- [x] `src-tauri/tauri.conf.json` — 版本 0.6.0 → 0.7.0
+#### 配置文件更新（3个）
+- [x] `package.json` — 版本 0.6.0 → 0.7.1
+- [x] `src-tauri/tauri.conf.json` — 版本 0.6.0 → 0.7.1
+- [x] `src-tauri/Cargo.toml` — 版本 0.6.0 → 0.7.1
 
 #### 主要文档更新（4个）
 - [x] `README.md` — 添加 v0.7.0 版本标识
