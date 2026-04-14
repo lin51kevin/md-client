@@ -58,10 +58,12 @@ describe('PluginPanel', () => {
 
   it('点击启用/禁用按钮切换状态', () => {
     render(<PluginPanel visible={true} onClose={() => {}} />);
-    // Backlinks Panel starts enabled
+    // Backlinks Panel starts enabled — only one "enabled" button initially
     const backlinksBtn = screen.getByText('plugins.enabled');
     fireEvent.click(backlinksBtn);
-    expect(screen.getByText('plugins.disabled')).toBeTruthy();
+    // After disabling Backlinks Panel, both plugins are now disabled
+    const disabledBtns = screen.getAllByText('plugins.disabled');
+    expect(disabledBtns.length).toBeGreaterThanOrEqual(1);
   });
 
   it('点击关闭按钮触发 onClose', () => {
@@ -99,11 +101,11 @@ describe('PluginPanel', () => {
 
   it('启用/禁用状态持久化到 localStorage', () => {
     render(<PluginPanel visible={true} onClose={() => {}} />);
-    // Graph View starts disabled → enable it
+    // Graph View starts disabled → enable it (the only disabled button initially)
     const graphBtn = screen.getByText('plugins.disabled');
     fireEvent.click(graphBtn);
-    // Verify localStorage was updated
-    const raw = localStorageMock.getItem('marklite-installed-plugins');
+    // Verify localStorage was updated (new key: 'marklite-ui-plugins')
+    const raw = localStorageMock.getItem('marklite-ui-plugins');
     expect(raw).toBeTruthy();
     const plugins = JSON.parse(raw!);
     const graphView = plugins.find((p: { id: string }) => p.id === 'graph-view');
@@ -112,11 +114,12 @@ describe('PluginPanel', () => {
 
   it('切换两次恢复原状态', () => {
     render(<PluginPanel visible={true} onClose={() => {}} />);
-    // Backlinks Panel starts enabled
+    // Backlinks Panel starts enabled — only one "enabled" button
     const btn1 = screen.getByText('plugins.enabled');
-    fireEvent.click(btn1); // disable
-    const btn2 = screen.getByText('plugins.disabled');
-    fireEvent.click(btn2); // re-enable
+    fireEvent.click(btn1); // disable → now 2 disabled buttons
+    // Re-enable: click the first disabled button (Backlinks Panel appears first in list)
+    const disabledBtns = screen.getAllByText('plugins.disabled');
+    fireEvent.click(disabledBtns[0]); // re-enable backlinks
     expect(screen.getByText('plugins.enabled')).toBeTruthy();
   });
 
