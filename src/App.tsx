@@ -32,6 +32,7 @@ import { useNavigation } from './hooks/useNavigation';
 import { useAppLifecycle } from './hooks/useAppLifecycle';
 import { usePendingImageMigration } from './hooks/usePendingImageMigration';
 import { usePreviewRenderers } from './hooks/usePreviewRenderers';
+import { usePluginRuntime } from './hooks/usePluginRuntime';
 import { restoreSnapshot } from './lib/version-history';
 import { getSavedSplitSizes } from './lib/split-preference';
 
@@ -81,7 +82,7 @@ export default function App() {
 
   // ── Core hooks ───────────────────────────────────────────────────
   const { focusMode, setFocusMode, isChromeless, hideStatusBar } = useFocusMode();
-  const { renderers: pluginRenderers } = usePreviewRenderers();
+  const { renderers: pluginRenderers, registerPreviewRenderer, unregisterPreviewRenderer } = usePreviewRenderers();
   const { welcomeDismissed, handleDismissWelcome, handleShowWelcome } = useWelcome();
   const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
   const [splitSizes, setSplitSizes] = useState<[number, number]>(() => getSavedSplitSizes());
@@ -165,6 +166,25 @@ export default function App() {
   useDragDrop({ isTauri, setIsDragOver, openFileInTab, onImageDrop: saveAndInsertImage });
   useWindowTitle(activeTab, isTauri);
   useWindowInit(isTauri, theme);
+
+  // ── Plugin runtime ───────────────────────────────────────────────
+  const pluginRuntimeDeps = useMemo(() => ({
+    getActiveTab: () => {
+      const t = getActiveTab();
+      return { path: t.filePath, content: t.doc };
+    },
+    openFileInTab: (path: string) => void openFileInTab(path),
+    getOpenFilePaths: () => tabs.filter(t => t.filePath).map(t => t.filePath!),
+    cmViewRef,
+    registerSidebarPanel: () => {},
+    unregisterSidebarPanel: () => {},
+    addStatusBarItem: () => {},
+    removeStatusBarItem: () => {},
+    registerPreviewRenderer,
+    unregisterPreviewRenderer,
+  }), [getActiveTab, openFileInTab, tabs, cmViewRef, registerPreviewRenderer, unregisterPreviewRenderer]);
+
+  const { activatePlugin, deactivatePlugin } = usePluginRuntime(pluginRuntimeDeps);
 
   // ── App lifecycle effects ────────────────────────────────────────
   useAppLifecycle({ isTauri, openFileWithContent, tabsRef, t });
@@ -349,6 +369,8 @@ export default function App() {
             <PluginPanel
               visible={showPluginsPanel}
               onClose={() => setActivePanel(null)}
+              onActivate={activatePlugin}
+              onDeactivate={deactivatePlugin}
             />
           )}
 

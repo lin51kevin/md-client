@@ -11,10 +11,15 @@ import { PanelFooter } from './PanelFooter';
 interface PluginPanelProps {
   visible: boolean;
   onClose: () => void;
+  onActivate?: (id: string) => Promise<void>;
+  onDeactivate?: (id: string) => Promise<void>;
 }
 
-export function PluginPanel({ visible, onClose }: PluginPanelProps) {
-  const { plugins, enablePlugin, disablePlugin, removePlugin, togglePlugin, installFromFile, addPluginFromManifest } = usePlugins();
+export function PluginPanel({ visible, onClose, onActivate, onDeactivate }: PluginPanelProps) {
+  const { plugins, enablePlugin, disablePlugin, removePlugin, togglePlugin, installFromFile, addPluginFromManifest } = usePlugins({
+    onActivate,
+    onDeactivate,
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'installed' | 'recommended'>('installed');
   const [expandedId, setExpandedId] = useState<string | null>(null);
