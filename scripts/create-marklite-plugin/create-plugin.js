@@ -35,22 +35,73 @@ function copyDir(src, dest, replacements) {
   }
 }
 
+function validatePluginId(pluginId) {
+  if (!pluginId || !pluginId.trim()) {
+    return { valid: false, reason: 'Plugin ID cannot be empty' };
+  }
+  
+  if (pluginId.includes('/')) {
+    return { valid: false, reason: 'Plugin ID cannot contain slashes (/)' };
+  }
+  
+  if (pluginId.includes('\\')) {
+    return { valid: false, reason: 'Plugin ID cannot contain backslashes (\\\\)' };
+  }
+  
+  if (pluginId.includes('..')) {
+    return { valid: false, reason: 'Plugin ID cannot contain parent directory (..)' };
+  }
+  
+  if (pluginId.includes('~')) {
+    return { valid: false, reason: 'Plugin ID cannot contain tilde (~)' };
+  }
+  
+  if (pluginId.startsWith('.')) {
+    return { valid: false, reason: 'Plugin ID cannot start with dot (.)' };
+  }
+  
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(pluginId)) {
+    return { valid: false, reason: 'Plugin ID must be kebab-case (lowercase letters, numbers, hyphens)' };
+  }
+  
+  return { valid: true };
+}
+
 async function main() {
   console.log('\n🧩 MarkLite Plugin Scaffolding\n');
 
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
-  const pluginId = await question(rl, 'Plugin ID (kebab-case)', 'my-plugin');
-  const pluginName = await question(rl, 'Plugin display name', pluginId);
-  const pluginDescription = await question(rl, 'Description', '');
-  const authorName = await question(rl, 'Author', '');
+  let pluginId, pluginName, pluginDescription, authorName;
+  
+  while (true) {
+    pluginId = await question(rl, 'Plugin ID (kebab-case)', 'my-plugin');
+    const validation = validatePluginId(pluginId);
+    if (validation.valid) {
+      break;
+    }
+    console.log(`❌ ${validation.reason}. Please try again.\n`);
+  }
+  
+  pluginName = await question(rl, 'Plugin display name', pluginId);
+  pluginDescription = await question(rl, 'Description', '');
+  authorName = await question(rl, 'Author', '');
 
   rl.close();
 
   const outputDir = path.resolve(process.cwd(), pluginId);
+  
+  // Security: ensure output directory is within current working directory
+  const resolvedCwd = path.resolve(process.cwd());
+  if (!outputDir.startsWith(resolvedCwd)) {
+    console.error('\n❌ Security error: Plugin directory would be created outside current directory');
+    console.error('   This could be a path traversal attempt.');
+    process.exit(1);
+  }
 
   if (fs.existsSync(outputDir)) {
     console.error(`\n❌ Directory "${pluginId}" already exists.`);
+    console.error('   Choose a different plugin ID.');
     process.exit(1);
   }
 
