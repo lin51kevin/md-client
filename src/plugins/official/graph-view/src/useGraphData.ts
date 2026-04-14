@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import type { PluginContext } from '../../../plugin-sandbox';
 
 export interface GraphNode {
@@ -135,7 +135,7 @@ export function useGraphData(ctx: PluginContext) {
   const [data, setData] = useState<{ nodes: GraphNode[]; edges: GraphEdge[] }>({ nodes: [], edges: [] });
   const [loading, setLoading] = useState(false);
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     setLoading(true);
     try {
       const files = ctx.workspace.getAllFiles();
@@ -144,11 +144,11 @@ export function useGraphData(ctx: PluginContext) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [ctx]);
 
   useEffect(() => {
-    refresh();
-  }, []);
+    void refresh();
+  }, [refresh]);
 
   return { ...data, loading, refresh };
 }

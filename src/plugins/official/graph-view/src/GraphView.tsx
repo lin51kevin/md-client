@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { GraphNode, GraphEdge } from './useGraphData';
-import { runSpringLayout } from './spring-layout';
+import { runSpringLayoutAsync } from './spring-layout';
 import type { PluginContext } from '../../../plugin-sandbox';
 
 interface Props {
@@ -39,19 +39,20 @@ export const GraphView: React.FC<Props> = ({ nodes, edges, ctx }) => {
     active: false, startX: 0, startY: 0, ox: 0, oy: 0,
   });
 
-  // Compute layout
+  // Compute layout incrementally via RAF to avoid blocking the main thread
   useEffect(() => {
     if (nodes.length === 0) { setLayout(new Map()); return; }
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
     const w = Math.max(rect.width, 400);
     const h = Math.max(rect.height, 300);
-    const positions = runSpringLayout(
+    const cancel = runSpringLayoutAsync(
       nodes.map((n) => n.id),
       edges.map((e) => ({ source: e.source, target: e.target })),
-      w, h, 150,
+      w, h,
+      (positions) => setLayout(positions),
     );
-    setLayout(positions);
+    return cancel;
   }, [nodes, edges]);
 
   const maxDeg = Math.max(...nodes.map((n) => n.degree), 1);
