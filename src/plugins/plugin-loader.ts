@@ -86,9 +86,40 @@ export async function loadPluginFromDirectory(
 /**
  * 动态 import 插件入口模块。
  */
+
+/**
+ * Validate that a plugin id contains no path traversal sequences.
+ * id must not contain /, \, .., or URL-encoded equivalents.
+ */
+function validatePluginId(id: string): void {
+  const decoded = id.replace(/%2e/gi, '.').replace(/%2f/gi, '/').replace(/%5c/gi, '\\');
+  if (/[/\\]/.test(decoded) || decoded.includes('..')) {
+    throw new Error(
+      `[PluginHost] Invalid plugin id "${id}": path traversal detected`,
+    );
+  }
+}
+
+/**
+ * Validate that a plugin main entry path contains no path traversal sequences.
+ * main must not start with / or \ and must not contain .. segments.
+ */
+function validatePluginMain(main: string): void {
+  const decoded = main.replace(/%2e/gi, '.').replace(/%2f/gi, '/').replace(/%5c/gi, '\\');
+  if (decoded.startsWith('/') || decoded.startsWith('\\') || decoded.includes('..')) {
+    throw new Error(
+      `[PluginHost] Invalid plugin main "${main}": path traversal detected`,
+    );
+  }
+}
+
 export async function loadPluginModule(
   manifest: PluginManifest,
 ): Promise<{ activate?: () => Promise<void>; deactivate?: () => Promise<void> }> {
+  // Security: validate id and main before constructing the module URL
+  validatePluginId(manifest.id);
+  validatePluginMain(manifest.main);
+
   try {
     // 预期插件被打包到 /plugins/{id}/dist/index.js
     const moduleUrl = `/plugins/${manifest.id}/${manifest.main}`;

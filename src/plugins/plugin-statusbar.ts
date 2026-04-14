@@ -1,7 +1,9 @@
+import type { PluginContext } from './plugin-sandbox';
+
 export function createStatusBarAPI(deps: {
   addStatusBarItem: (element: unknown) => void;
   removeStatusBarItem: (element: unknown) => void;
-}): Record<string, (...args: unknown[]) => unknown> {
+}): PluginContext['statusbar'] {
   return {
     addItem(element: unknown) {
       deps.addStatusBarItem(element);

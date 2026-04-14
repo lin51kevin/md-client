@@ -12,6 +12,7 @@ export interface PluginContextDeps {
   getActiveTab: () => { path: string | null; content: string } | null;
   openFileInTab: (path: string) => void;
   getOpenFilePaths: () => string[];
+  getAllWorkspaceFiles?: () => string[];
   cmViewRef: React.RefObject<EditorView | null>;
   registerSidebarPanel: (id: string, component: unknown) => void;
   unregisterSidebarPanel: (id: string) => void;
@@ -23,10 +24,10 @@ export function createPluginContext(deps: PluginContextDeps, pluginId?: string):
   return {
     commands: createCommandsAPI(),
     workspace: createWorkspaceAPI(deps),
-    editor: createEditorAPI(deps),
+    editor: createEditorAPI({ cmViewRef: deps.cmViewRef, getActiveTab: deps.getActiveTab }),
     sidebar: createSidebarAPI(deps),
     statusbar: createStatusBarAPI(deps),
-    storage: createStorageAPI(pluginId),
+    storage: createStorageAPI(pluginId) as PluginContext['storage'],
     ui: createUIAPI(),
     preview: { registerRenderer: () => ({ dispose: () => {} }) },
     settings: { registerSection: () => ({ dispose: () => {} }) },

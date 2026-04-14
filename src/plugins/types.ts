@@ -44,7 +44,7 @@ export interface PluginInstance {
   manifest: PluginManifest;
   status: PluginStatus;
   grantedPermissions: PluginPermission[];
-  activate?: () => Promise<void>;
+  activate?: (ctx?: import('./plugin-sandbox').PluginContext) => Promise<void>;
   deactivate?: () => Promise<void>;
 }
 

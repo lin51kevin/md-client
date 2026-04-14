@@ -2,14 +2,21 @@ import type { ActivationEvent } from './types';
 import { PluginRegistry } from './plugin-registry';
 import { PluginStorage } from './plugin-storage';
 import { loadPluginModule } from './plugin-loader';
+import { PermissionChecker } from './permission-checker';
+import { createSandbox } from './plugin-sandbox';
+import type { PluginContext } from './plugin-sandbox';
 
 export class PluginLifecycle {
   private registry: PluginRegistry;
   private storage: PluginStorage;
+  private pluginContext: PluginContext | null = null;
 
-  constructor(registry: PluginRegistry, storage: PluginStorage) {
+  constructor(registry: PluginRegistry, storage: PluginStorage);
+  constructor(registry: PluginRegistry, storage: PluginStorage, pluginContext: PluginContext);
+  constructor(registry: PluginRegistry, storage: PluginStorage, pluginContext?: PluginContext) {
     this.registry = registry;
     this.storage = storage;
+    this.pluginContext = pluginContext ?? null;
   }
 
   async activate(id: string): Promise<void> {
@@ -28,7 +35,16 @@ export class PluginLifecycle {
 
     try {
       if (instance.activate) {
-        await instance.activate();
+        // Read granted permissions and create sandboxed context
+        const record = this.storage.getInstalledPlugins().find(p => p.id === id);
+        const grantedPermissions = record?.grantedPermissions ?? [];
+        const checker = new PermissionChecker(grantedPermissions);
+        if (this.pluginContext) {
+          const sandboxedContext = createSandbox(this.pluginContext, checker.has.bind(checker));
+          await instance.activate(sandboxedContext);
+        } else {
+          await instance.activate();
+        }
       }
       instance.status = 'active';
       this.storage.updatePlugin(id, { enabled: true });

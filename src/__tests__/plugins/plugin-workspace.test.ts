@@ -8,16 +8,25 @@ describe('Workspace API', () => {
     getOpenFilePaths: vi.fn(() => ['/test/file.md', '/test/other.md']),
   };
 
-  it('should return active file info', () => {
+  it('should return active file info (path + name)', () => {
     const api = createWorkspaceAPI(mockDeps as any);
     const file = api.getActiveFile();
-    expect(file).toEqual({ path: '/test/file.md', content: '# Hello' });
+    expect(file).toEqual({ path: '/test/file.md', name: 'file.md' });
   });
 
-  it('should return all open file paths', () => {
+  it('should return all open file paths when no getAllWorkspaceFiles dep', () => {
     const api = createWorkspaceAPI(mockDeps as any);
     const files = api.getAllFiles();
     expect(files).toEqual(['/test/file.md', '/test/other.md']);
+  });
+
+  it('should use getAllWorkspaceFiles when provided', () => {
+    const deps = {
+      ...mockDeps,
+      getAllWorkspaceFiles: vi.fn(() => ['/a.md', '/b.md', '/c.md']),
+    };
+    const api = createWorkspaceAPI(deps as any);
+    expect(api.getAllFiles()).toEqual(['/a.md', '/b.md', '/c.md']);
   });
 
   it('should call openFileInTab when opening a file', () => {
@@ -33,10 +42,10 @@ describe('Workspace API', () => {
     expect(typeof disposable!.dispose).toBe('function');
   });
 
-  it('should return null active file when no tab is active', () => {
+  it('should return { path: null, name: null } when no tab is active', () => {
     const deps = { ...mockDeps, getActiveTab: vi.fn(() => null) };
     const api = createWorkspaceAPI(deps as any);
     const file = api.getActiveFile();
-    expect(file).toBeNull();
+    expect(file).toEqual({ path: null, name: null });
   });
 });

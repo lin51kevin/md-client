@@ -1,7 +1,9 @@
+import type { PluginContext } from './plugin-sandbox';
+
 export function createSidebarAPI(deps: {
   registerSidebarPanel: (id: string, component: unknown) => void;
   unregisterSidebarPanel: (id: string) => void;
-}): Record<string, (...args: unknown[]) => unknown> {
+}): PluginContext['sidebar'] {
   const registeredPanels = new Map<string, unknown>();
 
   return {

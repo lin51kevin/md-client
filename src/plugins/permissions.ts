@@ -1,19 +1,12 @@
 /**
- * Plugin permissions — permission type, levels, descriptions, and dangerous set.
+ * Plugin permissions — permission levels, descriptions, and dangerous set.
  *
- * NOTE: PluginPermission is defined here temporarily; Task A is creating the
- * canonical version in types.ts.  They will be merged during integration.
+ * The canonical PluginPermission type lives in ./types and is re-exported here
+ * for convenience so callers don't need to import from two places.
  */
 
-// ── Permission type ────────────────────────────────────────────────────────
-
-export type PluginPermission =
-  | 'file.read' | 'file.write' | 'file.watch'
-  | 'sidebar.panel' | 'statusbar.item' | 'contextmenu.item'
-  | 'editor.read' | 'editor.write' | 'editor.decorate'
-  | 'workspace' | 'preview.extend' | 'settings.section'
-  | 'theme' | 'export' | 'ui.message' | 'storage'
-  | 'commands' | 'tauri.raw';
+export type { PluginPermission } from './types';
+import type { PluginPermission } from './types';
 
 // ── Permission levels ──────────────────────────────────────────────────────
 

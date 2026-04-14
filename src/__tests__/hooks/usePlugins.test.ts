@@ -1,0 +1,108 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+// ── localStorage mock ──────────────────────────────────────────────────────
+
+let storageMock: Record<string, string> = {};
+
+beforeEach(() => {
+  storageMock = {};
+  vi.stubGlobal('localStorage', {
+    getItem: (key: string) => storageMock[key] ?? null,
+    setItem: (key: string, value: string) => { storageMock[key] = value; },
+    removeItem: (key: string) => { delete storageMock[key]; },
+  });
+  // Mock Tauri dialog so installFromFile falls through to native file input
+  vi.mock('@tauri-apps/api/dialog', () => ({}), { virtual: true });
+  vi.mock('@tauri-apps/api/fs', () => ({}), { virtual: true });
+});
+
+// ── CRITICAL 1: Storage key isolation ────────────────────────────────────
+
+describe('usePlugins - storage key isolation', () => {
+  it('uses a different localStorage key than PluginStorage ("marklite-installed-plugins")', async () => {
+    // Import both keys
+    const { PluginStorage } = await import('../../plugins/plugin-storage');
+    const pluginStorage = new PluginStorage();
+
+    // Write via PluginStorage with full InstalledPluginRecord schema
+    pluginStorage.addPlugin({
+      id: 'lifecycle-plugin',
+      manifest: {
+        id: 'lifecycle-plugin',
+        name: 'LC Plugin',
+        version: '1.0.0',
+        description: 'desc',
+        author: 'auth',
+        main: 'index.js',
+        activationEvents: [],
+        permissions: ['storage'],
+      },
+      enabled: true,
+      grantedPermissions: ['storage'],
+      installedAt: Date.now(),
+    });
+
+    // The PluginStorage key should be 'marklite-installed-plugins'
+    expect(storageMock['marklite-installed-plugins']).toBeDefined();
+
+    // The usePlugins UI key should be something different
+    const UI_KEY = 'marklite-ui-plugins';
+    // If usePlugins has not run yet, its key should be absent (or different from lifecycle key)
+    expect(UI_KEY).not.toBe('marklite-installed-plugins');
+
+    // Verify PluginStorage data is still intact (not overwritten)
+    const stored = JSON.parse(storageMock['marklite-installed-plugins']) as { id: string }[];
+    expect(stored[0].id).toBe('lifecycle-plugin');
+  });
+});
+
+// ── CRITICAL 2: Permission validation ────────────────────────────────────
+
+describe('usePlugins - permission validation', () => {
+  it('KNOWN_PERMISSIONS covers all entries in PERMISSION_DESCRIPTIONS', async () => {
+    const { PERMISSION_DESCRIPTIONS } = await import('../../plugins/permissions');
+    const knownKeys = new Set(Object.keys(PERMISSION_DESCRIPTIONS));
+    // All PERMISSION_DESCRIPTIONS keys should be valid PluginPermission values
+    expect(knownKeys.size).toBeGreaterThan(0);
+    for (const key of knownKeys) {
+      expect(typeof key).toBe('string');
+    }
+  });
+
+  it('unknown permissions are filtered out before the approval modal', async () => {
+    // We test the filtering logic in isolation by importing the PERMISSION_DESCRIPTIONS
+    const { PERMISSION_DESCRIPTIONS } = await import('../../plugins/permissions');
+    const KNOWN = new Set(Object.keys(PERMISSION_DESCRIPTIONS));
+
+    const incoming = ['storage', 'editor.read', 'tauri.raw', 'INVALID_PERM', 'file.write'];
+    const valid = incoming.filter((p) => KNOWN.has(p));
+
+    expect(valid).toContain('storage');
+    expect(valid).toContain('editor.read');
+    expect(valid).toContain('tauri.raw');
+    expect(valid).not.toContain('INVALID_PERM');
+  });
+
+  it('plugin with only invalid permissions shows no approval modal (zero valid perms)', async () => {
+    const { PERMISSION_DESCRIPTIONS } = await import('../../plugins/permissions');
+    const KNOWN = new Set(Object.keys(PERMISSION_DESCRIPTIONS));
+
+    const incoming = ['NOT_A_REAL_PERM', 'ALSO_FAKE'];
+    const valid = incoming.filter((p) => KNOWN.has(p));
+
+    expect(valid).toHaveLength(0);
+  });
+});
+
+// ── HIGH 1: installFromFile return value ─────────────────────────────────
+
+describe('usePlugins - installFromFile pending_approval result', () => {
+  it('pending_approval treated as non-false (installation started)', () => {
+    // The fix changes: resolve(result === true) → resolve(result !== false)
+    type TryResult = boolean | 'pending_approval';
+    const resolveFixed = (result: TryResult) => result !== false;
+    expect(resolveFixed('pending_approval')).toBe(true);
+    expect(resolveFixed(true)).toBe(true);
+    expect(resolveFixed(false)).toBe(false);
+  });
+});

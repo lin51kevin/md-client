@@ -1,6 +1,10 @@
 import type { EditorView } from '@codemirror/view';
+import type { PluginContext } from './plugin-sandbox';
 
-export function createEditorAPI(deps: { cmViewRef: React.RefObject<EditorView | null> }): Record<string, (...args: unknown[]) => unknown> {
+export function createEditorAPI(deps: {
+  cmViewRef: React.RefObject<EditorView | null>;
+  getActiveTab?: () => { path: string | null; content: string } | null;
+}): PluginContext['editor'] {
   return {
     getContent(): string {
       const view = deps.cmViewRef.current;
@@ -16,7 +20,7 @@ export function createEditorAPI(deps: { cmViewRef: React.RefObject<EditorView | 
       });
     },
     getActiveFilePath(): string | null {
-      return null;
+      return deps.getActiveTab?.()?.path ?? null;
     },
   };
 }

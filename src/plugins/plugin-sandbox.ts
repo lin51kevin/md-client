@@ -1,3 +1,4 @@
+import type { Disposable } from './types';
 import type { PluginPermission } from './permissions';
 import { PluginPermissionError } from './permission-checker';
 
@@ -57,20 +58,58 @@ function resolvePermission(namespace: string, method: string): PluginPermission 
 
 // ── Sandbox factory ────────────────────────────────────────────────────────
 
+// ── Typed API interfaces ───────────────────────────────────────────────────
+
+export interface CommandsAPI {
+  register(id: string, handler: (...args: unknown[]) => void): Disposable;
+}
+
+export interface SidebarAPI {
+  registerPanel(id: string, options: { title: string; icon?: string; render: () => unknown }): Disposable;
+}
+
+export interface StatusBarAPI {
+  addItem(element: unknown): Disposable;
+}
+
+export interface EditorAPI {
+  getContent(): string;
+  insertText(text: string, from?: number, to?: number): void;
+  getActiveFilePath(): string | null;
+}
+
+export interface WorkspaceAPI {
+  getActiveFile(): { path: string | null; name: string | null };
+  getAllFiles(): string[];
+  openFile(path: string): void;
+  onFileChanged(callback: (file: { path: string; name: string }) => void): Disposable;
+}
+
+export interface StorageAPI {
+  get(key: string): Promise<string | null>;
+  set(key: string, value: string): Promise<void>;
+  delete(key: string): Promise<void>;
+}
+
+export interface UIAPI {
+  showMessage(message: string, type?: 'info' | 'warning' | 'error'): void;
+  showModal(options: { title: string; content: string }): Promise<void>;
+}
+
 export interface PluginContext {
-  editor: Record<string, (...args: unknown[]) => unknown>;
-  sidebar: Record<string, (...args: unknown[]) => unknown>;
-  statusbar: Record<string, (...args: unknown[]) => unknown>;
-  contextMenu: Record<string, (...args: unknown[]) => unknown>;
-  files: Record<string, (...args: unknown[]) => unknown>;
-  workspace: Record<string, (...args: unknown[]) => unknown>;
-  commands: Record<string, (...args: unknown[]) => unknown>;
-  storage: Record<string, (...args: unknown[]) => unknown>;
-  ui: Record<string, (...args: unknown[]) => unknown>;
-  preview: Record<string, (...args: unknown[]) => unknown>;
-  settings: Record<string, (...args: unknown[]) => unknown>;
-  theme: Record<string, (...args: unknown[]) => unknown>;
-  export: Record<string, (...args: unknown[]) => unknown>;
+  commands: CommandsAPI;
+  sidebar: SidebarAPI;
+  statusbar: StatusBarAPI;
+  editor: EditorAPI;
+  workspace: WorkspaceAPI;
+  storage: StorageAPI;
+  ui: UIAPI;
+  files: { readFile(path: string): Promise<string | null>; watch(pattern: string, callback: (path: string) => void): Disposable };
+  contextMenu: { addItem(item: unknown): Disposable };
+  preview: { registerRenderer(type: string, renderFn: unknown): Disposable };
+  settings: { registerSection(section: unknown): Disposable };
+  theme: { register(cssVars: unknown): Disposable };
+  export: { registerExporter(format: string, fn: unknown): Disposable };
 }
 
 /**

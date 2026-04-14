@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import type { PluginPermission } from '../plugins/permissions';
+import type { PluginPermission } from '../plugins/types';
+import { PERMISSION_DESCRIPTIONS } from '../plugins/permissions';
 
 export interface PluginUIItem {
   id: string;
@@ -16,7 +17,7 @@ export interface PendingPermissionRequest {
   permissions: PluginPermission[];
 }
 
-const STORAGE_KEY = 'marklite-installed-plugins';
+const STORAGE_KEY = 'marklite-ui-plugins';
 
 const DEFAULT_PLUGINS: PluginUIItem[] = [
   {
@@ -126,9 +127,10 @@ export function usePlugins() {
     };
 
     const tryAddPlugin = (newPlugin: PluginUIItem): boolean | 'pending_approval' => {
-      // Filter valid permissions
+      // Filter valid permissions against the known permission set
+      const KNOWN_PERMISSIONS = new Set(Object.keys(PERMISSION_DESCRIPTIONS));
       const validPermissions = newPlugin.permissions.filter(
-        (_p): _p is PluginPermission => true,
+        (p): p is PluginPermission => KNOWN_PERMISSIONS.has(p),
       );
 
       if (validPermissions.length > 0) {
@@ -175,7 +177,7 @@ export function usePlugins() {
           const newPlugin = await readManifest(text);
           if (!newPlugin) { resolve(false); return; }
           const result = tryAddPlugin(newPlugin);
-          resolve(result === true);
+          resolve(result !== false);
         };
         input.click();
       });
