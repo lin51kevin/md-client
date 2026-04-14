@@ -7,6 +7,7 @@ import { createSidebarAPI } from './plugin-sidebar';
 import { createStatusBarAPI } from './plugin-statusbar';
 import { createStorageAPI } from './plugin-storage';
 import { createUIAPI } from './plugin-ui';
+import { createPreviewAPI } from './plugin-preview';
 
 /**
  * Dependencies needed to assemble a full plugin context.
@@ -31,6 +32,10 @@ export interface PluginContextDeps {
   addStatusBarItem: (element: unknown) => void;
   /** Remove a status bar element. */
   removeStatusBarItem: (element: unknown) => void;
+  /** Register a preview renderer for a node type. */
+  registerPreviewRenderer: (nodeType: string, renderFn: unknown) => void;
+  /** Unregister a preview renderer for a node type. */
+  unregisterPreviewRenderer: (nodeType: string) => void;
 }
 
 /**
@@ -49,7 +54,7 @@ export function createPluginContext(deps: PluginContextDeps, pluginId?: string):
     statusbar: createStatusBarAPI(deps),
     storage: createStorageAPI(pluginId) as PluginContext['storage'],
     ui: createUIAPI(),
-    preview: { registerRenderer: () => ({ dispose: () => {} }) },
+    preview: createPreviewAPI(deps),
     settings: { registerSection: () => ({ dispose: () => {} }) },
     theme: { register: () => ({ dispose: () => {} }) },
     export: { registerExporter: () => ({ dispose: () => {} }) },

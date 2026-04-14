@@ -31,6 +31,7 @@ import { useTabActions } from './hooks/useTabActions';
 import { useNavigation } from './hooks/useNavigation';
 import { useAppLifecycle } from './hooks/useAppLifecycle';
 import { usePendingImageMigration } from './hooks/usePendingImageMigration';
+import { usePreviewRenderers } from './hooks/usePreviewRenderers';
 import { restoreSnapshot } from './lib/version-history';
 import { getSavedSplitSizes } from './lib/split-preference';
 
@@ -80,6 +81,7 @@ export default function App() {
 
   // ── Core hooks ───────────────────────────────────────────────────
   const { focusMode, setFocusMode, isChromeless, hideStatusBar } = useFocusMode();
+  const { renderers: pluginRenderers } = usePreviewRenderers();
   const { welcomeDismissed, handleDismissWelcome, handleShowWelcome } = useWelcome();
   const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
   const [splitSizes, setSplitSizes] = useState<[number, number]>(() => getSavedSplitSizes());
@@ -389,6 +391,7 @@ export default function App() {
           onNew={createNewTab} onOpenFile={handleOpenFile}
           onOpenRecent={handleOpenRecent} onOpenSample={handleOpenSample}
           onDismiss={handleDismissWelcome} onShowWelcome={handleShowWelcome}
+          pluginRenderers={pluginRenderers}
         />
       </div>
 

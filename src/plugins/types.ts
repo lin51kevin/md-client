@@ -59,3 +59,16 @@ export interface InstalledPluginRecord {
 export interface Disposable {
   dispose(): void;
 }
+
+/** A preview renderer registered by a plugin. */
+export interface PreviewRendererEntry {
+  /** Plugin that registered this renderer. */
+  pluginId: string;
+  /** The HTML element type to override (e.g. 'blockquote', 'p', 'h1'). */
+  nodeType: string;
+  /**
+   * Render function invoked by the preview component.
+   * Receives the element props plus a `defaultRender` component for composition.
+   */
+  render: (props: Record<string, unknown> & { defaultRender: React.ComponentType<Record<string, unknown>> }) => React.ReactNode;
+}

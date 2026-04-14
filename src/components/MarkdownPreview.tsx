@@ -81,6 +81,8 @@ interface MarkdownPreviewProps {
   onContentChange?: (newContent: string) => void;
   /** Called when user clicks a [[wiki-link]]; target is the link text */
   onWikiLinkNavigate?: (target: string) => void;
+  /** Plugin-registered custom renderers keyed by node type (e.g. 'blockquote', 'p'). */
+  pluginRenderers?: Map<string, unknown>;
 }
 
 /**
@@ -271,6 +273,9 @@ function safeUrlTransform(url: string): string {
   return '';
 }
 
+/** Node types whose built-in renderers cannot be overridden by plugins. */
+const PROTECTED_NODE_TYPES = new Set(['img', 'a', 'code']);
+
 export const MarkdownPreview = memo(function MarkdownPreview({
   content,
   className,
@@ -278,6 +283,7 @@ export const MarkdownPreview = memo(function MarkdownPreview({
   onOpenFile,
   onContentChange,
   onWikiLinkNavigate,
+  pluginRenderers,
 }: MarkdownPreviewProps) {
   const [editingTable, setEditingTable] = useState<TableData | null>(null);
   /** Resets to 0 before each ReactMarkdown render pass to keep table indices aligned */
@@ -386,8 +392,27 @@ export const MarkdownPreview = memo(function MarkdownPreview({
       return <code className={className} {...props}>{children}</code>;
     };
 
+    // ── Plugin-registered renderers ─────────────────────────────────────────
+    if (pluginRenderers) {
+      for (const [nodeType, renderFn] of pluginRenderers) {
+        if (PROTECTED_NODE_TYPES.has(nodeType)) {
+          continue; // Built-in renderers take priority
+        }
+        if (typeof renderFn !== 'function') continue;
+        const DefaultElement = nodeType as keyof React.JSX.IntrinsicElements;
+        components[nodeType] = (props: Record<string, unknown>) => {
+          const defaultRender = (p: Record<string, unknown>) => {
+            const { children: c, ...rest } = p;
+            const El = DefaultElement as unknown as React.ElementType;
+            return <El {...rest}>{c as React.ReactNode}</El>;
+          };
+          return (renderFn as (p: Record<string, unknown>) => React.ReactNode)({ ...props, defaultRender });
+        };
+      }
+    }
+
     return components;
-  }, [filePath, onOpenFile, onContentChange, onWikiLinkNavigate, allTables]);
+  }, [filePath, onOpenFile, onContentChange, onWikiLinkNavigate, allTables, pluginRenderers]);
 
   const handleTableConfirm = useCallback((newTableMd: string) => {
     if (!editingTable || !onContentChange) return;

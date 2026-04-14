@@ -96,6 +96,10 @@ export interface UIAPI {
   showModal(options: { title: string; content: string }): Promise<void>;
 }
 
+export interface PreviewAPI {
+  registerRenderer(nodeType: string, renderFn: (props: Record<string, unknown> & { defaultRender: React.ComponentType<Record<string, unknown>> }) => React.ReactNode): Disposable;
+}
+
 export interface PluginContext {
   commands: CommandsAPI;
   sidebar: SidebarAPI;
@@ -106,7 +110,7 @@ export interface PluginContext {
   ui: UIAPI;
   files: { readFile(path: string): Promise<string | null>; watch(pattern: string, callback: (path: string) => void): Disposable };
   contextMenu: { addItem(item: unknown): Disposable };
-  preview: { registerRenderer(type: string, renderFn: unknown): Disposable };
+  preview: PreviewAPI;
   settings: { registerSection(section: unknown): Disposable };
   theme: { register(cssVars: unknown): Disposable };
   export: { registerExporter(format: string, fn: unknown): Disposable };

@@ -47,6 +47,7 @@ interface EditorContentAreaProps {
   onOpenSample: () => void;
   onDismiss: () => void;
   onShowWelcome: () => void;
+  pluginRenderers?: Map<string, unknown>;
 }
 
 const PreviewFallback = (
@@ -84,6 +85,7 @@ export function EditorContentArea({
   onOpenSample,
   onDismiss,
   onShowWelcome,
+  pluginRenderers,
 }: EditorContentAreaProps) {
   if (isPristine) {
     return welcomeDismissed ? (
@@ -155,6 +157,7 @@ export function EditorContentArea({
                 onContentChange={updateActiveDoc}
                 onWikiLinkNavigate={handleWikiLinkNavigate}
                 className={previewClass}
+                pluginRenderers={pluginRenderers}
               />
             </Suspense>
           </div>
@@ -196,6 +199,7 @@ export function EditorContentArea({
                 onContentChange={updateActiveDoc}
                 onWikiLinkNavigate={handleWikiLinkNavigate}
                 className={previewClass}
+                pluginRenderers={pluginRenderers}
               />
             </Suspense>
           </div>
