@@ -38,11 +38,15 @@ describe('Plugin Storage Key Consistency', () => {
   test('migration path for existing marklite-ui-plugins data', () => {
     // Simulate old data structure
     const oldData = [{ id: 'test-plugin', enabled: true }];
-    storage.getItem.mockReturnValue(JSON.stringify(oldData));
+    (storage.getItem as ReturnType<typeof vi.fn>).mockReturnValue(JSON.stringify(oldData));
     
     renderHook(() => usePlugins());
-    // Should have migrated old data
+    // Should have read from the correct key
     expect(storage.getItem).toHaveBeenCalledWith('marklite-installed-plugins');
-    expect(storage.setItem).toHaveBeenCalledWith('marklite-installed-plugins', JSON.stringify(oldData));
+    // Should have saved migrated data (original + missing defaults merged in)
+    expect(storage.setItem).toHaveBeenCalledWith(
+      'marklite-installed-plugins',
+      expect.stringContaining('test-plugin'),
+    );
   });
 });

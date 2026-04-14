@@ -58,24 +58,56 @@ const DEFAULT_PLUGINS: PluginUIItem[] = [
   },
 ];
 
+/** Migration map: old plugin IDs → new marklite-* IDs */
+const ID_MIGRATION: Record<string, string> = {
+  'backlinks-panel': 'marklite-backlinks',
+  'graph-view': 'marklite-graph-view',
+  'snippet-manager': 'marklite-snippet-manager',
+  'preview-edit': 'marklite-preview-edit',
+};
+
+function migratePluginIds(plugins: PluginUIItem[]): PluginUIItem[] {
+  let changed = false;
+  const migrated = plugins.map((p) => {
+    const newId = ID_MIGRATION[p.id];
+    if (newId) {
+      changed = true;
+      return { ...p, id: newId };
+    }
+    return p;
+  });
+
+  // Merge any default plugins that are missing (e.g. newly added ones)
+  const existingIds = new Set(migrated.map((p) => p.id));
+  for (const dp of DEFAULT_PLUGINS) {
+    if (!existingIds.has(dp.id)) {
+      changed = true;
+      migrated.push(dp);
+    }
+  }
+
+  if (changed) {
+    savePlugins(migrated);
+  }
+  return migrated;
+}
+
 function loadPlugins(): PluginUIItem[] {
   try {
     const OLD_STORAGE_KEY = 'marklite-ui-plugins';
     
     // First check new key
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw) as PluginUIItem[];
+    if (raw) return migratePluginIds(JSON.parse(raw) as PluginUIItem[]);
     
     // If new key doesn't exist, check old key for migration
     const oldRaw = localStorage.getItem(OLD_STORAGE_KEY);
     if (oldRaw) {
       try {
         const oldData = JSON.parse(oldRaw) as PluginUIItem[];
-        // Migrate data to new key
-        localStorage.setItem(STORAGE_KEY, oldRaw);
-        // Optionally remove old key (optional, keep for safety)
-        // localStorage.removeItem(OLD_STORAGE_KEY);
-        return oldData;
+        const migrated = migratePluginIds(oldData);
+        savePlugins(migrated);
+        return migrated;
       } catch { /* ignore */ }
     }
   } catch { /* ignore */ }

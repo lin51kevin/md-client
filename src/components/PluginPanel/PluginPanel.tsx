@@ -1,7 +1,6 @@
 import { useState, useRef, useMemo } from 'react';
 import { usePlugins } from '../../hooks/usePlugins';
 import { getOfficialPlugins } from '../../plugins/registry/registry-client';
-import { readRegistryManifest } from '../../plugins/registry/quick-install';
 import { PanelHeader } from './PanelHeader';
 import { SearchBar } from './SearchBar';
 import { TabSwitcher } from './TabSwitcher';
@@ -52,14 +51,18 @@ export function PluginPanel({ visible, onClose, onActivate, onDeactivate }: Plug
     }
   };
 
-  const handleRegistryInstall = async (plugin: Parameters<typeof readRegistryManifest>[0]) => {
+  const handleRegistryInstall = async (plugin: { id: string; name: string; version: string; author: string; description: string }) => {
     if (installingId === plugin.id) return;
     setInstallingId(plugin.id);
     try {
-      const manifest = await readRegistryManifest(plugin);
-      if (manifest) {
-        addPluginFromManifest(manifest);
-      }
+      // Install directly from registry entry data — no manifest fetch needed for official plugins
+      addPluginFromManifest({
+        id: plugin.id,
+        name: plugin.name,
+        version: plugin.version,
+        author: plugin.author,
+        description: plugin.description,
+      });
     } finally {
       setInstallingId(null);
     }
