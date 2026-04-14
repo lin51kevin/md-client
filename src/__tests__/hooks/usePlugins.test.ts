@@ -188,3 +188,27 @@ describe('usePlugins - ID migration', () => {
     expect(ids).toContain('marklite-preview-edit');
   });
 });
+
+// ── Remove triggers deactivate ─────────────────────────────────────────
+
+describe('usePlugins - removePlugin deactivation', () => {
+  it('calls onDeactivate when removePlugin is called', () => {
+    const onDeactivate = vi.fn().mockResolvedValue(undefined);
+    const { result } = renderHook(() => usePlugins({ onDeactivate }));
+
+    act(() => { result.current.removePlugin('marklite-backlinks'); });
+
+    expect(onDeactivate).toHaveBeenCalledWith('marklite-backlinks');
+  });
+
+  it('removes the plugin from the list', () => {
+    const { result } = renderHook(() => usePlugins());
+    const before = result.current.plugins.map((p) => p.id);
+    expect(before).toContain('marklite-backlinks');
+
+    act(() => { result.current.removePlugin('marklite-backlinks'); });
+
+    const after = result.current.plugins.map((p) => p.id);
+    expect(after).not.toContain('marklite-backlinks');
+  });
+});

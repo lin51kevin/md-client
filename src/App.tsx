@@ -206,6 +206,15 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ── Reset active panel if removed plugin panel was selected ──────
+  useEffect(() => {
+    if (!activePanel) return;
+    const isBuiltin = ['filetree', 'search', 'toc', 'plugins', 'git'].includes(activePanel);
+    if (isBuiltin) return;
+    const stillExists = pluginPanels.some((pp) => pp.id === activePanel);
+    if (!stillExists) setActivePanel(null);
+  }, [pluginPanels, activePanel, setActivePanel]);
+
   // ── App lifecycle effects ────────────────────────────────────────
   useAppLifecycle({ isTauri, openFileWithContent, tabsRef, t });
 

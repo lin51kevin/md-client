@@ -4,11 +4,15 @@ import { GraphView } from './GraphView';
 import { useGraphData } from './useGraphData';
 
 export function activate(ctx: PluginContext) {
-  ctx.sidebar.registerPanel('graph-view-official', {
+  const panel = ctx.sidebar.registerPanel('graph-view-official', {
     title: 'Graph',
-    icon: '🔗',
+    icon: 'share-2',
     render: () => React.createElement(GraphViewPlugin, { ctx }),
   });
+
+  return {
+    deactivate: () => panel.dispose(),
+  };
 }
 
 function GraphViewPlugin({ ctx }: { ctx: PluginContext }) {

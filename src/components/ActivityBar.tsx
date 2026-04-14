@@ -1,5 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FolderTree, Search, List, GitBranch, Settings, Package } from 'lucide-react';
+import { FolderTree, Search, List, GitBranch, Settings, Package, Link, Share2, Braces, type LucideIcon } from 'lucide-react';
+
+/** Map of icon name strings to Lucide icon components for plugin panels */
+const LUCIDE_ICON_MAP: Record<string, LucideIcon> = {
+  link: Link,
+  'share-2': Share2,
+  braces: Braces,
+  package: Package,
+  search: Search,
+  list: List,
+  'folder-tree': FolderTree,
+  'git-branch': GitBranch,
+  settings: Settings,
+};
 import { useI18n, type TranslationKey } from '../i18n';
 import { useLocalStorageString } from '../hooks/useLocalStorage';
 
@@ -205,6 +218,7 @@ export function ActivityBar({ activePanel, onPanelChange, onOpenSettings, plugin
           <div style={{ width: 24, height: 1, backgroundColor: 'var(--border-color)', margin: '4px auto' }} />
           {pluginPanels.map((pp) => {
             const isActive = activePanel === pp.id;
+            const LucideIconComp = pp.icon ? LUCIDE_ICON_MAP[pp.icon] : undefined;
             return (
               <button
                 key={pp.id}
@@ -227,10 +241,12 @@ export function ActivityBar({ activePanel, onPanelChange, onOpenSettings, plugin
                   border: 'none',
                   borderLeft: isActive ? '2px solid var(--accent-color)' : '2px solid transparent',
                   cursor: 'pointer',
-                  fontSize: pp.icon && pp.icon.length <= 2 ? 18 : 12,
+                  fontSize: LucideIconComp ? undefined : 18,
                 }}
               >
-                {pp.icon ?? pp.title.charAt(0)}
+                {LucideIconComp
+                  ? <LucideIconComp size={20} strokeWidth={1.6} />
+                  : (pp.icon ?? pp.title.charAt(0))}
               </button>
             );
           })}

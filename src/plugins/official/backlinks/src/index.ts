@@ -6,7 +6,7 @@ export function activate(context: PluginContext) {
 
   const panel = context.sidebar.registerPanel('backlinks-official', {
     title: 'Backlinks',
-    icon: '🔗',
+    icon: 'link',
     render: () => panelContent,
   });
 

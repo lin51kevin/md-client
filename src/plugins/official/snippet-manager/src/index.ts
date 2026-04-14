@@ -8,7 +8,7 @@ export function activate(context: PluginContext) {
 
   const panelDisposable = context.sidebar.registerPanel('snippet-manager-official', {
     title: 'Snippets',
-    icon: 'code',
+    icon: 'braces',
     render: () => new SnippetPluginPanel(context),
   });
 

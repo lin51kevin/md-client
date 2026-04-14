@@ -153,6 +153,8 @@ export function usePlugins(opts?: {
   }, []);
 
   const removePlugin = useCallback((id: string) => {
+    // Deactivate before removing so sidebar panels are cleaned up
+    void onDeactivateRef.current?.(id);
     setPlugins((prev) => prev.filter((p) => p.id !== id));
   }, []);
 
