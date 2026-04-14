@@ -5,9 +5,10 @@ import { createPluginContext } from '../plugins/plugin-context-factory';
 
 /** Map of official bundled plugin IDs to their module import functions. */
 const OFFICIAL_PLUGIN_MODULES: Record<string, () => Promise<{ activate?: (ctx: PluginContext) => unknown }>> = {
-  'backlinks-panel': () => import('../plugins/official/backlinks/src/index'),
-  'graph-view': () => import('../plugins/official/graph-view/src/index'),
-  'snippet-manager': () => import('../plugins/official/snippet-manager/src/index'),
+  'marklite-backlinks': () => import('../plugins/official/backlinks/src/index'),
+  'marklite-graph-view': () => import('../plugins/official/graph-view/src/index'),
+  'marklite-snippet-manager': () => import('../plugins/official/snippet-manager/src/index'),
+  'marklite-preview-edit': () => import('../plugins/official/preview-edit/src/index'),
 };
 
 interface ActivePluginEntry {

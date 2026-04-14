@@ -28,6 +28,15 @@
       "version": "1.0.0",
       "tags": ["snippets", "productivity"],
       "manifestUrl": "official/snippet-manager/manifest.json"
+    },
+    {
+      "id": "marklite-preview-edit",
+      "name": "Preview Editor",
+      "description": "在预览窗格中直接编辑文本，点击段落和标题即可原地修改",
+      "author": "MarkLite Team",
+      "version": "1.0.0",
+      "tags": ["preview", "editing", "wysiwyg"],
+      "manifestUrl": "official/preview-edit/manifest.json"
     }
   ]
 }

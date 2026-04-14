@@ -12,6 +12,9 @@ vi.mock('../../plugins/official/graph-view/src/index', () => ({
 vi.mock('../../plugins/official/snippet-manager/src/index', () => ({
   activate: vi.fn(),
 }));
+vi.mock('../../plugins/official/preview-edit/src/index', () => ({
+  activate: vi.fn(),
+}));
 
 function createMockDeps() {
   return {
@@ -48,7 +51,7 @@ describe('usePluginRuntime', () => {
     const backlinksMod = await import('../../plugins/official/backlinks/src/index');
 
     await act(async () => {
-      await result.current.activatePlugin('backlinks-panel');
+      await result.current.activatePlugin('marklite-backlinks');
     });
 
     expect(backlinksMod.activate).toHaveBeenCalledTimes(1);
@@ -70,14 +73,14 @@ describe('usePluginRuntime', () => {
     });
   });
 
-  it('activatePlugin for graph-view calls its activate', async () => {
+  it('activatePlugin for marklite-graph-view calls its activate', async () => {
     const deps = createMockDeps();
     const { result } = renderHook(() => usePluginRuntime(deps));
 
     const graphMod = await import('../../plugins/official/graph-view/src/index');
 
     await act(async () => {
-      await result.current.activatePlugin('graph-view');
+      await result.current.activatePlugin('marklite-graph-view');
     });
 
     expect(graphMod.activate).toHaveBeenCalledTimes(1);
@@ -94,11 +97,11 @@ describe('usePluginRuntime', () => {
     const { result } = renderHook(() => usePluginRuntime(deps));
 
     await act(async () => {
-      await result.current.activatePlugin('backlinks-panel');
+      await result.current.activatePlugin('marklite-backlinks');
     });
 
     await act(async () => {
-      await result.current.deactivatePlugin('backlinks-panel');
+      await result.current.deactivatePlugin('marklite-backlinks');
     });
 
     expect(deactivateFn).toHaveBeenCalledTimes(1);
@@ -115,10 +118,10 @@ describe('usePluginRuntime', () => {
     const { result } = renderHook(() => usePluginRuntime(deps));
 
     await act(async () => {
-      await result.current.activatePlugin('backlinks-panel');
+      await result.current.activatePlugin('marklite-backlinks');
     });
     await act(async () => {
-      await result.current.activatePlugin('backlinks-panel');
+      await result.current.activatePlugin('marklite-backlinks');
     });
 
     expect(deactivateFn).toHaveBeenCalledTimes(1);

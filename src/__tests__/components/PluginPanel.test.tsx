@@ -88,8 +88,8 @@ describe('PluginPanel', () => {
     const settingsBtns = screen.getAllByTitle('plugins.detail');
     fireEvent.click(settingsBtns[0]);
     expect(screen.getByText('plugins.permissions')).toBeTruthy();
-    expect(screen.getByText('sidebar')).toBeTruthy();
-    expect(screen.getByText('document-read')).toBeTruthy();
+    expect(screen.getByText('workspace')).toBeTruthy();
+    expect(screen.getByText('editor.read')).toBeTruthy();
   });
 
   it('展开详情面板显示卸载按钮', () => {
@@ -101,14 +101,14 @@ describe('PluginPanel', () => {
 
   it('启用/禁用状态持久化到 localStorage', () => {
     render(<PluginPanel visible={true} onClose={() => {}} />);
-    // Graph View starts disabled → enable it (the only disabled button initially)
-    const graphBtn = screen.getByText('plugins.disabled');
-    fireEvent.click(graphBtn);
+    // Graph View starts disabled → enable it (first disabled button is Graph View at index 0)
+    const disabledBtns = screen.getAllByText('plugins.disabled');
+    fireEvent.click(disabledBtns[0]);
     // Verify localStorage was updated (key: 'marklite-installed-plugins')
     const raw = localStorageMock.getItem('marklite-installed-plugins');
     expect(raw).toBeTruthy();
     const plugins = JSON.parse(raw!);
-    const graphView = plugins.find((p: { id: string }) => p.id === 'graph-view');
+    const graphView = plugins.find((p: { id: string }) => p.id === 'marklite-graph-view');
     expect(graphView.enabled).toBe(true);
   });
 
@@ -116,7 +116,7 @@ describe('PluginPanel', () => {
     render(<PluginPanel visible={true} onClose={() => {}} />);
     // Backlinks Panel starts enabled — only one "enabled" button
     const btn1 = screen.getByText('plugins.enabled');
-    fireEvent.click(btn1); // disable → now 2 disabled buttons
+    fireEvent.click(btn1); // disable → now all are disabled
     // Re-enable: click the first disabled button (Backlinks Panel appears first in list)
     const disabledBtns = screen.getAllByText('plugins.disabled');
     fireEvent.click(disabledBtns[0]); // re-enable backlinks

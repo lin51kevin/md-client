@@ -21,22 +21,40 @@ const STORAGE_KEY = 'marklite-installed-plugins';
 
 const DEFAULT_PLUGINS: PluginUIItem[] = [
   {
-    id: 'backlinks-panel',
+    id: 'marklite-backlinks',
     name: 'Backlinks Panel',
     version: '1.0.0',
     author: 'MarkLite Team',
     description: '显示当前文档的反向链接',
     enabled: true,
-    permissions: ['sidebar', 'document-read'],
+    permissions: ['workspace', 'editor.read', 'sidebar.panel', 'storage'],
   },
   {
-    id: 'graph-view',
+    id: 'marklite-graph-view',
     name: 'Graph View',
     version: '1.0.0',
     author: 'MarkLite Team',
     description: '双向链接知识图谱可视化',
     enabled: false,
-    permissions: ['sidebar', 'document-read'],
+    permissions: ['workspace', 'editor.read', 'sidebar.panel', 'storage'],
+  },
+  {
+    id: 'marklite-snippet-manager',
+    name: 'Snippet Manager',
+    version: '1.0.0',
+    author: 'MarkLite Team',
+    description: '增强型代码片段管理，支持分类和变量占位符',
+    enabled: false,
+    permissions: ['storage', 'editor.write', 'commands', 'ui.message'],
+  },
+  {
+    id: 'marklite-preview-edit',
+    name: 'Preview Editor',
+    version: '1.0.0',
+    author: 'MarkLite Team',
+    description: '在预览窗格中直接编辑文本，点击段落和标题即可原地修改',
+    enabled: false,
+    permissions: ['editor.read', 'editor.write', 'preview.extend'],
   },
 ];
 

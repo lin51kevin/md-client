@@ -1,0 +1,11 @@
+{
+  "id": "marklite-preview-edit",
+  "name": "Preview Editor",
+  "version": "1.0.0",
+  "description": "在预览窗格中直接编辑文本 — 点击段落和标题即可原地修改",
+  "author": "MarkLite Team",
+  "main": "src/index.ts",
+  "activationEvents": ["onWorkspaceReady"],
+  "permissions": ["editor.read", "editor.write", "preview.extend"],
+  "engines": { "marklite": ">=0.7.2" }
+}

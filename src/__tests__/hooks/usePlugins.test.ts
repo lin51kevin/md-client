@@ -113,46 +113,46 @@ describe('usePlugins - lifecycle callbacks', () => {
     const onActivate = vi.fn().mockResolvedValue(undefined);
     const { result } = renderHook(() => usePlugins({ onActivate }));
 
-    act(() => { result.current.enablePlugin('backlinks-panel'); });
+    act(() => { result.current.enablePlugin('marklite-backlinks'); });
 
-    expect(onActivate).toHaveBeenCalledWith('backlinks-panel');
+    expect(onActivate).toHaveBeenCalledWith('marklite-backlinks');
   });
 
   it('calls onDeactivate when disablePlugin is called', () => {
     const onDeactivate = vi.fn().mockResolvedValue(undefined);
     const { result } = renderHook(() => usePlugins({ onDeactivate }));
 
-    act(() => { result.current.disablePlugin('backlinks-panel'); });
+    act(() => { result.current.disablePlugin('marklite-backlinks'); });
 
-    expect(onDeactivate).toHaveBeenCalledWith('backlinks-panel');
+    expect(onDeactivate).toHaveBeenCalledWith('marklite-backlinks');
   });
 
   it('calls onActivate when togglePlugin enables a plugin', () => {
     const onActivate = vi.fn().mockResolvedValue(undefined);
-    // graph-view starts disabled by default
+    // marklite-graph-view starts disabled by default
     const { result } = renderHook(() => usePlugins({ onActivate }));
 
-    act(() => { result.current.togglePlugin('graph-view'); });
+    act(() => { result.current.togglePlugin('marklite-graph-view'); });
 
-    expect(onActivate).toHaveBeenCalledWith('graph-view');
+    expect(onActivate).toHaveBeenCalledWith('marklite-graph-view');
   });
 
   it('calls onDeactivate when togglePlugin disables a plugin', () => {
     const onDeactivate = vi.fn().mockResolvedValue(undefined);
-    // backlinks-panel starts enabled by default
+    // marklite-backlinks starts enabled by default
     const { result } = renderHook(() => usePlugins({ onDeactivate }));
 
-    act(() => { result.current.togglePlugin('backlinks-panel'); });
+    act(() => { result.current.togglePlugin('marklite-backlinks'); });
 
-    expect(onDeactivate).toHaveBeenCalledWith('backlinks-panel');
+    expect(onDeactivate).toHaveBeenCalledWith('marklite-backlinks');
   });
 
   it('works fine without any lifecycle callbacks (no crash)', () => {
     const { result } = renderHook(() => usePlugins());
 
     expect(() => {
-      act(() => { result.current.enablePlugin('backlinks-panel'); });
-      act(() => { result.current.disablePlugin('backlinks-panel'); });
+      act(() => { result.current.enablePlugin('marklite-backlinks'); });
+      act(() => { result.current.disablePlugin('marklite-backlinks'); });
     }).not.toThrow();
   });
 });
