@@ -1,0 +1,11 @@
+{
+  "id": "{{pluginId}}",
+  "name": "{{pluginName}}",
+  "version": "0.1.0",
+  "description": "{{pluginDescription}}",
+  "author": "{{authorName}}",
+  "main": "src/index.ts",
+  "activationEvents": ["onStartup"],
+  "permissions": [],
+  "engines": { "marklite": ">=0.8.0" }
+}

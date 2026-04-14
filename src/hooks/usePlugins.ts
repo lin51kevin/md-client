@@ -126,6 +126,35 @@ export function usePlugins(opts?: {
     setPendingPermission(null);
   }, []);
 
+  const addPluginFromManifest = useCallback((manifest: Partial<PluginUIItem>): boolean | 'pending_approval' => {
+    const KNOWN_PERMISSIONS = new Set(Object.keys(PERMISSION_DESCRIPTIONS));
+    if (!manifest.id || !manifest.name || !manifest.version) return false;
+    const newPlugin: PluginUIItem = {
+      id: manifest.id,
+      name: manifest.name,
+      version: manifest.version,
+      author: manifest.author ?? 'Unknown',
+      description: manifest.description ?? '',
+      enabled: false,
+      permissions: manifest.permissions ?? [],
+    };
+    const validPermissions = newPlugin.permissions.filter(
+      (p): p is PluginPermission => KNOWN_PERMISSIONS.has(p),
+    );
+    if (validPermissions.length > 0) {
+      pendingRef.current = newPlugin;
+      setPendingPermission({ plugin: newPlugin, permissions: validPermissions });
+      return 'pending_approval';
+    }
+    let added = false;
+    setPlugins((prev) => {
+      if (prev.some((p) => p.id === newPlugin.id)) return prev;
+      added = true;
+      return [...prev, newPlugin];
+    });
+    return added;
+  }, []);
+
   const installFromFile = useCallback(async (): Promise<boolean> => {
     const readManifest = async (text: string): Promise<PluginUIItem | null> => {
       try {
@@ -145,30 +174,6 @@ export function usePlugins(opts?: {
       }
     };
 
-    const tryAddPlugin = (newPlugin: PluginUIItem): boolean | 'pending_approval' => {
-      // Filter valid permissions against the known permission set
-      const KNOWN_PERMISSIONS = new Set(Object.keys(PERMISSION_DESCRIPTIONS));
-      const validPermissions = newPlugin.permissions.filter(
-        (p): p is PluginPermission => KNOWN_PERMISSIONS.has(p),
-      );
-
-      if (validPermissions.length > 0) {
-        // Show permission approval modal
-        pendingRef.current = newPlugin;
-        setPendingPermission({ plugin: newPlugin, permissions: validPermissions });
-        return 'pending_approval';
-      }
-
-      // No permissions needed, add directly
-      let added = false;
-      setPlugins((prev) => {
-        if (prev.some((p) => p.id === newPlugin.id)) return prev;
-        added = true;
-        return [...prev, newPlugin];
-      });
-      return added;
-    };
-
     try {
       const { open } = await import('@tauri-apps/plugin-dialog');
       const selected = await open({
@@ -180,7 +185,7 @@ export function usePlugins(opts?: {
       const content = await readTextFile(selected as string);
       const newPlugin = await readManifest(content);
       if (!newPlugin) return false;
-      return tryAddPlugin(newPlugin) === true;
+      return addPluginFromManifest(newPlugin) === true;
     } catch {
       // Fallback: native file input
       return new Promise<boolean>((resolve) => {
@@ -193,7 +198,7 @@ export function usePlugins(opts?: {
           const text = await file.text();
           const newPlugin = await readManifest(text);
           if (!newPlugin) { resolve(false); return; }
-          const result = tryAddPlugin(newPlugin);
+          const result = addPluginFromManifest(newPlugin);
           resolve(result !== false);
         };
         input.click();
@@ -208,6 +213,7 @@ export function usePlugins(opts?: {
     removePlugin,
     togglePlugin,
     installFromFile,
+    addPluginFromManifest,
     pendingPermission,
     onApprovePermissions: handleApprove,
     onCancelPermission: handleCancel,

@@ -1,0 +1,33 @@
+{
+  "version": "1.0.0",
+  "updatedAt": "2026-04-14T00:00:00.000Z",
+  "plugins": [
+    {
+      "id": "marklite-backlinks",
+      "name": "Backlinks Panel",
+      "description": "显示当前文档的反向链接，在任意 [[link]] 处查看哪些文档引用了它",
+      "author": "MarkLite Team",
+      "version": "1.0.0",
+      "tags": ["wiki", "backlinks", "knowledge"],
+      "manifestUrl": "official/backlinks/manifest.json"
+    },
+    {
+      "id": "marklite-graph-view",
+      "name": "Graph View",
+      "description": "双向链接知识图谱可视化，将笔记间的链接关系渲染为交互式节点图",
+      "author": "MarkLite Team",
+      "version": "1.0.0",
+      "tags": ["wiki", "graph", "visualization"],
+      "manifestUrl": "official/graph-view/manifest.json"
+    },
+    {
+      "id": "marklite-snippet-manager",
+      "name": "Snippet Manager",
+      "description": "增强型代码片段管理，支持分类和变量占位符",
+      "author": "MarkLite Team",
+      "version": "1.0.0",
+      "tags": ["snippets", "productivity"],
+      "manifestUrl": "official/snippet-manager/manifest.json"
+    }
+  ]
+}

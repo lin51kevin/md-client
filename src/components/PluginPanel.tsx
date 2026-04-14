@@ -1,7 +1,9 @@
-import { useState, useRef } from 'react';
-import { X, Package, Search, Download, Settings, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
+import { useState, useRef, useMemo } from 'react';
+import { X, Package, Search, Download, Settings, Trash2, ChevronDown, ChevronRight, Tag } from 'lucide-react';
 import { useI18n } from '../i18n';
 import { usePlugins } from '../hooks/usePlugins';
+import { getOfficialPlugins } from '../plugins/registry/registry-client';
+import { readRegistryManifest } from '../plugins/registry/quick-install';
 
 interface PluginPanelProps {
   visible: boolean;
@@ -10,10 +12,25 @@ interface PluginPanelProps {
 
 export function PluginPanel({ visible, onClose }: PluginPanelProps) {
   const { t } = useI18n();
-  const { plugins, enablePlugin, disablePlugin, removePlugin, togglePlugin, installFromFile } = usePlugins();
+  const { plugins, enablePlugin, disablePlugin, removePlugin, togglePlugin, installFromFile, addPluginFromManifest } = usePlugins();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'installed' | 'recommended'>('installed');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [installingId, setInstallingId] = useState<string | null>(null);
+
+  const installedIds = useMemo(() => new Set(plugins.map((p) => p.id)), [plugins]);
+
+  const registryPlugins = useMemo(() => {
+    const list = getOfficialPlugins();
+    if (!searchQuery) return list;
+    const q = searchQuery.toLowerCase();
+    return list.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.description.toLowerCase().includes(q) ||
+        p.tags.some((tag) => tag.toLowerCase().includes(q)),
+    );
+  }, [searchQuery]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const filteredPlugins = plugins.filter(
@@ -328,12 +345,110 @@ export function PluginPanel({ visible, onClose }: PluginPanelProps) {
             ))
           )
         ) : (
-          <div
-            className="px-3 py-8 text-center text-[10px]"
-            style={{ color: 'var(--text-tertiary)' }}
-          >
-            {t('plugins.noPlugins')}
-          </div>
+          registryPlugins.length === 0 ? (
+            <div
+              className="px-3 py-8 text-center text-[10px]"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              {t('plugins.noPlugins')}
+            </div>
+          ) : (
+            registryPlugins.map((rp) => {
+              const isInstalled = installedIds.has(rp.id);
+              const isInstalling = installingId === rp.id;
+              return (
+                <div key={rp.id}>
+                  <div
+                    className="group flex items-start gap-2 px-3 py-2 transition-colors"
+                    style={{ backgroundColor: 'transparent' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--hover-bg)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                  >
+                    <div
+                      className="shrink-0 flex items-center justify-center rounded mt-0.5"
+                      style={{
+                        width: 32,
+                        height: 32,
+                        backgroundColor: 'var(--bg-tertiary)',
+                        color: 'var(--text-secondary)',
+                      }}
+                    >
+                      <Package size={16} strokeWidth={1.4} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>
+                          {rp.name}
+                        </span>
+                        <span className="shrink-0 text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+                          v{rp.version}
+                        </span>
+                        {isInstalled && (
+                          <span
+                            className="shrink-0 px-1.5 py-0 rounded text-[9px]"
+                            style={{
+                              backgroundColor: 'rgba(34,134,58,0.12)',
+                              color: '#22863a',
+                              border: '1px solid rgba(34,134,58,0.3)',
+                            }}
+                          >
+                            {t('plugins.installed')}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[10px] truncate mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                        {rp.author}
+                      </div>
+                      <div className="text-[10px] truncate mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+                        {rp.description}
+                      </div>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {rp.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="flex items-center gap-0.5 px-1 py-0 rounded text-[9px]"
+                            style={{
+                              backgroundColor: 'var(--bg-tertiary)',
+                              color: 'var(--text-tertiary)',
+                              border: '1px solid var(--border-color)',
+                            }}
+                          >
+                            <Tag size={8} />
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    {!isInstalled && (
+                      <button
+                        onClick={async () => {
+                          if (isInstalling) return;
+                          setInstallingId(rp.id);
+                          try {
+                            const manifest = await readRegistryManifest(rp);
+                            if (manifest) {
+                              addPluginFromManifest(manifest);
+                            }
+                          } finally {
+                            setInstallingId(null);
+                          }
+                        }}
+                        disabled={isInstalling}
+                        className="shrink-0 px-2 py-0.5 rounded text-[10px] transition-colors"
+                        style={{
+                          backgroundColor: isInstalling ? 'var(--bg-tertiary)' : 'rgba(9,105,218,0.12)',
+                          border: isInstalling ? '1px solid var(--border-color)' : '1px solid rgba(9,105,218,0.3)',
+                          color: isInstalling ? 'var(--text-tertiary)' : '#0969da',
+                        }}
+                      >
+                        {isInstalling ? '...' : t('plugins.install')}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )
         )}
       </div>
 

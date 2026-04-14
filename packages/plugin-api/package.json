@@ -1,0 +1,19 @@
+{
+  "name": "@marklite/plugin-api",
+  "version": "0.1.0",
+  "description": "TypeScript type definitions for MarkLite plugin development",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "tsc"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "license": "MIT"
+}

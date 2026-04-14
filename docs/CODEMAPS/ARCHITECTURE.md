@@ -237,3 +237,71 @@ FileTreeSidebar
 3. **为什么用 base64 传递图片**：Tauri IPC 不支持直接传递 ArrayBuffer/Blob，base64 是最兼容的方式
 4. **为什么 frontmatter 有两套解析器**：内置轻量解析器覆盖 90% 场景且零额外依赖；js-yaml 作为后备覆盖复杂嵌套 YAML
 5. **文件树展开状态持久化**：使用 localStorage 存储展开路径集合，初始化时恢复，避免每次刷新都折叠
+
+---
+
+## 插件系统
+
+### 架构概览
+
+```
+┌──────────────────────────────────────────────────┐
+│                  MarkLite App                     │
+├──────────┬───────────┬───────────┬───────────────┤
+│ PluginPanel UI      │    Plugin Host Runtime    │
+│ (PluginPanel.tsx)   │                           │
+├──────────┴───────────┼───────────┴───────────────┤
+│                     │                           │
+│  ┌───────────────┐  │  ┌──────────────────────┐ │
+│  │ Plugin Loader │──▶│  │  Plugin Lifecycle   │ │
+│  │ (loader)      │  │  │  (activate/deactivate)│ │
+│  └───────┬───────┘  │  └──────────┬───────────┘ │
+│          │          │             │             │
+│  ┌───────▼───────┐  │  ┌──────────▼───────────┐ │
+│  │ Plugin        │  │  │  Plugin Context      │ │
+│  │ Registry      │  │  │  (commands/workspace/│ │
+│  │ (registry)    │  │  │   editor/sidebar/    │ │
+│  └───────────────┘  │  │   storage)           │ │
+│                     │  └──────────────────────┘ │
+│  ┌───────────────┐  │  ┌──────────────────────┐ │
+│  │ Permission    │  │  │  Plugin API Types    │ │
+│  │ Checker       │  │  │  (plugin-api.ts)     │ │
+│  └───────────────┘  │  └──────────────────────┘ │
+└─────────────────────┴───────────────────────────┘
+         │                         │
+    ┌────▼────┐              ┌─────▼──────┐
+    │ Official│              │  Community │
+    │ Plugins │              │  Plugins   │
+    │ (3个)   │              │  (可扩展)   │
+    └─────────┘              └────────────┘
+```
+
+### 开发阶段完成状态
+
+| Phase | 内容 | 状态 |
+|-------|------|------|
+| Phase 1 | Plugin API 类型定义 | ✅ 完成 |
+| Phase 2 | 插件加载器 + 生命周期管理 | ✅ 完成 |
+| Phase 3 | 权限系统 (声明式 + 运行时检查) | ✅ 完成 |
+| Phase 4 | 官方插件 (Backlinks / Graph View / Snippet Manager) | ✅ 完成 |
+| Phase 5 | 插件面板 UI + 脚手架 + 开发文档 | ✅ 完成 |
+
+### 核心文件索引
+
+| 文件 | 职责 |
+|------|------|
+| `src/plugins/plugin-api.ts` | PluginContext / Plugin 接口类型定义 |
+| `src/plugins/plugin-loader.ts` | 插件发现、加载、错误处理 |
+| `src/plugins/plugin-lifecycle.ts` | activate / deactivate 生命周期 |
+| `src/plugins/plugin-registry.ts` | 插件注册表（启用/禁用/查询） |
+| `src/plugins/plugin-context-factory.ts` | 构建插件上下文对象 |
+| `src/plugins/permissions.ts` | 权限常量定义 |
+| `src/plugins/permission-checker.ts` | 运行时权限校验 |
+| `src/plugins/plugin-commands.ts` | 插件命令注册/执行 |
+| `src/plugins/plugin-editor.ts` | 编辑器 API 桥接 |
+| `src/plugins/index.ts` | 插件系统统一入口 |
+| `src/components/PluginPanel.tsx` | 插件管理面板 UI |
+| `src/plugins/official/backlinks/` | 官方插件：反向链接 |
+| `src/plugins/official/graph-view/` | 官方插件：知识图谱 |
+| `src/plugins/official/snippet-manager/` | 官方插件：代码片段 |
+| `docs/PLUGIN_DEV.md` | 插件开发指南 |
