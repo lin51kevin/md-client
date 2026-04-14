@@ -416,6 +416,7 @@ export const zhCN = {
   'aiCopilot.settings.testing': '测试中...',
   'aiCopilot.settings.connected': '已连接',
   'aiCopilot.settings.failed': '失败',
+  'aiCopilot.settings.testConnectionError': '连接测试失败: {error}',
   'aiCopilot.settings.invalidConfig': '无效的供应商配置',
   'aiCopilot.panel.chat': '对话',
   'aiCopilot.panel.newChat': '新对话',

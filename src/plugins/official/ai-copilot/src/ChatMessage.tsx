@@ -1,5 +1,5 @@
 import { createElement } from 'react';
-import { Check, X, AlertTriangle } from 'lucide-react';
+import { Check, X, AlertTriangle, Bot } from 'lucide-react';
 import type { CopilotMessage } from './providers/types';
 import { useI18n } from '../../../../i18n';
 
@@ -14,31 +14,69 @@ export function ChatMessageView({ message, onApply, onDiscard }: ChatMessageProp
   const isUser = message.role === 'user';
   const displayContent = message.content || (message.error ? t('aiCopilot.panel.errorOccurred') : '');
 
+  if (isUser) {
+    // ── User message: right-aligned bubble ──
+    return createElement(
+      'div',
+      {
+        style: {
+          display: 'flex',
+          justifyContent: 'flex-end',
+          padding: '4px 12px',
+          marginTop: '4px',
+        },
+      },
+      createElement(
+        'div',
+        {
+          style: {
+            maxWidth: '82%',
+            padding: '8px 12px',
+            borderRadius: '8px',
+            background: 'rgba(255,255,255,0.08)',
+            color: 'var(--text-primary, #e0e0e0)',
+            fontSize: '13px',
+            lineHeight: '1.6',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+          },
+        },
+        displayContent,
+      ),
+    );
+  }
+
+  // ── AI message: left-aligned with icon label ──
   return createElement(
     'div',
     {
       style: {
-        padding: '10px 14px',
-        borderBottom: '1px solid var(--border-color, #2a2a2a)',
+        padding: '6px 12px 4px',
+        marginTop: '4px',
       },
     },
-    // Role label
+    // Icon + label row
     createElement(
       'div',
       {
         style: {
-          fontSize: '12px',
-          fontWeight: 600,
-          color: 'var(--text-secondary, #ccc)',
-          marginBottom: '6px',
           display: 'flex',
           alignItems: 'center',
-          gap: '6px',
+          gap: '5px',
+          marginBottom: '5px',
+          color: 'var(--text-muted, #888)',
         },
       },
-      isUser ? t('aiCopilot.panel.you') : t('aiCopilot.panel.assistant'),
+      createElement(Bot, { size: 13 }),
+      createElement(
+        'span',
+        {
+          style: { fontSize: '11px', fontWeight: 600, letterSpacing: '0.3px' },
+        },
+        t('aiCopilot.panel.assistant'),
+      ),
     ),
-    // Message content
+    // Content
     createElement(
       'div',
       {
@@ -48,6 +86,7 @@ export function ChatMessageView({ message, onApply, onDiscard }: ChatMessageProp
           color: 'var(--text-primary, #e0e0e0)',
           whiteSpace: 'pre-wrap',
           wordBreak: 'break-word',
+          paddingLeft: '2px',
         },
       },
       displayContent,
@@ -56,9 +95,9 @@ export function ChatMessageView({ message, onApply, onDiscard }: ChatMessageProp
             style: {
               display: 'inline-block',
               width: '2px',
-              height: '14px',
+              height: '13px',
               background: 'var(--text-primary, #e0e0e0)',
-              marginLeft: '1px',
+              marginLeft: '2px',
               animation: 'blink 1s step-end infinite',
               verticalAlign: 'text-bottom',
             },

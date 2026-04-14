@@ -476,7 +476,7 @@ export default function App() {
             content.onClose = () => setShowAIPanel(false);
           }
           return (
-            <FloatingPanel visible={showAIPanel}>
+            <FloatingPanel visible={showAIPanel && !showSettings && viewMode !== 'slide' && viewMode !== 'mindmap'}>
               {(dragHandle) => {
                 if (content && typeof content === 'object') {
                   content.onDragStart = dragHandle;

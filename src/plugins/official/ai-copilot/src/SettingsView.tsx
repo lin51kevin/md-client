@@ -52,7 +52,7 @@ export function SettingsViewComponent({ config, onSave, onTestConnection, onClos
     } catch (error) {
       setTestResult(false);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      setTestError(`Test connection error: ${errorMessage}`);
+      setTestError(t('aiCopilot.settings.testConnectionError', { error: errorMessage }));
     } finally {
       setTesting(false);
     }

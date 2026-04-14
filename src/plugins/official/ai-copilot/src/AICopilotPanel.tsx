@@ -19,7 +19,7 @@ import { ChatMessageView } from './ChatMessage';
 import { SlashCommandPopup } from './QuickCommands';
 import { ModelSelectorView } from './ModelSelector';
 import { SettingsViewComponent } from './SettingsView';
-import { useI18n } from '../../../i18n';
+import { useI18n } from '../../../../i18n';
 
 /**
  * Core panel content class following the backlinks pattern:
@@ -299,6 +299,7 @@ export class AICopilotPanelContent {
     const self = this;
 
     function AICopilotPanel() {
+      const { t } = useI18n();
       const [, forceUpdate] = useState(0);
       const [showSettings, setShowSettings] = useState(false);
       const [input, setInput] = useState('');
@@ -414,7 +415,7 @@ export class AICopilotPanelContent {
                 color: 'var(--text-secondary, #ccc)',
               },
             },
-            'Chat',
+            t('aiCopilot.panel.chat'),
           ),
           createElement(
             'div',
@@ -424,7 +425,7 @@ export class AICopilotPanelContent {
               'button',
               {
                 onClick: () => self.clearHistory(),
-                title: 'New Chat',
+                title: t('aiCopilot.panel.newChat'),
                 style: iconBtn,
                 onMouseDown: (e: React.MouseEvent) => e.stopPropagation(),
                 onMouseEnter: (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -441,7 +442,7 @@ export class AICopilotPanelContent {
               'button',
               {
                 onClick: () => setShowSettings(true),
-                title: 'Settings',
+                title: t('aiCopilot.panel.settings'),
                 style: iconBtn,
                 onMouseDown: (e: React.MouseEvent) => e.stopPropagation(),
                 onMouseEnter: (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -459,7 +460,7 @@ export class AICopilotPanelContent {
                   'button',
                   {
                     onClick: () => self.onClose?.(),
-                    title: 'Close (Ctrl+Alt+I)',
+                    title: t('aiCopilot.panel.close'),
                     style: iconBtn,
                     onMouseDown: (e: React.MouseEvent) => e.stopPropagation(),
                     onMouseEnter: (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -483,6 +484,7 @@ export class AICopilotPanelContent {
               flex: 1,
               overflow: 'auto',
               minHeight: 0,
+              padding: '4px 0 8px',
             },
           },
           // Empty state
@@ -503,9 +505,7 @@ export class AICopilotPanelContent {
                 createElement(
                   'div',
                   { style: { fontSize: '13px', textAlign: 'center', lineHeight: '1.6' } },
-                  'Ask a question or use ',
-                  createElement('code', { style: { fontSize: '12px', color: 'var(--accent-color, #4a9eff)' } }, '/'),
-                  ' commands to get started.',
+                  t('aiCopilot.panel.emptyHint'),
                 ),
               )
             : null,
@@ -514,7 +514,7 @@ export class AICopilotPanelContent {
             createElement(ChatMessageView, {
               key: msg.id,
               message: msg,
-              onApply: (action: EditAction) => self.applyAction(action),
+              onApply: (action: EditAction) => self.applyAction(action, t('aiCopilot.panel.applied')),
               onDiscard: (id: string) => self.discardAction(id),
             }),
           ),
@@ -554,13 +554,7 @@ export class AICopilotPanelContent {
                       color: 'var(--text-muted, #666)',
                     },
                   },
-                  'Tip: Use ',
-                  createElement(
-                    'code',
-                    { style: { color: 'var(--accent-color, #4a9eff)', fontSize: '11px' } },
-                    '/explain',
-                  ),
-                  ' to explain selected text.',
+                  t('aiCopilot.panel.tipHint'),
                 )
               : null,
             // Slash command popup
@@ -585,7 +579,7 @@ export class AICopilotPanelContent {
                   setShowSlashPopup(false);
                 }
               },
-              placeholder: 'Describe what to build...',
+              placeholder: t('aiCopilot.panel.placeholder'),
               rows: 2,
               disabled: isLoading,
               style: {
@@ -630,7 +624,7 @@ export class AICopilotPanelContent {
                 {
                   onClick: handleSend,
                   disabled: !input.trim() || isLoading,
-                  title: 'Send (Enter)',
+                  title: t('aiCopilot.panel.send'),
                   style: {
                     display: 'flex',
                     alignItems: 'center',

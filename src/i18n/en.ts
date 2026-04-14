@@ -419,6 +419,7 @@ export const en: Record<TranslationKey, string> = {
   'aiCopilot.settings.testing': 'Testing...',
   'aiCopilot.settings.connected': 'Connected',
   'aiCopilot.settings.failed': 'Failed',
+  'aiCopilot.settings.testConnectionError': 'Connection test failed: {error}',
   'aiCopilot.settings.invalidConfig': 'Invalid provider configuration',
   'aiCopilot.panel.chat': 'Chat',
   'aiCopilot.panel.newChat': 'New Chat',
