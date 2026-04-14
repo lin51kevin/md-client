@@ -1,4 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { renderHook, act } from '@testing-library/react';
+import { usePlugins } from '../../hooks/usePlugins';
+import { PluginStorage } from '../../plugins/plugin-storage';
+import { PERMISSION_DESCRIPTIONS } from '../../plugins/permissions';
+
+// Hoist Tauri virtual module mocks so vite doesn't try to resolve them
+vi.mock('@tauri-apps/plugin-dialog', () => ({}));
+vi.mock('@tauri-apps/plugin-fs', () => ({}));
 
 // ── localStorage mock ──────────────────────────────────────────────────────
 
@@ -11,17 +19,12 @@ beforeEach(() => {
     setItem: (key: string, value: string) => { storageMock[key] = value; },
     removeItem: (key: string) => { delete storageMock[key]; },
   });
-  // Mock Tauri dialog so installFromFile falls through to native file input
-  vi.mock('@tauri-apps/api/dialog', () => ({}), { virtual: true });
-  vi.mock('@tauri-apps/api/fs', () => ({}), { virtual: true });
 });
 
 // ── CRITICAL 1: Storage key isolation ────────────────────────────────────
 
 describe('usePlugins - storage key isolation', () => {
-  it('uses a different localStorage key than PluginStorage ("marklite-installed-plugins")', async () => {
-    // Import both keys
-    const { PluginStorage } = await import('../../plugins/plugin-storage');
+  it('uses a different localStorage key than PluginStorage ("marklite-installed-plugins")', () => {
     const pluginStorage = new PluginStorage();
 
     // Write via PluginStorage with full InstalledPluginRecord schema
@@ -59,8 +62,7 @@ describe('usePlugins - storage key isolation', () => {
 // ── CRITICAL 2: Permission validation ────────────────────────────────────
 
 describe('usePlugins - permission validation', () => {
-  it('KNOWN_PERMISSIONS covers all entries in PERMISSION_DESCRIPTIONS', async () => {
-    const { PERMISSION_DESCRIPTIONS } = await import('../../plugins/permissions');
+  it('KNOWN_PERMISSIONS covers all entries in PERMISSION_DESCRIPTIONS', () => {
     const knownKeys = new Set(Object.keys(PERMISSION_DESCRIPTIONS));
     // All PERMISSION_DESCRIPTIONS keys should be valid PluginPermission values
     expect(knownKeys.size).toBeGreaterThan(0);
@@ -69,9 +71,7 @@ describe('usePlugins - permission validation', () => {
     }
   });
 
-  it('unknown permissions are filtered out before the approval modal', async () => {
-    // We test the filtering logic in isolation by importing the PERMISSION_DESCRIPTIONS
-    const { PERMISSION_DESCRIPTIONS } = await import('../../plugins/permissions');
+  it('unknown permissions are filtered out before the approval modal', () => {
     const KNOWN = new Set(Object.keys(PERMISSION_DESCRIPTIONS));
 
     const incoming = ['storage', 'editor.read', 'tauri.raw', 'INVALID_PERM', 'file.write'];
@@ -83,8 +83,7 @@ describe('usePlugins - permission validation', () => {
     expect(valid).not.toContain('INVALID_PERM');
   });
 
-  it('plugin with only invalid permissions shows no approval modal (zero valid perms)', async () => {
-    const { PERMISSION_DESCRIPTIONS } = await import('../../plugins/permissions');
+  it('plugin with only invalid permissions shows no approval modal (zero valid perms)', () => {
     const KNOWN = new Set(Object.keys(PERMISSION_DESCRIPTIONS));
 
     const incoming = ['NOT_A_REAL_PERM', 'ALSO_FAKE'];
@@ -104,5 +103,56 @@ describe('usePlugins - installFromFile pending_approval result', () => {
     expect(resolveFixed('pending_approval')).toBe(true);
     expect(resolveFixed(true)).toBe(true);
     expect(resolveFixed(false)).toBe(false);
+  });
+});
+
+// ── MEDIUM 2: Lifecycle wiring ────────────────────────────────────────────
+
+describe('usePlugins - lifecycle callbacks', () => {
+  it('calls onActivate when enablePlugin is called', () => {
+    const onActivate = vi.fn().mockResolvedValue(undefined);
+    const { result } = renderHook(() => usePlugins({ onActivate }));
+
+    act(() => { result.current.enablePlugin('backlinks-panel'); });
+
+    expect(onActivate).toHaveBeenCalledWith('backlinks-panel');
+  });
+
+  it('calls onDeactivate when disablePlugin is called', () => {
+    const onDeactivate = vi.fn().mockResolvedValue(undefined);
+    const { result } = renderHook(() => usePlugins({ onDeactivate }));
+
+    act(() => { result.current.disablePlugin('backlinks-panel'); });
+
+    expect(onDeactivate).toHaveBeenCalledWith('backlinks-panel');
+  });
+
+  it('calls onActivate when togglePlugin enables a plugin', () => {
+    const onActivate = vi.fn().mockResolvedValue(undefined);
+    // graph-view starts disabled by default
+    const { result } = renderHook(() => usePlugins({ onActivate }));
+
+    act(() => { result.current.togglePlugin('graph-view'); });
+
+    expect(onActivate).toHaveBeenCalledWith('graph-view');
+  });
+
+  it('calls onDeactivate when togglePlugin disables a plugin', () => {
+    const onDeactivate = vi.fn().mockResolvedValue(undefined);
+    // backlinks-panel starts enabled by default
+    const { result } = renderHook(() => usePlugins({ onDeactivate }));
+
+    act(() => { result.current.togglePlugin('backlinks-panel'); });
+
+    expect(onDeactivate).toHaveBeenCalledWith('backlinks-panel');
+  });
+
+  it('works fine without any lifecycle callbacks (no crash)', () => {
+    const { result } = renderHook(() => usePlugins());
+
+    expect(() => {
+      act(() => { result.current.enablePlugin('backlinks-panel'); });
+      act(() => { result.current.disablePlugin('backlinks-panel'); });
+    }).not.toThrow();
   });
 });

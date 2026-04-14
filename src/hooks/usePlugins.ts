@@ -52,10 +52,20 @@ function savePlugins(plugins: PluginUIItem[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(plugins));
 }
 
-export function usePlugins() {
+export function usePlugins(opts?: {
+  onActivate?: (id: string) => Promise<void>;
+  onDeactivate?: (id: string) => Promise<void>;
+}) {
   const [plugins, setPlugins] = useState<PluginUIItem[]>(loadPlugins);
   const [pendingPermission, setPendingPermission] = useState<PendingPermissionRequest | null>(null);
   const pendingRef = useRef<PluginUIItem | null>(null);
+  // Keep lifecycle callback refs stable so callbacks don't invalidate memoized handlers
+  const onActivateRef = useRef(opts?.onActivate);
+  const onDeactivateRef = useRef(opts?.onDeactivate);
+  useEffect(() => {
+    onActivateRef.current = opts?.onActivate;
+    onDeactivateRef.current = opts?.onDeactivate;
+  });
 
   // Sync to localStorage whenever plugins change
   useEffect(() => {
@@ -66,12 +76,14 @@ export function usePlugins() {
     setPlugins((prev) =>
       prev.map((p) => (p.id === id ? { ...p, enabled: true } : p)),
     );
+    void onActivateRef.current?.(id);
   }, []);
 
   const disablePlugin = useCallback((id: string) => {
     setPlugins((prev) =>
       prev.map((p) => (p.id === id ? { ...p, enabled: false } : p)),
     );
+    void onDeactivateRef.current?.(id);
   }, []);
 
   const removePlugin = useCallback((id: string) => {
@@ -79,9 +91,16 @@ export function usePlugins() {
   }, []);
 
   const togglePlugin = useCallback((id: string) => {
-    setPlugins((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, enabled: !p.enabled } : p)),
-    );
+    setPlugins((prev) => {
+      const updated = prev.map((p) => (p.id === id ? { ...p, enabled: !p.enabled } : p));
+      const plugin = updated.find((p) => p.id === id);
+      if (plugin?.enabled) {
+        void onActivateRef.current?.(id);
+      } else {
+        void onDeactivateRef.current?.(id);
+      }
+      return updated;
+    });
   }, []);
 
   const handleApprove = useCallback((granted: PluginPermission[]) => {
@@ -151,15 +170,13 @@ export function usePlugins() {
     };
 
     try {
-      // @ts-expect-error - Tauri API available at runtime
-      const { open } = await import('@tauri-apps/api/dialog');
+      const { open } = await import('@tauri-apps/plugin-dialog');
       const selected = await open({
         multiple: false,
         filters: [{ name: 'Plugin Package', extensions: ['json', 'zip'] }],
       });
       if (!selected || typeof selected === 'object') return false;
-      // @ts-expect-error - Tauri API available at runtime
-      const { readTextFile } = await import('@tauri-apps/api/fs');
+      const { readTextFile } = await import('@tauri-apps/plugin-fs');
       const content = await readTextFile(selected as string);
       const newPlugin = await readManifest(content);
       if (!newPlugin) return false;

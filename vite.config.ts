@@ -13,7 +13,6 @@ export default defineConfig(async () => ({
   build: {
     chunkSizeWarningLimit: 700,
     rollupOptions: {
-      external: ['@tauri-apps/api/dialog', '@tauri-apps/api/fs'],
       output: {
         manualChunks: {
           codemirror: [
