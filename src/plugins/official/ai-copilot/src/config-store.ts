@@ -32,13 +32,14 @@ const DEFAULT_CONFIG: AIConfig = {
 
 /**
  * Build a ProviderConfig for the router by merging a registry preset
- * with the user's overrides.
+ * with the user's overrides. Unknown provider IDs fall back to the
+ * 'custom' (OpenAI-compatible) preset so any endpoint can be used.
  */
 export function buildProviderConfig(
   providerId: string,
   userConfig?: ProviderUserConfig,
 ): ProviderConfig | null {
-  const preset = getPreset(providerId);
+  const preset = getPreset(providerId) ?? getPreset('custom');
   if (!preset) return null;
   return {
     type: preset.type,

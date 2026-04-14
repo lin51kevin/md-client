@@ -21,7 +21,7 @@ export class OpenAICompatibleProvider implements AIProvider {
 
   configure(config: ProviderConfig): void {
     if (config.baseUrl) this.baseUrl = config.baseUrl.replace(/\/+$/, '');
-    if (config.apiKey) this.apiKey = config.apiKey;
+    if (config.apiKey) this.apiKey = config.apiKey.trim();
     if (config.model) this.model = config.model;
     if (config.timeout) this.timeout = config.timeout;
     if (config.customHeaders) this.customHeaders = config.customHeaders;
@@ -53,18 +53,21 @@ export class OpenAICompatibleProvider implements AIProvider {
       if (!response.ok) {
         let detail = await response.text().catch(() => '');
         if (response.status === 401) {
- const hints: string[] = [
-   'API Key 可能无效或已过期',
-   'API Key 可能没有访问该模型的权限',
-   '账户余额可能已用完（检查 OpenRouter Credits）',
-   `当前模型: ${this.model}`,
- ];
- try {
-   const errBody = JSON.parse(detail);
-   if (errBody?.error?.message) hints.unshift(errBody.error.message);
- } catch { /* non-JSON body */ }
- throw new Error(`${this.name} 认证失败 (HTTP 401)\n${hints.map(h => '• ' + h).join('\n')}`);
- }
+          const hints: string[] = [
+            'API Key 可能无效或已过期',
+            'API Key 可能没有访问该模型的权限',
+            '账户余额可能已用完（检查余额/Credits）',
+            `当前模型: ${this.model}`,
+          ];
+          if (this.name === 'openrouter') {
+            hints.push('OpenRouter 免费模型请使用带 :free 后缀的 ID，如 meta-llama/llama-3.3-70b-instruct:free');
+          }
+          try {
+            const errBody = JSON.parse(detail);
+            if (errBody?.error?.message) hints.unshift(errBody.error.message);
+          } catch { /* non-JSON body */ }
+          throw new Error(`${this.name} 认证失败 (HTTP 401)\n${hints.map(h => '• ' + h).join('\n')}`);
+        }
         throw new Error(`${this.name} HTTP ${response.status}: ${detail}`);
       }
 

@@ -11,7 +11,9 @@ export class ProviderRouter {
   addProvider(config: ProviderConfig, provider: AIProvider): void {
     provider.configure(config);
     this.providers.set(config.provider, provider);
-    this.configs = [...this.configs, config].sort((a, b) => a.priority - b.priority);
+    // Replace existing config entry for same provider (prevent duplicates on re-configure)
+    const withoutExisting = this.configs.filter((c) => c.provider !== config.provider);
+    this.configs = [...withoutExisting, config].sort((a, b) => a.priority - b.priority);
   }
 
   removeProvider(name: string): void {

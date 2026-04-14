@@ -90,43 +90,39 @@ export const PROVIDER_PRESETS: readonly ProviderPreset[] = [
     type: 'cloud',
     baseUrl: 'https://openrouter.ai/api/v1',
     models: [
-      // 免费模型（无需信用卡）
-      'openrouter/free',  // 自动路由到最佳免费模型
-      'meta-llama/llama-3.3-70b-instruct',  // Meta Llama 3.3 70B
-      'qwen/qwen3-4b-instruct',  // 轻量级Qwen
-      'google/gemma-3-27b-it',  // Google Gemma 3 27B多模态
-      'nvidia/nemotron-3-nano-30b-instruct',  // NVIDIA长上下文
-      
+      // 免费模型（模型 ID 末尾加 :free，无需余额）
+      'meta-llama/llama-3.3-70b-instruct:free',   // Llama 3.3 70B 免费版
+      'deepseek/deepseek-r1:free',                 // DeepSeek R1 免费版
+      'deepseek/deepseek-chat-v3-0324:free',       // DeepSeek V3 免费版
+      'google/gemma-3-27b-it:free',                // Gemma 3 27B 免费版
+      'qwen/qwen3-8b:free',                        // Qwen3 8B 免费版
+      'mistralai/mistral-7b-instruct:free',        // Mistral 7B 免费版
+
       // 热门付费模型
-      'openai/gpt-4o',  // OpenAI GPT-4o
-      'openai/gpt-4o-mini',  // 经济版GPT-4o
-      'openai/o3-mini',  // OpenAI最新推理模型
-      'anthropic/claude-3.5-sonnet-20240620',  // Claude 3.5 Sonnet
-      'anthropic/claude-3.5-haiku-20241022',  // Claude快速版
-      'google/gemini-2.5-flash',  // Google Gemini 2.5 Flash
-      'google/gemini-2.5-pro',  // Google Gemini 2.5 Pro
-      'deepseek/deepseek-chat',  // DeepSeek Chat
-      'deepseek/deepseek-r1',  // DeepSeek推理版
-      'meta-llama/llama-4-maverick-32b',  // Meta最新模型
-      'mistralai/mistral-large',  // Mistral Large
-      
-      // 编码专用模型
-      'mistralai/devstral-2-123b',  // 编码代理
-      'qwen/qwen3-coder-480b',  // Qwen编码模型
-      
-      // 保持向后兼容
-      'google/gemini-1.5-pro-latest',
-      'anthropic/claude-sonnet-4',
-      'meta-llama/llama-4-maverick',
+      'openai/gpt-4o',
+      'openai/gpt-4o-mini',
+      'openai/o3-mini',
+      'anthropic/claude-3.5-sonnet-20240620',
+      'anthropic/claude-3.5-haiku-20241022',
+      'google/gemini-2.5-flash',
+      'google/gemini-2.5-pro',
+      'deepseek/deepseek-chat',
+      'deepseek/deepseek-r1',
+      'meta-llama/llama-4-maverick-32b',
+      'mistralai/mistral-large',
+
+      // 编码专用（付费）
+      'qwen/qwen3-coder-480b',
+      'mistralai/devstral-2-123b',
     ],
-    defaultModel: 'openrouter/free',  // 默认使用免费自动路由
-    apiKeyPlaceholder: 'sk-or-...',
+    defaultModel: 'meta-llama/llama-3.3-70b-instruct:free',
+    apiKeyPlaceholder: 'sk-or-v1-...',
     apiKeyUrl: 'https://openrouter.ai/settings/keys',
     defaultHeaders: {
       'HTTP-Referer': 'https://marklite.app',
       'X-Title': 'MarkLite',
     },
-    description: 'Access 200+ models (including free models) from one API key',
+    description: '200+ 模型统一入口，免费模型 ID 末尾带 :free（如 meta-llama/llama-3.3-70b-instruct:free）',
   },
   {
     id: 'kimi',

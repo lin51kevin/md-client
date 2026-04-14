@@ -74,9 +74,6 @@ function buildPathCandidates(manifestUrl: string): string[] {
 export async function readRegistryManifest(entry: RegistryPluginEntry): Promise<PartialManifest | null> {
   const possiblePaths = buildPathCandidates(entry.manifestUrl);
 
-  console.log(`[registry] Environment: Tauri=${isTauri()}, DEV=${isDev()}, BASE_URL=${import.meta.env.BASE_URL}`);
-  console.log(`[registry] Trying paths for "${entry.id}":`, possiblePaths);
-
   // Try Tauri FS first (if available)
   if (isTauri()) {
     try {
@@ -84,13 +81,10 @@ export async function readRegistryManifest(entry: RegistryPluginEntry): Promise<
 
       for (const manifestPath of possiblePaths) {
         try {
-          console.log(`[registry] Tauri FS: trying ${manifestPath}`);
           const content = await readTextFile(manifestPath);
-          console.log(`[registry] Tauri FS: found at ${manifestPath}`);
           return JSON.parse(content) as PartialManifest;
-        } catch (err) {
+        } catch {
           // Path not found, try next
-          console.log(`[registry] Tauri FS: not found at ${manifestPath}`);
           continue;
         }
       }
@@ -105,16 +99,15 @@ export async function readRegistryManifest(entry: RegistryPluginEntry): Promise<
   // Fallback: fetch via HTTP (web context or Tauri webview)
   for (const manifestPath of possiblePaths) {
     try {
-      console.log(`[registry] Web fetch: trying ${manifestPath}`);
-      const resp = await fetch(manifestPath);
+      const resp = await fetch(manifestPath, { signal: AbortSignal.timeout(10_000) });
       if (resp.ok) {
         const content = await resp.text();
-        console.log(`[registry] Web fetch: found at ${manifestPath}`);
         return JSON.parse(content) as PartialManifest;
       }
-      console.log(`[registry] Web fetch: ${resp.status} at ${manifestPath}`);
     } catch (err) {
-      console.log(`[registry] Web fetch: error at ${manifestPath}: ${err}`);
+      if (err instanceof DOMException && err.name === 'TimeoutError') {
+        console.warn(`[registry] Web fetch timed out for ${manifestPath}`);
+      }
       continue;
     }
   }

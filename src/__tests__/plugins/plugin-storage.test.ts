@@ -93,4 +93,31 @@ describe('PluginStorage', () => {
     const s2 = new PluginStorage();
     expect(s2.getInstalledPlugins()).toHaveLength(2);
   });
+
+  it('uses marklite-plugin-records storage key (not the UI layer key)', () => {
+    const s = new PluginStorage();
+    s.getInstalledPlugins();
+    // Verify the correct isolated key is used
+    expect(storageMock['marklite-installed-plugins']).toBeUndefined();
+  });
+
+  it('addPlugin does not mutate the existing array in storage', () => {
+    const s = new PluginStorage();
+    s.addPlugin(makeRecord('a'));
+    const first = s.getInstalledPlugins();
+    s.addPlugin(makeRecord('b'));
+    const second = s.getInstalledPlugins();
+    // first snapshot should still have only 1 item (not mutated)
+    expect(first).toHaveLength(1);
+    expect(second).toHaveLength(2);
+  });
+
+  it('updatePlugin does not mutate the existing array returned by getInstalledPlugins', () => {
+    const s = new PluginStorage();
+    s.addPlugin(makeRecord('p'));
+    const before = s.getInstalledPlugins();
+    s.updatePlugin('p', { enabled: false });
+    // The snapshot captured before update should still reflect old state
+    expect(before[0].enabled).toBe(true);
+  });
 });

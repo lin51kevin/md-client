@@ -19,11 +19,7 @@ import { ChatMessageView } from './ChatMessage';
 import { SlashCommandPopup } from './QuickCommands';
 import { ModelSelectorView } from './ModelSelector';
 import { SettingsViewComponent } from './SettingsView';
-
-let idCounter = 0;
-function nextId(): string {
-  return `msg-${Date.now()}-${++idCounter}`;
-}
+import { useI18n } from '../../../i18n';
 
 /**
  * Core panel content class following the backlinks pattern:
@@ -35,6 +31,7 @@ export class AICopilotPanelContent {
   private state: CopilotState;
   private config: AIConfig | null = null;
   private listeners: Set<() => void> = new Set();
+  private idCounter = 0;
   /** Called when the user clicks the close button. Set by the host. */
   public onClose?: () => void;
   /** Called on mousedown to initiate drag. Set by the host (FloatingPanel). */
@@ -44,7 +41,11 @@ export class AICopilotPanelContent {
     this.context = context;
     this.router = new ProviderRouter();
     this.state = { messages: [], isLoading: false, selectedProvider: '' };
-    this.init();
+    this.init().catch((err) => console.error('[AI Copilot] Initialization failed:', err));
+  }
+
+  private nextId(): string {
+    return `msg-${Date.now()}-${++this.idCounter}`;
   }
 
   private notify() {
@@ -91,7 +92,7 @@ export class AICopilotPanelContent {
 
     // Add user message
     const userMsg: CopilotMessage = {
-      id: nextId(),
+      id: this.nextId(),
       role: 'user',
       content: text,
       timestamp: Date.now(),
@@ -99,15 +100,17 @@ export class AICopilotPanelContent {
 
     // Add streaming assistant message placeholder
     const assistantMsg: CopilotMessage = {
-      id: nextId(),
+      id: this.nextId(),
       role: 'assistant',
       content: '',
       timestamp: Date.now(),
       isStreaming: true,
     };
 
+    const maxHistory = this.config?.general?.maxHistoryLength ?? 50;
+    const trimmedHistory = this.state.messages.slice(-(maxHistory - 2));
     this.setState({
-      messages: [...this.state.messages, userMsg, assistantMsg],
+      messages: [...trimmedHistory, userMsg, assistantMsg],
       isLoading: true,
     });
 
@@ -146,9 +149,9 @@ export class AICopilotPanelContent {
       this.setState({ messages: finalMsgs, isLoading: false });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      const finalMsgs = this.state.messages.map((m) =>
+    const finalMsgs = this.state.messages.map((m) =>
         m.id === assistantMsg.id
-          ? { ...m, content: `抱歉，发生了错误`, isStreaming: false, error: errorMessage }
+          ? { ...m, content: '', isStreaming: false, error: errorMessage }
           : m,
       );
       this.setState({ messages: finalMsgs, isLoading: false });
@@ -162,7 +165,7 @@ export class AICopilotPanelContent {
     if (editorCtx.selection) {
       return [
         {
-          id: nextId(),
+          id: this.nextId(),
           type: 'replace',
           description: '替换选中文本',
           from: editorCtx.selection.from,
@@ -173,22 +176,24 @@ export class AICopilotPanelContent {
       ];
     }
 
+    // No selection: insert at cursor rather than replacing the whole document
+    const offset = editorCtx.cursor.offset;
     return [
       {
-        id: nextId(),
-        type: 'replace',
-        description: '替换文档内容',
-        from: 0,
-        to: editorCtx.content.length,
-        originalText: editorCtx.content,
+        id: this.nextId(),
+        type: 'insert',
+        description: '在光标处插入 AI 生成内容（无选区时请先选中要替换的文本）',
+        from: offset,
+        to: offset,
+        originalText: '',
         newText: modified,
       },
     ];
   }
 
-  applyAction(action: EditAction) {
+  applyAction(action: EditAction, successMessage = '已应用修改') {
     this.context.editor.replaceRange(action.from, action.to, action.newText);
-    this.context.ui.showMessage('已应用修改', 'info');
+    this.context.ui.showMessage(successMessage, 'info');
 
     // Remove the action from messages
     const msgs = this.state.messages.map((m) => ({

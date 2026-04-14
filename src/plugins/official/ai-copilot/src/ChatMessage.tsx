@@ -1,6 +1,7 @@
 import { createElement } from 'react';
 import { Check, X, AlertTriangle } from 'lucide-react';
 import type { CopilotMessage } from './providers/types';
+import { useI18n } from '../../../../i18n';
 
 interface ChatMessageProps {
   message: CopilotMessage;
@@ -9,7 +10,9 @@ interface ChatMessageProps {
 }
 
 export function ChatMessageView({ message, onApply, onDiscard }: ChatMessageProps) {
+  const { t } = useI18n();
   const isUser = message.role === 'user';
+  const displayContent = message.content || (message.error ? t('aiCopilot.panel.errorOccurred') : '');
 
   return createElement(
     'div',
@@ -33,7 +36,7 @@ export function ChatMessageView({ message, onApply, onDiscard }: ChatMessageProp
           gap: '6px',
         },
       },
-      isUser ? 'You' : 'AI Copilot',
+      isUser ? t('aiCopilot.panel.you') : t('aiCopilot.panel.assistant'),
     ),
     // Message content
     createElement(
@@ -47,7 +50,7 @@ export function ChatMessageView({ message, onApply, onDiscard }: ChatMessageProp
           wordBreak: 'break-word',
         },
       },
-      message.content,
+      displayContent,
       message.isStreaming
         ? createElement('span', {
             style: {
@@ -107,7 +110,7 @@ export function ChatMessageView({ message, onApply, onDiscard }: ChatMessageProp
                   },
                 },
                 createElement(Check, { size: 12 }),
-                'Apply',
+                t('aiCopilot.panel.apply'),
               ),
               createElement(
                 'button',
@@ -127,7 +130,7 @@ export function ChatMessageView({ message, onApply, onDiscard }: ChatMessageProp
                   },
                 },
                 createElement(X, { size: 12 }),
-                'Discard',
+                t('aiCopilot.panel.discard'),
               ),
             ),
           ),

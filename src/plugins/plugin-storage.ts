@@ -3,7 +3,9 @@ import type { PluginContext } from './plugin-sandbox';
 
 // ── Phase 1: PluginStorage class (for lifecycle management) ────────────────
 
-const STORAGE_KEY = 'marklite-installed-plugins';
+// Distinct from usePlugins' UI key ('marklite-installed-plugins').
+// Stores InstalledPluginRecord[] (lifecycle layer); the UI layer stores PluginUIItem[].
+const STORAGE_KEY = 'marklite-plugin-records';
 
 /**
  * Manages persistence of installed plugin records in localStorage.
@@ -44,12 +46,11 @@ export class PluginStorage {
   addPlugin(record: InstalledPluginRecord): void {
     const plugins = this.getInstalledPlugins();
     const idx = plugins.findIndex((p) => p.id === record.id);
-    if (idx >= 0) {
-      plugins[idx] = record;
-    } else {
-      plugins.push(record);
-    }
-    this.saveInstalledPlugins(plugins);
+    const updated =
+      idx >= 0
+        ? [...plugins.slice(0, idx), record, ...plugins.slice(idx + 1)]
+        : [...plugins, record];
+    this.saveInstalledPlugins(updated);
   }
 
   /**
@@ -71,10 +72,13 @@ export class PluginStorage {
   updatePlugin(id: string, updates: Partial<InstalledPluginRecord>): void {
     const plugins = this.getInstalledPlugins();
     const idx = plugins.findIndex((p) => p.id === id);
-    if (idx >= 0) {
-      plugins[idx] = { ...plugins[idx], ...updates };
-      this.saveInstalledPlugins(plugins);
-    }
+    if (idx < 0) return;
+    const updated = [
+      ...plugins.slice(0, idx),
+      { ...plugins[idx], ...updates },
+      ...plugins.slice(idx + 1),
+    ];
+    this.saveInstalledPlugins(updated);
   }
 }
 

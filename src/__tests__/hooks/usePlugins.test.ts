@@ -24,10 +24,10 @@ beforeEach(() => {
 // ── CRITICAL 1: Storage key isolation ────────────────────────────────────
 
 describe('usePlugins - storage key isolation', () => {
-  it('uses a different localStorage key than PluginStorage ("marklite-installed-plugins")', () => {
+  it('PluginStorage writes to marklite-plugin-records, not marklite-installed-plugins', () => {
     const pluginStorage = new PluginStorage();
 
-    // Write via PluginStorage with full InstalledPluginRecord schema
+    // Write via PluginStorage (lifecycle layer)
     pluginStorage.addPlugin({
       id: 'lifecycle-plugin',
       manifest: {
@@ -45,17 +45,19 @@ describe('usePlugins - storage key isolation', () => {
       installedAt: Date.now(),
     });
 
-    // The PluginStorage key should be 'marklite-installed-plugins'
-    expect(storageMock['marklite-installed-plugins']).toBeDefined();
+    // PluginStorage now uses 'marklite-plugin-records' (NOT 'marklite-installed-plugins')
+    expect(storageMock['marklite-plugin-records']).toBeDefined();
+    expect(storageMock['marklite-installed-plugins']).toBeUndefined();
 
-    // The usePlugins UI key should be something different
-    const UI_KEY = 'marklite-ui-plugins';
-    // If usePlugins has not run yet, its key should be absent (or different from lifecycle key)
-    expect(UI_KEY).not.toBe('marklite-installed-plugins');
-
-    // Verify PluginStorage data is still intact (not overwritten)
-    const stored = JSON.parse(storageMock['marklite-installed-plugins']) as { id: string }[];
+    // Verify PluginStorage data is intact
+    const stored = JSON.parse(storageMock['marklite-plugin-records']) as { id: string }[];
     expect(stored[0].id).toBe('lifecycle-plugin');
+  });
+
+  it('the two storage keys are distinct (no collision)', () => {
+    const LIFECYCLE_KEY = 'marklite-plugin-records';
+    const UI_KEY = 'marklite-installed-plugins';
+    expect(LIFECYCLE_KEY).not.toBe(UI_KEY);
   });
 });
 
@@ -209,5 +211,84 @@ describe('usePlugins - removePlugin deactivation', () => {
 
     const after = result.current.plugins.map((p) => p.id);
     expect(after).not.toContain('marklite-backlinks');
+  });
+});
+
+// ── Lifecycle error handling ──────────────────────────────────────────────
+
+describe('usePlugins - lifecycle error handling', () => {
+  it('does not throw when onActivate rejects', async () => {
+    const onActivate = vi.fn().mockRejectedValue(new Error('activate boom'));
+    const { result } = renderHook(() => usePlugins({ onActivate }));
+    expect(() =>
+      act(() => { result.current.enablePlugin('marklite-backlinks'); })
+    ).not.toThrow();
+  });
+
+  it('does not throw when onDeactivate rejects', async () => {
+    const onDeactivate = vi.fn().mockRejectedValue(new Error('deactivate boom'));
+    const { result } = renderHook(() => usePlugins({ onDeactivate }));
+    expect(() =>
+      act(() => { result.current.disablePlugin('marklite-backlinks'); })
+    ).not.toThrow();
+  });
+
+  it('does not throw when onDeactivate rejects during removePlugin', async () => {
+    const onDeactivate = vi.fn().mockRejectedValue(new Error('remove boom'));
+    const { result } = renderHook(() => usePlugins({ onDeactivate }));
+    expect(() =>
+      act(() => { result.current.removePlugin('marklite-backlinks'); })
+    ).not.toThrow();
+  });
+});
+
+// ── addPluginFromManifest - ID validation ─────────────────────────────────
+
+describe('usePlugins - addPluginFromManifest ID validation', () => {
+  it('rejects a manifest with path traversal in ID', () => {
+    const { result } = renderHook(() => usePlugins());
+    const added = result.current.addPluginFromManifest({
+      id: '../../evil',
+      name: 'Evil',
+      version: '1.0.0',
+      permissions: [],
+    });
+    expect(added).toBe(false);
+  });
+
+  it('rejects a manifest with forward slash in ID', () => {
+    const { result } = renderHook(() => usePlugins());
+    const added = result.current.addPluginFromManifest({
+      id: 'some/other',
+      name: 'Other',
+      version: '1.0.0',
+      permissions: [],
+    });
+    expect(added).toBe(false);
+  });
+
+  it('rejects a manifest with URL-encoded traversal in ID', () => {
+    const { result } = renderHook(() => usePlugins());
+    const added = result.current.addPluginFromManifest({
+      id: '%2e%2e/evil',
+      name: 'Evil',
+      version: '1.0.0',
+      permissions: [],
+    });
+    expect(added).toBe(false);
+  });
+
+  it('accepts a valid plugin ID', () => {
+    const { result } = renderHook(() => usePlugins());
+    let added: boolean | 'pending_approval' = false;
+    act(() => {
+      added = result.current.addPluginFromManifest({
+        id: 'my-safe-plugin',
+        name: 'Safe Plugin',
+        version: '1.0.0',
+        permissions: [],
+      });
+    });
+    expect(added).not.toBe(false);
   });
 });

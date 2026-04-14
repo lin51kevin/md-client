@@ -1,4 +1,5 @@
 import type { PluginManifest } from './types';
+import { verifyPluginSignature, SignatureStatus } from './signature-verify';
 
 import pkg from '../../package.json';
 
@@ -91,7 +92,7 @@ export async function loadPluginFromDirectory(
  * Validate that a plugin id contains no path traversal sequences.
  * id must not contain /, \, .., or URL-encoded equivalents.
  */
-function validatePluginId(id: string): void {
+export function validatePluginId(id: string): void {
   const decoded = id.replace(/%2e/gi, '.').replace(/%2f/gi, '/').replace(/%5c/gi, '\\');
   if (/[/\\]/.test(decoded) || decoded.includes('..')) {
     throw new Error(
@@ -119,6 +120,17 @@ export async function loadPluginModule(
   // Security: validate id and main before constructing the module URL
   validatePluginId(manifest.id);
   validatePluginMain(manifest.main);
+
+  // Security: run signature verification (logs status; blocks only on Failed)
+  const sigResult = verifyPluginSignature(manifest, { publicKeys: [] });
+  if (sigResult.status === SignatureStatus.Failed) {
+    throw new Error(
+      `[PluginHost] Signature verification failed for plugin "${manifest.id}": ${sigResult.message}`,
+    );
+  }
+  if (sigResult.status === SignatureStatus.Missing || sigResult.status === SignatureStatus.Skipped) {
+    console.warn(`[PluginHost] Plugin "${manifest.id}" loaded without signature verification: ${sigResult.message}`);
+  }
 
   try {
     // 预期插件被打包到 /plugins/{id}/dist/index.js

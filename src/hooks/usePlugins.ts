@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { PluginPermission } from '../plugins/types';
 import { PERMISSION_DESCRIPTIONS } from '../plugins/permissions';
+import { validatePluginId } from '../plugins/plugin-loader';
 
 export interface PluginUIItem {
   id: string;
@@ -132,19 +133,25 @@ export function usePlugins(opts?: {
     setPlugins((prev) =>
       prev.map((p) => (p.id === id ? { ...p, enabled: true } : p)),
     );
-    void onActivateRef.current?.(id);
+    onActivateRef.current?.(id).catch((e) =>
+      console.error(`[Plugin] activate failed for "${id}":`, e),
+    );
   }, []);
 
   const disablePlugin = useCallback((id: string) => {
     setPlugins((prev) =>
       prev.map((p) => (p.id === id ? { ...p, enabled: false } : p)),
     );
-    void onDeactivateRef.current?.(id);
+    onDeactivateRef.current?.(id).catch((e) =>
+      console.error(`[Plugin] deactivate failed for "${id}":`, e),
+    );
   }, []);
 
   const removePlugin = useCallback((id: string) => {
     // Deactivate before removing so sidebar panels are cleaned up
-    void onDeactivateRef.current?.(id);
+    onDeactivateRef.current?.(id).catch((e) =>
+      console.error(`[Plugin] deactivate on remove failed for "${id}":`, e),
+    );
     setPlugins((prev) => prev.filter((p) => p.id !== id));
   }, []);
 
@@ -153,9 +160,13 @@ export function usePlugins(opts?: {
       const updated = prev.map((p) => (p.id === id ? { ...p, enabled: !p.enabled } : p));
       const plugin = updated.find((p) => p.id === id);
       if (plugin?.enabled) {
-        void onActivateRef.current?.(id);
+        onActivateRef.current?.(id).catch((e) =>
+          console.error(`[Plugin] activate failed for "${id}":`, e),
+        );
       } else {
-        void onDeactivateRef.current?.(id);
+        onDeactivateRef.current?.(id).catch((e) =>
+          console.error(`[Plugin] deactivate failed for "${id}":`, e),
+        );
       }
       return updated;
     });
@@ -187,6 +198,8 @@ export function usePlugins(opts?: {
   const addPluginFromManifest = useCallback((manifest: Partial<PluginUIItem>): boolean | 'pending_approval' => {
     const KNOWN_PERMISSIONS = new Set(Object.keys(PERMISSION_DESCRIPTIONS));
     if (!manifest.id || !manifest.name || !manifest.version) return false;
+    // Security: reject IDs containing path traversal sequences
+    try { validatePluginId(manifest.id); } catch { return false; }
     const newPlugin: PluginUIItem = {
       id: manifest.id,
       name: manifest.name,
@@ -243,6 +256,7 @@ export function usePlugins(opts?: {
       const content = await readTextFile(selected as string);
       const newPlugin = await readManifest(content);
       if (!newPlugin) return false;
+      try { validatePluginId(newPlugin.id ?? ''); } catch { return false; }
       return addPluginFromManifest(newPlugin) === true;
     } catch {
       // Fallback: native file input
@@ -256,6 +270,7 @@ export function usePlugins(opts?: {
           const text = await file.text();
           const newPlugin = await readManifest(text);
           if (!newPlugin) { resolve(false); return; }
+          try { validatePluginId(newPlugin.id ?? ''); } catch { resolve(false); return; }
           const result = addPluginFromManifest(newPlugin);
           resolve(result !== false);
         };

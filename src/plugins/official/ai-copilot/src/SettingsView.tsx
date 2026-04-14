@@ -4,6 +4,7 @@ import type { ProviderConfig } from './providers/types';
 import type { AIConfig, ProviderUserConfig } from './config-store';
 import { buildProviderConfig } from './config-store';
 import { PROVIDER_PRESETS, getPreset } from './providers/provider-registry';
+import { useI18n } from '../../../../i18n';
 
 interface SettingsViewProps {
   config: AIConfig;
@@ -13,6 +14,7 @@ interface SettingsViewProps {
 }
 
 export function SettingsViewComponent({ config, onSave, onTestConnection, onClose }: SettingsViewProps) {
+  const { t } = useI18n();
   const [selectedId, setSelectedId] = useState(config.activeProvider);
   const [draft, setDraft] = useState<Record<string, ProviderUserConfig>>(
     JSON.parse(JSON.stringify(config.providerConfigs)),
@@ -21,7 +23,8 @@ export function SettingsViewComponent({ config, onSave, onTestConnection, onClos
   const [testResult, setTestResult] = useState<boolean | null>(null);
   const [testError, setTestError] = useState<string | null>(null);
 
-  const preset = getPreset(selectedId);
+  // Use the matched preset if known; fall back to 'custom' so the form always renders
+  const preset = getPreset(selectedId) ?? getPreset('custom')!;
 
   const getUserConfig = (id: string): ProviderUserConfig => draft[id] ?? {};
 
@@ -40,7 +43,7 @@ export function SettingsViewComponent({ config, onSave, onTestConnection, onClos
       const pc = buildProviderConfig(selectedId, uc);
       if (!pc) {
         setTestResult(false);
-        setTestError('Invalid provider configuration');
+        setTestError(t('aiCopilot.settings.invalidConfig'));
         return;
       }
       const result = await onTestConnection(pc);
@@ -90,13 +93,6 @@ export function SettingsViewComponent({ config, onSave, onTestConnection, onClos
     outline: 'none',
   };
 
-  const selectStyle: React.CSSProperties = {
-    ...inputStyle,
-    cursor: 'pointer',
-    marginBottom: '14px',
-    padding: '5px 8px',
-  };
-
   const btnBase: React.CSSProperties = {
     display: 'flex',
     alignItems: 'center',
@@ -116,6 +112,8 @@ export function SettingsViewComponent({ config, onSave, onTestConnection, onClos
   };
 
   const currentUserConfig = getUserConfig(selectedId);
+  // Find the matching known preset (if any) for label / apiKeyUrl display
+  const knownPreset = getPreset(selectedId);
 
   return createElement(
     'div',
@@ -140,7 +138,7 @@ export function SettingsViewComponent({ config, onSave, onTestConnection, onClos
           marginBottom: '16px',
         },
       },
-      createElement('span', { style: { fontWeight: 600, fontSize: '13px' } }, 'AI Settings'),
+      createElement('span', { style: { fontWeight: 600, fontSize: '13px' } }, t('aiCopilot.settings.title')),
       createElement(
         'button',
         {
@@ -151,199 +149,202 @@ export function SettingsViewComponent({ config, onSave, onTestConnection, onClos
       ),
     ),
 
-    // ── Provider selector ──────────────────────────────────
-    createElement('span', { style: labelStyle }, 'Provider'),
+    // ── Provider input (replaces dropdown) ────────────────
+    createElement('span', { style: labelStyle }, t('aiCopilot.settings.provider')),
     createElement(
-      'select',
-      {
+      'div',
+      { style: { position: 'relative', marginBottom: '6px' } },
+      createElement('input', {
+        type: 'text',
+        list: 'ai-provider-list',
         value: selectedId,
-        onChange: (e: React.ChangeEvent<HTMLSelectElement>) => handleProviderChange(e.target.value),
-        style: selectStyle,
-      },
-      ...PROVIDER_PRESETS.map((p) =>
-        createElement('option', { key: p.id, value: p.id }, p.label),
+        onChange: (e: React.ChangeEvent<HTMLInputElement>) => handleProviderChange(e.target.value),
+        style: { ...inputStyle, marginBottom: 0 },
+        placeholder: t('aiCopilot.settings.providerHint'),
+      }),
+      createElement(
+        'datalist',
+        { id: 'ai-provider-list' },
+        ...PROVIDER_PRESETS.map((p) =>
+          createElement('option', { key: p.id, value: p.id }, p.label),
+        ),
       ),
     ),
 
-    // ── Provider description ───────────────────────────────
-    preset
-      ? createElement(
-          'div',
-          {
-            style: {
-              fontSize: '11px',
-              color: 'var(--text-muted, #888)',
-              marginBottom: '14px',
-              lineHeight: '1.5',
-            },
-          },
-          preset.description,
-        )
-      : null,
+    // Provider label + description
+    createElement(
+      'div',
+      {
+        style: {
+          fontSize: '11px',
+          color: 'var(--text-muted, #888)',
+          marginBottom: '14px',
+          lineHeight: '1.5',
+        },
+      },
+      knownPreset
+        ? `${knownPreset.label}${knownPreset.description ? ' — ' + knownPreset.description : ''}`
+        : t('aiCopilot.settings.providerHint'),
+    ),
 
     // ── Provider-specific config ───────────────────────────
-    preset
-      ? createElement(
-          'div',
-          { style: sectionStyle },
+    createElement(
+      'div',
+      { style: sectionStyle },
 
-          // API Key (cloud only)
-          preset.type === 'cloud'
-            ? createElement(
-                'div',
-                null,
-                createElement(
-                  'div',
-                  {
-                    style: {
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: '4px',
-                    },
-                  },
-                  createElement('span', { style: labelStyle }, 'API Key'),
-                  preset.apiKeyUrl
-                    ? createElement(
-                        'a',
-                        {
-                          href: preset.apiKeyUrl,
-                          target: '_blank',
-                          rel: 'noopener noreferrer',
-                          style: {
-                            fontSize: '11px',
-                            color: 'var(--accent-color, #4a9eff)',
-                            textDecoration: 'none',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '3px',
-                          },
-                        },
-                        'Get API Key',
-                        createElement(ExternalLink, { size: 10 }),
-                      )
-                    : null,
-                ),
-                createElement('input', {
-                  type: 'password',
-                  value: currentUserConfig.apiKey ?? '',
-                  onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-                    updateField('apiKey', e.target.value),
-                  style: inputStyle,
-                  placeholder: preset.apiKeyPlaceholder ?? 'your-api-key',
-                }),
-              )
-            : null,
-
-          // Base URL
-          createElement('span', { style: labelStyle }, 'Base URL'),
-          createElement('input', {
-            type: 'text',
-            value: currentUserConfig.baseUrl ?? preset.baseUrl,
-            onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-              updateField('baseUrl', e.target.value),
-            style: inputStyle,
-            placeholder: preset.baseUrl || 'https://api.example.com/v1',
-          }),
-
-          // Model
-          createElement('span', { style: labelStyle }, 'Model'),
-          preset.models.length > 0
-            ? createElement(
-                'div',
-                { style: { position: 'relative', marginBottom: '10px' } },
-                createElement(
-                  'select',
-                  {
-                    value: currentUserConfig.model ?? preset.defaultModel,
-                    onChange: (e: React.ChangeEvent<HTMLSelectElement>) =>
-                      updateField('model', e.target.value),
-                    style: { ...inputStyle, marginBottom: 0, cursor: 'pointer' },
-                  },
-                  ...preset.models.map((m) =>
-                    createElement('option', { key: m, value: m }, m),
-                  ),
-                ),
-              )
-            : createElement('input', {
-                type: 'text',
-                value: currentUserConfig.model ?? '',
-                onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-                  updateField('model', e.target.value),
-                style: inputStyle,
-                placeholder: 'model-name',
-              }),
-
-          // Test connection
-          createElement(
+      // API Key (cloud providers)
+      preset.type === 'cloud'
+        ? createElement(
             'div',
-            {
-              style: {
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                marginTop: '4px',
-              },
-            },
+            null,
             createElement(
-              'button',
+              'div',
               {
-                onClick: handleTest,
-                disabled: testing,
                 style: {
-                  ...btnBase,
-                  background: 'var(--bg-tertiary, #333)',
-                  color: 'var(--text-primary, #e0e0e0)',
-                  border: '1px solid var(--border-color, #3c3c3c)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '4px',
                 },
               },
-              createElement(Plug, { size: 12 }),
-              testing ? 'Testing...' : 'Test Connection',
+              createElement('span', { style: labelStyle }, t('aiCopilot.settings.apiKey')),
+              (knownPreset ?? preset).apiKeyUrl
+                ? createElement(
+                    'a',
+                    {
+                      href: (knownPreset ?? preset).apiKeyUrl,
+                      target: '_blank',
+                      rel: 'noopener noreferrer',
+                      style: {
+                        fontSize: '11px',
+                        color: 'var(--accent-color, #4a9eff)',
+                        textDecoration: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '3px',
+                      },
+                    },
+                    t('aiCopilot.settings.getApiKey'),
+                    createElement(ExternalLink, { size: 10 }),
+                  )
+                : null,
             ),
-            testResult !== null
-              ? createElement(
-                  'span',
-                  {
-                    style: {
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '3px',
-                      fontSize: '11px',
-                      color: testResult
-                        ? 'var(--success-color, #4caf50)'
-                        : 'var(--error-color, #f44)',
-                    },
-                  },
-                  testResult
-                    ? createElement(Check, { size: 12 })
-                    : createElement(X, { size: 12 }),
-                  testResult ? 'Connected' : 'Failed',
-                )
-              : null,
-            testError && !testResult
-              ? createElement(
-                  'span',
-                  {
-                    style: {
-                      fontSize: '10px',
-                      color: 'var(--error-color, #f44)',
-                      background: 'var(--bg-secondary, #3c3c3c)',
-                      padding: '2px 6px',
-                      borderRadius: '2px',
-                      border: '1px solid var(--border-color, #555)',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      maxWidth: '200px',
-                    },
-                    title: testError, // 鼠标悬停显示完整错误
-                  },
-                  testError
-                )
-              : null,
-          ),
-        )
-      : null,
+            createElement('input', {
+              type: 'password',
+              value: currentUserConfig.apiKey ?? '',
+              onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+                updateField('apiKey', e.target.value),
+              style: inputStyle,
+              placeholder: (knownPreset ?? preset).apiKeyPlaceholder ?? 'your-api-key',
+            }),
+          )
+        : null,
+
+      // Base URL
+      createElement('span', { style: labelStyle }, t('aiCopilot.settings.baseUrl')),
+      createElement('input', {
+        type: 'text',
+        value: currentUserConfig.baseUrl ?? (knownPreset ?? preset).baseUrl,
+        onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+          updateField('baseUrl', e.target.value),
+        style: inputStyle,
+        placeholder: (knownPreset ?? preset).baseUrl || 'https://api.example.com/v1',
+      }),
+
+      // Model
+      createElement('span', { style: labelStyle }, t('aiCopilot.settings.model')),
+      createElement(
+        'div',
+        { style: { position: 'relative', marginBottom: '10px' } },
+        createElement('input', {
+          type: 'text',
+          list: `model-list-${selectedId}`,
+          value: currentUserConfig.model ?? (knownPreset ?? preset).defaultModel,
+          onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+            updateField('model', e.target.value),
+          style: { ...inputStyle, marginBottom: 0 },
+          placeholder: (knownPreset ?? preset).defaultModel || 'model-name',
+        }),
+        (knownPreset ?? preset).models.length > 0
+          ? createElement(
+              'datalist',
+              { id: `model-list-${selectedId}` },
+              ...(knownPreset ?? preset).models.map((m) =>
+                createElement('option', { key: m, value: m }),
+              ),
+            )
+          : null,
+      ),
+
+      // Test connection
+      createElement(
+        'div',
+        {
+          style: {
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            marginTop: '4px',
+          },
+        },
+        createElement(
+          'button',
+          {
+            onClick: handleTest,
+            disabled: testing,
+            style: {
+              ...btnBase,
+              background: 'var(--bg-tertiary, #333)',
+              color: 'var(--text-primary, #e0e0e0)',
+              border: '1px solid var(--border-color, #3c3c3c)',
+            },
+          },
+          createElement(Plug, { size: 12 }),
+          testing ? t('aiCopilot.settings.testing') : t('aiCopilot.settings.testConnection'),
+        ),
+        testResult !== null
+          ? createElement(
+              'span',
+              {
+                style: {
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '3px',
+                  fontSize: '11px',
+                  color: testResult
+                    ? 'var(--success-color, #4caf50)'
+                    : 'var(--error-color, #f44)',
+                },
+              },
+              testResult
+                ? createElement(Check, { size: 12 })
+                : createElement(X, { size: 12 }),
+              testResult ? t('aiCopilot.settings.connected') : t('aiCopilot.settings.failed'),
+            )
+          : null,
+        testError && !testResult
+          ? createElement(
+              'span',
+              {
+                style: {
+                  fontSize: '10px',
+                  color: 'var(--error-color, #f44)',
+                  background: 'var(--bg-secondary, #3c3c3c)',
+                  padding: '2px 6px',
+                  borderRadius: '2px',
+                  border: '1px solid var(--border-color, #555)',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  maxWidth: '200px',
+                },
+                title: testError,
+              },
+              testError
+            )
+          : null,
+      ),
+    ),
 
     // ── Save / Cancel ──────────────────────────────────────
     createElement(
@@ -367,7 +368,7 @@ export function SettingsViewComponent({ config, onSave, onTestConnection, onClos
             color: 'var(--text-secondary, #ccc)',
           },
         },
-        'Cancel',
+        t('common.cancel'),
       ),
       createElement(
         'button',
@@ -380,7 +381,7 @@ export function SettingsViewComponent({ config, onSave, onTestConnection, onClos
           },
         },
         createElement(Save, { size: 12 }),
-        'Save',
+        t('common.save'),
       ),
     ),
   );
