@@ -1,5 +1,6 @@
 import { test, describe, expect, vi, beforeEach } from 'vitest';
-import { usePlugins } from '../usePlugins';
+import { renderHook } from '@testing-library/react';
+import { usePlugins } from '../../hooks/usePlugins';
 import { PluginStorage } from '../../plugins/plugin-storage';
 
 describe('Plugin Storage Key Consistency', () => {
@@ -28,7 +29,7 @@ describe('Plugin Storage Key Consistency', () => {
 
   test('usePlugins hook uses same storage key as plugin-storage', () => {
     // When usePlugins loads plugins, it should use the same storage key
-    const { plugins } = usePlugins();
+    renderHook(() => usePlugins());
     // usePlugins should call localStorage with 'marklite-installed-plugins'
     // not 'marklite-ui-plugins'
     expect(storage.getItem).toHaveBeenCalledWith('marklite-installed-plugins');
@@ -39,7 +40,7 @@ describe('Plugin Storage Key Consistency', () => {
     const oldData = [{ id: 'test-plugin', enabled: true }];
     storage.getItem.mockReturnValue(JSON.stringify(oldData));
     
-    const { plugins } = usePlugins();
+    renderHook(() => usePlugins());
     // Should have migrated old data
     expect(storage.getItem).toHaveBeenCalledWith('marklite-installed-plugins');
     expect(storage.setItem).toHaveBeenCalledWith('marklite-installed-plugins', JSON.stringify(oldData));

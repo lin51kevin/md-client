@@ -1,5 +1,12 @@
 import type { PluginContext } from './plugin-sandbox';
 
+/**
+ * Create the workspace API for plugin contexts.
+ * Allows plugins to access workspace files and react to file changes.
+ *
+ * @param deps - Workspace integration callbacks from the host app.
+ * @returns The workspace portion of the plugin context.
+ */
 export function createWorkspaceAPI(deps: {
   getActiveTab: () => { path: string | null; content: string } | null;
   openFileInTab: (path: string) => void;
@@ -7,17 +14,35 @@ export function createWorkspaceAPI(deps: {
   getAllWorkspaceFiles?: () => string[];
 }): PluginContext['workspace'] {
   return {
-    getActiveFile() {
+    /**
+   * Get the currently active file info.
+   * @returns Object with `path` and `name`, or both null if no file is active.
+   */
+  getActiveFile() {
       const tab = deps.getActiveTab();
       return tab ? { path: tab.path, name: tab.path ? tab.path.split(/[/\\]/).pop() ?? null : null } : { path: null, name: null };
     },
-    getAllFiles() {
+    /**
+   * Get all available file paths.
+   * Uses getAllWorkspaceFiles if available, otherwise falls back to open tabs.
+   */
+  getAllFiles() {
       return deps.getAllWorkspaceFiles ? deps.getAllWorkspaceFiles() : deps.getOpenFilePaths();
     },
-    openFile(path: string) {
+    /**
+   * Open a file in the editor.
+   * @param path - File path to open.
+   */
+  openFile(path: string) {
       deps.openFileInTab(path);
     },
-    onFileChanged(_callback: (file: { path: string; name: string }) => void) {
+    /**
+   * Subscribe to file change events.
+   * @param _callback - Function called with the changed file info.
+   * @returns A disposable that removes the listener.
+   * @deprecated Not yet implemented — returns a no-op disposable.
+   */
+  onFileChanged(_callback: (file: { path: string; name: string }) => void) {
       return { dispose() {} };
     },
   };

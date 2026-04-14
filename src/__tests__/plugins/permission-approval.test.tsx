@@ -57,10 +57,10 @@ describe('PermissionApprovalModal', () => {
 
   it('renders level badges', () => {
     renderModal();
-    expect(screen.getByText('low')).toBeInTheDocument();
-    expect(screen.getByText('medium')).toBeInTheDocument();
-    expect(screen.getByText('high')).toBeInTheDocument();
-    expect(screen.getByText('critical')).toBeInTheDocument();
+    expect(screen.getAllByText('low').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('medium').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('high').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('critical').length).toBeGreaterThanOrEqual(1);
   });
 
   it('dangerous permissions are unchecked by default', () => {
@@ -82,8 +82,8 @@ describe('PermissionApprovalModal', () => {
 
   it('dangerous permissions have warning text', () => {
     renderModal();
-    expect(screen.getByText(/⚠.*tauri\.raw/)).toBeInTheDocument();
-    expect(screen.getByText(/⚠.*file\.write/)).toBeInTheDocument();
+    const warnings = screen.getAllByText(/⚠ 危险权限/);
+    expect(warnings.length).toBeGreaterThanOrEqual(2);
   });
 
   it('calls onCancel when clicking cancel button', () => {

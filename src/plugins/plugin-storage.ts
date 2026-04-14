@@ -5,7 +5,12 @@ import type { PluginContext } from './plugin-sandbox';
 
 const STORAGE_KEY = 'marklite-installed-plugins';
 
+/**
+ * Manages persistence of installed plugin records in localStorage.
+ * Used by the plugin lifecycle system (install, update, remove).
+ */
 export class PluginStorage {
+  /** Load all installed plugin records from localStorage. */
   getInstalledPlugins(): InstalledPluginRecord[] {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -16,6 +21,7 @@ export class PluginStorage {
     }
   }
 
+  /** Save the full list of installed plugins to localStorage. */
   saveInstalledPlugins(plugins: InstalledPluginRecord[]): void {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(plugins));
@@ -24,6 +30,7 @@ export class PluginStorage {
     }
   }
 
+  /** Add or update a plugin record (upsert by ID). */
   addPlugin(record: InstalledPluginRecord): void {
     const plugins = this.getInstalledPlugins();
     const idx = plugins.findIndex((p) => p.id === record.id);
@@ -35,11 +42,13 @@ export class PluginStorage {
     this.saveInstalledPlugins(plugins);
   }
 
+  /** Remove a plugin record by ID. */
   removePlugin(id: string): void {
     const plugins = this.getInstalledPlugins().filter((p) => p.id !== id);
     this.saveInstalledPlugins(plugins);
   }
 
+  /** Partially update an existing plugin record by ID. */
   updatePlugin(id: string, updates: Partial<InstalledPluginRecord>): void {
     const plugins = this.getInstalledPlugins();
     const idx = plugins.findIndex((p) => p.id === id);
@@ -52,6 +61,13 @@ export class PluginStorage {
 
 // ── Phase 2: createStorageAPI (for plugin runtime API) ─────────────────────
 
+/**
+ * Create a namespaced storage API for a specific plugin.
+ * All keys are prefixed with `plugin.<pluginId>.` to prevent collisions.
+ *
+ * @param pluginId - The plugin ID used as namespace prefix.
+ * @returns The storage portion of the plugin context (get/set/delete).
+ */
 export function createStorageAPI(pluginId?: string): PluginContext['storage'] {
   const prefix = pluginId ? `plugin.${pluginId}.` : 'plugin.';
 

@@ -35,9 +35,9 @@ describe('ActivityBar', () => {
 
   it('应渲染 4 个面板图标按钮 + 1 个底部设置按钮', () => {
     render(<ActivityBar {...defaultProps} />);
-    // 4 panel buttons + 1 settings button = 5 total
+    // 5 panel buttons + 1 settings button = 6 total
     const buttons = screen.getAllByRole('button');
-    expect(buttons.length).toBe(5);
+    expect(buttons.length).toBe(6);
   });
 
   it('应渲染文件树、搜索、大纲、Git 图标', () => {
@@ -175,12 +175,13 @@ describe('ActivityBar', () => {
     });
 
     it('PANEL_ITEMS 导出应包含 4 个面板', () => {
-      expect(PANEL_ITEMS).toHaveLength(4);
+      expect(PANEL_ITEMS).toHaveLength(5);
       const ids = PANEL_ITEMS.map(p => p.id);
       expect(ids).toContain('filetree');
       expect(ids).toContain('search');
       expect(ids).toContain('toc');
       expect(ids).toContain('git');
+      expect(ids).toContain('plugins');
     });
   });
 });

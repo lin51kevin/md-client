@@ -104,8 +104,8 @@ describe('PluginPanel', () => {
     // Graph View starts disabled → enable it (the only disabled button initially)
     const graphBtn = screen.getByText('plugins.disabled');
     fireEvent.click(graphBtn);
-    // Verify localStorage was updated (new key: 'marklite-ui-plugins')
-    const raw = localStorageMock.getItem('marklite-ui-plugins');
+    // Verify localStorage was updated (key: 'marklite-installed-plugins')
+    const raw = localStorageMock.getItem('marklite-installed-plugins');
     expect(raw).toBeTruthy();
     const plugins = JSON.parse(raw!);
     const graphView = plugins.find((p: { id: string }) => p.id === 'graph-view');

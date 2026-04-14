@@ -4,9 +4,10 @@ describe('Plugin ID Validation', () => {
   test('should reject plugin IDs with path traversal characters', () => {
     const validatePluginId = (id: string): { valid: boolean; reason?: string } => {
       if (!id) return { valid: false, reason: 'Plugin ID cannot be empty' };
+      if (id.includes('..')) return { valid: false, reason: 'Plugin ID cannot contain parent directory (..)' };
+      if (id.includes('~')) return { valid: false, reason: 'Plugin ID cannot contain tilde (~)' };
       if (id.includes('/')) return { valid: false, reason: 'Plugin ID cannot contain slashes (/)' };
       if (id.includes('\\')) return { valid: false, reason: 'Plugin ID cannot contain backslashes (\\)' };
-      if (id.includes('..')) return { valid: false, reason: 'Plugin ID cannot contain parent directory (..)' };
       if (id.includes('~')) return { valid: false, reason: 'Plugin ID cannot contain tilde (~)' };
       if (id.startsWith('.')) return { valid: false, reason: 'Plugin ID cannot start with dot (.)' };
       if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id)) {

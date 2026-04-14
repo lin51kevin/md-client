@@ -1,10 +1,24 @@
 import type { EditorView } from '@codemirror/view';
 import type { PluginContext } from './plugin-sandbox';
 
-export function createEditorAPI(deps: {
+/**
+ * Dependencies required by the editor API.
+ */
+export interface EditorAPIDeps {
+  /** React ref holding the current CodeMirror EditorView instance. */
   cmViewRef: React.RefObject<EditorView | null>;
+  /** Optional: returns the currently active tab (path + content). */
   getActiveTab?: () => { path: string | null; content: string } | null;
-}): PluginContext['editor'] {
+}
+
+/**
+ * Create the editor API for plugin contexts.
+ * Provides read/write access to the editor document and cursor.
+ *
+ * @param deps - Editor dependencies (CodeMirror view ref, active tab getter).
+ * @returns The editor portion of the plugin context.
+ */
+export function createEditorAPI(deps: EditorAPIDeps): PluginContext['editor'] {
   return {
     getContent(): string {
       const view = deps.cmViewRef.current;

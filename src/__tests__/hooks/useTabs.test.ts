@@ -260,8 +260,8 @@ describe('useTabs', () => {
       
       expect(success).toBe(true);
       expect(invoke).toHaveBeenCalledWith('rename_file', {
-        old_path: '/path/to/old.md',
-        new_path: '/path/to/new.md'
+        oldPath: '/path/to/old.md',
+        newPath: '/path/to/new.md'
       });
       expect(moveSnapshots).toHaveBeenCalledWith('/path/to/old.md', '/path/to/new.md');
       expect(removeRecentFile).toHaveBeenCalledWith('/path/to/old.md');
