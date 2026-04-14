@@ -29,7 +29,7 @@ dist-ssr
 # Docs
 docs/FEATURE_COMPARISON.md
 docs/ISSUES_TO_FIX.md
-docs/DIAGNOSTIC_REPORT.md
+docs/DIAGNOSTIC*.md
 sample.md
 
  src-tauri/assets/images/*.jpg
