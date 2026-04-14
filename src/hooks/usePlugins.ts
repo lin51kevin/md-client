@@ -17,7 +17,7 @@ export interface PendingPermissionRequest {
   permissions: PluginPermission[];
 }
 
-const STORAGE_KEY = 'marklite-ui-plugins';
+const STORAGE_KEY = 'marklite-installed-plugins';
 
 const DEFAULT_PLUGINS: PluginUIItem[] = [
   {
@@ -42,8 +42,24 @@ const DEFAULT_PLUGINS: PluginUIItem[] = [
 
 function loadPlugins(): PluginUIItem[] {
   try {
+    const OLD_STORAGE_KEY = 'marklite-ui-plugins';
+    
+    // First check new key
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw) as PluginUIItem[];
+    
+    // If new key doesn't exist, check old key for migration
+    const oldRaw = localStorage.getItem(OLD_STORAGE_KEY);
+    if (oldRaw) {
+      try {
+        const oldData = JSON.parse(oldRaw) as PluginUIItem[];
+        // Migrate data to new key
+        localStorage.setItem(STORAGE_KEY, oldRaw);
+        // Optionally remove old key (optional, keep for safety)
+        // localStorage.removeItem(OLD_STORAGE_KEY);
+        return oldData;
+      } catch { /* ignore */ }
+    }
   } catch { /* ignore */ }
   return DEFAULT_PLUGINS;
 }
