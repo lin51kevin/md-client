@@ -39,15 +39,6 @@ const DEFAULT_PLUGINS: PluginUIItem[] = [
     permissions: ['workspace', 'editor.read', 'sidebar.panel', 'storage'],
   },
   {
-    id: 'marklite-snippet-manager',
-    name: 'Snippet Manager',
-    version: '1.0.0',
-    author: 'MarkLite Team',
-    description: '增强型代码片段管理，支持分类和变量占位符',
-    enabled: false,
-    permissions: ['storage', 'editor.write', 'commands', 'ui.message'],
-  },
-  {
     id: 'marklite-preview-edit',
     name: 'Preview Editor',
     version: '1.0.0',
@@ -62,7 +53,6 @@ const DEFAULT_PLUGINS: PluginUIItem[] = [
 const ID_MIGRATION: Record<string, string> = {
   'backlinks-panel': 'marklite-backlinks',
   'graph-view': 'marklite-graph-view',
-  'snippet-manager': 'marklite-snippet-manager',
   'preview-edit': 'marklite-preview-edit',
 };
 

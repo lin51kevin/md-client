@@ -9,9 +9,6 @@ vi.mock('../../plugins/official/backlinks/src/index', () => ({
 vi.mock('../../plugins/official/graph-view/src/index', () => ({
   activate: vi.fn(),
 }));
-vi.mock('../../plugins/official/snippet-manager/src/index', () => ({
-  activate: vi.fn(),
-}));
 vi.mock('../../plugins/official/preview-edit/src/index', () => ({
   activate: vi.fn(),
 }));

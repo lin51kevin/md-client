@@ -7,7 +7,6 @@ import { createPluginContext } from '../plugins/plugin-context-factory';
 const OFFICIAL_PLUGIN_MODULES: Record<string, () => Promise<{ activate?: (ctx: PluginContext) => unknown }>> = {
   'marklite-backlinks': () => import('../plugins/official/backlinks/src/index'),
   'marklite-graph-view': () => import('../plugins/official/graph-view/src/index'),
-  'marklite-snippet-manager': () => import('../plugins/official/snippet-manager/src/index'),
   'marklite-preview-edit': () => import('../plugins/official/preview-edit/src/index'),
 };
 

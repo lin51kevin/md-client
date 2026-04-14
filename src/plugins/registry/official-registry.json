@@ -21,15 +21,6 @@
       "manifestUrl": "official/graph-view/manifest.json"
     },
     {
-      "id": "marklite-snippet-manager",
-      "name": "Snippet Manager",
-      "description": "增强型代码片段管理，支持分类和变量占位符",
-      "author": "MarkLite Team",
-      "version": "1.0.0",
-      "tags": ["snippets", "productivity"],
-      "manifestUrl": "official/snippet-manager/manifest.json"
-    },
-    {
       "id": "marklite-preview-edit",
       "name": "Preview Editor",
       "description": "在预览窗格中直接编辑文本，点击段落和标题即可原地修改",
