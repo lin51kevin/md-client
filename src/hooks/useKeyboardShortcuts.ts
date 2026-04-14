@@ -24,6 +24,8 @@ interface ShortcutsParams {
   toggleFileTree?: () => void;
   /** 切换TOC大纲侧边栏 */
   toggleToc?: () => void;
+  /** 切换AI面板浮窗 */
+  toggleAIPanel?: () => void;
 }
 
 /** 默认快捷键映射：actionId → 解析后的快捷键 */
@@ -43,6 +45,7 @@ const DEFAULT_PARSED = new Map([
   ['insertSnippet', { ctrl: true, shift: true, alt: false, key: 'j' }],
   ['toggleFileTree', { ctrl: false, shift: false, alt: true, key: '1' }],
   ['toggleToc', { ctrl: false, shift: false, alt: true, key: '2' }],
+  ['toggleAIPanel', { ctrl: true, shift: false, alt: true, key: 'i' }],
 ]);
 
 export function useKeyboardShortcuts(params: ShortcutsParams) {
@@ -53,7 +56,7 @@ export function useKeyboardShortcuts(params: ShortcutsParams) {
     const custom = getCustomShortcuts();
 
     const handler = (e: KeyboardEvent) => {
-      const { createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile, closeTab, setViewMode, activeTabIdRef, toggleFindReplace, setFocusMode, focusMode, openSnippetPicker, toggleFileTree, toggleToc } = paramsRef.current;
+      const { createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile, closeTab, setViewMode, activeTabIdRef, toggleFindReplace, setFocusMode, focusMode, openSnippetPicker, toggleFileTree, toggleToc, toggleAIPanel } = paramsRef.current;
       
       // F009 — ESC 退出任何焦点模式（优先处理，无需 Ctrl）
       if (e.key === 'Escape' && focusMode && focusMode !== 'normal') {
@@ -108,6 +111,7 @@ export function useKeyboardShortcuts(params: ShortcutsParams) {
             case 'insertSnippet': openSnippetPicker?.(); break;
             case 'toggleFileTree': toggleFileTree?.(); break;
             case 'toggleToc': toggleToc?.(); break;
+            case 'toggleAIPanel': toggleAIPanel?.(); break;
           }
           return; // 匹配成功，停止继续检查
         }

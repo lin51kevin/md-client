@@ -1,0 +1,19 @@
+{
+  "id": "marklite-ai-copilot",
+  "name": "AI Copilot",
+  "version": "1.0.0",
+  "description": "AI 辅助编辑 — 智能改写、解释、翻译、总结，支持本地模型和云端模型",
+  "author": "MarkLite Team",
+  "main": "src/index.ts",
+  "activationEvents": ["onStartup"],
+  "permissions": [
+    "sidebar.panel",
+    "editor.read",
+    "editor.write",
+    "storage",
+    "commands",
+    "ui.message",
+    "workspace"
+  ],
+  "engines": { "marklite": ">=0.7.2" }
+}

@@ -1,0 +1,99 @@
+import type { StorageAPI } from '../../../plugin-sandbox';
+import type { ProviderConfig } from './providers/types';
+import { getPreset } from './providers/provider-registry';
+
+const CONFIG_KEY = 'ai-config';
+
+/** Per-provider user overrides (API key, model, base URL, etc.). */
+export interface ProviderUserConfig {
+  apiKey?: string;
+  baseUrl?: string;
+  model?: string;
+  customHeaders?: Record<string, string>;
+}
+
+export interface AIConfig {
+  /** Currently selected provider ID from the registry. */
+  activeProvider: string;
+  /** User overrides keyed by provider ID. */
+  providerConfigs: Record<string, ProviderUserConfig>;
+  general: {
+    maxHistoryLength: number;
+  };
+}
+
+const DEFAULT_CONFIG: AIConfig = {
+  activeProvider: 'ollama',
+  providerConfigs: {},
+  general: {
+    maxHistoryLength: 50,
+  },
+};
+
+/**
+ * Build a ProviderConfig for the router by merging a registry preset
+ * with the user's overrides.
+ */
+export function buildProviderConfig(
+  providerId: string,
+  userConfig?: ProviderUserConfig,
+): ProviderConfig | null {
+  const preset = getPreset(providerId);
+  if (!preset) return null;
+  return {
+    type: preset.type,
+    provider: providerId,
+    apiKey: userConfig?.apiKey,
+    baseUrl: userConfig?.baseUrl || preset.baseUrl,
+    model: userConfig?.model || preset.defaultModel,
+    priority: 1,
+    enabled: true,
+    customHeaders: { ...preset.defaultHeaders, ...userConfig?.customHeaders },
+  };
+}
+
+/** Migrate legacy config format (providers array) to the new structure. */
+function migrateConfig(raw: Record<string, unknown>): AIConfig {
+  if (Array.isArray(raw.providers)) {
+    const legacyProviders = raw.providers as Array<Record<string, unknown>>;
+    const providerConfigs: Record<string, ProviderUserConfig> = {};
+    for (const lp of legacyProviders) {
+      const id = lp.provider as string;
+      if (!id) continue;
+      providerConfigs[id] = {
+        apiKey: (lp.apiKey as string) ?? undefined,
+        baseUrl: (lp.baseUrl as string) ?? undefined,
+        model: (lp.model as string) ?? undefined,
+        customHeaders: (lp.customHeaders as Record<string, string>) ?? undefined,
+      };
+    }
+    return {
+      activeProvider: (raw.activeProvider as string) || DEFAULT_CONFIG.activeProvider,
+      providerConfigs,
+      general: (raw.general as AIConfig['general']) || DEFAULT_CONFIG.general,
+    };
+  }
+  return {
+    ...DEFAULT_CONFIG,
+    ...raw,
+    providerConfigs: (raw.providerConfigs as Record<string, ProviderUserConfig>) ?? {},
+  };
+}
+
+export async function loadConfig(storage: StorageAPI): Promise<AIConfig> {
+  try {
+    const raw = await storage.get(CONFIG_KEY);
+    if (!raw) return { ...DEFAULT_CONFIG };
+    return migrateConfig(JSON.parse(raw));
+  } catch {
+    return { ...DEFAULT_CONFIG };
+  }
+}
+
+export async function saveConfig(storage: StorageAPI, config: AIConfig): Promise<void> {
+  await storage.set(CONFIG_KEY, JSON.stringify(config));
+}
+
+export function getDefaultConfig(): AIConfig {
+  return { ...DEFAULT_CONFIG };
+}

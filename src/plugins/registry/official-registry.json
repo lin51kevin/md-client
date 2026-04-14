@@ -28,6 +28,15 @@
       "version": "1.0.0",
       "tags": ["preview", "editing", "wysiwyg"],
       "manifestUrl": "official/preview-edit/manifest.json"
+    },
+    {
+      "id": "marklite-ai-copilot",
+      "name": "AI Copilot",
+      "description": "AI 辅助编辑 — 智能改写、解释、翻译、总结，支持本地模型和云端模型",
+      "author": "MarkLite Team",
+      "version": "1.0.0",
+      "tags": ["ai", "copilot", "editing", "translation"],
+      "manifestUrl": "official/ai-copilot/manifest.json"
     }
   ]
 }

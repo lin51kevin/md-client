@@ -56,12 +56,14 @@ import { GitPanel } from './components/GitPanel';
 import { PluginPanel } from './components/PluginPanel';
 import { ActivityBar } from './components/ActivityBar';
 import { SidebarContainer } from './components/SidebarContainer';
+import { useLocalStorageBool } from './hooks/useLocalStorage';
 import { useGit } from './hooks/useGit';
 const HelpModal = lazy(() => import('./components/HelpModal').then(m => ({ default: m.HelpModal })));
 const SlidePreview = lazy(() => import('./components/SlidePreview').then(m => ({ default: m.SlidePreview })));
 const MindmapView = lazy(() => import('./components/MindmapView').then(m => ({ default: m.MindmapView })));
 import { EditorContentArea } from './components/EditorContentArea';
 import { PluginSidebarRenderer } from './components/PluginSidebarRenderer';
+import { FloatingPanel } from './components/FloatingPanel';
 import { createCommandRegistry } from './lib/command-registry';
 
 
@@ -80,6 +82,8 @@ export default function App() {
 
   // ── Extracted state hooks ────────────────────────────────────────
   const { activePanel, setActivePanel, showFileTree, showToc, showSearchPanel, showGitPanel, showPluginsPanel } = useSidebarPanel();
+  const [showAIPanel, setShowAIPanel] = useLocalStorageBool('marklite-ai-panel', false);
+  const AI_PANEL_ID = 'ai-copilot-official';
   const { spellCheck, setSpellCheck, vimMode, setVimMode, autoSave, setAutoSave, autoSaveDelay, setAutoSaveDelay, gitMdOnly, setGitMdOnly, theme, setThemeState } = usePreferences();
 
   // ── Core hooks ───────────────────────────────────────────────────
@@ -244,6 +248,7 @@ export default function App() {
     openSnippetPicker,
     toggleFileTree: () => setActivePanel(activePanel === 'filetree' ? null : 'filetree'),
     toggleToc: () => setActivePanel(activePanel === 'toc' ? null : 'toc'),
+    toggleAIPanel: () => setShowAIPanel(!showAIPanel),
   });
 
   // ── Command Palette registry ─────────────────────────────────────
@@ -372,6 +377,7 @@ export default function App() {
             onPanelChange={setActivePanel}
             onOpenSettings={() => setShowSettings(true)}
             pluginPanels={pluginPanels}
+            floatingPanelId={AI_PANEL_ID}
           />
         )}
 
@@ -426,9 +432,9 @@ export default function App() {
             />
           )}
 
-          {/* Plugin-registered sidebar panels */}
+          {/* Plugin-registered sidebar panels (left — excludes right panel) */}
           {pluginPanels.map((pp) => (
-            activePanel === pp.id && (
+            pp.id !== AI_PANEL_ID && activePanel === pp.id && (
               <div key={pp.id} className="w-full h-full flex flex-col overflow-hidden text-xs select-none" style={{ backgroundColor: 'var(--bg-secondary)' }}>
                 <div className="flex items-center justify-between px-3 py-2 border-b" style={{ borderColor: 'var(--border-color)' }}>
                   <span className="font-semibold text-xs uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>{pp.title}</span>
@@ -460,6 +466,26 @@ export default function App() {
           onDismiss={handleDismissWelcome} onShowWelcome={handleShowWelcome}
           pluginRenderers={pluginRenderers}
         />
+
+        {/* Floating AI Chat Panel */}
+        {(() => {
+          const aiPanel = pluginPanels.find((pp) => pp.id === AI_PANEL_ID);
+          if (!aiPanel) return null;
+          const content = aiPanel.content as { onClose?: () => void; onDragStart?: (e: React.MouseEvent) => void } | null;
+          if (content && typeof content === 'object') {
+            content.onClose = () => setShowAIPanel(false);
+          }
+          return (
+            <FloatingPanel visible={showAIPanel}>
+              {(dragHandle) => {
+                if (content && typeof content === 'object') {
+                  content.onDragStart = dragHandle;
+                }
+                return <PluginSidebarRenderer content={aiPanel.content} />;
+              }}
+            </FloatingPanel>
+          );
+        })()}
       </div>
 
       {!hideStatusBar && (

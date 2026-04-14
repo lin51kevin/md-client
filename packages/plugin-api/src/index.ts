@@ -64,7 +64,10 @@ export interface CommandsAPI {
 
 export interface EditorAPI {
   getContent(): string;
+  getSelection(): { from: number; to: number; text: string } | null;
+  getCursorPosition(): { line: number; column: number; offset: number };
   insertText(text: string, from?: number, to?: number): void;
+  replaceRange(from: number, to: number, text: string): void;
   getActiveFilePath(): string | null;
 }
 

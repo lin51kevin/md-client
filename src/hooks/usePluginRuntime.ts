@@ -8,6 +8,7 @@ const OFFICIAL_PLUGIN_MODULES: Record<string, () => Promise<{ activate?: (ctx: P
   'marklite-backlinks': () => import('../plugins/official/backlinks/src/index'),
   'marklite-graph-view': () => import('../plugins/official/graph-view/src/index'),
   'marklite-preview-edit': () => import('../plugins/official/preview-edit/src/index'),
+  'marklite-ai-copilot': () => import('../plugins/official/ai-copilot/src/index'),
 };
 
 interface ActivePluginEntry {

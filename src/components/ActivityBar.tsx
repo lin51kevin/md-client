@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FolderTree, Search, List, GitBranch, Settings, Package, Link, Share2, Braces, type LucideIcon } from 'lucide-react';
+import { FolderTree, Search, List, GitBranch, Settings, Package, Link, Share2, Braces, Sparkles, Bot, MessageSquare, type LucideIcon } from 'lucide-react';
 
 /** Map of icon name strings to Lucide icon components for plugin panels */
 const LUCIDE_ICON_MAP: Record<string, LucideIcon> = {
@@ -12,6 +12,9 @@ const LUCIDE_ICON_MAP: Record<string, LucideIcon> = {
   'folder-tree': FolderTree,
   'git-branch': GitBranch,
   settings: Settings,
+  sparkles: Sparkles,
+  bot: Bot,
+  'message-square': MessageSquare,
 };
 import { useI18n, type TranslationKey } from '../i18n';
 import { useLocalStorageString } from '../hooks/useLocalStorage';
@@ -30,6 +33,8 @@ interface ActivityBarProps {
   onPanelChange: (panel: PanelId | null) => void;
   onOpenSettings: () => void;
   pluginPanels?: DynamicPanelItem[];
+  /** ID of the plugin panel shown as floating window (excluded from left sidebar) */
+  floatingPanelId?: string;
 }
 
 type PanelItem = { id: PanelId; icon: typeof FolderTree; titleKey: TranslationKey };
@@ -65,7 +70,7 @@ interface TooltipState {
   y: number; // viewport Y center of the hovered button
 }
 
-export function ActivityBar({ activePanel, onPanelChange, onOpenSettings, pluginPanels = [] }: ActivityBarProps) {
+export function ActivityBar({ activePanel, onPanelChange, onOpenSettings, pluginPanels = [], floatingPanelId }: ActivityBarProps) {
   const { t } = useI18n();
   const [orderRaw, setOrderRaw] = useLocalStorageString('marklite-panel-order', DEFAULT_ORDER);
   const [orderedIds, setOrderedIds] = useState<PanelId[]>(() => parseOrder(orderRaw));
@@ -212,46 +217,50 @@ export function ActivityBar({ activePanel, onPanelChange, onOpenSettings, plugin
         );
       })}
 
-      {/* Plugin-contributed panels */}
-      {pluginPanels.length > 0 && (
-        <>
-          <div style={{ width: 24, height: 1, backgroundColor: 'var(--border-color)', margin: '4px auto' }} />
-          {pluginPanels.map((pp) => {
-            const isActive = activePanel === pp.id;
-            const LucideIconComp = pp.icon ? LUCIDE_ICON_MAP[pp.icon] : undefined;
-            return (
-              <button
-                key={pp.id}
-                onClick={() => onPanelChange(activePanel === pp.id ? null : pp.id)}
-                onMouseEnter={(e) => {
-                  if (!isActive) e.currentTarget.style.color = 'var(--text-secondary)';
-                  showTooltip(e, pp.title);
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) e.currentTarget.style.color = 'var(--text-tertiary)';
-                  hideTooltip();
-                }}
-                title={pp.title}
-                className="flex items-center justify-center"
-                style={{
-                  width: 44,
-                  height: ITEM_HEIGHT,
-                  color: isActive ? 'var(--accent-color)' : 'var(--text-tertiary)',
-                  backgroundColor: 'transparent',
-                  border: 'none',
-                  borderLeft: isActive ? '2px solid var(--accent-color)' : '2px solid transparent',
-                  cursor: 'pointer',
-                  fontSize: LucideIconComp ? undefined : 18,
-                }}
-              >
-                {LucideIconComp
-                  ? <LucideIconComp size={20} strokeWidth={1.6} />
-                  : (pp.icon ?? pp.title.charAt(0))}
-              </button>
-            );
-          })}
-        </>
-      )}
+      {/* Plugin-contributed panels (left sidebar only — exclude floating panel) */}
+      {(() => {
+        const leftPanels = pluginPanels.filter((pp) => pp.id !== floatingPanelId);
+        if (leftPanels.length === 0) return null;
+        return (
+          <>
+            <div style={{ width: 24, height: 1, backgroundColor: 'var(--border-color)', margin: '4px auto' }} />
+            {leftPanels.map((pp) => {
+              const isActive = activePanel === pp.id;
+              const LucideIconComp = pp.icon ? LUCIDE_ICON_MAP[pp.icon] : undefined;
+              return (
+                <button
+                  key={pp.id}
+                  onClick={() => onPanelChange(activePanel === pp.id ? null : pp.id)}
+                  onMouseEnter={(e) => {
+                    if (!isActive) e.currentTarget.style.color = 'var(--text-secondary)';
+                    showTooltip(e, pp.title);
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) e.currentTarget.style.color = 'var(--text-tertiary)';
+                    hideTooltip();
+                  }}
+                  title={pp.title}
+                  className="flex items-center justify-center"
+                  style={{
+                    width: 44,
+                    height: ITEM_HEIGHT,
+                    color: isActive ? 'var(--accent-color)' : 'var(--text-tertiary)',
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    borderLeft: isActive ? '2px solid var(--accent-color)' : '2px solid transparent',
+                    cursor: 'pointer',
+                    fontSize: LucideIconComp ? undefined : 18,
+                  }}
+                >
+                  {LucideIconComp
+                    ? <LucideIconComp size={20} strokeWidth={1.6} />
+                    : (pp.icon ?? pp.title.charAt(0))}
+                </button>
+              );
+            })}
+          </>
+        );
+      })()}
 
       {/* Bottom spacer + Settings */}
       <div className="mt-auto mb-1">

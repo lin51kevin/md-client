@@ -5,6 +5,7 @@ import path from 'path';
 export default defineConfig({
   plugins: [react()],
   resolve: {
+    extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
     alias: {
       // Tauri APIs are unavailable in the Node/jsdom test environment.
       // Redirect them to empty stubs so tests that import usePlugins or other
@@ -20,6 +21,7 @@ export default defineConfig({
     setupFiles: ['./src/test-setup.ts'],
     server: {
       deps: {
+        inline: [/plugins\/official/],
         external: [/scripts\//],
       },
     },

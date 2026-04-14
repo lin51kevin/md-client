@@ -7,7 +7,10 @@ import { PluginPermissionError } from './permission-checker';
 const PERMISSION_MAP: Record<string, Record<string, PluginPermission>> = {
   editor: {
     getContent: 'editor.read',
+    getSelection: 'editor.read',
+    getCursorPosition: 'editor.read',
     insertText: 'editor.write',
+    replaceRange: 'editor.write',
   },
   sidebar: {
     registerPanel: 'sidebar.panel',
@@ -74,7 +77,10 @@ export interface StatusBarAPI {
 
 export interface EditorAPI {
   getContent(): string;
+  getSelection(): { from: number; to: number; text: string } | null;
+  getCursorPosition(): { line: number; column: number; offset: number };
   insertText(text: string, from?: number, to?: number): void;
+  replaceRange(from: number, to: number, text: string): void;
   getActiveFilePath(): string | null;
 }
 

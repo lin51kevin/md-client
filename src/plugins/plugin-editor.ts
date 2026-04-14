@@ -23,16 +23,32 @@ export function createEditorAPI(deps: EditorAPIDeps): PluginContext['editor'] {
     /**
      * Get the full text content of the currently active editor.
      * @returns The editor document as a string, or empty string if no editor is available.
-     *
-     * @example
-     * ```ts
-     * const content = ctx.editor.getContent();
-     * console.log('Document length:', content.length);
-     * ```
      */
     getContent(): string {
       const view = deps.cmViewRef.current;
       return view ? view.state.doc.toString() : '';
+    },
+    /**
+     * Get the current text selection in the editor.
+     * @returns An object with from, to offsets and the selected text, or null if nothing is selected.
+     */
+    getSelection(): { from: number; to: number; text: string } | null {
+      const view = deps.cmViewRef.current;
+      if (!view) return null;
+      const { from, to } = view.state.selection.main;
+      if (from === to) return null;
+      return { from, to, text: view.state.doc.sliceString(from, to) };
+    },
+    /**
+     * Get the current cursor position in the editor.
+     * @returns An object with line (1-based), column (1-based), and offset (0-based).
+     */
+    getCursorPosition(): { line: number; column: number; offset: number } {
+      const view = deps.cmViewRef.current;
+      if (!view) return { line: 1, column: 1, offset: 0 };
+      const head = view.state.selection.main.head;
+      const line = view.state.doc.lineAt(head);
+      return { line: line.number, column: head - line.from + 1, offset: head };
     },
     /**
      * Insert text at a specific position, or replace the current selection.
@@ -41,14 +57,6 @@ export function createEditorAPI(deps: EditorAPIDeps): PluginContext['editor'] {
      * @param text - The text to insert.
      * @param from - Start position (default: current selection start).
      * @param to - End position (default: current selection end).
-     *
-     * @example
-     * ```ts
-     * // Replace selection with text
-     * ctx.editor.insertText('Hello, world!');
-     * // Insert at a specific position
-     * ctx.editor.insertText('TODO', 10, 15);
-     * ```
      */
     insertText(text: string, from?: number, to?: number): void {
       const view = deps.cmViewRef.current;
@@ -60,14 +68,22 @@ export function createEditorAPI(deps: EditorAPIDeps): PluginContext['editor'] {
       });
     },
     /**
+     * Replace a range of text in the editor.
+     * @param from - Start offset (0-based).
+     * @param to - End offset (0-based).
+     * @param text - The replacement text.
+     */
+    replaceRange(from: number, to: number, text: string): void {
+      const view = deps.cmViewRef.current;
+      if (!view) return;
+      view.dispatch({
+        changes: { from, to, insert: text },
+        selection: { anchor: from + text.length },
+      });
+    },
+    /**
      * Get the file path of the currently active tab.
      * @returns Absolute file path, or null if no file is open.
-     *
-     * @example
-     * ```ts
-     * const path = ctx.editor.getActiveFilePath();
-     * if (path) console.log('Editing:', path);
-     * ```
      */
     getActiveFilePath(): string | null {
       return deps.getActiveTab?.()?.path ?? null;
