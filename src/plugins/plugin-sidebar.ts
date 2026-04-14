@@ -8,7 +8,7 @@ import type { PluginContext } from './plugin-sandbox';
  * @returns The sidebar portion of the plugin context.
  */
 export function createSidebarAPI(deps: {
-  registerSidebarPanel: (id: string, component: unknown) => void;
+  registerSidebarPanel: (id: string, component: unknown, meta?: { title?: string; icon?: string }) => void;
   unregisterSidebarPanel: (id: string) => void;
 }): PluginContext['sidebar'] {
   const registeredPanels = new Map<string, unknown>();
@@ -23,7 +23,7 @@ export function createSidebarAPI(deps: {
     registerPanel(id: string, options: { title: string; icon?: string; render: () => unknown }) {
       const panelContent = options.render();
       registeredPanels.set(id, panelContent);
-      deps.registerSidebarPanel(id, panelContent);
+      deps.registerSidebarPanel(id, panelContent, { title: options.title, icon: options.icon });
       return {
         dispose() {
           registeredPanels.delete(id);

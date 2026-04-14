@@ -33,6 +33,7 @@ import { useAppLifecycle } from './hooks/useAppLifecycle';
 import { usePendingImageMigration } from './hooks/usePendingImageMigration';
 import { usePreviewRenderers } from './hooks/usePreviewRenderers';
 import { usePluginRuntime } from './hooks/usePluginRuntime';
+import { usePluginPanels } from './hooks/usePluginPanels';
 import { restoreSnapshot } from './lib/version-history';
 import { getSavedSplitSizes } from './lib/split-preference';
 
@@ -60,6 +61,7 @@ const HelpModal = lazy(() => import('./components/HelpModal').then(m => ({ defau
 const SlidePreview = lazy(() => import('./components/SlidePreview').then(m => ({ default: m.SlidePreview })));
 const MindmapView = lazy(() => import('./components/MindmapView').then(m => ({ default: m.MindmapView })));
 import { EditorContentArea } from './components/EditorContentArea';
+import { PluginSidebarRenderer } from './components/PluginSidebarRenderer';
 import { createCommandRegistry } from './lib/command-registry';
 
 
@@ -83,6 +85,7 @@ export default function App() {
   // ── Core hooks ───────────────────────────────────────────────────
   const { focusMode, setFocusMode, isChromeless, hideStatusBar } = useFocusMode();
   const { renderers: pluginRenderers, registerPreviewRenderer, unregisterPreviewRenderer } = usePreviewRenderers();
+  const { panels: pluginPanels, registerPanel: registerPluginPanel, unregisterPanel: unregisterPluginPanel } = usePluginPanels();
   const { welcomeDismissed, handleDismissWelcome, handleShowWelcome } = useWelcome();
   const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
   const [splitSizes, setSplitSizes] = useState<[number, number]>(() => getSavedSplitSizes());
@@ -176,15 +179,32 @@ export default function App() {
     openFileInTab: (path: string) => void openFileInTab(path),
     getOpenFilePaths: () => tabs.filter(t => t.filePath).map(t => t.filePath!),
     cmViewRef,
-    registerSidebarPanel: () => {},
-    unregisterSidebarPanel: () => {},
+    registerSidebarPanel: registerPluginPanel,
+    unregisterSidebarPanel: unregisterPluginPanel,
     addStatusBarItem: () => {},
     removeStatusBarItem: () => {},
     registerPreviewRenderer,
     unregisterPreviewRenderer,
-  }), [getActiveTab, openFileInTab, tabs, cmViewRef, registerPreviewRenderer, unregisterPreviewRenderer]);
+  }), [getActiveTab, openFileInTab, tabs, cmViewRef, registerPluginPanel, unregisterPluginPanel, registerPreviewRenderer, unregisterPreviewRenderer]);
 
   const { activatePlugin, deactivatePlugin } = usePluginRuntime(pluginRuntimeDeps);
+
+  // ── Auto-activate enabled plugins on startup ─────────────────────
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('marklite-installed-plugins');
+      if (!raw) return;
+      const plugins = JSON.parse(raw) as { id: string; enabled: boolean }[];
+      for (const p of plugins) {
+        if (p.enabled) {
+          void activatePlugin(p.id);
+        }
+      }
+    } catch {
+      // ignore — plugins will still be activatable via the panel
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── App lifecycle effects ────────────────────────────────────────
   useAppLifecycle({ isTauri, openFileWithContent, tabsRef, t });
@@ -342,6 +362,7 @@ export default function App() {
             activePanel={activePanel}
             onPanelChange={setActivePanel}
             onOpenSettings={() => setShowSettings(true)}
+            pluginPanels={pluginPanels}
           />
         )}
 
@@ -395,6 +416,21 @@ export default function App() {
               onFileOpen={(path) => openFileInTab(gitRepoPath ? `${gitRepoPath}/${path}` : path)}
             />
           )}
+
+          {/* Plugin-registered sidebar panels */}
+          {pluginPanels.map((pp) => (
+            activePanel === pp.id && (
+              <div key={pp.id} className="w-full h-full flex flex-col overflow-hidden text-xs select-none" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                <div className="flex items-center justify-between px-3 py-2 border-b" style={{ borderColor: 'var(--border-color)' }}>
+                  <span className="font-semibold text-xs uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>{pp.title}</span>
+                  <button onClick={() => setActivePanel(null)} className="text-xs" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)' }}>✕</button>
+                </div>
+                <div className="flex-1 overflow-auto">
+                  <PluginSidebarRenderer content={pp.content} />
+                </div>
+              </div>
+            )
+          ))}
         </SidebarContainer>
 
         {/* Editor content area */}

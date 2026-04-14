@@ -5,9 +5,12 @@ import { PANEL_ITEMS, type PanelId } from '../components/ActivityBar';
 export function useSidebarPanel() {
   const [activePanelRaw, setActivePanelRaw] = useLocalStorageString('marklite-active-panel', '');
   const VALID_PANELS = PANEL_ITEMS.map(item => item.id);
+  // Accept built-in panel IDs or any string (plugin panel IDs)
   const activePanel: PanelId | null =
-    activePanelRaw && (VALID_PANELS as readonly string[]).includes(activePanelRaw)
-      ? (activePanelRaw as PanelId)
+    activePanelRaw
+      ? (VALID_PANELS as readonly string[]).includes(activePanelRaw)
+        ? (activePanelRaw as PanelId)
+        : activePanelRaw // allow dynamic plugin panel IDs
       : null;
 
   const setActivePanel = useCallback((panel: PanelId | null) => {

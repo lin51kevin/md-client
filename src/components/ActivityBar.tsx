@@ -3,12 +3,20 @@ import { FolderTree, Search, List, GitBranch, Settings, Package } from 'lucide-r
 import { useI18n, type TranslationKey } from '../i18n';
 import { useLocalStorageString } from '../hooks/useLocalStorage';
 
-export type PanelId = 'filetree' | 'search' | 'toc' | 'plugins' | 'git';
+export type BuiltinPanelId = 'filetree' | 'search' | 'toc' | 'plugins' | 'git';
+export type PanelId = BuiltinPanelId | (string & {});
+
+export interface DynamicPanelItem {
+  id: string;
+  title: string;
+  icon?: string;
+}
 
 interface ActivityBarProps {
   activePanel: PanelId | null;
   onPanelChange: (panel: PanelId | null) => void;
   onOpenSettings: () => void;
+  pluginPanels?: DynamicPanelItem[];
 }
 
 type PanelItem = { id: PanelId; icon: typeof FolderTree; titleKey: TranslationKey };
@@ -44,7 +52,7 @@ interface TooltipState {
   y: number; // viewport Y center of the hovered button
 }
 
-export function ActivityBar({ activePanel, onPanelChange, onOpenSettings }: ActivityBarProps) {
+export function ActivityBar({ activePanel, onPanelChange, onOpenSettings, pluginPanels = [] }: ActivityBarProps) {
   const { t } = useI18n();
   const [orderRaw, setOrderRaw] = useLocalStorageString('marklite-panel-order', DEFAULT_ORDER);
   const [orderedIds, setOrderedIds] = useState<PanelId[]>(() => parseOrder(orderRaw));
@@ -190,6 +198,44 @@ export function ActivityBar({ activePanel, onPanelChange, onOpenSettings }: Acti
           </button>
         );
       })}
+
+      {/* Plugin-contributed panels */}
+      {pluginPanels.length > 0 && (
+        <>
+          <div style={{ width: 24, height: 1, backgroundColor: 'var(--border-color)', margin: '4px auto' }} />
+          {pluginPanels.map((pp) => {
+            const isActive = activePanel === pp.id;
+            return (
+              <button
+                key={pp.id}
+                onClick={() => onPanelChange(activePanel === pp.id ? null : pp.id)}
+                onMouseEnter={(e) => {
+                  if (!isActive) e.currentTarget.style.color = 'var(--text-secondary)';
+                  showTooltip(e, pp.title);
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) e.currentTarget.style.color = 'var(--text-tertiary)';
+                  hideTooltip();
+                }}
+                title={pp.title}
+                className="flex items-center justify-center"
+                style={{
+                  width: 44,
+                  height: ITEM_HEIGHT,
+                  color: isActive ? 'var(--accent-color)' : 'var(--text-tertiary)',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  borderLeft: isActive ? '2px solid var(--accent-color)' : '2px solid transparent',
+                  cursor: 'pointer',
+                  fontSize: pp.icon && pp.icon.length <= 2 ? 18 : 12,
+                }}
+              >
+                {pp.icon ?? pp.title.charAt(0)}
+              </button>
+            );
+          })}
+        </>
+      )}
 
       {/* Bottom spacer + Settings */}
       <div className="mt-auto mb-1">
