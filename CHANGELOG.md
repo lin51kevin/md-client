@@ -6,6 +6,50 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [v0.8.0] - 2026-04-14
+
+### Added
+
+#### Plugin System (全新功能)
+- 插件系统核心基础设施：插件加载器、注册表、生命周期管理
+- 插件面板 UI 及侧边栏入口按钮
+- Commands API：插件可注册并调用编辑器命令
+- Workspace API：插件可读写工作区状态
+- Preview namespace：插件可扩展预览渲染行为
+- Phase 3 安全沙箱：限制插件权限与资源访问
+- Phase 4 官方内置插件支持
+- Phase 5 社区插件生态：推荐插件列表与一键安装
+- 插件激活流水线端到端打通（含 Tauri v2 plugin API 迁移）
+- 插件卸载时自动移除侧边栏图标
+- 每个插件面板使用独立的 Lucide 图标加以区分
+
+#### Graph View
+- 异步增量弹簧布局（Spring Layout via RAF），大图不再卡顿主线程
+
+### Fixed
+
+#### Plugin System
+- 修复推荐插件 Tab 中安装功能不生效的问题
+- 修复插件 ID 在注册表 / 运行时 / 默认配置之间不一致导致的加载失败
+- 修复 P0 存储键不一致问题（C1），防止状态丢失
+- 修复 P1 路径穿越风险（`create-plugin.js`）
+- 通过 TDD 修复 8 个高危安全与正确性问题
+- 修复 TypeScript 构建错误（PluginPanel 组件）
+- 修复 `usePlugins` 迁移至 Tauri v2 plugin API 后的兼容性问题
+
+### Refactored
+
+- 拆分 PluginPanel 为多个子组件，增强可维护性
+- 强化 Plugin API 类型定义，减少运行时错误
+- 从 plugin entries 中移除重复的 Snippet Manager 入口（已在 Settings 中提供）
+
+### Tests
+
+- 修复 PluginPanel 测试套件（适配 Tauri stub 修复及键名重命名）
+- 补全测试用例，修复全部失败测试
+
+---
+
 ## [v0.7.2] - 2026-04-14
 
 ### Fixed
