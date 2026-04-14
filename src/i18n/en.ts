@@ -393,4 +393,17 @@ export const en: Record<TranslationKey, string> = {
   'plugins.detail': 'Detail',
   'plugins.settings': 'Settings',
   'plugins.removeConfirm': 'Are you sure to remove plugin "{name}"?',
+
+  // ── Permission Approval Modal ────────────────────────────────────────
+  'perm.title': '{name} is requesting the following permissions',
+  'perm.cancel': 'Cancel',
+  'perm.approve': 'Grant Permissions',
+  'perm.dangerousWarning': '⚠ Dangerous permission: {desc}. This may pose a security risk.',
+
+  // ── Plugin Signature ────────────────────────────────────────────────
+  'plugins.signature.verified': 'Signature verified',
+  'plugins.signature.failed': 'Signature verification failed',
+  'plugins.signature.skipped': 'Signature verification skipped (no public key configured)',
+  'plugins.signature.invalidFormat': 'Invalid plugin signature format',
+  'plugins.signature.missing': 'Plugin is missing signature information',
 };

@@ -1,5 +1,5 @@
-import { useRef, useState, useEffect, useCallback } from 'react';
-import { X, Plus, ChevronLeft, ChevronRight, Pin } from 'lucide-react';
+import { useRef, useState, useEffect } from 'react';
+import { X, Plus, Pin } from 'lucide-react';
 import { Tab } from '../types';
 import { useI18n } from '../i18n';
 
@@ -35,10 +35,7 @@ interface TabBarProps {
 export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorder, onContextMenu, getTabTitle, renamingTabId, onStartRename, onConfirmRename, onCancelRename, onPin, onUnpin, showWelcomeTab, onCloseWelcomeTab }: TabBarProps) {
   const { t } = useI18n();
   const [dragOverTabId, setDragOverTabId] = useState<string | null>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
   const tabDragRef = useRef<{ fromId: string; startX: number; overId: string | null } | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
   // F013: 重命名输入框 ref，用于自动聚焦
   const renameInputRef = useRef<HTMLInputElement>(null);
 
@@ -48,32 +45,6 @@ export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorde
       setTimeout(() => renameInputRef.current?.select(), 0);
     }
   }, [renamingTabId]);
-
-  const updateScrollButtons = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    setCanScrollLeft(el.scrollLeft > 0);
-    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
-  }, []);
-
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    updateScrollButtons();
-    el.addEventListener('scroll', updateScrollButtons);
-    const ro = new ResizeObserver(updateScrollButtons);
-    ro.observe(el);
-    return () => {
-      el.removeEventListener('scroll', updateScrollButtons);
-      ro.disconnect();
-    };
-  }, [tabs, updateScrollButtons]);
-
-  const scroll = (dir: 'left' | 'right') => {
-    const el = scrollRef.current;
-    if (!el) return;
-    el.scrollBy({ left: dir === 'left' ? -120 : 120, behavior: 'smooth' });
-  };
 
   const handlePointerDown = (e: React.PointerEvent, id: string) => {
     if (e.button !== 0) return;
@@ -127,7 +98,6 @@ export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorde
       role="tablist"
       className="shrink-0 flex items-stretch" style={{ minHeight: 30, backgroundColor: 'var(--bg-tertiary)', borderBottom: '1px solid var(--border-color)' }}>
       <div
-        ref={scrollRef}
         className="flex items-end flex-1 overflow-x-auto tabbar-scroll min-w-0"
       >
         {/* Virtual "Welcome" tab – shown when the welcome page is active */}
@@ -276,48 +246,6 @@ export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorde
           <Plus size={14} />
         </button>
       </div>
-      {(canScrollLeft || canScrollRight) && (
-        <div className="flex items-center shrink-0 border-l" style={{ borderColor: 'var(--border-color)' }}>
-          <button
-            onClick={() => scroll('left')}
-            disabled={!canScrollLeft}
-            className="flex self-end items-center justify-center w-6 h-6 disabled:opacity-30 disabled:cursor-default"
-            style={{ color: 'var(--text-secondary)' }}
-            onMouseEnter={(e) => {
-              if (!e.currentTarget.disabled) {
-                e.currentTarget.style.color = 'var(--text-primary)';
-                e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = 'var(--text-secondary)';
-              e.currentTarget.style.backgroundColor = '';
-            }}
-            title="向左滚动"
-          >
-            <ChevronLeft size={14} />
-          </button>
-          <button
-            onClick={() => scroll('right')}
-            disabled={!canScrollRight}
-            className="flex self-end items-center justify-center w-6 h-6 disabled:opacity-30 disabled:cursor-default border-l"
-            style={{ color: 'var(--text-secondary)', borderColor: 'var(--border-color)' }}
-            onMouseEnter={(e) => {
-              if (!e.currentTarget.disabled) {
-                e.currentTarget.style.color = 'var(--text-primary)';
-                e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = 'var(--text-secondary)';
-              e.currentTarget.style.backgroundColor = '';
-            }}
-            title="向右滚动"
-          >
-            <ChevronRight size={14} />
-          </button>
-        </div>
-      )}
     </div>
   );
 }

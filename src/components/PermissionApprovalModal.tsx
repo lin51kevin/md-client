@@ -6,6 +6,7 @@ import {
   getPermissionLevel,
   DANGEROUS_PERMISSIONS,
 } from '../plugins/permissions';
+import { useI18n } from '../i18n';
 
 export interface PermissionApprovalModalProps {
   visible: boolean;
@@ -31,6 +32,8 @@ export function PermissionApprovalModal({
 }: PermissionApprovalModalProps) {
   const dangerousRequested = permissions.filter(p => DANGEROUS_PERMISSIONS.includes(p));
   const hasDangerous = dangerousRequested.length > 0;
+
+  const { locale, t } = useI18n();
 
   const [checked, setChecked] = useState<Set<PluginPermission>>(() => {
     const s = new Set<PluginPermission>();
@@ -97,7 +100,7 @@ export function PermissionApprovalModal({
           <div className="flex items-center gap-2">
             <Shield size={16} style={{ color: 'var(--accent-color)' }} />
             <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-              {pluginName} 请求以下权限
+              {t('perm.title', { name: pluginName })}
             </span>
           </div>
           <button
@@ -147,16 +150,16 @@ export function PermissionApprovalModal({
                     </span>
                   </div>
                   <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-                    {desc.zh}
+                    {locale === 'zh-CN' ? desc.zh : desc.en}
                   </p>
                   <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                    {desc.en}
+                    {locale === 'zh-CN' ? desc.en : desc.zh}
                   </p>
                   {dangerous && (
                     <div className="flex items-center gap-1 mt-1">
                       <AlertTriangle size={12} style={{ color: '#dc2626' }} />
                       <span className="text-[10px]" style={{ color: '#dc2626' }}>
-                        ⚠ 危险权限：{desc.zh}，可能存在安全风险
+                        {t('perm.dangerousWarning', { desc: locale === 'zh-CN' ? desc.zh : desc.en })}
                       </span>
                     </div>
                   )}
@@ -180,7 +183,7 @@ export function PermissionApprovalModal({
               border: '1px solid var(--border-color)',
             }}
           >
-            取消
+            {t('perm.cancel')}
           </button>
           <button
             disabled={!allDangerousChecked}
@@ -196,7 +199,7 @@ export function PermissionApprovalModal({
           >
             <span className="flex items-center gap-1">
               <ShieldAlert size={12} />
-              授予权限
+              {t('perm.approve')}
             </span>
           </button>
         </div>

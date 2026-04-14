@@ -10,7 +10,10 @@ const STORAGE_KEY = 'marklite-installed-plugins';
  * Used by the plugin lifecycle system (install, update, remove).
  */
 export class PluginStorage {
-  /** Load all installed plugin records from localStorage. */
+  /**
+   * Load all installed plugin records from localStorage.
+   * @returns Array of installed plugin records. Returns empty array on failure.
+   */
   getInstalledPlugins(): InstalledPluginRecord[] {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -21,7 +24,10 @@ export class PluginStorage {
     }
   }
 
-  /** Save the full list of installed plugins to localStorage. */
+  /**
+   * Save the full list of installed plugins to localStorage.
+   * @param plugins - The complete list of installed plugin records to persist.
+   */
   saveInstalledPlugins(plugins: InstalledPluginRecord[]): void {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(plugins));
@@ -30,7 +36,11 @@ export class PluginStorage {
     }
   }
 
-  /** Add or update a plugin record (upsert by ID). */
+  /**
+   * Add or update a plugin record (upsert by ID).
+   * If a record with the same ID exists, it will be replaced.
+   * @param record - The plugin record to add or update.
+   */
   addPlugin(record: InstalledPluginRecord): void {
     const plugins = this.getInstalledPlugins();
     const idx = plugins.findIndex((p) => p.id === record.id);
@@ -42,13 +52,22 @@ export class PluginStorage {
     this.saveInstalledPlugins(plugins);
   }
 
-  /** Remove a plugin record by ID. */
+  /**
+   * Remove a plugin record by ID.
+   * No-op if the ID is not found.
+   * @param id - The plugin ID to remove.
+   */
   removePlugin(id: string): void {
     const plugins = this.getInstalledPlugins().filter((p) => p.id !== id);
     this.saveInstalledPlugins(plugins);
   }
 
-  /** Partially update an existing plugin record by ID. */
+  /**
+   * Partially update an existing plugin record by ID.
+   * No-op if the ID is not found.
+   * @param id - The plugin ID to update.
+   * @param updates - Partial record with fields to merge into the existing record.
+   */
   updatePlugin(id: string, updates: Partial<InstalledPluginRecord>): void {
     const plugins = this.getInstalledPlugins();
     const idx = plugins.findIndex((p) => p.id === id);
@@ -72,12 +91,26 @@ export function createStorageAPI(pluginId?: string): PluginContext['storage'] {
   const prefix = pluginId ? `plugin.${pluginId}.` : 'plugin.';
 
   return {
+    /**
+     * Get a value from plugin-scoped storage.
+     * @param key - Storage key (automatically prefixed with plugin namespace).
+     * @returns The stored value as a string, or null if not found.
+     */
     async get(key: string): Promise<string | null> {
       return localStorage.getItem(prefix + key);
     },
+    /**
+     * Set a value in plugin-scoped storage.
+     * @param key - Storage key (automatically prefixed with plugin namespace).
+     * @param value - The string value to store.
+     */
     async set(key: string, value: string): Promise<void> {
       localStorage.setItem(prefix + key, value);
     },
+    /**
+     * Delete a value from plugin-scoped storage.
+     * @param key - Storage key (automatically prefixed with plugin namespace).
+     */
     async delete(key: string): Promise<void> {
       localStorage.removeItem(prefix + key);
     },

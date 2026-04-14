@@ -2,6 +2,7 @@
  * Registry Client — access the official plugin registry
  */
 import type { RegistryManifest, RegistryPluginEntry } from './registry-schema';
+export type { RegistryPluginEntry } from './registry-schema';
 import officialRegistry from './official-registry.json';
 
 /** Get the full official registry manifest */

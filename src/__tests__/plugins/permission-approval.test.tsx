@@ -2,7 +2,35 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { PermissionApprovalModal } from '../../components/PermissionApprovalModal';
+import { I18nContext } from '../../i18n';
+import type { Locale, TranslationKey } from '../../i18n';
+import { zhCN } from '../../i18n/zh-CN';
+import { en } from '../../i18n/en';
 import type { PluginPermission } from '../../plugins/permissions';
+
+const LOCALES: Record<Locale, Record<TranslationKey, string>> = { 'zh-CN': zhCN, en };
+
+function t(key: TranslationKey, params?: Record<string, string | number>, locale: Locale = 'zh-CN'): string {
+  let str: string = LOCALES[locale][key] ?? key;
+  if (params) {
+    for (const [k, v] of Object.entries(params)) {
+      str = str.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
+    }
+  }
+  return str;
+}
+
+const i18nCtx = {
+  locale: 'zh-CN' as Locale,
+  setLocale: vi.fn(),
+  t: (key: TranslationKey, params?: Record<string, string | number>) => t(key, params, 'zh-CN'),
+};
+
+const i18nCtxEn = {
+  locale: 'en' as Locale,
+  setLocale: vi.fn(),
+  t: (key: TranslationKey, params?: Record<string, string | number>) => t(key, params, 'en'),
+};
 
 const BASE_PERMISSIONS: PluginPermission[] = [
   'editor.read',
@@ -22,8 +50,12 @@ const defaultProps = {
   onCancel: vi.fn(),
 };
 
-function renderModal(overrides = {}) {
-  return render(<PermissionApprovalModal {...defaultProps} {...overrides} />);
+function renderModal(overrides = {}, localeCtx = i18nCtx) {
+  return render(
+    <I18nContext.Provider value={localeCtx}>
+      <PermissionApprovalModal {...defaultProps} {...overrides} />
+    </I18nContext.Provider>,
+  );
 }
 
 describe('PermissionApprovalModal', () => {
@@ -41,6 +73,11 @@ describe('PermissionApprovalModal', () => {
     expect(screen.getByText(/Test Plugin 请求以下权限/)).toBeInTheDocument();
   });
 
+  it('renders modal title in English when locale is en', () => {
+    renderModal({}, i18nCtxEn);
+    expect(screen.getByText(/Test Plugin is requesting/)).toBeInTheDocument();
+  });
+
   it('renders all permissions', () => {
     renderModal();
     for (const p of BASE_PERMISSIONS) {
@@ -53,6 +90,13 @@ describe('PermissionApprovalModal', () => {
     expect(screen.getByText('读取编辑器内容')).toBeInTheDocument();
     expect(screen.getByText('访问插件存储')).toBeInTheDocument();
     expect(screen.getByText('读取文件内容')).toBeInTheDocument();
+  });
+
+  it('renders permission descriptions in English when locale is en', () => {
+    renderModal({}, i18nCtxEn);
+    expect(screen.getByText('Read editor content')).toBeInTheDocument();
+    expect(screen.getByText('Access plugin storage')).toBeInTheDocument();
+    expect(screen.getByText('Read file contents')).toBeInTheDocument();
   });
 
   it('renders level badges', () => {
@@ -89,6 +133,11 @@ describe('PermissionApprovalModal', () => {
   it('calls onCancel when clicking cancel button', () => {
     renderModal();
     fireEvent.click(screen.getByText('取消'));
+  });
+
+  it('calls onCancel when clicking cancel button (English)', () => {
+    renderModal({}, i18nCtxEn);
+    fireEvent.click(screen.getByText('Cancel'));
     expect(defaultProps.onCancel).toHaveBeenCalled();
   });
 
@@ -111,9 +160,14 @@ describe('PermissionApprovalModal', () => {
     expect(approveBtn).toBeDisabled();
   });
 
+  it('approve button is disabled when dangerous permissions exist but unchecked (English)', () => {
+    renderModal({}, i18nCtxEn);
+    const approveBtn = screen.getByRole('button', { name: /Grant Permissions/ });
+    expect(approveBtn).toBeDisabled();
+  });
+
   it('approve button enables when all dangerous permissions are checked', () => {
     renderModal();
-    // Check dangerous permissions
     const tauriRow = screen.getByText('tauri.raw').closest('[data-permission]')!;
     const fileWriteRow = screen.getByText('file.write').closest('[data-permission]')!;
     fireEvent.click(within(tauriRow).getByRole('checkbox'));
@@ -135,6 +189,31 @@ describe('PermissionApprovalModal', () => {
     fireEvent.click(within(tauriRow).getByRole('checkbox'));
     fireEvent.click(within(fileWriteRow).getByRole('checkbox'));
 
+    fireEvent.click(screen.getByRole('button', { name: /授予权限/ }));
+
+    const granted = defaultProps.onApprove.mock.calls[0][0] as PluginPermission[];
+  });
+
+  it('dangerous warning text is i18n-aware', () => {
+    renderModal();
+    const warnings = screen.getAllByText(/危险权限/);
+    expect(warnings.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('dangerous warning text shows in English when locale is en', () => {
+    renderModal({}, i18nCtxEn);
+    const warnings = screen.getAllByText(/Dangerous permission/);
+    expect(warnings.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('calls onApprove with granted permissions (excluding unchecked)', () => {
+    renderModal();
+    const storageRow = screen.getByText('storage').closest('[data-permission]')!;
+    fireEvent.click(within(storageRow).getByRole('checkbox'));
+    const tauriRow = screen.getByText('tauri.raw').closest('[data-permission]')!;
+    const fileWriteRow = screen.getByText('file.write').closest('[data-permission]')!;
+    fireEvent.click(within(tauriRow).getByRole('checkbox'));
+    fireEvent.click(within(fileWriteRow).getByRole('checkbox'));
     fireEvent.click(screen.getByRole('button', { name: /授予权限/ }));
 
     const granted = defaultProps.onApprove.mock.calls[0][0] as PluginPermission[];

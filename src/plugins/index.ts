@@ -29,3 +29,15 @@ export { createStatusBarAPI } from './plugin-statusbar';
 export { createStorageAPI } from './plugin-storage';
 export { createUIAPI } from './plugin-ui';
 export { createPluginContext, type PluginContextDeps } from './plugin-context-factory';
+export {
+  verifyPluginSignature,
+  createSignatureVerifier,
+  SignatureStatus,
+} from './signature-verify';
+export type {
+  SignatureResult,
+  SignatureVerifyOptions,
+  SignaturePublicKey,
+  SignatureAlgorithm,
+  SignatureManifest,
+} from './signature-verify';

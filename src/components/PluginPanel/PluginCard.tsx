@@ -1,9 +1,9 @@
 import { Package, ChevronDown, ChevronRight, Settings, Trash2 } from 'lucide-react';
-import type { InstalledPluginRecord } from '../../plugins/types';
+import type { PluginUIItem } from '../../hooks/usePlugins';
 import { useI18n } from '../../i18n';
 
 interface PluginCardProps {
-  plugin: InstalledPluginRecord;
+  plugin: PluginUIItem;
   expanded: boolean;
   onToggleExpand: () => void;
   onToggleEnable: (id: string) => void;

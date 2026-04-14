@@ -107,5 +107,91 @@ describe('createEditorAPI', () => {
       const change = dispatch.mock.calls[0][0].changes;
       expect(change).toEqual({ from: 1, to: 4, insert: 'X' });
     });
+
+    it('inserts empty string without error', () => {
+      const dispatch = vi.fn();
+      const mockView = {
+        state: {
+          doc: { toString: () => 'abc' },
+          selection: { main: { from: 1, to: 1 } },
+        },
+        dispatch,
+      } as unknown as import('@codemirror/view').EditorView;
+      const api = createEditorAPI({ cmViewRef: { current: mockView } });
+      api.insertText('');
+      expect(dispatch).toHaveBeenCalledOnce();
+    });
+
+    it('inserts multiline text', () => {
+      const dispatch = vi.fn();
+      const mockView = {
+        state: {
+          doc: { toString: () => 'line1' },
+          selection: { main: { from: 5, to: 5 } },
+        },
+        dispatch,
+      } as unknown as import('@codemirror/view').EditorView;
+      const api = createEditorAPI({ cmViewRef: { current: mockView } });
+      api.insertText('\nline2\nline3');
+      const change = dispatch.mock.calls[0][0].changes;
+      expect(change.insert).toBe('\nline2\nline3');
+      expect(dispatch.mock.calls[0][0].selection.anchor).toBe(5 + 12);
+    });
+
+    it('explicit from overrides cursor position', () => {
+      const dispatch = vi.fn();
+      const mockView = {
+        state: {
+          doc: { toString: () => 'abcdefghij' },
+          selection: { main: { from: 5, to: 5 } },
+        },
+        dispatch,
+      } as unknown as import('@codemirror/view').EditorView;
+      const api = createEditorAPI({ cmViewRef: { current: mockView } });
+      api.insertText('X', 2);
+      const change = dispatch.mock.calls[0][0].changes;
+      expect(change.from).toBe(2);
+      expect(change.to).toBe(5); // uses cursor `to` as fallback
+    });
+  });
+
+  describe('content change detection', () => {
+    it('reflects view changes after insertText', () => {
+      const dispatch = vi.fn();
+      const content = 'initial content';
+      const mockView = {
+        state: {
+          doc: { toString: () => content },
+          selection: { main: { from: 0, to: 0 } },
+        },
+        dispatch,
+      } as unknown as import('@codemirror/view').EditorView;
+      const api = createEditorAPI({ cmViewRef: { current: mockView } });
+      expect(api.getContent()).toBe('initial content');
+      api.insertText('prefix ');
+      expect(dispatch).toHaveBeenCalled();
+    });
+
+    it('handles very large content in getContent', () => {
+      const bigText = 'x'.repeat(100_000);
+      const mockView = {
+        state: { doc: { toString: () => bigText } },
+      } as unknown as import('@codemirror/view').EditorView;
+      const api = createEditorAPI({ cmViewRef: { current: mockView } });
+      expect(api.getContent()).toHaveLength(100_000);
+    });
+  });
+
+  describe('ref switching', () => {
+    it('returns content from the latest view when ref changes', () => {
+      const ref: React.RefObject<import('@codemirror/view').EditorView | null> = { current: null };
+      const api = createEditorAPI({ cmViewRef: ref });
+      expect(api.getContent()).toBe('');
+
+      ref.current = {
+        state: { doc: { toString: () => 'new content' } },
+      } as unknown as import('@codemirror/view').EditorView;
+      expect(api.getContent()).toBe('new content');
+    });
   });
 });

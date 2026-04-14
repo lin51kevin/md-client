@@ -15,34 +15,40 @@ export function createWorkspaceAPI(deps: {
 }): PluginContext['workspace'] {
   return {
     /**
-   * Get the currently active file info.
-   * @returns Object with `path` and `name`, or both null if no file is active.
-   */
-  getActiveFile() {
+     * Get the currently active file info.
+     * @returns Object with `path` and `name`, or both null if no file is active.
+     */
+    getActiveFile() {
       const tab = deps.getActiveTab();
-      return tab ? { path: tab.path, name: tab.path ? tab.path.split(/[/\\]/).pop() ?? null : null } : { path: null, name: null };
+      return tab
+        ? { path: tab.path, name: tab.path ? tab.path.split(/[/\\]/).pop() ?? null : null }
+        : { path: null, name: null };
     },
+
     /**
-   * Get all available file paths.
-   * Uses getAllWorkspaceFiles if available, otherwise falls back to open tabs.
-   */
-  getAllFiles() {
+     * Get all available file paths.
+     * Uses `getAllWorkspaceFiles` if available, otherwise falls back to open tabs.
+     * @returns Array of file path strings.
+     */
+    getAllFiles() {
       return deps.getAllWorkspaceFiles ? deps.getAllWorkspaceFiles() : deps.getOpenFilePaths();
     },
+
     /**
-   * Open a file in the editor.
-   * @param path - File path to open.
-   */
-  openFile(path: string) {
+     * Open a file in the editor.
+     * @param path - File path to open.
+     */
+    openFile(path: string) {
       deps.openFileInTab(path);
     },
+
     /**
-   * Subscribe to file change events.
-   * @param _callback - Function called with the changed file info.
-   * @returns A disposable that removes the listener.
-   * @deprecated Not yet implemented — returns a no-op disposable.
-   */
-  onFileChanged(_callback: (file: { path: string; name: string }) => void) {
+     * Subscribe to file change events.
+     * @param _callback - Function called with the changed file info.
+     * @returns A disposable that removes the listener.
+     * @deprecated Not yet implemented — returns a no-op disposable.
+     */
+    onFileChanged(_callback: (file: { path: string; name: string }) => void) {
       return { dispose() {} };
     },
   };

@@ -390,6 +390,19 @@ export const zhCN = {
   'plugins.detail': '详情',
   'plugins.settings': '设置',
   'plugins.removeConfirm': '确定要移除插件「{name}」吗？',
+
+  // ── Permission Approval Modal ────────────────────────────────────────
+  'perm.title': '{name} 请求以下权限',
+  'perm.cancel': '取消',
+  'perm.approve': '授予权限',
+  'perm.dangerousWarning': '⚠ 危险权限：{desc}，可能存在安全风险',
+
+  // ── Plugin Signature ────────────────────────────────────────────────
+  'plugins.signature.verified': '签名验证通过',
+  'plugins.signature.failed': '签名验证失败',
+  'plugins.signature.skipped': '签名验证已跳过（未配置公钥）',
+  'plugins.signature.invalidFormat': '插件签名格式无效',
+  'plugins.signature.missing': '插件缺少签名信息',
 };
 
 export type TranslationKey = keyof typeof zhCN;
