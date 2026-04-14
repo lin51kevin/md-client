@@ -1,0 +1,11 @@
+{
+  "id": "marklite-snippet-manager",
+  "name": "Snippet Manager",
+  "version": "1.0.0",
+  "description": "增强型代码片段管理 — 分类整理、一键插入、支持变量占位符",
+  "author": "MarkLite Team",
+  "main": "src/index.ts",
+  "activationEvents": ["onStartup"],
+  "permissions": ["storage", "editor.write", "commands", "ui.message"],
+  "engines": { "marklite": ">=0.7.2" }
+}

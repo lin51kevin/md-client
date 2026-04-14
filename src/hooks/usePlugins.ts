@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import type { PluginPermission } from '../plugins/permissions';
 
 export interface PluginUIItem {
   id: string;
@@ -8,6 +9,11 @@ export interface PluginUIItem {
   description: string;
   enabled: boolean;
   permissions: string[];
+}
+
+export interface PendingPermissionRequest {
+  plugin: PluginUIItem;
+  permissions: PluginPermission[];
 }
 
 const STORAGE_KEY = 'marklite-installed-plugins';
@@ -47,6 +53,8 @@ function savePlugins(plugins: PluginUIItem[]) {
 
 export function usePlugins() {
   const [plugins, setPlugins] = useState<PluginUIItem[]>(loadPlugins);
+  const [pendingPermission, setPendingPermission] = useState<PendingPermissionRequest | null>(null);
+  const pendingRef = useRef<PluginUIItem | null>(null);
 
   // Sync to localStorage whenever plugins change
   useEffect(() => {
@@ -75,8 +83,30 @@ export function usePlugins() {
     );
   }, []);
 
+  const handleApprove = useCallback((granted: PluginPermission[]) => {
+    const pending = pendingRef.current;
+    if (!pending) return;
+
+    const pluginWithPermissions: PluginUIItem = {
+      ...pending,
+      permissions: granted as unknown as string[],
+    };
+
+    setPlugins((prev) => {
+      if (prev.some((p) => p.id === pending.id)) return prev;
+      return [...prev, pluginWithPermissions];
+    });
+
+    pendingRef.current = null;
+    setPendingPermission(null);
+  }, []);
+
+  const handleCancel = useCallback(() => {
+    pendingRef.current = null;
+    setPendingPermission(null);
+  }, []);
+
   const installFromFile = useCallback(async (): Promise<boolean> => {
-    // Try Tauri dialog first, fallback to native file input
     const readManifest = async (text: string): Promise<PluginUIItem | null> => {
       try {
         const manifest = JSON.parse(text) as Partial<PluginUIItem>;
@@ -95,7 +125,20 @@ export function usePlugins() {
       }
     };
 
-    const addPlugin = (newPlugin: PluginUIItem): boolean => {
+    const tryAddPlugin = (newPlugin: PluginUIItem): boolean | 'pending_approval' => {
+      // Filter valid permissions
+      const validPermissions = newPlugin.permissions.filter(
+        (_p): _p is PluginPermission => true,
+      );
+
+      if (validPermissions.length > 0) {
+        // Show permission approval modal
+        pendingRef.current = newPlugin;
+        setPendingPermission({ plugin: newPlugin, permissions: validPermissions });
+        return 'pending_approval';
+      }
+
+      // No permissions needed, add directly
       let added = false;
       setPlugins((prev) => {
         if (prev.some((p) => p.id === newPlugin.id)) return prev;
@@ -118,7 +161,7 @@ export function usePlugins() {
       const content = await readTextFile(selected as string);
       const newPlugin = await readManifest(content);
       if (!newPlugin) return false;
-      return addPlugin(newPlugin);
+      return tryAddPlugin(newPlugin) === true;
     } catch {
       // Fallback: native file input
       return new Promise<boolean>((resolve) => {
@@ -131,12 +174,23 @@ export function usePlugins() {
           const text = await file.text();
           const newPlugin = await readManifest(text);
           if (!newPlugin) { resolve(false); return; }
-          resolve(addPlugin(newPlugin));
+          const result = tryAddPlugin(newPlugin);
+          resolve(result === true);
         };
         input.click();
       });
     }
   }, []);
 
-  return { plugins, enablePlugin, disablePlugin, removePlugin, togglePlugin, installFromFile };
+  return {
+    plugins,
+    enablePlugin,
+    disablePlugin,
+    removePlugin,
+    togglePlugin,
+    installFromFile,
+    pendingPermission,
+    onApprovePermissions: handleApprove,
+    onCancelPermission: handleCancel,
+  };
 }

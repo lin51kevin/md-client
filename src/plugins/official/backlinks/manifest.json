@@ -1,0 +1,11 @@
+{
+  "id": "marklite-backlinks",
+  "name": "Backlinks Panel",
+  "version": "1.0.0",
+  "description": "显示当前文档的反向链接 — 在任意 [[link]] 处查看哪些文档引用了它",
+  "author": "MarkLite Team",
+  "main": "src/index.ts",
+  "activationEvents": ["onWorkspaceReady"],
+  "permissions": ["workspace", "editor.read", "sidebar.panel", "storage"],
+  "engines": { "marklite": ">=0.7.2" }
+}
