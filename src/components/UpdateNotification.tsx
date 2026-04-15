@@ -1,5 +1,4 @@
 import { Download, X, RotateCw } from 'lucide-react';
-import { useI18n } from '../i18n';
 
 interface UpdateNotificationProps {
   version: string;
@@ -22,7 +21,6 @@ export function UpdateNotification({
   readyToRestart,
   onRestart,
 }: UpdateNotificationProps) {
-  const { t } = useI18n();
 
   return (
     <div

@@ -6,6 +6,7 @@ import { EditorView } from '@codemirror/view';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { languages } from '@codemirror/language-data';
 import { foldGutter } from '@codemirror/language';
+import { undoDepth, redoDepth } from '@codemirror/commands';
 import { THEMES, type ThemeName } from '../lib/theme';
 import { sepiaCmTheme, highContrastCmTheme } from '../lib/cm-themes';
 import { autoCloseBrackets } from '../lib/cmAutocomplete';
@@ -92,9 +93,8 @@ export function useEditorInstance({
     const rangeCount = viewUpdate.state.selection.ranges.length;
     setCursorCount(rangeCount);
     if (viewUpdate.docChanged) {
-      const hist = viewUpdate.state.history;
-      setCanUndo(!!hist && hist.undoDepth > 0);
-      setCanRedo(!!hist && hist.redoDepth > 0);
+      setCanUndo(undoDepth(viewUpdate.state) > 0);
+      setCanRedo(redoDepth(viewUpdate.state) > 0);
     }
   }, [activeTabId, theme]);
 

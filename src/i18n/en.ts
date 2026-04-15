@@ -505,4 +505,17 @@ export const en: Record<TranslationKey, string> = {
   'aiCopilot.prompt.editLabel.workspace': 'workspace context',
   'aiCopilot.prompt.editLabel.document': 'document content',
   'aiCopilot.prompt.editInstruction': 'User instruction: {instruction}\n\nCurrent {targetLabel}:\n---\n{content}\n---\n\nPlease modify the above content according to the instruction and provide the modified text directly (wrapped in a ```markdown code block).',
+
+  // ── File Watcher ──────────────────────────────────────────────────────────
+  'fileWatcher.modified': 'File modified externally',
+  'fileWatcher.deleted': 'File deleted',
+  'fileWatcher.reload': 'Reload',
+  'fileWatcher.keep': 'Keep',
+  'fileWatcher.saveAs': 'Save As',
+  'settings.editor.fileWatch': 'File Change Detection',
+  'settings.editor.fileWatchDesc': 'Detect modifications or deletions to open files by external programs',
+  'settings.editor.fileWatchBehavior': 'Change Behavior',
+  'settings.editor.fileWatchBehaviorDesc': 'Default behavior when a file change is detected',
+  'settings.editor.fileWatchAlwaysAsk': 'Always ask',
+  'settings.editor.fileWatchAutoReload': 'Auto reload (ask if there are unsaved changes)',
 };

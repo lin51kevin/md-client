@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { check as tauriCheck } from '@tauri-apps/plugin-updater';
 
 export interface UpdateInfo {
   version: string;
@@ -47,35 +48,13 @@ export function useAutoUpgrade(options: UseAutoUpgradeOptions) {
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
   const updateRef = useRef<any>(null); // the Tauri update object
 
-  // Try to import Tauri updater — it may not be available in web dev mode
-  const checkFnRef = useRef<() => Promise<any>>(async () => {
-    try {
-      const mod = await import('@tauri-apps/plugin-updater');
-      return mod.check;
-    } catch {
-      try {
-        const mod = await import('@tauri-apps/plugin-updater/dist-js');
-        return mod.check;
-      } catch {
-        return null;
-      }
-    }
-  });
-
   const checkForUpdate = useCallback(async () => {
     if (checking) return;
     if (!shouldCheck()) return;
 
     setChecking(true);
     try {
-      const getCheckFn = await checkFnRef.current();
-      if (!getCheckFn) {
-        // Updater plugin not available (e.g. web dev mode)
-        setChecking(false);
-        return;
-      }
-      const check = getCheckFn as () => Promise<any>;
-      const update = await check();
+      const update = await tauriCheck();
 
       recordCheck();
 
@@ -83,7 +62,6 @@ export function useAutoUpgrade(options: UseAutoUpgradeOptions) {
         const info: UpdateInfo = {
           version: update.version,
           releaseNotes: update.body,
-          downloadUrl: update.downloadUrl,
         };
         setUpdateInfo(info);
         updateRef.current = update;

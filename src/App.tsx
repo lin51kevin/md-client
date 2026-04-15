@@ -34,6 +34,7 @@ import { useAppLifecycle } from './hooks/useAppLifecycle';
 import { useAutoUpgrade } from './hooks/useAutoUpgrade';
 import { usePendingImageMigration } from './hooks/usePendingImageMigration';
 import { useFileWatcher, markSelfSave } from './hooks/useFileWatcher';
+import { invoke } from '@tauri-apps/api/core';
 import { FileChangeToast } from './components/FileChangeToast';
 import { usePreviewRenderers } from './hooks/usePreviewRenderers';
 import { usePluginRuntime } from './hooks/usePluginRuntime';
@@ -132,6 +133,11 @@ export default function App() {
     getActiveTab, tabs, openFileInTab, markSaved, markSavedAs, t, onFirstSave: handleFirstSave,
   });
 
+  // F012 - Version history wraps rawHandleSaveFile to create snapshots on manual save
+  const { snapshots, handleSaveFile } = useVersionHistory({
+    rawHandleSaveFile, getActiveTab, tabs, activeFilePath: activeTab.filePath,
+  });
+
   // ── File watcher state ────────────────────────────────────────
   const [fileChangeToast, setFileChangeToast] = useState<{ type: 'modified' | 'deleted'; tabId: string; filePath: string; } | null>(null);
 
@@ -146,6 +152,13 @@ export default function App() {
       console.warn('[App] reload file failed:', err);
     }
   }, [tabs, updateTabDoc]);
+
+  // Wrap handleSaveFile to mark self-save for file watcher
+  const handleSaveWithWatchMark = useCallback(async (tabId?: string) => {
+    await handleSaveFile(tabId);
+    const tab = tabId ? tabs.find(t => t.id === tabId) : getActiveTab();
+    if (tab?.filePath) markSelfSave(tab.filePath);
+  }, [handleSaveFile, tabs, getActiveTab]);
 
   useFileWatcher({
     tabs,
@@ -166,18 +179,6 @@ export default function App() {
     onFileDeleted: (tabId, filePath) => {
       setFileChangeToast({ type: 'deleted', tabId, filePath });
     },
-  });
-
-  // Wrap handleSaveFile to mark self-save for file watcher
-  const handleSaveWithWatchMark = useCallback(async (tabId?: string) => {
-    await handleSaveFile(tabId);
-    const tab = tabId ? tabs.find(t => t.id === tabId) : getActiveTab();
-    if (tab?.filePath) markSelfSave(tab.filePath);
-  }, [handleSaveFile, tabs, getActiveTab]);
-
-  // F012 - Version history wraps rawHandleSaveFile to create snapshots on manual save
-  const { snapshots, handleSaveFile } = useVersionHistory({
-    rawHandleSaveFile, getActiveTab, tabs, activeFilePath: activeTab.filePath,
   });
 
   // ── Editor infrastructure ────────────────────────────────────────
@@ -228,7 +229,7 @@ export default function App() {
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [readyToRestart, setReadyToRestart] = useState(false);
 
-  const { checkForUpdate, downloadAndInstall, updateInfo, downloading: isDownloading } = useAutoUpgrade({
+  const { downloadAndInstall, updateInfo, downloading: isDownloading } = useAutoUpgrade({
     enabled: true,
     onUpdateAvailable: () => setShowUpdateNotification(true),
     onDownloadProgress: setDownloadProgress,
