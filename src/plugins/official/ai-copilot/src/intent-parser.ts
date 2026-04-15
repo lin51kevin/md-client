@@ -1,14 +1,16 @@
 /** Intent parser for AI Copilot quick commands and natural language input. */
+import type { EditScopeMode } from './providers/types';
 
 export interface ParsedIntent {
-  action: 'edit' | 'explain' | 'summarize' | 'translate' | 'format' | 'question';
-  target: 'selection' | 'document';
+  action: 'edit' | 'explain' | 'summarize' | 'translate' | 'format' | 'question' | 'create_document';
+  target: EditScopeMode;
   params: Record<string, string>;
   confidence: number;
   originalText: string;
 }
 
 const QUICK_COMMANDS: Record<string, Partial<ParsedIntent>> = {
+  '/new': { action: 'create_document', target: 'document' },
   '/explain': { action: 'explain', target: 'selection' },
   '/rewrite': { action: 'edit', target: 'selection', params: { mode: 'rewrite' } },
   '/summarize': { action: 'summarize', target: 'document' },
@@ -16,10 +18,16 @@ const QUICK_COMMANDS: Record<string, Partial<ParsedIntent>> = {
   '/format': { action: 'format', target: 'selection' },
   '/todo': { action: 'edit', target: 'selection', params: { mode: 'todo' } },
   '/expand': { action: 'edit', target: 'selection', params: { mode: 'expand' } },
+  '/toc': { action: 'edit', target: 'document', params: { mode: 'toc' } },
+  '/lint': { action: 'edit', target: 'document', params: { mode: 'lint' } },
+  '/fix-links': { action: 'edit', target: 'document', params: { mode: 'fix-links' } },
+  '/table-format': { action: 'edit', target: 'selection', params: { mode: 'table-format' } },
+  '/heading-promote': { action: 'edit', target: 'selection', params: { mode: 'heading-promote' } },
 };
 
 export function getQuickCommandList(): Array<{ command: string; label: string; description: string }> {
   return [
+    { command: '/new', label: 'New Doc', description: 'Create a new document with AI content' },
     { command: '/explain', label: 'Explain', description: 'Explain selected text' },
     { command: '/rewrite', label: 'Rewrite', description: 'Rewrite selected text' },
     { command: '/summarize', label: 'Summarize', description: 'Summarize the document' },
@@ -27,11 +35,56 @@ export function getQuickCommandList(): Array<{ command: string; label: string; d
     { command: '/format', label: 'Format', description: 'Format markdown content' },
     { command: '/todo', label: 'TODO', description: 'Generate a TODO list' },
     { command: '/expand', label: 'Expand', description: 'Expand abbreviated content' },
+    { command: '/toc', label: 'TOC', description: 'Generate table of contents' },
+    { command: '/lint', label: 'Lint', description: 'Lint markdown style issues' },
+    { command: '/fix-links', label: 'Fix Links', description: 'Fix broken markdown links' },
+    { command: '/table-format', label: 'Table Format', description: 'Format markdown tables' },
+    { command: '/heading-promote', label: 'Promote Heading', description: 'Adjust heading levels' },
   ];
+}
+
+function parseScopeMode(input: string): { target: EditScopeMode; targetFilePath?: string } {
+  const token = input.trim().toLowerCase();
+  if (token === 'selection') return { target: 'selection' };
+  if (token === 'document' || token === 'doc') return { target: 'document' };
+  if (token === 'workspace' || token === 'ws') return { target: 'workspace' };
+  if (token.startsWith('tab:')) {
+    return { target: 'tab', targetFilePath: input.slice(4).trim() };
+  }
+  if (token === 'tab') return { target: 'tab' };
+  return { target: 'document' };
 }
 
 export function parseIntent(input: string): ParsedIntent {
   const trimmed = input.trim();
+
+  if (trimmed.startsWith('/scope ')) {
+    const rest = trimmed.slice('/scope '.length).trim();
+    const firstSpace = rest.indexOf(' ');
+    const scopeToken = firstSpace >= 0 ? rest.slice(0, firstSpace) : rest;
+    const nestedInstruction = firstSpace >= 0 ? rest.slice(firstSpace + 1).trim() : '';
+    const scoped = parseScopeMode(scopeToken);
+    const nested = nestedInstruction
+      ? parseIntent(nestedInstruction)
+      : {
+          action: 'question' as const,
+          target: 'document' as const,
+          params: { instruction: '' },
+          confidence: 0.8,
+          originalText: trimmed,
+        };
+    return {
+      ...nested,
+      target: scoped.target,
+      params: {
+        ...nested.params,
+        instruction: nestedInstruction || nested.params.instruction || '',
+        ...(scoped.targetFilePath ? { targetFilePath: scoped.targetFilePath } : {}),
+      },
+      originalText: trimmed,
+      confidence: Math.max(0.8, nested.confidence),
+    };
+  }
 
   // 1. Quick commands
   for (const [cmd, template] of Object.entries(QUICK_COMMANDS)) {
@@ -48,6 +101,23 @@ export function parseIntent(input: string): ParsedIntent {
   }
 
   // 2. Natural language patterns (Chinese)
+
+  // 0. Create new document — check before generic patterns
+  const createNewDocPatterns = [
+    /^(请|帮我?|请帮我?)?(创建|新建|生成)(一[个份]?)?(新[的]?)?(文档|文件|md|markdown)/i,
+    /^create (a )?(new )?(document|file|markdown|doc)/i,
+    /^(新建|创建)(文档|文件)/i,
+  ];
+  if (createNewDocPatterns.some((re) => re.test(trimmed))) {
+    return {
+      action: 'create_document',
+      target: 'document',
+      params: { instruction: trimmed },
+      confidence: 0.95,
+      originalText: trimmed,
+    };
+  }
+
   const patterns: Array<{
     regex: RegExp;
     action: ParsedIntent['action'];

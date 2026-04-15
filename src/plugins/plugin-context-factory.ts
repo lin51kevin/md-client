@@ -18,6 +18,8 @@ export interface PluginContextDeps {
   getActiveTab: () => { path: string | null; content: string } | null;
   /** Open a file in a new tab. */
   openFileInTab: (path: string) => void;
+  /** Create a new untitled tab, optionally pre-filled with content. */
+  openNewUntitled?: (content: string) => void;
   /** Returns file paths of all open tabs. */
   getOpenFilePaths: () => string[];
   /** Optional: returns all workspace files (including unopened). */

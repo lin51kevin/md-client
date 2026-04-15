@@ -30,6 +30,9 @@ export class OpenAICompatibleProvider implements AIProvider {
 
   async chat(messages: ChatMessage[], onChunk?: (chunk: string) => void): Promise<string> {
     if (!this.apiKey) throw new Error(`${this.name}: API key not configured`);
+    if (this.name === 'openrouter' && !this.apiKey.startsWith('sk-or-v1-')) {
+      throw new Error('OpenRouter API Key 格式不正确（应以 sk-or-v1- 开头）');
+    }
 
     const useStream = Boolean(onChunk);
     const controller = new AbortController();
@@ -39,7 +42,7 @@ export class OpenAICompatibleProvider implements AIProvider {
       const response = await fetch(`${this.baseUrl}/chat/completions`, {
         method: 'POST',
         headers: {
-          // customHeaders spread first so provider-level auth always takes precedence
+          // Authorization is set last so provider auth always takes precedence.
           ...this.customHeaders,
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${this.apiKey}`,

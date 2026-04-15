@@ -2,6 +2,7 @@ import { createElement, useState, useRef, useEffect, useCallback } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { PROVIDER_PRESETS, getModelLabel } from './providers/provider-registry';
 import type { AIConfig } from './config-store';
+import { useI18n } from '../../../../i18n';
 
 interface ModelSelectorProps {
   config: AIConfig;
@@ -10,6 +11,7 @@ interface ModelSelectorProps {
 }
 
 export function ModelSelectorView({ config, activeProvider, onSelect }: ModelSelectorProps) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -105,7 +107,7 @@ export function ModelSelectorView({ config, activeProvider, onSelect }: ModelSel
                   color: 'var(--text-muted, #888)',
                   textAlign: 'center' as const,
                 },
-              }, '请先在设置中配置并测试连接')];
+              }, t('aiCopilot.modelSelector.noVerifiedProviders'))];
             }
             return verified.map((p) => {
               const uc = config.providerConfigs[p.id];

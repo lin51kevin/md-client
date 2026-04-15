@@ -12,6 +12,7 @@ export function createWorkspaceAPI(deps: {
   openFileInTab: (path: string) => void;
   getOpenFilePaths: () => string[];
   getAllWorkspaceFiles?: () => string[];
+  openNewUntitled?: (content: string) => void;
 }): PluginContext['workspace'] {
   return {
     /**
@@ -50,6 +51,9 @@ export function createWorkspaceAPI(deps: {
      */
     onFileChanged(_callback: (file: { path: string; name: string }) => void) {
       return { dispose() {} };
+    },
+    createNewDoc(content?: string) {
+      deps.openNewUntitled?.(content ?? '');
     },
   };
 }

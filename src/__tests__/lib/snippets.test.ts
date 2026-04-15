@@ -9,6 +9,13 @@ import {
   type Snippet,
 } from '../../lib/snippets';
 
+function normalizeSnippets(snippets: Snippet[]): Array<Omit<Snippet, 'createdAt'> & { createdAt: 'number' }> {
+  return snippets.map((s) => ({
+    ...s,
+    createdAt: 'number',
+  }));
+}
+
 describe('generateSnippetId', () => {
   it('returns a string prefixed with snip-', () => {
     expect(generateSnippetId()).toMatch(/^snip-/);
@@ -39,7 +46,10 @@ describe('getSnippets / saveSnippets', () => {
 
   it('returns default snippets when nothing is stored', () => {
     const result = getSnippets();
-    expect(result).toEqual(getDefaultSnippets());
+    expect(normalizeSnippets(result)).toEqual(normalizeSnippets(getDefaultSnippets()));
+    for (const snippet of result) {
+      expect(typeof snippet.createdAt).toBe('number');
+    }
   });
 
   it('returns saved snippets when present', () => {
@@ -50,7 +60,11 @@ describe('getSnippets / saveSnippets', () => {
 
   it('returns defaults on invalid JSON', () => {
     localStorage.setItem(SNIPPETS_STORAGE_KEY, 'not-json{{{');
-    expect(getSnippets()).toEqual(getDefaultSnippets());
+    const result = getSnippets();
+    expect(normalizeSnippets(result)).toEqual(normalizeSnippets(getDefaultSnippets()));
+    for (const snippet of result) {
+      expect(typeof snippet.createdAt).toBe('number');
+    }
   });
 
   it('saveSnippets persists and returns true', () => {

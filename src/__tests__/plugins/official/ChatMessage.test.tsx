@@ -123,7 +123,7 @@ describe('ChatMessageView — VS Code-style layout', () => {
             actions: [{
               id: 'act-1', type: 'replace',
               description: 'fix', from: 0, to: 5,
-              originalText: 'Hello', newText: 'Hi',
+              originalText: 'Hello', newText: 'Hi', sourceFilePath: '/doc.md',
             }],
           })}
           onApply={onApply}
@@ -144,7 +144,7 @@ describe('ChatMessageView — VS Code-style layout', () => {
             actions: [{
               id: 'act-1', type: 'replace',
               description: 'fix', from: 0, to: 5,
-              originalText: 'Hello', newText: 'Hi',
+              originalText: 'Hello', newText: 'Hi', sourceFilePath: '/doc.md',
             }],
           })}
         />

@@ -5,6 +5,7 @@ import type {
   CopilotMessage,
   CopilotState,
   EditAction,
+  EditScopeMode,
   EditorContext,
   ChatMessage as AIChatMessage,
   ProviderConfig,
@@ -15,11 +16,14 @@ import { OpenAICompatibleProvider } from './providers/openai-compatible';
 import { loadConfig, saveConfig, buildProviderConfig, type AIConfig } from './config-store';
 import { parseIntent } from './intent-parser';
 import { buildSystemPrompt, buildChatPrompt, extractModifiedText } from './prompt-builder';
+import { getEffectiveScope } from './edit-scope';
+import { validateActionAgainstCurrentContent } from './stale-guard';
+import { createMarkdownSectionActions } from './markdown-actions';
 import { ChatMessageView } from './ChatMessage';
 import { SlashCommandPopup } from './QuickCommands';
 import { ModelSelectorView } from './ModelSelector';
 import { SettingsViewComponent } from './SettingsView';
-import { useI18n } from '../../../../i18n';
+import { getT, useI18n } from '../../../../i18n';
 
 /**
  * Core panel content class following the backlinks pattern:
@@ -40,7 +44,7 @@ export class AICopilotPanelContent {
   constructor(context: PluginContext) {
     this.context = context;
     this.router = new ProviderRouter();
-    this.state = { messages: [], isLoading: false, selectedProvider: '' };
+    this.state = { messages: [], isLoading: false, selectedProvider: '', editScope: 'selection' };
     this.init().catch((err) => console.error('[AI Copilot] Initialization failed:', err));
   }
 
@@ -76,19 +80,57 @@ export class AICopilotPanelContent {
     }
   }
 
-  private captureContext(): EditorContext {
-    const content = this.context.editor.getContent();
+  private async captureContext(scope: EditScopeMode, targetFilePath?: string): Promise<EditorContext> {
+    const activeContent = this.context.editor.getContent();
     const cursor = this.context.editor.getCursorPosition();
     const selection = this.context.editor.getSelection() ?? undefined;
-    const filePath = this.context.editor.getActiveFilePath();
-    return { filePath, content, cursor, selection };
+    const activeFilePath = this.context.editor.getActiveFilePath();
+
+    if (scope === 'workspace') {
+      const workspaceFiles = this.context.workspace
+        .getAllFiles()
+        .filter((p) => /\.(md|markdown)$/i.test(p))
+        .slice(0, 8);
+      const loaded = await Promise.all(
+        workspaceFiles.map(async (path) => ({ path, content: (await this.context.files.readFile(path)) ?? '' })),
+      );
+      return {
+        filePath: activeFilePath,
+        content: activeContent,
+        cursor,
+        selection,
+        scope,
+        workspaceFiles: loaded.filter((f) => f.content.trim().length > 0),
+      };
+    }
+
+    if (scope === 'tab' && targetFilePath) {
+      const tabContent = await this.context.files.readFile(targetFilePath);
+      if (tabContent !== null) {
+        return {
+          filePath: targetFilePath,
+          content: tabContent,
+          cursor: { line: 1, column: 1, offset: 0 },
+          scope,
+          targetFilePath,
+        };
+      }
+      this.context.ui.showMessage(`未找到目标文件: ${targetFilePath}，已回退到当前文档`, 'warning');
+    }
+
+    return { filePath: activeFilePath, content: activeContent, cursor, selection, scope, targetFilePath };
   }
 
   async sendMessage(text: string) {
     if (!text.trim() || this.state.isLoading) return;
 
-    const editorCtx = this.captureContext();
+    const t = getT();
+
     const intent = parseIntent(text);
+    const hasSelection = Boolean(this.context.editor.getSelection());
+    const requestedScope = text.trim().startsWith('/scope ') ? intent.target : this.state.editScope;
+    const effectiveScope = getEffectiveScope(requestedScope, hasSelection);
+    const editorCtx = await this.captureContext(effectiveScope, intent.params.targetFilePath);
 
     // Add user message
     const userMsg: CopilotMessage = {
@@ -112,6 +154,7 @@ export class AICopilotPanelContent {
     this.setState({
       messages: [...trimmedHistory, userMsg, assistantMsg],
       isLoading: true,
+      editScope: effectiveScope,
     });
 
     try {
@@ -138,7 +181,32 @@ export class AICopilotPanelContent {
       );
 
       // Build actions if the response contains modified text
-      const actions = this.buildActions(fullResponse, editorCtx);
+
+      // ── create_document: open a new untitled tab with the generated content ──
+      if (intent.action === 'create_document') {
+        const newDocContent = extractModifiedText(fullResponse) ?? fullResponse;
+        const finalMsgs = this.state.messages.map((m) =>
+          m.id === assistantId ? { ...m, content: fullResponse, isStreaming: false } : m,
+        );
+        this.setState({ messages: finalMsgs, isLoading: false });
+
+        if (!newDocContent.trim()) {
+          this.context.ui.showMessage(t('aiCopilot.panel.newDocEmpty'), 'warning');
+          return;
+        }
+
+        try {
+          this.context.workspace.createNewDoc(newDocContent);
+          this.context.ui.showMessage(t('aiCopilot.panel.newDocCreated'), 'info');
+        } catch (err) {
+          const reason = err instanceof Error ? err.message : String(err);
+          this.context.ui.showMessage(t('aiCopilot.panel.newDocCreateFailed', { reason }), 'error');
+        }
+        return;
+      }
+
+      // Build actions if the response contains modified text
+      const actions = this.buildActions(fullResponse, editorCtx, effectiveScope);
 
       const isBypass = this.config?.general?.applyMode === 'bypass';
 
@@ -148,10 +216,22 @@ export class AICopilotPanelContent {
           m.id === assistantId ? { ...m, content: fullResponse, isStreaming: false } : m,
         );
         this.setState({ messages: finalMsgs, isLoading: false });
+        let appliedCount = 0;
         for (const action of actions) {
-          this.context.editor.replaceRange(action.from, action.to, action.newText);
+          if (this.tryApplyAction(action)) {
+            appliedCount += 1;
+          }
         }
-        this.context.ui.showMessage('已自动应用修改', 'info');
+        if (appliedCount === actions.length) {
+          this.context.ui.showMessage(t('aiCopilot.panel.autoApplied'), 'info');
+        } else if (appliedCount > 0) {
+          this.context.ui.showMessage(
+            t('aiCopilot.panel.autoAppliedPartial', { appliedCount, totalCount: actions.length }),
+            'warning',
+          );
+        } else {
+          this.context.ui.showMessage(t('aiCopilot.panel.autoApplyFailed'), 'warning');
+        }
       } else {
         // Default mode: show Apply/Discard buttons
         const finalMsgs = this.state.messages.map((m) =>
@@ -172,9 +252,10 @@ export class AICopilotPanelContent {
     }
   }
 
-  private buildActions(response: string, editorCtx: EditorContext): EditAction[] {
+  private buildActions(response: string, editorCtx: EditorContext, scope: EditScopeMode): EditAction[] {
     const modified = extractModifiedText(response);
     if (!modified) return [];
+    if (scope === 'workspace') return [];
 
     if (editorCtx.selection) {
       return [
@@ -186,27 +267,22 @@ export class AICopilotPanelContent {
           to: editorCtx.selection.to,
           originalText: editorCtx.selection.text,
           newText: modified,
+          sourceFilePath: editorCtx.filePath,
         },
       ];
     }
 
-    // No selection: insert at cursor rather than replacing the whole document
-    const offset = editorCtx.cursor.offset;
-    return [
-      {
-        id: this.nextId(),
-        type: 'insert',
-        description: '在光标处插入 AI 生成内容（无选区时请先选中要替换的文本）',
-        from: offset,
-        to: offset,
-        originalText: '',
-        newText: modified,
-      },
-    ];
+    return createMarkdownSectionActions({
+      original: editorCtx.content,
+      modified,
+      baseFrom: 0,
+      filePath: editorCtx.filePath,
+      idFactory: () => this.nextId(),
+    });
   }
 
   applyAction(action: EditAction, successMessage = '已应用修改') {
-    this.context.editor.replaceRange(action.from, action.to, action.newText);
+    if (!this.tryApplyAction(action)) return;
     this.context.ui.showMessage(successMessage, 'info');
 
     // Remove the action from messages
@@ -215,6 +291,24 @@ export class AICopilotPanelContent {
       actions: m.actions?.filter((a) => a.id !== action.id),
     }));
     this.setState({ messages: msgs });
+  }
+
+  private tryApplyAction(action: EditAction): boolean {
+    const currentPath = this.context.editor.getActiveFilePath();
+    if (action.sourceFilePath && currentPath !== action.sourceFilePath) {
+      this.context.workspace.openFile(action.sourceFilePath);
+      this.context.ui.showMessage('检测到文件已切换，已跳转回建议来源文件，请再次点击应用', 'warning');
+      return false;
+    }
+
+    const validation = validateActionAgainstCurrentContent(action, this.context.editor.getContent());
+    if (!validation.valid) {
+      this.context.ui.showMessage('文档已变化，当前建议已过期，请重新生成。', 'warning');
+      return false;
+    }
+
+    this.context.editor.replaceRange(action.from, action.to, action.newText);
+    return true;
   }
 
   toggleApplyMode() {
@@ -317,6 +411,10 @@ export class AICopilotPanelContent {
     }
   }
 
+  setEditScope(scope: EditScopeMode) {
+    this.setState({ editScope: scope });
+  }
+
   /** Stable React component reference – created once, reused across render() calls. */
   private _Component: React.FunctionComponent | null = null;
 
@@ -375,7 +473,7 @@ export class AICopilotPanelContent {
         inputRef.current?.focus();
       }, []);
 
-      const { messages, isLoading, selectedProvider } = self.state;
+      const { messages, isLoading, selectedProvider, editScope } = self.state;
 
       // Icon button helper style
       const iconBtn: React.CSSProperties = {
@@ -653,7 +751,9 @@ export class AICopilotPanelContent {
                     'button',
                     {
                       onClick: () => self.toggleApplyMode(),
-                      title: isBypass ? '自动应用 — 点击切换为手动确认' : '手动确认 — 点击切换为自动应用',
+                      title: isBypass
+                        ? t('aiCopilot.applyMode.autoTooltip')
+                        : t('aiCopilot.applyMode.manualTooltip'),
                       style: {
                         display: 'flex',
                         alignItems: 'center',
@@ -671,9 +771,44 @@ export class AICopilotPanelContent {
                         flexShrink: 0,
                       },
                     },
-                    isBypass ? 'AUTO' : 'MANUAL',
+                    isBypass ? t('aiCopilot.applyMode.auto') : t('aiCopilot.applyMode.manual'),
                   );
                 })(),
+                createElement(
+                  'button',
+                  {
+                    onClick: () => {
+                      const order: EditScopeMode[] = ['selection', 'document', 'tab', 'workspace'];
+                      const idx = order.indexOf(editScope);
+                      const next = order[(idx + 1) % order.length];
+                      self.setEditScope(next);
+                    },
+                    title: t('aiCopilot.scope.tooltip', { scope: editScope }),
+                    style: {
+                      display: 'flex',
+                      alignItems: 'center',
+                      height: '16px',
+                      padding: '0 6px',
+                      border: '1px solid var(--border-color, #444)',
+                      borderRadius: '8px',
+                      background: 'transparent',
+                      color: 'var(--text-muted, #666)',
+                      fontSize: '9px',
+                      fontWeight: 700,
+                      letterSpacing: '0.4px',
+                      cursor: 'pointer',
+                      userSelect: 'none' as const,
+                      flexShrink: 0,
+                    },
+                  },
+                  editScope === 'selection'
+                    ? t('aiCopilot.scope.selection')
+                    : editScope === 'document'
+                      ? t('aiCopilot.scope.document')
+                      : editScope === 'tab'
+                        ? t('aiCopilot.scope.tab')
+                        : t('aiCopilot.scope.workspace'),
+                ),
               ),
               // Send button
               createElement(

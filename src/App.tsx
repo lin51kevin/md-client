@@ -181,6 +181,7 @@ export default function App() {
       return { path: t.filePath, content: t.doc };
     },
     openFileInTab: (path: string) => void openFileInTab(path),
+    openNewUntitled: (content: string) => createNewTab(content),
     getOpenFilePaths: () => tabs.filter(t => t.filePath).map(t => t.filePath!),
     cmViewRef,
     registerSidebarPanel: registerPluginPanel,
@@ -189,7 +190,7 @@ export default function App() {
     removeStatusBarItem: () => {},
     registerPreviewRenderer,
     unregisterPreviewRenderer,
-  }), [getActiveTab, openFileInTab, tabs, cmViewRef, registerPluginPanel, unregisterPluginPanel, registerPreviewRenderer, unregisterPreviewRenderer]);
+  }), [getActiveTab, openFileInTab, createNewTab, tabs, cmViewRef, registerPluginPanel, unregisterPluginPanel, registerPreviewRenderer, unregisterPreviewRenderer]);
 
   const { activatePlugin, deactivatePlugin } = usePluginRuntime(pluginRuntimeDeps);
 

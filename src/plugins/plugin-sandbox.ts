@@ -28,6 +28,7 @@ const PERMISSION_MAP: Record<string, Record<string, PluginPermission>> = {
   workspace: {
     getAllFiles: 'workspace',
     openFile: 'workspace',
+    createNewDoc: 'workspace',
   },
   commands: {
     register: 'commands',
@@ -89,6 +90,7 @@ export interface WorkspaceAPI {
   getAllFiles(): string[];
   openFile(path: string): void;
   onFileChanged(callback: (file: { path: string; name: string }) => void): Disposable;
+  createNewDoc(content?: string): void;
 }
 
 export interface StorageAPI {

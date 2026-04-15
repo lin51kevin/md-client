@@ -268,7 +268,7 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
     }
   }, [tr, notifyRecent]);
 
-  const createNewTab = () => {
+  const createNewTab = (initialContent?: string) => {
     const current = tabsRef.current;
     // 用户新建 → untitled + 序号，空内容
     const usedNames = new Set(current.map(t => getTabTitle(t).replace(/ \u25cf$/, '')));
@@ -278,7 +278,8 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
       while (usedNames.has(`untitled${i}.md`)) i++;
       name = `untitled${i}.md`;
     }
-    const newTab: Tab = { id: genTabId(), filePath: null, doc: '', isDirty: false, displayName: name };
+    const hasContent = initialContent != null && initialContent.length > 0;
+    const newTab: Tab = { id: genTabId(), filePath: null, doc: initialContent ?? '', isDirty: hasContent, displayName: name };
     // Replace the pristine backing tab (no file, not dirty, no custom displayName = welcome state)
     const isPristineBacking = current.length === 1 && !current[0].filePath && !current[0].isDirty && !current[0].displayName;
     if (isPristineBacking) {

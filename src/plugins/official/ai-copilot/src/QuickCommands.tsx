@@ -9,6 +9,7 @@ interface SlashCommandPopupProps {
 }
 
 const CMD_KEYS: Record<string, { labelKey: TranslationKey; descKey: TranslationKey }> = {
+  '/new':      { labelKey: 'aiCopilot.cmd.new',      descKey: 'aiCopilot.cmd.new.desc'      },
   '/explain':  { labelKey: 'aiCopilot.cmd.explain',  descKey: 'aiCopilot.cmd.explain.desc'  },
   '/rewrite':  { labelKey: 'aiCopilot.cmd.rewrite',  descKey: 'aiCopilot.cmd.rewrite.desc'  },
   '/summarize':{ labelKey: 'aiCopilot.cmd.summarize', descKey: 'aiCopilot.cmd.summarize.desc' },
@@ -16,6 +17,11 @@ const CMD_KEYS: Record<string, { labelKey: TranslationKey; descKey: TranslationK
   '/format':   { labelKey: 'aiCopilot.cmd.format',   descKey: 'aiCopilot.cmd.format.desc'   },
   '/todo':     { labelKey: 'aiCopilot.cmd.todo',     descKey: 'aiCopilot.cmd.todo.desc'     },
   '/expand':   { labelKey: 'aiCopilot.cmd.expand',   descKey: 'aiCopilot.cmd.expand.desc'   },
+  '/toc':      { labelKey: 'aiCopilot.cmd.toc',      descKey: 'aiCopilot.cmd.toc.desc'      },
+  '/lint':     { labelKey: 'aiCopilot.cmd.lint',     descKey: 'aiCopilot.cmd.lint.desc'     },
+  '/fix-links': { labelKey: 'aiCopilot.cmd.fixLinks', descKey: 'aiCopilot.cmd.fixLinks.desc' },
+  '/table-format': { labelKey: 'aiCopilot.cmd.tableFormat', descKey: 'aiCopilot.cmd.tableFormat.desc' },
+  '/heading-promote': { labelKey: 'aiCopilot.cmd.headingPromote', descKey: 'aiCopilot.cmd.headingPromote.desc' },
 };
 
 /**
@@ -28,9 +34,11 @@ export function SlashCommandPopup({ filter, onSelect }: SlashCommandPopupProps) 
 
   const commands = rawCommands.map((c) => {
     const keys = CMD_KEYS[c.command];
-    return keys
-      ? { ...c, label: t(keys.labelKey), description: t(keys.descKey) }
-      : c;
+    return {
+      ...c,
+      label: keys ? t(keys.labelKey) : c.command,
+      description: keys ? t(keys.descKey) : '',
+    };
   });
 
   const filtered = filter

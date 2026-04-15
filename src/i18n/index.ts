@@ -41,6 +41,14 @@ function translate(
   return str;
 }
 
+// ── Standalone translator (for non-React code) ──────────────────────────────
+
+/** Get a translation function based on the currently saved locale. */
+export function getT(): (key: TranslationKey, params?: Record<string, string | number>) => string {
+  const locale = getSavedLocale();
+  return (key, params) => translate(locale, key, params);
+}
+
 // ── React Context ────────────────────────────────────────────────────────────
 
 interface I18nContext {

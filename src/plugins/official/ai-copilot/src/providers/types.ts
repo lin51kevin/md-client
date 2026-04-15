@@ -5,6 +5,8 @@ export interface ChatMessage {
   content: string;
 }
 
+export type EditScopeMode = 'selection' | 'document' | 'tab' | 'workspace';
+
 export interface ProviderConfig {
   type: 'cloud' | 'local';
   provider: string;
@@ -35,6 +37,7 @@ export interface EditAction {
   to: number;
   originalText: string;
   newText: string;
+  sourceFilePath: string | null;
 }
 
 export interface EditorContext {
@@ -42,6 +45,9 @@ export interface EditorContext {
   content: string;
   cursor: { line: number; column: number; offset: number };
   selection?: { from: number; to: number; text: string };
+  scope?: EditScopeMode;
+  targetFilePath?: string;
+  workspaceFiles?: Array<{ path: string; content: string }>;
 }
 
 export interface CopilotMessage {
@@ -58,4 +64,5 @@ export interface CopilotState {
   messages: CopilotMessage[];
   isLoading: boolean;
   selectedProvider: string;
+  editScope: EditScopeMode;
 }
