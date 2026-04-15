@@ -165,7 +165,7 @@ export function EditorContentArea({
                 onContentChange={updateActiveDoc}
                 onWikiLinkNavigate={handleWikiLinkNavigate}
                 className={previewClass}
-                pluginRenderers={pluginRenderers}
+                {...(!useMilkdownPreview ? { pluginRenderers } : {})}
               />
             </Suspense>
           </div>
@@ -207,7 +207,7 @@ export function EditorContentArea({
                 onContentChange={updateActiveDoc}
                 onWikiLinkNavigate={handleWikiLinkNavigate}
                 className={previewClass}
-                pluginRenderers={pluginRenderers}
+                {...(!useMilkdownPreview ? { pluginRenderers } : {})}
               />
             </Suspense>
           </div>

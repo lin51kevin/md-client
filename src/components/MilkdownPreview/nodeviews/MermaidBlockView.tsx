@@ -11,6 +11,8 @@ import { initMermaid } from '../../../lib/mermaid';
  * Milkdown renderPreview 兼容的 Mermaid 渲染函数
  * 返回加载提示文本，异步通过 applyPreview 回调更新为 SVG
  */
+let mermaidCounter = 0;
+
 export function renderMermaidPreview(
   language: string,
   codeContent: string,
@@ -18,7 +20,7 @@ export function renderMermaidPreview(
 ): string | null {
   if (language !== 'mermaid') return null;
 
-  const id = `milkdown-mermaid-${Date.now()}`;
+  const id = `milkdown-mermaid-${++mermaidCounter}`;
   initMermaid()
     .then(({ default: mermaid }) => mermaid.render(id, codeContent))
     .then(({ svg }) => {

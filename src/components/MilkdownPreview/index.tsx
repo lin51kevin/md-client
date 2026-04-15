@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback, useMemo, memo } from 'react';
+import YAML from 'js-yaml';
 import { Milkdown, MilkdownProvider, useEditor } from '@milkdown/react';
 import { Crepe, CrepeFeature } from '@milkdown/crepe';
 import { EditorState } from '@milkdown/prose/state';
@@ -12,18 +13,7 @@ import { renderMermaidPreview } from './nodeviews/MermaidBlockView';
 
 /** Convert a Frontmatter object back to YAML string (without --- delimiters) */
 function frontmatterToYaml(fm: Frontmatter): string {
-  const lines: string[] = [];
-  for (const [key, val] of Object.entries(fm)) {
-    if (Array.isArray(val)) {
-      lines.push(`${key}:`);
-      for (const item of val as string[]) {
-        lines.push(`  - ${item}`);
-      }
-    } else {
-      lines.push(`${key}: ${String(val)}`);
-    }
-  }
-  return lines.join('\n') + '\n';
+  return YAML.dump(fm).replace(/\n$/, '') + '\n';
 }
 
 interface MilkdownPreviewProps {
@@ -150,7 +140,7 @@ function MilkdownEditor({
     const editor = get();
     if (!crepe || !editor) return;
 
-    if (content === lastContentRef.current) return;
+    if (body === lastContentRef.current) return;
 
     isExternalUpdate.current = true;
     editor.action((ctx) => {
