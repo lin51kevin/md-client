@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updatedAt": "2026-04-14T00:00:00.000Z",
+  "updatedAt": "2026-04-15T05:05:00.000Z",
   "plugins": [
     {
       "id": "marklite-backlinks",
@@ -19,15 +19,6 @@
       "version": "1.0.0",
       "tags": ["wiki", "graph", "visualization"],
       "manifestUrl": "official/graph-view/manifest.json"
-    },
-    {
-      "id": "marklite-preview-edit",
-      "name": "Preview Editor",
-      "description": "在预览窗格中直接编辑文本，点击段落和标题即可原地修改",
-      "author": "MarkLite Team",
-      "version": "1.0.0",
-      "tags": ["preview", "editing", "wysiwyg"],
-      "manifestUrl": "official/preview-edit/manifest.json"
     },
     {
       "id": "marklite-ai-copilot",

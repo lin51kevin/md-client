@@ -20,6 +20,9 @@ export interface PendingPermissionRequest {
 
 const STORAGE_KEY = 'marklite-installed-plugins';
 
+/** Plugin IDs that are hidden from the UI (built-in features supersede them). */
+const HIDDEN_PLUGIN_IDS = new Set(['marklite-preview-edit']);
+
 const DEFAULT_PLUGINS: PluginUIItem[] = [
   {
     id: 'marklite-backlinks',
@@ -39,15 +42,6 @@ const DEFAULT_PLUGINS: PluginUIItem[] = [
     enabled: false,
     permissions: ['workspace', 'editor.read', 'sidebar.panel', 'storage'],
   },
-  {
-    id: 'marklite-preview-edit',
-    name: 'Preview Editor',
-    version: '1.0.0',
-    author: 'MarkLite Team',
-    description: '在预览窗格中直接编辑文本，点击段落和标题即可原地修改',
-    enabled: false,
-    permissions: ['editor.read', 'editor.write', 'preview.extend'],
-  },
 ];
 
 /** Migration map: old plugin IDs → new marklite-* IDs */
@@ -59,14 +53,22 @@ const ID_MIGRATION: Record<string, string> = {
 
 function migratePluginIds(plugins: PluginUIItem[]): PluginUIItem[] {
   let changed = false;
-  const migrated = plugins.map((p) => {
-    const newId = ID_MIGRATION[p.id];
-    if (newId) {
-      changed = true;
-      return { ...p, id: newId };
-    }
-    return p;
-  });
+  const migrated = plugins
+    .filter((p) => {
+      if (HIDDEN_PLUGIN_IDS.has(p.id) || HIDDEN_PLUGIN_IDS.has(ID_MIGRATION[p.id] ?? '')) {
+        changed = true;
+        return false;
+      }
+      return true;
+    })
+    .map((p) => {
+      const newId = ID_MIGRATION[p.id];
+      if (newId) {
+        changed = true;
+        return { ...p, id: newId };
+      }
+      return p;
+    });
 
   // Merge any default plugins that are missing (e.g. newly added ones)
   const existingIds = new Set(migrated.map((p) => p.id));
