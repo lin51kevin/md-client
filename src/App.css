@@ -1546,3 +1546,13 @@ button:focus .recent-remove-btn {
   font-size: 18px;
   cursor: pointer;
 }
+
+/* Typewriter mode - dim non-focused lines */
+.cm-editor.typewriter-dim .cm-line:not(.cm-activeLine),
+.cm-editor.typewriter-dim .cm-activeLineGutter + .cm-line {
+  opacity: 0.3;
+  transition: opacity 0.3s;
+}
+.cm-editor.typewriter-dim .cm-activeLine {
+  opacity: 1;
+}

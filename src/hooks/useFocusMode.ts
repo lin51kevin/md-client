@@ -9,9 +9,11 @@
  */
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { FocusMode } from '../types';
+import type { TypewriterOptions } from './useTypewriterOptions';
 
 interface UseFocusModeOptions {
   onModeChange?: (mode: FocusMode) => void;
+  typewriterOptions?: TypewriterOptions;
 }
 
 export function useFocusMode(options: UseFocusModeOptions = {}) {
