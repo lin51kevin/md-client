@@ -6,6 +6,64 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [v0.9.0] - 2026-04-15
+
+### Added
+
+#### 磁盘文件变更检测（File Watcher）
+- **useFileWatcher hook** — 基于 Tauri `fs.watch` API 实时监控打开文件的磁盘变更：
+  - 外部修改：Toast 提示"文件已在外部修改"，提供**重新加载**按钮
+  - 外部删除：Toast 提示文件已被删除
+  - 防抖处理（500ms），避免大量写操作触发多次通知
+  - 组件卸载时自动清理 watcher（防内存泄漏）
+
+#### 自动升级（Auto Upgrade）
+- **useAutoUpgrade hook** — 基于 Tauri Updater 插件的自动更新流程：
+  - 启动时自动检测新版本
+  - Toast 通知 + 进度条展示下载进度
+  - 下载完成后提示重启安装
+  - 设置面板新增"自动检查更新"开关，支持关闭自动检查
+  - i18n 完整覆盖（中/英）更新设置 UI
+
+#### 工具栏撤销/重做（Toolbar Undo/Redo）
+- 工具栏新增 **撤销（Undo）** 和 **重做（Redo）** 快捷按钮
+- 直接调用 CodeMirror `undo` / `redo` 命令
+- 与键盘快捷键 `Ctrl+Z` / `Ctrl+Shift+Z` 完全同步
+
+#### 文件夹拖拽到文件树（Folder Drag-to-FileTree）
+- 支持将操作系统文件夹**拖拽到应用窗口**，自动在文件树中展开该文件夹
+- 与已有的文件拖拽逻辑保持统一（单文件拖拽已于 v0.7.x 支持）
+
+#### 文件类型关联（File Type Association）
+- **Windows 安装程序（NSIS）** 注册 `.md` / `.markdown` 文件关联：
+  - 双击 `.md` 文件自动用 MarkLite 打开
+  - 右键菜单"用 MarkLite 打开"
+- Tauri `tauri.conf.json` 同步配置文件类型关联
+
+#### AI Copilot 增强
+- **Stop Generation 按钮** — AI 对话面板新增停止生成按钮，可随时中断响应流
+- **编辑工作流改进** — Apply 动作更精准地插入/替换编辑器内容
+- **i18n 完整覆盖** — AI Copilot 编辑相关操作全部接入 `t()` 翻译
+
+#### 编码自动检测（Encoding Auto-Detection）
+- 文件打开时自动检测编码（支持 GBK / GB18030 / UTF-8 / BOM 等）
+- 中文 Windows 环境下非 UTF-8 文件不再乱码
+- 底部状态栏显示当前文件编码
+
+### Fixed
+
+- 修复分栏模式下编辑器窗格压缩预览区的布局问题
+- 修复幻灯片 / 思维导图切换时 AI Copilot 对话状态丢失的问题
+- 修复所有 TypeScript 构建错误
+
+### Tests
+
+- 新增 `useFileWatcher.test.ts` — 文件监控 hook 完整测试
+- 新增 `prompt-builder.test.ts` — AI 提示词构建测试
+- 新增 `openai-compatible.test.ts` — OpenAI 兼容 Provider 测试
+
+---
+
 ## [v0.8.0] - 2026-04-15
 
 ### Added

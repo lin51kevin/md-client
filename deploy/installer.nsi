@@ -7,7 +7,7 @@
 !define APPNAME "MarkLite"
 !define COMPANYNAME "MarkLite"
 !define DESCRIPTION "A lightweight Markdown Editor"
-!define VERSION "0.8.0"
+!define VERSION "0.9.0"
 !define EXENAME "marklite.exe"
 !define PROG_ID "MarkLite.Markdown"
 
