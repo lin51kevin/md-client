@@ -24,22 +24,34 @@ export function resetMermaidInit(): void {
 export async function initMermaid(): Promise<typeof import('mermaid')> {
   const m = await import('mermaid');
   if (!mermaidInitialized) {
-    // htmlLabels: true (default) → 使用 <foreignObject> 渲染标签。
-    // 配合 themeVariables.primaryTextColor 显式设置文字颜色，
-    // 避免外层 CSS color 变量 (dark-mode) 通过继承使文字不可见。
+    // htmlLabels: false → 使用 SVG <text> 而非 <foreignObject>。
+    // <foreignObject> 的 HTML 内容在 Milkdown Crepe 的 DOMPurify + innerHTML
+    // 管道中会丢失，导致节点标签完全不可见。
+    //
+    // 必须同时设置顶层 htmlLabels 和 flowchart.htmlLabels：
+    // Mermaid 11.x 的 labelHelper 直接读 config.htmlLabels（顶层），
+    // 不经过 getEffectiveHtmlLabels()，因此光设 flowchart.htmlLabels 不够。
+    //
+    // themeCSS 注入到 SVG 内部 <style>（带 #svgId 作用域），
+    // 确保 text fill 不受外层 CSS currentColor 继承影响。
     m.default.initialize({
       startOnLoad: false,
       theme: 'default',
       securityLevel: 'strict',
       fontFamily: 'sans-serif',
       suppressErrorRendering: false,
-      flowchart: { htmlLabels: true },
+      htmlLabels: false,
+      flowchart: { htmlLabels: false },
       sequence: { useMaxWidth: false },
       themeVariables: {
         primaryTextColor: '#1f1f1f',
         nodeTextColor: '#1f1f1f',
         lineColor: '#333',
       },
+      themeCSS: `
+        text, tspan { fill: #1f1f1f !important; }
+        .nodeLabel, .edgeLabel, .label { color: #1f1f1f !important; }
+      `,
     });
     mermaidInitialized = true;
   }
