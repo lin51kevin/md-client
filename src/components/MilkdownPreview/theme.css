@@ -375,3 +375,45 @@
 .milkdown-preview .milkdown-code-block .cm-selectionBackground {
   background: var(--selection-bg, rgba(70,130,220,0.25)) !important;
 }
+
+/* ── Code Block Fold ── */
+.milkdown-preview .milkdown-code-block[data-folded="true"] .cm-scroller {
+  overflow: hidden;
+  max-height: calc(1.4em * 3); /* show up to 3 lines when folded */
+  position: relative;
+}
+.milkdown-preview .milkdown-code-block[data-folded="true"] .cm-scroller::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2em;
+  background: linear-gradient(transparent, var(--bg-secondary, #f6f8fa));
+  pointer-events: none;
+}
+/* Fold toggle button — injected by useCodeBlockFold DOM post-processing */
+.milkdown-preview .code-block-fold-btn {
+  position: absolute;
+  top: 4px;
+  right: 32px;
+  z-index: 10;
+  padding: 2px 6px;
+  font-size: 10px;
+  line-height: 1.4;
+  border-radius: 4px;
+  border: 1px solid var(--border-color, #d0d7de);
+  background: var(--bg-tertiary, #eaecef);
+  color: var(--text-secondary, #656d76);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+  font-family: inherit;
+}
+.milkdown-preview .milkdown-code-block:hover .code-block-fold-btn {
+  opacity: 1;
+}
+.milkdown-preview .code-block-fold-btn:hover {
+  background: var(--hover-bg, #f3f4f6);
+  color: var(--text-primary, #1f2328);
+}

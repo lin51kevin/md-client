@@ -11,6 +11,7 @@ import { extractFrontmatter, type Frontmatter } from '../../lib/markdown-extensi
 import { FrontmatterPanel } from './FrontmatterPanel';
 import { useLocalImage, remarkWikiLinkPlugin, wikiLinkSchema } from './nodeviews';
 import { renderMermaidPreview } from './nodeviews/MermaidBlockView';
+import { CodeBlockFoldOverlay } from './CodeBlockFoldOverlay';
 
 /** Convert a Frontmatter object back to YAML string (without --- delimiters) */
 function frontmatterToYaml(fm: Frontmatter): string {
@@ -221,9 +222,11 @@ export const MilkdownPreview = memo(function MilkdownPreview({
     [onContentChange]
   );
 
+  const previewContainerRef = useRef<HTMLDivElement>(null);
+
   return (
     <MilkdownProvider>
-      <div className={`milkdown-preview${className ? ` ${className}` : ''}`}>
+      <div ref={previewContainerRef} className={`milkdown-preview${className ? ` ${className}` : ''}`}>
         <MilkdownEditor
           content={content}
           onContentChange={handleContentChange}
@@ -232,6 +235,7 @@ export const MilkdownPreview = memo(function MilkdownPreview({
           onOpenFile={onOpenFile}
           onWikiLinkNavigate={onWikiLinkNavigate}
         />
+        <CodeBlockFoldOverlay containerRef={previewContainerRef} />
       </div>
     </MilkdownProvider>
   );
