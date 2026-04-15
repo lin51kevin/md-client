@@ -13,7 +13,8 @@
     "storage",
     "commands",
     "ui.message",
-    "workspace"
+    "workspace",
+    "contextmenu.item"
   ],
   "engines": { "marklite": ">=0.7.2" }
 }

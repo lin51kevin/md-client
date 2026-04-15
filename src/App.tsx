@@ -325,23 +325,7 @@ export default function App() {
     getActiveTab, openFileInTab, t,
   });
 
-  // ── AI Selection → Copilot Integration ─────────────────────────────
-  // Right-click AI actions open the Copilot panel and send the corresponding command
-  const handleAISelection = useCallback((action: string) => {
-    const view = cmViewRef.current;
-    if (!view) return;
-    const sel = view.state.selection.main;
-    if (sel.from === sel.to) return;
-    setEditorCtxMenu(null);
-    // Open Copilot panel and send command
-    setShowAIPanel(true);
-    const cmd = `/${action}`;
-    // Find the Copilot panel content and call sendMessage
-    const aiPanel = pluginPanels.find((pp) => pp.id === AI_PANEL_ID);
-    if (aiPanel?.content && typeof aiPanel.content === 'object' && 'sendMessage' in aiPanel.content) {
-      (aiPanel.content as { sendMessage: (text: string) => void }).sendMessage(cmd);
-    }
-  }, [cmViewRef, setEditorCtxMenu, pluginPanels]);
+  // ── AI Selection — handled by AI Copilot plugin via contextMenu API ──
 
   // F014 — Editor right-click actions
   const { handleEditorCtxAction: _baseCtxAction } = useEditorContextActions({
@@ -438,7 +422,6 @@ export default function App() {
           })()}
           onClose={() => setEditorCtxMenu(null)}
           onAction={handleEditorCtxAction}
-          onAIAction={handleAISelection}
         />
       )}
 

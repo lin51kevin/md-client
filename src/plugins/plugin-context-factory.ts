@@ -8,6 +8,7 @@ import { createStatusBarAPI } from './plugin-statusbar';
 import { createStorageAPI } from './plugin-storage';
 import { createUIAPI } from './plugin-ui';
 import { createPreviewAPI } from './plugin-preview';
+import { createContextMenuAPI } from './plugin-context-menu';
 
 /**
  * Dependencies needed to assemble a full plugin context.
@@ -61,6 +62,6 @@ export function createPluginContext(deps: PluginContextDeps, pluginId?: string):
     theme: { register: () => ({ dispose: () => {} }) },
     export: { registerExporter: () => ({ dispose: () => {} }) },
     files: { readFile: async () => null, watch: () => ({ dispose: () => {} }) },
-    contextMenu: { addItem: () => ({ dispose: () => {} }) },
+    contextMenu: createContextMenuAPI(),
   };
 }

@@ -117,7 +117,7 @@ export interface PluginContext {
   storage: StorageAPI;
   ui: UIAPI;
   files: { readFile(path: string): Promise<string | null>; watch(pattern: string, callback: (path: string) => void): Disposable };
-  contextMenu: { addItem(item: unknown): Disposable };
+  contextMenu: import('./plugin-context-menu').ContextMenuAPI;
   preview: PreviewAPI;
   settings: { registerSection(section: unknown): Disposable };
   theme: { register(cssVars: unknown): Disposable };
