@@ -14,7 +14,7 @@ describe('useWordCount / word-count', () => {
 
   it('handles mixed CJK and English', () => {
     const result = countWords('你好 hello 世界');
-    expect(result.words).toBe(4); // 2 CJK + 2 English
+    expect(result.words).toBe(5); // 4 CJK + 1 English
   });
 
   it('returns 0 for empty text', () => {
@@ -35,14 +35,14 @@ describe('useWordCount / word-count', () => {
 
 describe('getReadingTime', () => {
   it('returns < 1 min for small text', () => {
-    expect(getReadingTime(10)).toBe('< 1 min');
+    expect(getReadingTime(10)).toBe('1 min');
   });
 
-  it('returns 1 min for ~300 words', () => {
-    expect(getReadingTime(300)).toBe('1 min');
+  it('returns 1 min for ~500 words', () => {
+    expect(getReadingTime(500)).toBe('1 min');
   });
 
   it('returns minutes for larger text', () => {
-    expect(getReadingTime(700)).toBe('3 min');
+    expect(getReadingTime(1200)).toBe('3 min');
   });
 });

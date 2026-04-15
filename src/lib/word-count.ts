@@ -79,12 +79,12 @@ export function countCharacters(text: string): CharacterCount {
 /**
  * 估算阅读时间
  *
- * 中英文混合保守估计约 300 字词/分钟
+ * 中英文混合保守估计约 500 字词/分钟
  */
 export function getReadingTime(wordCount: number): string {
   if (wordCount <= 0) return '< 1 min';
 
-  const minutes = Math.ceil(wordCount / 300);
+  const minutes = Math.ceil(wordCount / 500);
 
   if (minutes < 1) return '< 1 min';
   if (minutes === 1) return '1 min';
