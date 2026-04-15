@@ -1431,7 +1431,7 @@
     "@types/lodash-es" "^4.17.12"
     lodash-es "^4.17.21"
 
-"@milkdown/plugin-math@^7.20.0":
+"@milkdown/plugin-math@^7.5.9":
   version "7.5.9"
   resolved "https://registry.npmmirror.com/@milkdown/plugin-math/-/plugin-math-7.5.9.tgz#d404a981dd139d14a6d39db3ea2ec16968eb7f8a"
   integrity sha512-LzFZKNc7zm3uOTs9mEN/12/X+UdGoyQRp5Gt9GE7lPJ96jOZaGJD0vMtX0mTauTOmUxDQoQS0I7NW1g9UhC6qQ==
