@@ -7,12 +7,12 @@
 
 <p align="center">
 
-![MarkLite 界面预览](./docs/screenshot.png)
+![MarkLite 界面预览](./docs/assets/screenshot.png)
 
 </p>
 
 <p align="center">
-  <a href="./USER_GUIDE.md">中文用户手册</a> &nbsp;|&nbsp;
+  <a href="./docs/guides/USER_GUIDE.md">中文用户手册</a> &nbsp;|&nbsp;
   <a href="#✨-features">功能特性</a> &nbsp;|&nbsp;
   <a href="#getting-started">快速开始</a> &nbsp;|&nbsp;
   <a href="#tech-stack">技术栈</a>

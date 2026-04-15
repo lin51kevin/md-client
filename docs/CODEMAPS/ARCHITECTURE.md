@@ -304,4 +304,4 @@ FileTreeSidebar
 | `src/plugins/official/backlinks/` | 官方插件：反向链接 |
 | `src/plugins/official/graph-view/` | 官方插件：知识图谱 |
 | `src/plugins/official/snippet-manager/` | 官方插件：代码片段 |
-| `docs/PLUGIN_DEV.md` | 插件开发指南 |
+| `docs/guides/PLUGIN_DEV.md` | 插件开发指南 |

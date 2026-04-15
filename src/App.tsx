@@ -510,7 +510,7 @@ export default function App() {
             recentFiles={recentFiles} onOpenRecent={handleOpenRecent} onClearRecent={handleClearRecent} onRemoveRecent={handleRemoveRecent}
             onCloseAll={handleCloseAllTabs}
             onFormatAction={handleFormatAction} onImageLocal={() => handleFormatAction('image-local')}
-            onOpenHelp={() => { import('@tauri-apps/plugin-opener').then(m => m.openUrl('https://github.com/lin51kevin/md-client/blob/main/USER_GUIDE.md')).catch(() => window.open('https://github.com/lin51kevin/md-client/blob/main/USER_GUIDE.md')); }}
+            onOpenHelp={() => { import('@tauri-apps/plugin-opener').then(m => m.openUrl('https://github.com/lin51kevin/md-client/blob/main/docs/guides/USER_GUIDE.md')).catch(() => window.open('https://github.com/lin51kevin/md-client/blob/main/docs/guides/USER_GUIDE.md')); }}
             onInsertSnippet={openSnippetPicker}
             canUndo={canUndo} canRedo={canRedo}
             onUndo={() => { const v = cmViewRef.current; if (v) undo(v); }}

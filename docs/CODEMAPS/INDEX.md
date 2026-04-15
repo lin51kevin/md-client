@@ -53,9 +53,14 @@ md-client/
 │   └── Cargo.toml               # Rust 依赖配置
 │
 ├── docs/                         # 文档
-│   ├── USER_GUIDE.md            # 用户手册（v0.6.0）
+│   ├── guides/                  # 用户与开发指南
+│   │   ├── USER_GUIDE.md        # 用户手册
+│   │   ├── PLUGIN_DEV.md        # 插件开发指南
+│   │   ├── FEATURE_COMPARISON.md # 功能对比
+│   │   └── VERSION_BUMP.md      # 版本发布指南
 │   ├── CODEMAPS/                # 代码映射（本目录）
-│   └── screenshot.png           # 界面截图
+│   └── assets/                  # 文档资源
+│       └── screenshot.png       # 界面截图
 │
 ├── public/                       # 静态资源
 ├── CHANGELOG.md                 # 版本历史（已更新 v0.6.0）
@@ -202,7 +207,7 @@ md-client/
 
 ## 📖 文档导航
 
-- **用户指南** — [USER_GUIDE.md](../../USER_GUIDE.md) — 功能教程、快捷键、常见问题
+- **用户指南** — [USER_GUIDE.md](../guides/USER_GUIDE.md) — 功能教程、快捷键、常见问题
 - **维护日志** — [CHANGELOG.md](../../CHANGELOG.md) — 版本历史
 - **项目首页** — [README.md](../../README.md) — 功能总览、技术栈
 
