@@ -13,19 +13,21 @@ describe('FloatingPanel — visibility gating', () => {
     expect(screen.getByTestId('panel-content')).toBeInTheDocument();
   });
 
-  it('renders nothing when visible=false', () => {
+  it('hides (display:none) when visible=false but keeps children mounted', () => {
     render(<FloatingPanel visible={false}>{child}</FloatingPanel>);
-    expect(screen.queryByTestId('panel-content')).toBeNull();
+    // Children remain in DOM (state preserved) but panel is hidden
+    expect(screen.getByTestId('panel-content')).toBeInTheDocument();
+    expect(screen.getByTestId('floating-panel-root')).toHaveStyle('display: none');
   });
 
   it('hides when viewMode is slide (visible=false)', () => {
-    // Simulate App.tsx expression: showAIPanel && viewMode !== 'slide'
     const viewMode = 'slide';
     const showAIPanel = true;
     const showSettings = false;
     const visible = showAIPanel && !showSettings && viewMode !== 'slide' && viewMode !== 'mindmap';
     render(<FloatingPanel visible={visible}>{child}</FloatingPanel>);
-    expect(screen.queryByTestId('panel-content')).toBeNull();
+    expect(screen.getByTestId('panel-content')).toBeInTheDocument();
+    expect(screen.getByTestId('floating-panel-root')).toHaveStyle('display: none');
   });
 
   it('hides when viewMode is mindmap', () => {
@@ -34,7 +36,8 @@ describe('FloatingPanel — visibility gating', () => {
     const showSettings = false;
     const visible = showAIPanel && !showSettings && viewMode !== 'slide' && viewMode !== 'mindmap';
     render(<FloatingPanel visible={visible}>{child}</FloatingPanel>);
-    expect(screen.queryByTestId('panel-content')).toBeNull();
+    expect(screen.getByTestId('panel-content')).toBeInTheDocument();
+    expect(screen.getByTestId('floating-panel-root')).toHaveStyle('display: none');
   });
 
   it('hides when settings modal is open', () => {
@@ -43,7 +46,8 @@ describe('FloatingPanel — visibility gating', () => {
     const showSettings = true;
     const visible = showAIPanel && !showSettings && viewMode !== 'slide' && viewMode !== 'mindmap';
     render(<FloatingPanel visible={visible}>{child}</FloatingPanel>);
-    expect(screen.queryByTestId('panel-content')).toBeNull();
+    expect(screen.getByTestId('panel-content')).toBeInTheDocument();
+    expect(screen.getByTestId('floating-panel-root')).toHaveStyle('display: none');
   });
 
   it('shows when normal mode, settings closed, panel toggled on', () => {
@@ -61,7 +65,8 @@ describe('FloatingPanel — visibility gating', () => {
     const showSettings = false;
     const visible = showAIPanel && !showSettings && viewMode !== 'slide' && viewMode !== 'mindmap';
     render(<FloatingPanel visible={visible}>{child}</FloatingPanel>);
-    expect(screen.queryByTestId('panel-content')).toBeNull();
+    expect(screen.getByTestId('panel-content')).toBeInTheDocument();
+    expect(screen.getByTestId('floating-panel-root')).toHaveStyle('display: none');
   });
 
   it('shows when preview mode (not slide/mindmap)', () => {
@@ -70,6 +75,17 @@ describe('FloatingPanel — visibility gating', () => {
     const showSettings = false;
     const visible = showAIPanel && !showSettings && viewMode !== 'slide' && viewMode !== 'mindmap';
     render(<FloatingPanel visible={visible}>{child}</FloatingPanel>);
+    expect(screen.getByTestId('panel-content')).toBeInTheDocument();
+  });
+
+  it('preserves children across visibility toggles (no remount)', () => {
+    const { rerender } = render(<FloatingPanel visible={true}>{child}</FloatingPanel>);
+    expect(screen.getByTestId('panel-content')).toBeInTheDocument();
+    // Hide
+    rerender(<FloatingPanel visible={false}>{child}</FloatingPanel>);
+    expect(screen.getByTestId('panel-content')).toBeInTheDocument();
+    // Show again — same DOM node, state preserved
+    rerender(<FloatingPanel visible={true}>{child}</FloatingPanel>);
     expect(screen.getByTestId('panel-content')).toBeInTheDocument();
   });
 });

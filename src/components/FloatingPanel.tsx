@@ -97,8 +97,6 @@ export function FloatingPanel({ visible, children }: FloatingPanelProps) {
     return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
   }, []);
 
-  if (!visible) return null;
-
   const E = 5; // edge handle size
   const C = 14; // corner handle size
   const handles: { id: string; cursor: string; style: React.CSSProperties }[] = [
@@ -112,10 +110,12 @@ export function FloatingPanel({ visible, children }: FloatingPanelProps) {
     { id: 'lt', cursor: 'nwse-resize', style: { left: 0, top: 0, width: C, height: C } },
   ];
 
+  // Use display:none instead of returning null to preserve child component
+  // state (e.g. AI chat messages) across visibility toggles (slide/mindmap mode).
   return (
-    <div style={{
+    <div data-testid="floating-panel-root" style={{
       position: 'fixed', left: rect.x, top: rect.y, width: rect.w, height: rect.h,
-      zIndex: 10000, display: 'flex', flexDirection: 'column',
+      zIndex: 10000, display: visible ? 'flex' : 'none', flexDirection: 'column',
       borderRadius: 8, border: '1px solid var(--border-color)',
       boxShadow: '0 8px 32px rgba(0,0,0,0.35)',
       backgroundColor: 'var(--bg-secondary)',
