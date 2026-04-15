@@ -20,7 +20,7 @@
 - [x] `README.md` — 添加 v0.7.0 版本标识
 - [x] `CHANGELOG.md` — 新增 v0.7.0 规划条目
 - [x] `FEATURE_COMPARISON.md` — 版本号更新至 0.7.0
-- [x] `docs/USER_GUIDE.md` — 版本号与日期更新
+- [x] `USER_GUIDE.md` — 版本号与日期更新
 
 #### 代码映射文档（4个）
 - [x] `docs/CODEMAPS/INDEX.md` — 版本号与日期更新
@@ -122,7 +122,7 @@ Changes to be committed:
         modified:   FEATURE_COMPARISON.md
         modified:   docs/CODEMAPS/ARCHITECTURE.md
         modified:   docs/CODEMAPS/INDEX.md
-        modified:   docs/USER_GUIDE.md
+        modified:   USER_GUIDE.md
         modified:   package.json
         modified:   src-tauri/tauri.conf.json
         new file:   docs/CODEMAPS/backend.md

@@ -202,7 +202,7 @@ md-client/
 
 ## 📖 文档导航
 
-- **用户指南** — [docs/USER_GUIDE.md](../USER_GUIDE.md) — 功能教程、快捷键、常见问题
+- **用户指南** — [USER_GUIDE.md](../../USER_GUIDE.md) — 功能教程、快捷键、常见问题
 - **维护日志** — [CHANGELOG.md](../../CHANGELOG.md) — 版本历史
 - **项目首页** — [README.md](../../README.md) — 功能总览、技术栈
 

@@ -7,7 +7,7 @@ import rehypeHighlight from 'rehype-highlight';
 import { useI18n } from '../i18n';
 import { extractToc, type TocEntry } from '../lib/toc';
 // Vite ?raw import — USER_GUIDE.md bundled as a plain string
-import userGuideZh from '../../docs/USER_GUIDE.md?raw';
+import userGuideZh from '../../USER_GUIDE.md?raw';
 
 const REMARK_PLUGINS = [remarkGfm];
 const REHYPE_PLUGINS = [rehypeSlug, rehypeHighlight];

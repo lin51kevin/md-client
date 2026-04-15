@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { HelpModal } from '../../components/HelpModal';
 
 // ?raw imports return a string in Vitest — mock the markdown to keep tests fast
-vi.mock('../../../docs/USER_GUIDE.md?raw', () => ({ default: '# 快速入门\n\n## 基础操作\n\n内容' }));
+vi.mock('../../../USER_GUIDE.md?raw', () => ({ default: '# 快速入门\n\n## 基础操作\n\n内容' }));
 
 describe('HelpModal', () => {
   it('renders nothing when visible is false', () => {
