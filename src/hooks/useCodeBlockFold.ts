@@ -26,7 +26,9 @@ function blockId(lang: string, firstLine: string): string {
 function loadState(): FoldState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : { collapsed: new Set() };
+    if (!raw) return { collapsed: new Set() };
+    const parsed = JSON.parse(raw);
+    return { collapsed: new Set(Array.isArray(parsed) ? parsed : []) };
   } catch {
     return { collapsed: new Set() };
   }

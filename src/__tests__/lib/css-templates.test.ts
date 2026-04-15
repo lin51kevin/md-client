@@ -5,7 +5,7 @@ import {
   deleteCssTemplate,
   importCssTemplate,
   exportCssTemplate,
-} from '../lib/css-templates';
+} from '../../lib/css-templates';
 
 beforeEach(() => {
   localStorage.clear();

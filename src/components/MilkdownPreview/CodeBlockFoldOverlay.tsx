@@ -12,55 +12,73 @@ interface Props {
 }
 
 export function CodeBlockFoldOverlay({ containerRef }: Props) {
-  const { isCollapsed, toggle, lineCount, blockId } = useCodeBlockFold();
+  const { isCollapsed, toggle, blockId } = useCodeBlockFold();
   const { t } = useI18n();
   const observerRef = useRef<MutationObserver | null>(null);
+  const syncingRef = useRef(false);
 
   const syncButtons = useCallback(() => {
     const container = containerRef.current;
-    if (!container) return;
+    if (!container || syncingRef.current) return;
 
-    // Remove old buttons
-    container.querySelectorAll('.code-block-fold-btn').forEach(btn => btn.remove());
+    syncingRef.current = true;
+    // Pause observer during DOM manipulation to avoid infinite loop
+    observerRef.current?.disconnect();
 
-    // Find all code blocks
-    const codeBlocks = container.querySelectorAll('.milkdown-code-block');
-    codeBlocks.forEach((block) => {
-      const el = block as HTMLElement;
+    try {
+      const codeBlocks = container.querySelectorAll('.milkdown-code-block');
+      codeBlocks.forEach((block) => {
+        const el = block as HTMLElement;
 
-      // Skip if already has a button
-      if (el.querySelector('.code-block-fold-btn')) return;
+        // Extract language and first line for stable id
+        const langBtn = el.querySelector('.language-button, [data-element="code-block-lang-select"] button');
+        const lang = langBtn?.textContent?.trim() ?? '';
+        const codeEl = el.querySelector('.cm-content');
+        const firstLine = codeEl?.textContent?.split('\n')[0] ?? '';
+        const id = blockId(lang, firstLine);
 
-      // Extract language and first line for stable id
-      const langBtn = el.querySelector('.language-button, [data-element="code-block-lang-select"] button');
-      const lang = langBtn?.textContent?.trim() ?? '';
-      const codeEl = el.querySelector('.cm-content');
-      const firstLine = codeEl?.textContent?.split('\n')[0] ?? '';
-      const id = blockId(lang, firstLine);
+        const collapsed = isCollapsed(id);
 
-      // Restore folded state
-      if (isCollapsed(id)) {
-        el.setAttribute('data-folded', 'true');
-      }
+        // Sync data-folded attribute
+        if (collapsed) {
+          el.setAttribute('data-folded', 'true');
+        } else {
+          el.removeAttribute('data-folded');
+        }
 
-      // Create fold button
-      const btn = document.createElement('button');
-      btn.className = 'code-block-fold-btn';
-      btn.textContent = isCollapsed(id) ? t('settings.shortcuts.foldCodeBlock').split('/')[1]?.trim() ?? '▾' : '▾';
-      // Use chevron as indicator
-      btn.textContent = isCollapsed(id) ? '▶' : '▼';
-      btn.title = isCollapsed(id) ? t('settings.shortcuts.foldCodeBlock') : t('settings.shortcuts.foldCodeBlock');
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        toggle(id);
+        // Insert into toolbar button group instead of absolute positioning
+        let btn = el.querySelector('.code-block-fold-btn') as HTMLButtonElement | null;
+        if (btn) {
+          btn.textContent = collapsed ? '▶' : '▼';
+          btn.title = t('settings.shortcuts.foldCodeBlock');
+        } else {
+          const toolsGroup = el.querySelector('.tools-button-group');
+          btn = document.createElement('button');
+          btn.className = 'code-block-fold-btn';
+          btn.textContent = collapsed ? '▶' : '▼';
+          btn.title = t('settings.shortcuts.foldCodeBlock');
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggle(id);
+          });
+          if (toolsGroup) {
+            // Prepend before copy button
+            toolsGroup.insertBefore(btn, toolsGroup.firstChild);
+          } else {
+            el.style.position = el.style.position || 'relative';
+            el.appendChild(btn);
+          }
+        }
       });
-
-      // Position: code-block has position relative from CSS
-      el.style.position = el.style.position || 'relative';
-      el.appendChild(btn);
-    });
-  }, [containerRef, isCollapsed, toggle, lineCount, blockId, t]);
+    } finally {
+      // Re-enable observer
+      if (container && observerRef.current) {
+        observerRef.current.observe(container, { childList: true, subtree: true });
+      }
+      syncingRef.current = false;
+    }
+  }, [containerRef, isCollapsed, toggle, blockId, t]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -78,15 +96,10 @@ export function CodeBlockFoldOverlay({ containerRef }: Props) {
 
     return () => {
       observer.disconnect();
-      // Cleanup buttons
+      observerRef.current = null;
       container.querySelectorAll('.code-block-fold-btn').forEach(btn => btn.remove());
     };
   }, [containerRef, syncButtons]);
-
-  // Also re-sync when fold state changes
-  useEffect(() => {
-    syncButtons();
-  }, [isCollapsed, syncButtons]);
 
   return null;
 }

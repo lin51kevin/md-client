@@ -27,7 +27,6 @@ import { useTableEditor } from './hooks/useTableEditor';
 import { useSnippetFlow } from './hooks/useSnippetFlow';
 import { useEditorInstance } from './hooks/useEditorInstance';
 import { usePreferences } from './hooks/usePreferences';
-import { formatDuration } from './lib/format-duration';
 import { useSidebarPanel } from './hooks/useSidebarPanel';
 import { useRecentFiles } from './hooks/useRecentFiles';
 import { useTabActions } from './hooks/useTabActions';
@@ -107,19 +106,13 @@ export default function App() {
   const effectiveChromeless = isChromeless || (focusMode === 'typewriter' && typewriterOptions.hideUI);
   const effectiveHideStatusBar = hideStatusBar || (focusMode === 'typewriter' && typewriterOptions.hideUI);
 
-  // Focus duration timer
+  // Focus duration start timestamp — timer moved to StatusBar to avoid re-rendering App
   const focusStartRef = useRef<number | null>(null);
-  const [focusDuration, setFocusDuration] = useState(0);
   useEffect(() => {
     if (focusMode === 'typewriter') {
       if (!focusStartRef.current) focusStartRef.current = Date.now();
-      const timer = setInterval(() => {
-        if (focusStartRef.current) setFocusDuration(Date.now() - focusStartRef.current);
-      }, 1000);
-      return () => clearInterval(timer);
     } else {
       focusStartRef.current = null;
-      setFocusDuration(0);
     }
   }, [focusMode]);
   const { renderers: pluginRenderers, registerPreviewRenderer, unregisterPreviewRenderer } = usePreviewRenderers();
@@ -680,13 +673,13 @@ export default function App() {
         })()}
       </div>
 
-          {!effectiveHideStatusBar && (
+      {!effectiveHideStatusBar && (
         <StatusBar
           filePath={activeTab.filePath} isDirty={activeTab.isDirty}
           line={cursorPos.line} col={cursorPos.col}
           snapshots={snapshots} wordCount={wordCount} readingTime={readingTime} cursorCount={cursorCount}
           vimMode={vimMode}
-          focusDuration={typewriterOptions.showDuration && focusMode === 'typewriter' ? formatDuration(focusDuration) : undefined}
+          focusStartTime={typewriterOptions.showDuration && focusMode === 'typewriter' ? focusStartRef.current ?? undefined : undefined}
           updateAvailable={updateInfo}
           onUpdateClick={() => setShowUpdateNotification(prev => !prev)}
           onSnapshotRestore={(id) => {

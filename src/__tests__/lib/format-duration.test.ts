@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { formatDuration } from '../lib/format-duration';
+import { formatDuration } from '../../lib/format-duration';
 
 describe('formatDuration', () => {
   it('should format seconds', () => {

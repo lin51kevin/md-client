@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { History, X, Download } from 'lucide-react';
 import { useI18n } from '../i18n';
+import { formatDuration } from '../lib/format-duration';
 
 interface StatusBarProps {
   filePath: string | null;
@@ -23,13 +24,26 @@ interface StatusBarProps {
   /** Update available info */
   updateAvailable?: { version: string } | null;
   onUpdateClick?: () => void;
-  /** Focus duration string (typewriter mode) */
-  focusDuration?: string;
+  /** Focus start timestamp (ms). When set, StatusBar runs its own 1s timer. */
+  focusStartTime?: number;
 }
 
-export function StatusBar({ filePath, isDirty, line, col, wordCount, readingTime, cursorCount, vimMode, saveStatus, snapshots, onSnapshotRestore, updateAvailable, onUpdateClick, focusDuration }: StatusBarProps) {
+export function StatusBar({ filePath, isDirty, line, col, wordCount, readingTime, cursorCount, vimMode, saveStatus, snapshots, onSnapshotRestore, updateAvailable, onUpdateClick, focusStartTime }: StatusBarProps) {
   const { t } = useI18n();
   const [showSnapshots, setShowSnapshots] = useState(false);
+
+  // Self-contained 1s timer — only this component re-renders
+  const [focusDuration, setFocusDuration] = useState('');
+  useEffect(() => {
+    if (focusStartTime == null) {
+      setFocusDuration('');
+      return;
+    }
+    const tick = () => setFocusDuration(formatDuration(Date.now() - focusStartTime));
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [focusStartTime]);
 
   const displaySnapshots = showSnapshots ? snapshots : null;
 

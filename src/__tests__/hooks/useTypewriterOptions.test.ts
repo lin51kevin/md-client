@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useTypewriterOptions, type TypewriterOptions } from '../hooks/useTypewriterOptions';
+import { useTypewriterOptions, type TypewriterOptions } from '../../hooks/useTypewriterOptions';
 import { renderHook, act } from '@testing-library/react';
 
 beforeEach(() => {
