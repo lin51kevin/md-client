@@ -437,6 +437,7 @@ export const en: Record<TranslationKey, string> = {
   'aiCopilot.panel.tipHint': 'Tip: Use /explain to explain selected text',
   'aiCopilot.panel.placeholder': 'Describe what to build...',
   'aiCopilot.panel.send': 'Send (Enter)',
+  'aiCopilot.panel.stop': 'Stop generation',
   'aiCopilot.panel.you': 'You',
   'aiCopilot.panel.assistant': 'AI Copilot',
   'aiCopilot.panel.apply': 'Apply',

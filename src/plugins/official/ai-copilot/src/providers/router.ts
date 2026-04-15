@@ -7,6 +7,7 @@ import type { AIProvider, ChatMessage, ProviderConfig } from './types';
 export class ProviderRouter {
   private providers: Map<string, AIProvider> = new Map();
   private configs: ProviderConfig[] = [];
+  private activeProvider: AIProvider | null = null;
 
   addProvider(config: ProviderConfig, provider: AIProvider): void {
     provider.configure(config);
@@ -53,15 +54,26 @@ export class ProviderRouter {
       if (!provider) continue;
 
       try {
+        this.activeProvider = provider;
         return await provider.chat(messages, onChunk);
       } catch (error) {
         errors.push({ provider: config.provider, error });
         console.warn(`[AI Router] Provider "${config.provider}" failed:`, error);
+      } finally {
+        this.activeProvider = null;
       }
     }
 
     const summary = errors.map((e) => `${e.provider}: ${e.error}`).join('; ');
     throw new Error(`All AI providers failed. ${summary}`);
+  }
+
+  /**
+   * Abort the current in-flight chat request, if any.
+   */
+  abort(): void {
+    this.activeProvider?.abort?.();
+    this.activeProvider = null;
   }
 
   /**

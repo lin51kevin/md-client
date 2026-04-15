@@ -27,6 +27,8 @@ export interface AIProvider {
   configure(config: ProviderConfig): void;
   chat(messages: ChatMessage[], onChunk?: (chunk: string) => void): Promise<string>;
   healthCheck(): Promise<boolean>;
+  /** Abort the current in-flight chat request, if any. */
+  abort?(): void;
 }
 
 export interface EditAction {

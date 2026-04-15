@@ -434,6 +434,7 @@ export const zhCN = {
   'aiCopilot.panel.tipHint': '提示：输入 /explain 解释选中文本',
   'aiCopilot.panel.placeholder': '描述你想做什么...',
   'aiCopilot.panel.send': '发送 (Enter)',
+  'aiCopilot.panel.stop': '停止生成',
   'aiCopilot.panel.you': '你',
   'aiCopilot.panel.assistant': 'AI 助手',
   'aiCopilot.panel.apply': '应用',

@@ -14,6 +14,7 @@ export class OpenAICompatibleProvider implements AIProvider {
   private model = 'gpt-4o';
   private timeout = 60000;
   private customHeaders: Record<string, string> = {};
+  private controller: AbortController | null = null;
 
   constructor(name = 'openai') {
     this.name = name;
@@ -36,6 +37,7 @@ export class OpenAICompatibleProvider implements AIProvider {
 
     const useStream = Boolean(onChunk);
     const controller = new AbortController();
+    this.controller = controller;
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
     try {
@@ -117,8 +119,14 @@ export class OpenAICompatibleProvider implements AIProvider {
 
       return fullContent;
     } finally {
+      this.controller = null;
       clearTimeout(timeoutId);
     }
+  }
+
+  abort(): void {
+    this.controller?.abort();
+    this.controller = null;
   }
 
   async healthCheck(): Promise<boolean> {

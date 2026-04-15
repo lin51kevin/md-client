@@ -1,5 +1,5 @@
 import { createElement, useState, useCallback, useRef, useEffect } from 'react';
-import { Plus, Settings, ArrowUp, Loader, X } from 'lucide-react';
+import { Plus, Settings, ArrowUp, X, Square } from 'lucide-react';
 import type { PluginContext } from '../../../plugin-sandbox';
 import type {
   CopilotMessage,
@@ -250,6 +250,14 @@ export class AICopilotPanelContent {
       );
       this.setState({ messages: finalMsgs, isLoading: false });
     }
+  }
+
+  stopGeneration() {
+    this.router.abort();
+    const finalMsgs = this.state.messages.map((m) =>
+      m.isStreaming ? { ...m, isStreaming: false } : m,
+    );
+    this.setState({ messages: finalMsgs, isLoading: false });
   }
 
   private buildActions(response: string, editorCtx: EditorContext, scope: EditScopeMode): EditAction[] {
@@ -810,34 +818,53 @@ export class AICopilotPanelContent {
                         : t('aiCopilot.scope.workspace'),
                 ),
               ),
-              // Send button
-              createElement(
-                'button',
-                {
-                  onClick: handleSend,
-                  disabled: !input.trim() || isLoading,
-                  title: t('aiCopilot.panel.send'),
-                  style: {
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: '24px',
-                    height: '24px',
-                    border: 'none',
-                    borderRadius: '4px',
-                    background:
-                      !input.trim() || isLoading
-                        ? 'transparent'
-                        : 'var(--accent-color, #4a9eff)',
-                    color: !input.trim() || isLoading ? 'var(--text-muted, #555)' : '#fff',
-                    cursor: !input.trim() || isLoading ? 'default' : 'pointer',
-                    padding: 0,
-                  },
-                },
-                isLoading
-                  ? createElement(Loader, { size: 14, style: { animation: 'spin 1s linear infinite' } })
-                  : createElement(ArrowUp, { size: 14 }),
-              ),
+              // Send / Stop button
+              isLoading
+                ? createElement(
+                    'button',
+                    {
+                      onClick: () => self.stopGeneration(),
+                      title: t('aiCopilot.panel.stop'),
+                      style: {
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '24px',
+                        height: '24px',
+                        border: 'none',
+                        borderRadius: '4px',
+                        background: 'var(--error-color, #e55)',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        padding: 0,
+                      },
+                    },
+                    createElement(Square, { size: 10, fill: 'currentColor' }),
+                  )
+                : createElement(
+                    'button',
+                    {
+                      onClick: handleSend,
+                      disabled: !input.trim(),
+                      title: t('aiCopilot.panel.send'),
+                      style: {
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '24px',
+                        height: '24px',
+                        border: 'none',
+                        borderRadius: '4px',
+                        background: !input.trim()
+                          ? 'transparent'
+                          : 'var(--accent-color, #4a9eff)',
+                        color: !input.trim() ? 'var(--text-muted, #555)' : '#fff',
+                        cursor: !input.trim() ? 'default' : 'pointer',
+                        padding: 0,
+                      },
+                    },
+                    createElement(ArrowUp, { size: 14 }),
+                  ),
             ),
           ),
         ),

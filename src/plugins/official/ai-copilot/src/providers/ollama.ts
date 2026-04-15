@@ -11,6 +11,7 @@ export class OllamaProvider implements AIProvider {
   private baseUrl = 'http://localhost:11434';
   private model = 'qwen2.5';
   private timeout = 60000;
+  private controller: AbortController | null = null;
 
   configure(config: ProviderConfig): void {
     if (config.baseUrl) this.baseUrl = config.baseUrl.replace(/\/+$/, '');
@@ -21,6 +22,7 @@ export class OllamaProvider implements AIProvider {
   async chat(messages: ChatMessage[], onChunk?: (chunk: string) => void): Promise<string> {
     const useStream = Boolean(onChunk);
     const controller = new AbortController();
+    this.controller = controller;
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
     try {
@@ -73,8 +75,14 @@ export class OllamaProvider implements AIProvider {
 
       return fullContent;
     } finally {
+      this.controller = null;
       clearTimeout(timeoutId);
     }
+  }
+
+  abort(): void {
+    this.controller?.abort();
+    this.controller = null;
   }
 
   async healthCheck(): Promise<boolean> {
