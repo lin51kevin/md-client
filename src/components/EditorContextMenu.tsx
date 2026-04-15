@@ -11,7 +11,7 @@ import type { ContextInfo } from '../lib/context-menu';
 import { useI18n } from '../i18n';
 import type { TranslationKey } from '../i18n/zh-CN';
 
-import type { AIAction } from '../hooks/useAISelection';
+import type { AIAction } from '../lib/ai-prompts';
 
 interface EditorContextMenuProps {
   visible: boolean;

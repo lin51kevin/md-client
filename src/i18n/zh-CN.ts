@@ -541,6 +541,7 @@ export const zhCN = {
   'aiCopilot.prompt.summarize': '请总结以下文档的要点:\n\n{content}',
   'aiCopilot.prompt.translate': '请将以下内容翻译成{language}:\n\n{content}',
   'aiCopilot.prompt.format': '请格式化整理以下 Markdown 内容，保持语义不变:\n\n{content}',
+  'aiCopilot.prompt.polish': '请润色以下文本，使其更加流畅、专业。直接返回润色后的结果，不要添加解释或前缀。如果有修改，请用 ```markdown 代码块包裹。\n\n{content}',
   'aiCopilot.prompt.editLabel.selection': '选中文本',
   'aiCopilot.prompt.editLabel.workspace': '工作区上下文',
   'aiCopilot.prompt.editLabel.document': '文档内容',

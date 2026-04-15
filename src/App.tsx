@@ -35,9 +35,6 @@ import { useAppLifecycle } from './hooks/useAppLifecycle';
 import { useAutoUpgrade } from './hooks/useAutoUpgrade';
 import { usePendingImageMigration } from './hooks/usePendingImageMigration';
 import { useFileWatcher, markSelfSave } from './hooks/useFileWatcher';
-import { useAISelection } from './hooks/useAISelection';
-import { AIResultModal } from './components/AIResultModal';
-import type { AIAction } from './hooks/useAISelection';
 import { invoke } from '@tauri-apps/api/core';
 import { FileChangeToast } from './components/FileChangeToast';
 import { usePreviewRenderers } from './hooks/usePreviewRenderers';
@@ -328,53 +325,23 @@ export default function App() {
     getActiveTab, openFileInTab, t,
   });
 
-  // ── AI Selection Processing ──────────────────────────────────────
-  const [aiSelection, setAISelection] = useState<{ action: AIAction; originalText: string; from: number; to: number } | null>(null);
-  const [aiResult, setAIResult] = useState('');
-
-  const handleAIResult = useCallback((result: string) => {
-    setAIResult(result);
-  }, []);
-
-  const handleAIChunk = useCallback((chunk: string) => {
-    setAIResult((prev) => prev + chunk);
-  }, []);
-
-  const { processSelection: aiProcess, loading: aiLoading, abort: aiAbort } = useAISelection({
-    apiEndpoint: '',
-    apiKey: '',
-    onResult: handleAIResult,
-    onChunk: handleAIChunk,
-  });
-
-  const handleAISelection = useCallback((action: AIAction) => {
+  // ── AI Selection → Copilot Integration ─────────────────────────────
+  // Right-click AI actions open the Copilot panel and send the corresponding command
+  const handleAISelection = useCallback((action: string) => {
     const view = cmViewRef.current;
     if (!view) return;
     const sel = view.state.selection.main;
     if (sel.from === sel.to) return;
-    const text = view.state.doc.sliceString(sel.from, sel.to);
-    setAISelection({ action, originalText: text, from: sel.from, to: sel.to });
-    setAIResult('');
-    void aiProcess(text, action);
     setEditorCtxMenu(null);
-  }, [aiProcess, cmViewRef, setEditorCtxMenu]);
-
-  const handleAIApply = useCallback((replacement: string) => {
-    if (!aiSelection || !cmViewRef.current) return;
-    const view = cmViewRef.current;
-    view.dispatch({
-      changes: { from: aiSelection.from, to: aiSelection.to, insert: replacement },
-    });
-    setAISelection(null);
-    setAIResult('');
-    view.focus();
-  }, [aiSelection, cmViewRef]);
-
-  const handleAIClose = useCallback(() => {
-    if (aiLoading) aiAbort();
-    setAISelection(null);
-    setAIResult('');
-  }, [aiLoading, aiAbort]);
+    // Open Copilot panel and send command
+    setShowAIPanel(true);
+    const cmd = `/${action}`;
+    // Find the Copilot panel content and call sendMessage
+    const aiPanel = pluginPanels.find((pp) => pp.id === AI_PANEL_ID);
+    if (aiPanel?.content && typeof aiPanel.content === 'object' && 'sendMessage' in aiPanel.content) {
+      (aiPanel.content as { sendMessage: (text: string) => void }).sendMessage(cmd);
+    }
+  }, [cmViewRef, setEditorCtxMenu, pluginPanels]);
 
   // F014 — Editor right-click actions
   const { handleEditorCtxAction: _baseCtxAction } = useEditorContextActions({
@@ -747,18 +714,6 @@ export default function App() {
             onNavigate={handleTocNavigate}
           />
         </Suspense>
-      )}
-
-      {aiSelection && (
-        <AIResultModal
-          action={aiSelection.action}
-          originalText={aiSelection.originalText}
-          result={aiResult}
-          loading={aiLoading}
-          onApply={handleAIApply}
-          onCopy={() => navigator.clipboard.writeText(aiResult).catch(() => {})}
-          onClose={handleAIClose}
-        />
       )}
     </div>
     </I18nContext.Provider>
