@@ -16,6 +16,10 @@ const MarkdownPreview = lazy(() =>
   import('./MarkdownPreview').then((m) => ({ default: m.MarkdownPreview }))
 );
 
+const MilkdownPreview = lazy(() =>
+  import('./MilkdownPreview').then((m) => ({ default: m.MilkdownPreview }))
+);
+
 const EDITOR_SETUP = { lineNumbers: true, foldGutter: true, highlightActiveLine: true, tabSize: 2 };
 
 interface EditorContentAreaProps {
@@ -48,6 +52,8 @@ interface EditorContentAreaProps {
   onDismiss: () => void;
   onShowWelcome: () => void;
   pluginRenderers?: Map<string, unknown>;
+  /** Use Milkdown as the preview engine (default: true) */
+  useMilkdownPreview?: boolean;
 }
 
 const PreviewFallback = (
@@ -86,6 +92,7 @@ export function EditorContentArea({
   onDismiss,
   onShowWelcome,
   pluginRenderers,
+  useMilkdownPreview = true,
 }: EditorContentAreaProps) {
   if (isPristine) {
     return welcomeDismissed ? (
@@ -103,6 +110,7 @@ export function EditorContentArea({
   }
 
   const previewClass = `markdown-preview max-w-full min-h-full ${THEMES[theme].previewClass}`;
+  const PreviewComponent = useMilkdownPreview ? MilkdownPreview : MarkdownPreview;
 
   if (viewMode === 'split') {
     return (
@@ -150,7 +158,7 @@ export function EditorContentArea({
         >
           <div className="p-8">
             <Suspense fallback={PreviewFallback}>
-              <MarkdownPreview
+              <PreviewComponent
                 content={debouncedDoc}
                 filePath={activeTab.filePath ?? undefined}
                 onOpenFile={openFileInTab}
@@ -192,7 +200,7 @@ export function EditorContentArea({
         >
           <div className="p-8">
             <Suspense fallback={PreviewFallback}>
-              <MarkdownPreview
+              <PreviewComponent
                 content={debouncedDoc}
                 filePath={activeTab.filePath ?? undefined}
                 onOpenFile={openFileInTab}

@@ -1,0 +1,109 @@
+/* MilkdownPreview theme overrides */
+
+.milkdown-preview {
+  padding: 8px;
+  min-height: 100%;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-primary, inherit);
+}
+
+/* Ensure headings match existing markdown-body style */
+.milkdown-preview h1,
+.milkdown-preview h2,
+.milkdown-preview h3,
+.milkdown-preview h4,
+.milkdown-preview h5,
+.milkdown-preview h6 {
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.milkdown-preview h1 { font-size: 2em; border-bottom: 1px solid var(--border-color, #e0e0e0); padding-bottom: 0.3em; }
+.milkdown-preview h2 { font-size: 1.5em; border-bottom: 1px solid var(--border-color, #e0e0e0); padding-bottom: 0.3em; }
+.milkdown-preview h3 { font-size: 1.25em; }
+
+/* Code blocks */
+.milkdown-preview pre {
+  background: var(--bg-secondary, #f6f8fa);
+  border-radius: 6px;
+  padding: 16px;
+  overflow-x: auto;
+}
+
+.milkdown-preview code {
+  font-family: 'Fira Code', 'JetBrains Mono', monospace;
+  font-size: 0.9em;
+}
+
+.milkdown-preview :not(pre) > code {
+  background: var(--bg-secondary, #f6f8fa);
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+}
+
+/* Tables */
+.milkdown-preview table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.milkdown-preview th,
+.milkdown-preview td {
+  border: 1px solid var(--border-color, #d0d7de);
+  padding: 8px 12px;
+}
+
+.milkdown-preview th {
+  background: var(--bg-secondary, #f6f8fa);
+  font-weight: 600;
+}
+
+/* Blockquotes */
+.milkdown-preview blockquote {
+  border-left: 4px solid var(--border-color, #d0d7de);
+  padding: 0.5em 1em;
+  margin: 1em 0;
+  color: var(--text-secondary, #656d76);
+}
+
+/* Task list checkboxes */
+.milkdown-preview input[type='checkbox'] {
+  margin-right: 6px;
+}
+
+/* KaTeX math */
+.milkdown-preview .katex-display {
+  margin: 1em 0;
+  overflow-x: auto;
+}
+
+/* Readonly mode */
+.milkdown-preview.ProseMirror[contenteditable='false'] {
+  cursor: default;
+}
+
+/* Links */
+.milkdown-preview a {
+  color: var(--link-color, #0969da);
+  text-decoration: none;
+}
+
+.milkdown-preview a:hover {
+  text-decoration: underline;
+}
+
+/* Images */
+.milkdown-preview img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Horizontal rule */
+.milkdown-preview hr {
+  border: none;
+  border-top: 1px solid var(--border-color, #d0d7de);
+  margin: 2em 0;
+}
