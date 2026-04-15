@@ -108,6 +108,21 @@ export function removeTheme(name: string): void {
 }
 
 /**
+ * 将指定主题配置导出为可导入的 JSON 字符串。
+ * 用户可据此修改后重新导入为自定义主题。
+ */
+export function exportThemeAsJson(theme: ThemeConfig): string {
+  const exportObj: Record<string, unknown> = {
+    name: `${theme.name}-custom`,
+    label: `${theme.label} (Custom)`,
+    isDark: theme.isDark,
+    cmTheme: theme.cmTheme,
+    cssVars: { ...theme.cssVars },
+  };
+  return JSON.stringify(exportObj, null, 2);
+}
+
+/**
  * 检查是否为内置主题名
  */
 export function isBuiltInTheme(name: string): boolean {

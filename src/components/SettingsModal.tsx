@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { X, Settings, Palette, Type, FolderOpen, Keyboard, RotateCcw, FileText, FolderInput, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
+import { X, Settings, Palette, Type, FolderOpen, Keyboard, RotateCcw, FileText, FolderInput, Download, Trash2 } from 'lucide-react';
 import { useI18n, type Locale } from '../i18n';
 import type { TranslationKey } from '../i18n/zh-CN';
 import type { ThemeName } from '../lib/theme';
-import { getInstalledThemes, loadThemeFromJson, installTheme, removeTheme, isBuiltInTheme } from '../lib/theme-manager';
+import { getInstalledThemes, loadThemeFromJson, installTheme, removeTheme, isBuiltInTheme, exportThemeAsJson } from '../lib/theme-manager';
+import { save } from '@tauri-apps/plugin-dialog';
+import { invoke } from '@tauri-apps/api/core';
 import { CustomCssEditor } from './CustomCssEditor';
-import { CssTemplateManager } from './CssTemplateManager';
 import { getImageSaveDir, setImageSaveDir } from '../lib/image-paste';
 import {
   DEFAULT_SHORTCUTS,
@@ -90,7 +91,6 @@ export function SettingsModal({
   const [imageDir, setImageDir] = useState(getImageSaveDir);
   const [installedThemes, setInstalledThemes] = useState(() => getInstalledThemes());
   const [themeImportError, setThemeImportError] = useState<string | null>(null);
-  const [showThemeFormat, setShowThemeFormat] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const PRESET_DELAYS = [1000, 2000, 5000];
   const [isCustomDelay, setIsCustomDelay] = useState(!PRESET_DELAYS.includes(autoSaveDelay));
@@ -131,6 +131,23 @@ export function SettingsModal({
     refreshThemes();
     if (currentTheme === name) onThemeChange('light' as ThemeName);
   }, [currentTheme, onThemeChange, refreshThemes]);
+
+  const handleExportThemeExample = useCallback(async () => {
+    const theme = installedThemes.find(t => t.name === currentTheme);
+    if (!theme) return;
+    const json = exportThemeAsJson(theme);
+    try {
+      const savePath = await save({
+        defaultPath: `${currentTheme}-custom.json`,
+        filters: [{ name: 'JSON', extensions: ['json'] }],
+      });
+      if (savePath) {
+        await invoke('write_file_text', { path: savePath, content: json });
+      }
+    } catch {
+      // user cancelled
+    }
+  }, [currentTheme, installedThemes]);
 
   // Close on Escape
   useEffect(() => {
@@ -451,29 +468,41 @@ export function SettingsModal({
 
                 {/* Custom theme management */}
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
-                        {t('settings.appearance.customThemes')}
-                      </div>
-                      <div className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-                        {t('settings.appearance.customThemesDesc')}
-                      </div>
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
+                      {t('settings.appearance.customThemes')}
                     </div>
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors"
-                      style={{
-                        backgroundColor: 'var(--accent-bg)',
-                        color: 'var(--accent-color)',
-                        border: '1px solid var(--accent-color)',
-                      }}
-                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--accent-color)'; e.currentTarget.style.color = '#fff'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--accent-bg)'; e.currentTarget.style.color = 'var(--accent-color)'; }}
-                    >
-                      <FolderInput size={11} />
-                      {t('settings.appearance.importTheme')}
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={handleExportThemeExample}
+                        className="flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors"
+                        style={{
+                          backgroundColor: 'var(--bg-secondary)',
+                          color: 'var(--text-secondary)',
+                          border: '1px solid var(--border-color)',
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--hover-bg)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-secondary)'; }}
+                        title={t('settings.appearance.exportThemeExample')}
+                      >
+                        <Download size={11} />
+                        {t('settings.appearance.exportThemeExample')}
+                      </button>
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors"
+                        style={{
+                          backgroundColor: 'var(--accent-bg)',
+                          color: 'var(--accent-color)',
+                          border: '1px solid var(--accent-color)',
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--accent-color)'; e.currentTarget.style.color = '#fff'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--accent-bg)'; e.currentTarget.style.color = 'var(--accent-color)'; }}
+                      >
+                        <FolderInput size={11} />
+                        {t('settings.appearance.importTheme')}
+                      </button>
+                    </div>
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -485,22 +514,15 @@ export function SettingsModal({
 
                   {themeImportError && (
                     <div
-                      className="text-xs px-2 py-1.5 rounded mb-2"
+                      className="text-xs px-2 py-1.5 rounded mt-2"
                       style={{ backgroundColor: 'var(--warning-bg)', color: 'var(--warning-color)' }}
                     >
                       {t('settings.appearance.importThemeError')}: {themeImportError}
                     </div>
                   )}
 
-                  {installedThemes.filter(cfg => !isBuiltInTheme(cfg.name)).length === 0 ? (
-                    <div
-                      className="text-xs px-3 py-2 rounded text-center"
-                      style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-tertiary)' }}
-                    >
-                      {t('settings.appearance.noCustomThemes')}
-                    </div>
-                  ) : (
-                    <div className="space-y-1">
+                  {installedThemes.filter(cfg => !isBuiltInTheme(cfg.name)).length > 0 && (
+                    <div className="space-y-1 mt-2">
                       {installedThemes.filter(cfg => !isBuiltInTheme(cfg.name)).map(cfg => (
                         <div
                           key={cfg.name}
@@ -510,68 +532,21 @@ export function SettingsModal({
                           <span style={{ color: 'var(--text-primary)' }}>{cfg.label}</span>
                           <button
                             onClick={() => handleRemoveTheme(cfg.name)}
-                            className="flex items-center gap-1 px-1.5 py-0.5 rounded transition-colors"
+                            className="p-0.5 rounded transition-colors"
                             style={{ color: 'var(--text-tertiary)' }}
-                            onMouseEnter={(e) => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.1)'; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-tertiary)'; e.currentTarget.style.backgroundColor = 'transparent'; }}
+                            onMouseEnter={(e) => { e.currentTarget.style.color = '#ef4444'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-tertiary)'; }}
                             title={t('settings.appearance.removeTheme')}
                           >
                             <Trash2 size={11} />
-                            {t('settings.appearance.removeTheme')}
                           </button>
                         </div>
                       ))}
                     </div>
                   )}
-
-                  {/* JSON format reference */}
-                  <div className="mt-3">
-                    <button
-                      onClick={() => setShowThemeFormat(v => !v)}
-                      className="flex items-center gap-1 text-[10px] transition-colors"
-                      style={{ color: 'var(--text-tertiary)' }}
-                      onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-tertiary)'; }}
-                    >
-                      {showThemeFormat ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
-                      {t('settings.appearance.themeFormatHint')}
-                    </button>
-                    {showThemeFormat && (
-                      <pre
-                        className="mt-1.5 text-[9px] rounded p-2 overflow-x-auto leading-relaxed"
-                        style={{
-                          backgroundColor: 'var(--bg-tertiary)',
-                          color: 'var(--text-secondary)',
-                          border: '1px solid var(--border-color)',
-                          fontFamily: 'monospace',
-                        }}
-                      >{`{
-  "name": "my-theme",
-  "label": "🎨 我的主题",
-  "isDark": false,
-  "cmTheme": "light",
-  "cssVars": {
-    "--bg-primary":    "#ffffff",
-    "--bg-secondary":  "#f6f8fa",
-    "--bg-tertiary":   "#eaecef",
-    "--text-primary":  "#1f2328",
-    "--text-secondary":"#656d76",
-    "--text-tertiary": "#9ca3af",
-    "--border-color":  "#d0d7de",
-    "--accent-color":  "#0969da",
-    "--accent-hover":  "#0550ae",
-    "--accent-bg":     "#ddf4ff",
-    "--hover-bg":      "#f3f4f6",
-    "--hover-overlay": "rgba(0,0,0,0.05)",
-    "--warning-color": "#f59e0b",
-    "--warning-bg":    "#fef3c7"
-  }
-}`}</pre>
-                    )}
-                  </div>
                 </div>
 
-                {/* Custom CSS */}
+                {/* Custom CSS (with integrated template management) */}
                 <div>
                   <div className="text-xs font-medium mb-1" style={{ color: 'var(--text-primary)' }}>
                     {t('settings.appearance.customCss')}
@@ -580,17 +555,6 @@ export function SettingsModal({
                     {t('settings.appearance.customCssDesc')}
                   </div>
                   <CustomCssEditor />
-                </div>
-
-                {/* CSS Templates */}
-                <div>
-                  <div className="text-xs font-medium mb-1" style={{ color: 'var(--text-primary)' }}>
-                    {t('settings.appearance.cssTemplates')}
-                  </div>
-                  <div className="text-xs mb-2" style={{ color: 'var(--text-secondary)' }}>
-                    {t('settings.appearance.cssTemplatesDesc')}
-                  </div>
-                  <CssTemplateManager />
                 </div>
               </div>
             )}
