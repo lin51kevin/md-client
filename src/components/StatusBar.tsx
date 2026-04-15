@@ -9,6 +9,12 @@ interface StatusBarProps {
   col: number;
   /** F012: 字数统计 */
   wordCount?: number;
+  /** 阅读时间 */
+  readingTime?: string;
+  /** Vim 模式是否启用 */
+  vimMode?: boolean;
+  /** 保存状态 */
+  saveStatus?: 'saved' | 'saving' | 'unsaved';
   /** 多光标数量（>1 时显示） */
   cursorCount?: number;
   /** F012: 快照列表（有值时显示版本历史入口） */
@@ -17,9 +23,11 @@ interface StatusBarProps {
   /** Update available info */
   updateAvailable?: { version: string } | null;
   onUpdateClick?: () => void;
+  /** Focus duration string (typewriter mode) */
+  focusDuration?: string;
 }
 
-export function StatusBar({ filePath, isDirty, line, col, wordCount, cursorCount, snapshots, onSnapshotRestore, updateAvailable, onUpdateClick }: StatusBarProps) {
+export function StatusBar({ filePath, isDirty, line, col, wordCount, readingTime, cursorCount, vimMode, saveStatus, snapshots, onSnapshotRestore, updateAvailable, onUpdateClick, focusDuration }: StatusBarProps) {
   const { t } = useI18n();
   const [showSnapshots, setShowSnapshots] = useState(false);
 
@@ -35,7 +43,7 @@ export function StatusBar({ filePath, isDirty, line, col, wordCount, cursorCount
             <span>{filePath ?? t('status.newFile')}</span>
           </span>
           {wordCount !== undefined && wordCount > 0 && (
-            <span className="tabular-nums">{t('status.words', { count: wordCount })}</span>
+            <span className="tabular-nums">{t('status.words', { count: wordCount })}{readingTime ? ` | ${readingTime}` : ''}{focusDuration ? ` | ⏱ ${focusDuration}` : ''}</span>
           )}
         </div>
         <div className="flex items-center gap-3">
@@ -66,6 +74,9 @@ export function StatusBar({ filePath, isDirty, line, col, wordCount, cursorCount
               <span>v{updateAvailable.version}</span>
             </button>
           )}
+          {vimMode && <span className="font-mono font-bold" style={{ color: 'var(--accent-color)' }}>NORMAL</span>}
+          {saveStatus === 'saving' && <span>💾</span>}
+          {saveStatus === 'unsaved' && <span style={{ color: 'var(--warning-color)' }}>⚠️</span>}
           <span className="tabular-nums">{t('status.lineCol', { line, col })}</span>
         </div>
       </div>
