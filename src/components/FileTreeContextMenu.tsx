@@ -42,7 +42,7 @@ export function FileTreeContextMenu({ menu, onRename, onDelete, onReveal, onClos
       >
         <Pencil size={12} /> 重命名
       </button>
-      {onReveal && !menu.node.isDirectory && (
+      {onReveal && !menu.node.is_dir && (
         <button
           className="w-full text-left px-3 py-1.5 text-xs flex items-center gap-2 transition-colors hover:bg-opacity-10"
           style={{ color: 'var(--text-primary)' }}

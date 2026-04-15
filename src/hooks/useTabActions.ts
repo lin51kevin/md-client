@@ -46,7 +46,6 @@ export function useTabActions({
   }, [tabs, closeTab, t]);
 
   const handleCloseOtherTabs = useCallback(async (keepTabId: string) => {
-    const idx = tabs.findIndex(t => t.id === keepTabId);
     const toClose: string[] = [];
     for (const tab of tabs) {
       if (tab.id === keepTabId) continue;
