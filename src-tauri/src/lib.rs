@@ -11,6 +11,32 @@ use base64::Engine as _;
 use tauri::Manager;
 use tauri::Emitter;
 
+/// Read a file as text, automatically detecting encoding.
+/// Tries UTF-8 first; on failure uses chardetng to detect encoding
+/// (handles GBK, GB18030, Shift-JIS, etc.) and converts to UTF-8.
+fn read_text_auto_encoding(path: &str) -> Result<String, String> {
+    let bytes = std::fs::read(path).map_err(|e| e.to_string())?;
+
+    // Fast path: valid UTF-8
+    if let Ok(s) = std::str::from_utf8(&bytes) {
+        return Ok(s.to_string());
+    }
+
+    // Detect encoding with chardetng (Firefox's detector)
+    let mut detector = chardetng::EncodingDetector::new();
+    detector.feed(&bytes, true);
+    let encoding = detector.guess(None, true);
+
+    let (cow, _, had_errors) = encoding.decode(&bytes);
+    if had_errors {
+        return Err(format!(
+            "Cannot read file: detected encoding '{}' but file contains invalid bytes",
+            encoding.name()
+        ));
+    }
+    Ok(cow.into_owned())
+}
+
 /// Validate that a user-supplied path does not escape into sensitive system directories.
 /// This is a defence-in-depth measure for a desktop app that wraps raw std::fs operations.
 /// Rejects:
@@ -82,7 +108,7 @@ fn get_open_file() -> Option<OpenFileResult> {
         if validate_user_path(path).is_err() {
             return None;
         }
-        match std::fs::read_to_string(path) {
+        match read_text_auto_encoding(path) {
             Ok(content) => Some(OpenFileResult { path: path.clone(), content }),
             Err(_) => None,
         }
@@ -133,11 +159,12 @@ async fn export_document(
     }
 }
 
-/// Read any file as UTF-8 text.
+/// Read any file as UTF-8 text, with automatic encoding detection fallback.
+/// Handles GBK, GB18030, Shift-JIS, and other common non-UTF-8 encodings.
 #[tauri::command]
 fn read_file_text(path: String) -> Result<String, String> {
     validate_user_path(&path)?;
-    std::fs::read_to_string(&path).map_err(|e| e.to_string())
+    read_text_auto_encoding(&path)
 }
 
 /// Read any file as raw bytes.
@@ -384,7 +411,7 @@ fn search_files(
             break;
         }
 
-        match std::fs::read_to_string(&filepath) {
+        match read_text_auto_encoding(&filepath.to_string_lossy()) {
             Ok(content) => {
                 let fname = filepath.file_name()
                     .and_then(|n| n.to_str())
@@ -500,7 +527,7 @@ fn replace_in_files(
     let mut files_modified = Vec::new();
 
     for filepath in collect_files(dir_path) {
-        let content = match std::fs::read_to_string(&filepath) {
+        let content = match read_text_auto_encoding(&filepath.to_string_lossy()) {
             Ok(c) => c,
             Err(_) => continue,
         };
