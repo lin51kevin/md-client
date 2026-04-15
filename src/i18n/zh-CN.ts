@@ -269,6 +269,11 @@ export const zhCN = {
   'ctx.toggleListType': '切换列表类型',
   'ctx.removeBlockquote': '移除引用',
   'ctx.copyFormula': '复制公式',
+  'ctx.aiPolish': '✨ AI 润色',
+  'ctx.aiExplain': '📖 AI 解释',
+  'ctx.aiTranslate': '🌐 AI 翻译',
+  'ctx.aiSummarize': '📝 AI 总结',
+  'ctx.aiRewrite': '↔️ AI 改写',
 
   // ── Tab Context Menu ──────────────────────────────────────────────────────
   'tabCtx.save': '保存',

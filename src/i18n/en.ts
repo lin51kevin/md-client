@@ -272,6 +272,11 @@ export const en: Record<TranslationKey, string> = {
   'ctx.toggleListType': 'Toggle List Type',
   'ctx.removeBlockquote': 'Remove Blockquote',
   'ctx.copyFormula': 'Copy Formula',
+  'ctx.aiPolish': '✨ AI Polish',
+  'ctx.aiExplain': '📖 AI Explain',
+  'ctx.aiTranslate': '🌐 AI Translate',
+  'ctx.aiSummarize': '📝 AI Summarize',
+  'ctx.aiRewrite': '↔️ AI Rewrite',
 
   // ── Tab Context Menu ──────────────────────────────────────────────────────
   'tabCtx.save': 'Save',

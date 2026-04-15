@@ -5,19 +5,23 @@ import {
   Heading1, ArrowDownToLine, ArrowUpFromLine,
   Plus, Minus, AlignLeft, AlignCenter, AlignRight,
   IndentIncrease, IndentDecrease, ListOrdered,
-  Quote, Sigma, Pencil, FileText
+  Quote, Sigma, Pencil, FileText, BookOpen, Globe, RefreshCw
 } from 'lucide-react';
 import type { ContextInfo } from '../lib/context-menu';
 import { useI18n } from '../i18n';
 import type { TranslationKey } from '../i18n/zh-CN';
+
+import type { AIAction } from '../hooks/useAISelection';
 
 interface EditorContextMenuProps {
   visible: boolean;
   x: number;
   y: number;
   context: ContextInfo;
+  hasSelection: boolean;
   onClose: () => void;
   onAction: (action: string) => void;
+  onAIAction?: (action: AIAction) => void;
 }
 
 /** Menu item definition */
@@ -29,7 +33,7 @@ interface MenuItem {
 }
 
 /** Build menu items based on context type */
-function buildMenuItems(context: ContextInfo, t: (key: TranslationKey) => string): MenuItem[] {
+function buildMenuItems(context: ContextInfo, t: (key: TranslationKey) => string, hasSelection: boolean, onAIAction?: (action: AIAction) => void): MenuItem[] {
   const base: MenuItem[] = [
     { id: 'cut', label: t('ctx.cut'), icon: <Scissors size={14} strokeWidth={1.8} /> },
     { id: 'copy', label: t('ctx.copy'), icon: <Copy size={14} strokeWidth={1.8} /> },
@@ -102,10 +106,24 @@ function buildMenuItems(context: ContextInfo, t: (key: TranslationKey) => string
       break;
   }
 
-  return [...base, ...contextual];
+  const result: MenuItem[] = [...base, ...contextual];
+
+  // AI selection menu (only when text is selected)
+  if (hasSelection && onAIAction) {
+    const aiItems: MenuItem[] = [
+      { id: 'ai.polish', label: t('ctx.aiPolish'), icon: <Pencil size={14} strokeWidth={1.8} /> },
+      { id: 'ai.explain', label: t('ctx.aiExplain'), icon: <BookOpen size={14} strokeWidth={1.8} /> },
+      { id: 'ai.translate', label: t('ctx.aiTranslate'), icon: <Globe size={14} strokeWidth={1.8} /> },
+      { id: 'ai.summarize', label: t('ctx.aiSummarize'), icon: <FileText size={14} strokeWidth={1.8} /> },
+      { id: 'ai.rewrite', label: t('ctx.aiRewrite'), icon: <RefreshCw size={14} strokeWidth={1.8} /> },
+    ];
+    result.push(...aiItems);
+  }
+
+  return result;
 }
 
-export function EditorContextMenu({ visible, x, y, context, onClose, onAction }: EditorContextMenuProps) {
+export function EditorContextMenu({ visible, x, y, context, hasSelection, onClose, onAction, onAIAction }: EditorContextMenuProps) {
   const { t } = useI18n();
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -130,7 +148,7 @@ export function EditorContextMenu({ visible, x, y, context, onClose, onAction }:
 
   if (!visible) return null;
 
-  const items = buildMenuItems(context, t);
+  const items = buildMenuItems(context, t, hasSelection, onAIAction);
 
   // Clamp position to viewport
   const menuWidth = 180;
@@ -149,7 +167,13 @@ export function EditorContextMenu({ visible, x, y, context, onClose, onAction }:
           {item.divider && idx > 0 && <div className="ctx-menu-separator" />}
           <button
             className="ctx-menu-item"
-            onClick={() => onAction(item.id)}
+            onClick={() => {
+              if (item.id.startsWith('ai.') && onAIAction) {
+                onAIAction(item.id.slice(3) as AIAction);
+              } else {
+                onAction(item.id);
+              }
+            }}
             onMouseDown={(e) => e.preventDefault()} // prevent blur before click
           >
             <span className="ctx-menu-icon">{item.icon}</span>
