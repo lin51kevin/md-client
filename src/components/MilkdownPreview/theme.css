@@ -299,6 +299,11 @@
   border-color: var(--border-color, #e0e0e0) !important;
 }
 
+/* Language button: always visible (Crepe hides it at opacity:0 by default) */
+.milkdown-preview .milkdown-code-block .tools .language-button {
+  opacity: 1 !important;
+}
+
 /* Buttons inside the code block toolbar */
 .milkdown-preview .milkdown-code-block button {
   background: transparent !important;
