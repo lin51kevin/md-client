@@ -6,6 +6,67 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [v0.9.1] - 2026-04-16
+
+### Added
+
+#### AI 文本选区处理（AI Text Selection）
+- **useAISelection hook** — 编辑器内选中文本后，右键菜单出现 AI 操作项（润色、解释、翻译、摘要、改写）
+- **AIResultModal 组件** — 以浮层展示 AI 处理结果，支持一键复制或替换选中内容
+- **ai-prompts 库** — 内置 5 类提示词（polish / explain / translate / summarize / rewrite），可复用于其他场景
+- i18n 完整覆盖（中/英）
+
+#### CSS 模板管理器（CSS Template Manager）
+- **CssTemplateManager 组件** — 设置 > Appearance 新增模板管理面板：
+  - 保存当前自定义 CSS 为命名模板
+  - 一键加载、删除已保存模板
+  - 导出 / 导入模板 JSON 文件
+- **css-templates 库** — localStorage 持久化，支持模板增删改查
+
+#### 代码块折叠（Code Block Fold for Milkdown Preview）
+- **useCodeBlockFold hook** — Milkdown 预览区代码块右上角新增折叠/展开按钮
+- 折叠状态通过 localStorage 跨会话持久化
+- **CodeBlockFoldOverlay 组件** — 基于 MutationObserver 动态挂载折叠覆层
+
+#### 打字机模式增强（Typewriter Mode Enhancements）
+- **useTypewriterOptions hook** — 新增三个打字机选项：
+  - 非当前段落半透明（Dim others）
+  - 隐藏非必要 UI（Hide UI）
+  - 显示专注计时器（Focus duration）
+- **format-duration 工具** — 将专注时长格式化为 `mm:ss` 显示
+- **typewriter-dim CSS 类** — 段落半透明淡出效果
+
+#### 快捷键增强（Shortcuts Enhancement）
+- 快捷键配置新增 `category` 字段，支持按类别分组展示
+- 新增 `detectConflict` 冲突检测功能，阻止绑定已占用按键
+- 新增快捷键：切换面板（Toggle Panels）、折叠代码块（Fold Code Block）
+
+#### 状态栏增强（StatusBar Enhancement）
+- 新增：**阅读时间**（基于字数估算）、**Vim 模式指示器**、**保存状态**、**专注计时器**
+
+### Fixed
+
+- 修复 `CodeBlockFoldOverlay` 无限循环与序列化 Bug
+- 修复字数统计测试预期值及阅读时间计算逻辑
+- 梳理外观设置 UI，减少重复功能入口（CSS 模板管理器 vs 自定义 CSS 编辑器）
+
+### Refactored
+
+- 将应用内 HelpModal 替换为指向 GitHub `USER_GUIDE.md` 的外链，减少包体积
+- `USER_GUIDE.md` 移至项目根目录，方便 GitHub 直接访问
+
+### Tests
+
+- 新增 `AIResultModal.test.tsx` — AI 结果弹窗组件测试
+- 新增 `useAISelection.test.ts` — AI 选区 hook 完整测试
+- 新增 `useCodeBlockFold.test.ts` — 代码块折叠 hook 测试
+- 新增 `useTypewriterOptions.test.ts` — 打字机选项 hook 测试
+- 新增 `format-duration.test.ts` — 时长格式化工具测试
+- 新增 `css-templates.test.ts` — CSS 模板库测试
+- 新增 `useWordCount.test.ts` — 字数统计 hook 测试
+
+---
+
 ## [v0.9.0] - 2026-04-15
 
 ### Added
