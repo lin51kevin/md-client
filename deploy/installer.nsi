@@ -9,6 +9,7 @@
 !define DESCRIPTION "A lightweight Markdown Editor"
 !define VERSION "0.8.0"
 !define EXENAME "marklite.exe"
+!define PROG_ID "MarkLite.Markdown"
 
 ; Default install location
 InstallDir "$LOCALAPPDATA\MarkLite"
@@ -54,17 +55,17 @@ Section /o "Start Menu Entry" SecStartMenu
 SectionEnd
 
 Section "-File Associations" SecAssoc
-  ; Register .md file association
-  WriteRegStr HKCR ".md" "" "MarkLite.md"
-  WriteRegStr HKCR "MarkLite.md" "" "Markdown File"
-  WriteRegStr HKCR "MarkLite.md\shell\open\command" "" '"$INSTDIR\${EXENAME}" "%1"'
-  WriteRegStr HKCR "MarkLite.doc\DefaultIcon" "" '$INSTDIR\${EXENAME},0'
-  
-  ; Register .markdown file association
-  WriteRegStr HKCR ".markdown" "" "MarkLite.markdown"
-  WriteRegStr HKCR "MarkLite.markdown" "" "Markdown File"
-  WriteRegStr HKCR "MarkLite.markdown\shell\open\command" '''"$INSTDIR\${EXENAME}" "%1"'
-  WriteRegStr HKCR "MarkLite.markdown\DefaultIcon" "" '"$INSTDIR\${EXENAME}",0'
+  ; Register all markdown file extensions
+  WriteRegStr HKCR ".md" "" "${PROG_ID}"
+  WriteRegStr HKCR ".markdown" "" "${PROG_ID}"
+  WriteRegStr HKCR ".mdown" "" "${PROG_ID}"
+  WriteRegStr HKCR ".mkd" "" "${PROG_ID}"
+  WriteRegStr HKCR ".mdx" "" "${PROG_ID}"
+
+  ; Register prog id (shared by all extensions)
+  WriteRegStr HKCR "${PROG_ID}" "" "Markdown Document"
+  WriteRegStr HKCR "${PROG_ID}\shell\open\command" "" '"$INSTDIR\${EXENAME}" "%1"'
+  WriteRegStr HKCR "${PROG_ID}\DefaultIcon" "" "$INSTDIR\${EXENAME},0"
 
   ; Notify shell of file association changes
   ${If} ${AtLeastWinVista}
@@ -82,17 +83,19 @@ Section "Uninstall"
   Delete "$INSTDIR\README.html"
   RMDir /r $INSTDIR
   
-  ; Remove registry entries
-  DeleteRegKey HKCR "MarkLite.md"
-  DeleteRegKey HKCR "MarkLite.markdown"
+  ; Remove file associations
+  DeleteRegKey HKCR "${PROG_ID}"
   DeleteRegValue HKCR ".md" ""
   DeleteRegValue HKCR ".markdown" ""
+  DeleteRegValue HKCR ".mdown" ""
+  DeleteRegValue HKCR ".mkd" ""
+  DeleteRegValue HKCR ".mdx" ""
 SectionEnd
 
 LangString DESC_SecCore ${LANG_ENGLISH} "Core MarkLite files."
 LangString DESC_SecDesktop ${LANG_ENGLISH} "Create a shortcut on the desktop."
 LangString DESC_SecStartMenu ${LANG_ENGLISH} "Add MarkLite to the Start Menu."
-LangString DESC_SecAssoc ${LANG_ENGLISH} "Register .md and .markdown file associations."
+LangString DESC_SecAssoc ${LANG_ENGLISH} "Register Markdown file associations (.md, .markdown, .mdown, .mkd, .mdx)."
 
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
   !insertmacro MUI_DESCRIPTION_TEXT ${SecCore} $(DESC_SecCore)
