@@ -132,7 +132,7 @@ export function Toolbar({
         />
 
         {/* 文件操作 */}
-        <ToolbarButton onClick={onNewTab} title={t('file.new')} className="px-2.5">
+        <ToolbarButton onClick={() => onNewTab()} title={t('file.new')} className="px-2.5">
           <FilePlus size={14} strokeWidth={1.8} />
         </ToolbarButton>
         <ToolbarButton onClick={onOpenFile} title={t('file.open')} className="px-2.5">

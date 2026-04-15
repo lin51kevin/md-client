@@ -230,7 +230,7 @@ export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorde
           );
         })}
         <button
-          onClick={onNew}
+          onClick={() => onNew()}
           title={t('tab.newTab')}
           className="flex self-end items-center justify-center w-6 h-6 shrink-0 ml-0.5"
           style={{ color: 'var(--text-secondary)' }}
