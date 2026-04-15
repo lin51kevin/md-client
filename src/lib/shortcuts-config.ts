@@ -4,30 +4,37 @@
  */
 import type { TranslationKey } from '../i18n/zh-CN';
 
+export type ShortcutCategory = 'file' | 'edit' | 'view' | 'ai';
+
 export interface ShortcutAction {
   id: string;
   labelKey: TranslationKey;
   defaultKeys: string;
+  category: ShortcutCategory;
 }
 
 /** 所有可自定义的快捷键 */
 export const DEFAULT_SHORTCUTS: ShortcutAction[] = [
-  { id: 'newTab', labelKey: 'settings.shortcuts.newTab', defaultKeys: 'Ctrl+N' },
-  { id: 'openFile', labelKey: 'settings.shortcuts.openFile', defaultKeys: 'Ctrl+O' },
-  { id: 'saveFile', labelKey: 'settings.shortcuts.saveFile', defaultKeys: 'Ctrl+S' },
-  { id: 'saveAsFile', labelKey: 'settings.shortcuts.saveAsFile', defaultKeys: 'Ctrl+Shift+S' },
-  { id: 'closeTab', labelKey: 'settings.shortcuts.closeTab', defaultKeys: 'Ctrl+W' },
-  { id: 'findReplace', labelKey: 'settings.shortcuts.findReplace', defaultKeys: 'Ctrl+F' },
-  { id: 'editMode', labelKey: 'settings.shortcuts.editMode', defaultKeys: 'Ctrl+1' },
-  { id: 'splitMode', labelKey: 'settings.shortcuts.splitMode', defaultKeys: 'Ctrl+2' },
-  { id: 'previewMode', labelKey: 'settings.shortcuts.previewMode', defaultKeys: 'Ctrl+3' },
-  { id: 'slideMode', labelKey: 'settings.shortcuts.slideMode', defaultKeys: 'Ctrl+4' },
-  { id: 'typewriterMode', labelKey: 'settings.shortcuts.typewriterMode', defaultKeys: 'Ctrl+.' },
-  { id: 'focusMode', labelKey: 'settings.shortcuts.focusMode', defaultKeys: 'Ctrl+,' },
-  { id: 'multicursor.selectAllOccurrences', labelKey: 'settings.shortcuts.selectAllOccurrences', defaultKeys: 'Alt+D' },
-  { id: 'multicursor.addCursorAbove', labelKey: 'settings.shortcuts.addCursorAbove', defaultKeys: 'Alt+Up' },
-  { id: 'multicursor.addCursorBelow', labelKey: 'settings.shortcuts.addCursorBelow', defaultKeys: 'Alt+Down' },
-  { id: 'insertSnippet', labelKey: 'settings.shortcuts.insertSnippet', defaultKeys: 'Ctrl+Shift+J' },
+  { id: 'newTab', labelKey: 'settings.shortcuts.newTab', defaultKeys: 'Ctrl+N', category: 'file' },
+  { id: 'openFile', labelKey: 'settings.shortcuts.openFile', defaultKeys: 'Ctrl+O', category: 'file' },
+  { id: 'saveFile', labelKey: 'settings.shortcuts.saveFile', defaultKeys: 'Ctrl+S', category: 'file' },
+  { id: 'saveAsFile', labelKey: 'settings.shortcuts.saveAsFile', defaultKeys: 'Ctrl+Shift+S', category: 'file' },
+  { id: 'closeTab', labelKey: 'settings.shortcuts.closeTab', defaultKeys: 'Ctrl+W', category: 'file' },
+  { id: 'findReplace', labelKey: 'settings.shortcuts.findReplace', defaultKeys: 'Ctrl+F', category: 'edit' },
+  { id: 'editMode', labelKey: 'settings.shortcuts.editMode', defaultKeys: 'Ctrl+1', category: 'view' },
+  { id: 'splitMode', labelKey: 'settings.shortcuts.splitMode', defaultKeys: 'Ctrl+2', category: 'view' },
+  { id: 'previewMode', labelKey: 'settings.shortcuts.previewMode', defaultKeys: 'Ctrl+3', category: 'view' },
+  { id: 'slideMode', labelKey: 'settings.shortcuts.slideMode', defaultKeys: 'Ctrl+4', category: 'view' },
+  { id: 'typewriterMode', labelKey: 'settings.shortcuts.typewriterMode', defaultKeys: 'Ctrl+.', category: 'view' },
+  { id: 'focusMode', labelKey: 'settings.shortcuts.focusMode', defaultKeys: 'Ctrl+,', category: 'view' },
+  { id: 'multicursor.selectAllOccurrences', labelKey: 'settings.shortcuts.selectAllOccurrences', defaultKeys: 'Alt+D', category: 'edit' },
+  { id: 'multicursor.addCursorAbove', labelKey: 'settings.shortcuts.addCursorAbove', defaultKeys: 'Alt+Up', category: 'edit' },
+  { id: 'multicursor.addCursorBelow', labelKey: 'settings.shortcuts.addCursorBelow', defaultKeys: 'Alt+Down', category: 'edit' },
+  { id: 'insertSnippet', labelKey: 'settings.shortcuts.insertSnippet', defaultKeys: 'Ctrl+Shift+J', category: 'edit' },
+  { id: 'toggleFileTree', labelKey: 'settings.shortcuts.toggleFileTree', defaultKeys: 'Alt+1', category: 'view' },
+  { id: 'toggleToc', labelKey: 'settings.shortcuts.toggleToc', defaultKeys: 'Alt+2', category: 'view' },
+  { id: 'toggleAIPanel', labelKey: 'settings.shortcuts.toggleAIPanel', defaultKeys: 'Ctrl+Alt+I', category: 'ai' },
+  { id: 'foldCodeBlock', labelKey: 'settings.shortcuts.foldCodeBlock', defaultKeys: 'Ctrl+Shift+.', category: 'edit' },
 ];
 
 const STORAGE_KEY = 'marklite-custom-shortcuts';
@@ -85,6 +92,17 @@ export function eventMatchesShortcut(e: KeyboardEvent, sc: ParsedShortcut): bool
     e.altKey === sc.alt &&
     e.key.toLowerCase() === sc.key.toLowerCase()
   );
+}
+
+/** 检测快捷键冲突：返回冲突的 action id，无冲突返回 null */
+export function detectConflict(key: string, excludeId: string): string | null {
+  const custom = getCustomShortcuts();
+  for (const sc of DEFAULT_SHORTCUTS) {
+    if (sc.id === excludeId) continue;
+    const current = custom[sc.id] || sc.defaultKeys;
+    if (current.toLowerCase() === key.toLowerCase()) return sc.id;
+  }
+  return null;
 }
 
 /** 格式化 KeyboardEvent 为快捷键显示字符串 */

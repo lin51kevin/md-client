@@ -4,6 +4,8 @@ import {
   getCustomShortcuts,
   parseShortcut,
   eventMatchesShortcut,
+  DEFAULT_SHORTCUTS,
+  detectConflict,
 } from '../lib/shortcuts-config';
 
 interface ShortcutsParams {
@@ -26,38 +28,30 @@ interface ShortcutsParams {
   toggleToc?: () => void;
   /** 切换AI面板浮窗 */
   toggleAIPanel?: () => void;
+  /** 折叠/展开代码块 */
+  toggleCodeBlockFold?: () => void;
 }
 
-/** 默认快捷键映射：actionId → 解析后的快捷键 */
-const DEFAULT_PARSED = new Map([
-  ['newTab', { ctrl: true, shift: false, alt: false, key: 'n' }],
-  ['openFile', { ctrl: true, shift: false, alt: false, key: 'o' }],
-  ['saveFile', { ctrl: true, shift: false, alt: false, key: 's' }],
-  ['saveAsFile', { ctrl: true, shift: true, alt: false, key: 's' }],
-  ['closeTab', { ctrl: true, shift: false, alt: false, key: 'w' }],
-  ['findReplace', { ctrl: true, shift: false, alt: false, key: 'f' }],
-  ['editMode', { ctrl: true, shift: false, alt: false, key: '1' }],
-  ['splitMode', { ctrl: true, shift: false, alt: false, key: '2' }],
-  ['previewMode', { ctrl: true, shift: false, alt: false, key: '3' }],
-  ['mindmapMode', { ctrl: true, shift: false, alt: false, key: '5' }],
-  ['typewriterMode', { ctrl: true, shift: false, alt: false, key: '.' }],
-  ['focusMode', { ctrl: true, shift: false, alt: false, key: ',' }],
-  ['insertSnippet', { ctrl: true, shift: true, alt: false, key: 'j' }],
-  ['toggleFileTree', { ctrl: false, shift: false, alt: true, key: '1' }],
-  ['toggleToc', { ctrl: false, shift: false, alt: true, key: '2' }],
-  ['toggleAIPanel', { ctrl: true, shift: false, alt: true, key: 'i' }],
-]);
+/** 根据 actionId 获取当前快捷键（用户自定义优先） */
+function getCurrentShortcut(actionId: string): string {
+  const custom = getCustomShortcuts();
+  const sc = DEFAULT_SHORTCUTS.find(s => s.id === actionId);
+  return custom[actionId] ?? sc?.defaultKeys ?? '';
+}
 
 export function useKeyboardShortcuts(params: ShortcutsParams) {
   const paramsRef = useRef(params);
   paramsRef.current = params;
 
   useEffect(() => {
-    const custom = getCustomShortcuts();
-
     const handler = (e: KeyboardEvent) => {
-      const { createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile, closeTab, setViewMode, activeTabIdRef, toggleFindReplace, setFocusMode, focusMode, openSnippetPicker, toggleFileTree, toggleToc, toggleAIPanel } = paramsRef.current;
-      
+      const {
+        createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile,
+        closeTab, setViewMode, activeTabIdRef, toggleFindReplace,
+        setFocusMode, focusMode, openSnippetPicker,
+        toggleFileTree, toggleToc, toggleAIPanel, toggleCodeBlockFold,
+      } = paramsRef.current;
+
       // F009 — ESC 退出任何焦点模式（优先处理，无需 Ctrl）
       if (e.key === 'Escape' && focusMode && focusMode !== 'normal') {
         e.preventDefault();
@@ -82,28 +76,31 @@ export function useKeyboardShortcuts(params: ShortcutsParams) {
         return;
       }
 
-      // 检查 Ctrl/Cmd 键
-      if (!(e.ctrlKey || e.metaKey)) return;
+      // 不拦截纯 Alt 组合（Alt+数字切换面板等）
+      if (!e.ctrlKey && !e.metaKey && e.altKey) {
+        // Allow Alt+1/2 (toggleFileTree/Toc) through to DEFAULT_PARSED
+      } else if (!e.ctrlKey && !e.metaKey) {
+        // Allow non-modifier keys (but no plain Ctrl/Meta without a target key)
+      }
 
-      // 尝试匹配用户自定义快捷键或默认快捷键
-      for (const [actionId, defaultSc] of DEFAULT_PARSED) {
-        const keys = custom[actionId];
-        const parsed = keys ? parseShortcut(keys) : defaultSc;
+      // 遍历 DEFAULT_SHORTCUTS 检查匹配（用户自定义优先）
+      for (const sc of DEFAULT_SHORTCUTS) {
+        const currentKeys = getCurrentShortcut(sc.id);
+        if (!currentKeys) continue;
+        const parsed = parseShortcut(currentKeys);
         if (eventMatchesShortcut(e, parsed)) {
           e.preventDefault();
-          switch (actionId) {
+          switch (sc.id) {
             case 'newTab': createNewTab(); break;
             case 'openFile': handleOpenFile(); break;
             case 'saveFile': handleSaveFile(); break;
             case 'saveAsFile': handleSaveAsFile(); break;
             case 'closeTab': closeTab(activeTabIdRef.current); break;
-            case 'findReplace': case 'findReplaceAlt':
-              toggleFindReplace?.(); break;
+            case 'findReplace': toggleFindReplace?.(); break;
             case 'editMode': setViewMode('edit'); break;
             case 'splitMode': setViewMode('split'); break;
             case 'previewMode': setViewMode('preview'); break;
             case 'slideMode': setViewMode('slide'); break;
-            case 'mindmapMode': setViewMode('mindmap'); break;
             case 'typewriterMode':
               setFocusMode?.(focusMode === 'typewriter' ? 'normal' : 'typewriter'); break;
             case 'focusMode':
@@ -112,8 +109,9 @@ export function useKeyboardShortcuts(params: ShortcutsParams) {
             case 'toggleFileTree': toggleFileTree?.(); break;
             case 'toggleToc': toggleToc?.(); break;
             case 'toggleAIPanel': toggleAIPanel?.(); break;
+            case 'foldCodeBlock': toggleCodeBlockFold?.(); break;
           }
-          return; // 匹配成功，停止继续检查
+          return;
         }
       }
     };
@@ -121,3 +119,6 @@ export function useKeyboardShortcuts(params: ShortcutsParams) {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 }
+
+/** 导出冲突检测供 SettingsModal 使用 */
+export { detectConflict };
