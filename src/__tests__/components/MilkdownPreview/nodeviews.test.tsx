@@ -50,6 +50,61 @@ tags:
     });
   });
 
+  describe('WikiLink plugin', () => {
+    it('exports wikiLinkPlugin', async () => {
+      const { wikiLinkPlugin, wikiLinkId, wikiLinkSchema } = await import(
+        '../../../components/MilkdownPreview/nodeviews/wikiLinkPlugin'
+      );
+      expect(wikiLinkPlugin).toBeDefined();
+      expect(wikiLinkId).toBe('wikiLink');
+      expect(wikiLinkSchema).toBeDefined();
+    });
+
+    it('wikiLinkPlugin is an array with remark and schema plugins', async () => {
+      const { wikiLinkPlugin } = await import(
+        '../../../components/MilkdownPreview/nodeviews/wikiLinkPlugin'
+      );
+      expect(Array.isArray(wikiLinkPlugin)).toBe(true);
+      expect(wikiLinkPlugin).toHaveLength(2);
+    });
+
+    it('remark-wikilinks correctly parses [[text]]', async () => {
+      const { remarkWikiLinks } = await import(
+        '../../../lib/remark-wikilinks'
+      );
+      const { unified } = await import('unified');
+      const remarkParse = (await import('remark-parse')).default;
+
+      const processor = unified().use(remarkParse).use(remarkWikiLinks);
+      const tree = processor.runSync(processor.parse('See [[MyPage]] for details'));
+
+      // WikiLink nodes are inside paragraph children
+      const children = (tree as any).children?.flatMap(
+        (n: any) => (n.type === 'paragraph' ? n.children : [])
+      ).filter((n: any) => n.type === 'wikiLink');
+      expect(children).toHaveLength(1);
+      expect(children[0].value).toBe('MyPage');
+    });
+
+    it('remark-wikilinks handles multiple links', async () => {
+      const { remarkWikiLinks } = await import(
+        '../../../lib/remark-wikilinks'
+      );
+      const { unified } = await import('unified');
+      const remarkParse = (await import('remark-parse')).default;
+
+      const processor = unified().use(remarkParse).use(remarkWikiLinks);
+      const tree = processor.runSync(processor.parse('See [[PageA]] and [[Page B]]'));
+
+      const children = (tree as any).children?.flatMap(
+        (n: any) => (n.type === 'paragraph' ? n.children : [])
+      ).filter((n: any) => n.type === 'wikiLink');
+      expect(children).toHaveLength(2);
+      expect(children[0].value).toBe('PageA');
+      expect(children[1].value).toBe('Page B');
+    });
+  });
+
   describe('WikiLink pattern', () => {
     const WIKI_LINK_REGEX = /\[\[([^\]]+)\]\]/g;
 

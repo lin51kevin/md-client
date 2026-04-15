@@ -1,11 +1,30 @@
-import { useEffect, useRef, useCallback, memo } from 'react';
+import { useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import { Milkdown, MilkdownProvider, useEditor } from '@milkdown/react';
 import { Crepe, CrepeFeature } from '@milkdown/crepe';
 import { EditorState } from '@milkdown/prose/state';
 import '@milkdown/crepe/theme/frame.css';
 import 'katex/dist/katex.min.css';
 import './theme.css';
-import { useLocalImage, useMermaidBlock, useWikiLink, useFrontmatter } from './nodeviews';
+import { extractFrontmatter, type Frontmatter } from '../../lib/markdown-extensions';
+import { FrontmatterPanel } from './FrontmatterPanel';
+import { useLocalImage, wikiLinkPlugin } from './nodeviews';
+import { renderMermaidPreview } from './nodeviews/MermaidBlockView';
+
+/** Convert a Frontmatter object back to YAML string (without --- delimiters) */
+function frontmatterToYaml(fm: Frontmatter): string {
+  const lines: string[] = [];
+  for (const [key, val] of Object.entries(fm)) {
+    if (Array.isArray(val)) {
+      lines.push(`${key}:`);
+      for (const item of val as string[]) {
+        lines.push(`  - ${item}`);
+      }
+    } else {
+      lines.push(`${key}: ${String(val)}`);
+    }
+  }
+  return lines.join('\n') + '\n';
+}
 
 interface MilkdownPreviewProps {
   content: string;
@@ -35,9 +54,25 @@ function MilkdownEditor({
   const lastContentRef = useRef(content);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Extract frontmatter once per content change
+  const { frontmatter, body } = useMemo(() => {
+    const fm = extractFrontmatter(content);
+    const b = content.replace(/^---[\s\S]*?---\n?/, '').replace(/^\n+/, '');
+    return { frontmatter: fm, body: b };
+  }, [content]);
+
+  // Keep a ref so markdownUpdated callback can reconstruct full content
+  const frontmatterRef = useRef(frontmatter);
+  frontmatterRef.current = frontmatter;
+
   const { get } = useEditor((_root) => {
     const crepe = new Crepe({
-      defaultValue: content,
+      defaultValue: body,
+      featureConfigs: {
+        [CrepeFeature.CodeMirror]: {
+          renderPreview: renderMermaidPreview,
+        },
+      },
       features: {
         [CrepeFeature.CodeMirror]: true,
         [CrepeFeature.ListItem]: true,
@@ -62,7 +97,12 @@ function MilkdownEditor({
         }
         if (newMarkdown !== prevMarkdown) {
           lastContentRef.current = newMarkdown;
-          onContentChange?.(newMarkdown);
+          // Reconstruct full content with frontmatter
+          const fm = frontmatterRef.current;
+          const fullContent = Object.keys(fm).length > 0
+            ? `---\n${frontmatterToYaml(fm)}---\n${newMarkdown}`
+            : newMarkdown;
+          onContentChange?.(fullContent);
         }
       });
     });
@@ -74,11 +114,35 @@ function MilkdownEditor({
     return crepe;
   }, []);
 
+  // Register wiki-link Milkdown plugin
+  useEffect(() => {
+    const editor = get();
+    if (editor) {
+      editor.use(wikiLinkPlugin as any);
+    }
+  }, [get]);
+
   // NodeView post-processing hooks
-  useLocalImage(filePath, containerRef);
-  useMermaidBlock(containerRef);
-  useWikiLink(containerRef, onWikiLinkNavigate);
-  useFrontmatter(containerRef, content);
+  useLocalImage(filePath, containerRef, content);
+
+  // WikiLink click delegation
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || !onWikiLinkNavigate) return;
+
+    const handler = (e: MouseEvent) => {
+      const target = (e.target as HTMLElement).closest('.wiki-link');
+      if (!target) return;
+      e.preventDefault();
+      const wikiTarget = target.getAttribute('data-wiki-target');
+      if (wikiTarget) {
+        onWikiLinkNavigate(wikiTarget);
+      }
+    };
+
+    container.addEventListener('click', handler);
+    return () => container.removeEventListener('click', handler);
+  }, [containerRef, onWikiLinkNavigate]);
 
   // Sync external content changes → Milkdown
   useEffect(() => {
@@ -94,7 +158,7 @@ function MilkdownEditor({
       const view = (ctx as any).get('editorView');
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const parser = (ctx as any).get('parser');
-      const doc = parser(content);
+      const doc = parser(body);
       view.update(
         EditorState.create({
           doc,
@@ -106,7 +170,7 @@ function MilkdownEditor({
     requestAnimationFrame(() => {
       isExternalUpdate.current = false;
     });
-  }, [content, get]);
+  }, [content, body, get]);
 
   // Handle editable changes
   useEffect(() => {
@@ -115,7 +179,12 @@ function MilkdownEditor({
     crepe.setReadonly(!editable);
   }, [editable]);
 
-  return <div ref={containerRef}><Milkdown /></div>;
+  return (
+    <>
+      <FrontmatterPanel frontmatter={frontmatter} />
+      <div ref={containerRef}><Milkdown /></div>
+    </>
+  );
 }
 
 export const MilkdownPreview = memo(function MilkdownPreview({
