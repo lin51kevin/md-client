@@ -11,10 +11,11 @@ interface FileTreeContextMenuProps {
   menu: { x: number; y: number; node: TreeNode };
   onRename: (node: TreeNode) => void;
   onDelete: (node: TreeNode) => void;
+  onReveal?: (node: TreeNode) => void;
   onClose: () => void;
 }
 
-export function FileTreeContextMenu({ menu, onRename, onDelete, onClose }: FileTreeContextMenuProps) {
+export function FileTreeContextMenu({ menu, onRename, onDelete, onReveal, onClose }: FileTreeContextMenuProps) {
   useEffect(() => {
     const closeMenu = () => onClose();
     window.addEventListener('click', closeMenu);
@@ -41,6 +42,17 @@ export function FileTreeContextMenu({ menu, onRename, onDelete, onClose }: FileT
       >
         <Pencil size={12} /> 重命名
       </button>
+      {onReveal && !menu.node.isDirectory && (
+        <button
+          className="w-full text-left px-3 py-1.5 text-xs flex items-center gap-2 transition-colors hover:bg-opacity-10"
+          style={{ color: 'var(--text-primary)' }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--accent-color) 15%, transparent)')}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          onClick={() => onReveal(menu.node)}
+        >
+          📂 在文件管理器中显示
+        </button>
+      )}
       <button
         className="w-full text-left px-3 py-1.5 text-xs flex items-center gap-2 transition-colors hover:bg-opacity-10"
         style={{ color: 'var(--danger-color, #ef4444)' }}

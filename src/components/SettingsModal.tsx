@@ -31,6 +31,10 @@ interface SettingsModalProps {
   onGitMdOnlyChange: (enabled: boolean) => void;
   milkdownPreview: boolean;
   onMilkdownPreviewChange: (enabled: boolean) => void;
+  fileWatch: boolean;
+  onFileWatchChange: (enabled: boolean) => void;
+  fileWatchBehavior: boolean;
+  onFileWatchBehaviorChange: (autoReload: boolean) => void;
 }
 
 type TabId = 'general' | 'editor' | 'appearance' | 'files' | 'shortcuts' | 'snippets';
@@ -61,6 +65,10 @@ export function SettingsModal({
   onGitMdOnlyChange,
   milkdownPreview,
   onMilkdownPreviewChange,
+  fileWatch,
+  onFileWatchChange,
+  fileWatchBehavior,
+  onFileWatchBehaviorChange,
 }: SettingsModalProps) {
   const { t, locale, setLocale } = useI18n();
   const [activeTab, setActiveTab] = useState<TabId>('general');
@@ -315,6 +323,34 @@ export function SettingsModal({
                 >
                   <ToggleSwitch checked={milkdownPreview} onChange={onMilkdownPreviewChange} />
                 </SettingItem>
+
+                <SettingItem
+                  label={t('settings.editor.fileWatch')}
+                  description={t('settings.editor.fileWatchDesc')}
+                >
+                  <ToggleSwitch checked={fileWatch} onChange={onFileWatchChange} />
+                </SettingItem>
+
+                {fileWatch && (
+                  <SettingItem
+                    label={t('settings.editor.fileWatchBehavior')}
+                    description={t('settings.editor.fileWatchBehaviorDesc')}
+                  >
+                    <select
+                      value={fileWatchBehavior ? 'auto' : 'ask'}
+                      onChange={(e) => onFileWatchBehaviorChange(e.target.value === 'auto')}
+                      className="text-xs px-2 py-1 rounded outline-none"
+                      style={{
+                        backgroundColor: 'var(--bg-secondary)',
+                        border: '1px solid var(--border-color)',
+                        color: 'var(--text-primary)',
+                      }}
+                    >
+                      <option value="ask">{t('settings.editor.fileWatchAlwaysAsk')}</option>
+                      <option value="auto">{t('settings.editor.fileWatchAutoReload')}</option>
+                    </select>
+                  </SettingItem>
+                )}
               </div>
             )}
 

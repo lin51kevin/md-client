@@ -1,6 +1,6 @@
 
 import { useRef, useState } from 'react';
-import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, SpellCheck, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, HelpCircle, FilePlus, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight, Table2, FileCode2, Minus, ListChecks, Sigma, Presentation, Library, List, Brain } from 'lucide-react';
+import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, SpellCheck, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, HelpCircle, FilePlus, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight, Table2, FileCode2, Minus, ListChecks, Sigma, Presentation, Library, List, Brain, Undo2, Redo2 } from 'lucide-react';
 import { ViewMode, FocusMode } from '../types';
 
 import { FileMenuDropdown } from './FileMenuDropdown';
@@ -52,6 +52,11 @@ interface ToolbarProps {
   onActivateTab?: (id: string) => void;
   /** 打开片段选择器 */
   onInsertSnippet?: () => void;
+  /** Undo/Redo state */
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onUndo?: () => void;
+  onRedo?: () => void;
 }
 
 const DIVIDER = (
@@ -68,6 +73,7 @@ export function Toolbar({
   recentFiles, onOpenRecent, onClearRecent, onRemoveRecent,
   vimMode, onToggleVimMode, onImageLocal, onOpenHelp,
   tabs, activeTabId, onActivateTab, onCloseAll, onInsertSnippet,
+  canUndo, canRedo, onUndo, onRedo,
 }: ToolbarProps & { onImageLocal?: () => void }) {
   const { t } = useI18n();
   const toolbarRef = useRef<HTMLDivElement>(null);
@@ -140,6 +146,14 @@ export function Toolbar({
         </ToolbarButton>
 
         <div className="w-px h-5 mx-1 shrink-0" style={{ backgroundColor: 'var(--border-color)' }} />
+
+        {/* Undo / Redo */}
+        <ToolbarButton disabled={!canUndo} onClick={onUndo} title={t('toolbar.undo')}>
+          <Undo2 size={14} strokeWidth={2} />
+        </ToolbarButton>
+        <ToolbarButton disabled={!canRedo} onClick={onRedo} title={t('toolbar.redo')}>
+          <Redo2 size={14} strokeWidth={2} />
+        </ToolbarButton>
 
         {/* 格式化 */}
         <ToolbarButton onClick={() => onFormatAction?.('bold')} title={t('toolbar.bold')}>

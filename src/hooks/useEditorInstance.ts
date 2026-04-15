@@ -85,10 +85,17 @@ export function useEditorInstance({
     }
   }, [activeTabId, theme]);
 
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
   const handleEditorUpdate = useCallback((viewUpdate: ViewUpdate) => {
     savedStatesRef.current.set(activeTabId, { state: viewUpdate.state, themeKey: theme });
     const rangeCount = viewUpdate.state.selection.ranges.length;
     setCursorCount(rangeCount);
+    if (viewUpdate.docChanged) {
+      const hist = viewUpdate.state.history;
+      setCanUndo(!!hist && hist.undoDepth > 0);
+      setCanRedo(!!hist && hist.redoDepth > 0);
+    }
   }, [activeTabId, theme]);
 
   // Attach contextmenu + dblclick listeners whenever a new EditorView mounts.
@@ -200,5 +207,7 @@ export function useEditorInstance({
     handleCreateEditor,
     handleEditorUpdate,
     cursorCount,
+    canUndo,
+    canRedo,
   };
 }

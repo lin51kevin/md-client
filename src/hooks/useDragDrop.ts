@@ -12,12 +12,16 @@ interface DragDropParams {
   /** 处理拖入的图片（由 useImagePaste 提供）。Tauri 的 onDragDropEvent 拦截了原生
    *  drop 事件，导致 DOM dataTransfer.files 可能为空，因此需在此处理图片拖入。 */
   onImageDrop?: (ext: string, data: Uint8Array) => Promise<void>;
+  /** 当拖入文件夹时，设置文件树根目录 */
+  onFolderDrop?: (path: string) => void;
 }
 
-export function useDragDrop({ isTauri, setIsDragOver, openFileInTab, onImageDrop }: DragDropParams) {
-  // Ref 让 Tauri 事件回调始终读到最新的 onImageDrop，无需重新订阅
+export function useDragDrop({ isTauri, setIsDragOver, openFileInTab, onImageDrop, onFolderDrop }: DragDropParams) {
+  // Ref 让 Tauri 事件回调始终读到最新的 onImageDrop / onFolderDrop，无需重新订阅
   const onImageDropRef = useRef(onImageDrop);
+  const onFolderDropRef = useRef(onFolderDrop);
   useEffect(() => { onImageDropRef.current = onImageDrop; });
+  useEffect(() => { onFolderDropRef.current = onFolderDrop; });
 
   useEffect(() => {
     if (!isTauri) return;
@@ -30,8 +34,6 @@ export function useDragDrop({ isTauri, setIsDragOver, openFileInTab, onImageDrop
         const { type } = event.payload;
         if (type === 'enter' || type === 'over') {
           setIsDragOver(true);
-        } else if (type === 'leave') {
-          setIsDragOver(false);
         } else if (type === 'drop') {
           setIsDragOver(false);
           const paths = (event.payload as { type: 'drop'; paths: string[] }).paths;
@@ -40,6 +42,24 @@ export function useDragDrop({ isTauri, setIsDragOver, openFileInTab, onImageDrop
           paths
             .filter(p => /\.(md|markdown|txt)$/i.test(p))
             .forEach(p => openFileInTab(p));
+
+          // 检测并处理文件夹拖入
+          const folderHandler = onFolderDropRef.current;
+          if (folderHandler && paths.length > 0) {
+            (async () => {
+              for (const p of paths) {
+                try {
+                  const isDir = await invoke<boolean>('is_directory', { path: p });
+                  if (isDir) {
+                    folderHandler(p);
+                    break; // 只处理第一个文件夹
+                  }
+                } catch (err) {
+                  console.warn(`[useDragDrop] Failed to check directory: ${p}`, err);
+                }
+              }
+            })();
+          }
 
           // 处理图片文件：通过 read_file_bytes 读取内容，交给 saveAndInsert 保存并插入 Markdown
           const handler = onImageDropRef.current;
@@ -59,6 +79,10 @@ export function useDragDrop({ isTauri, setIsDragOver, openFileInTab, onImageDrop
               })();
             }
           }
+        } else {
+          // leave / cancelled / any unknown type (e.g. drag cancelled via Escape)
+          // — always hide overlay to prevent it getting stuck
+          setIsDragOver(false);
         }
       });
       // StrictMode 下 setup() 可能在 cleanup 之后才完成，需立即取消订阅
@@ -70,9 +94,17 @@ export function useDragDrop({ isTauri, setIsDragOver, openFileInTab, onImageDrop
     };
 
     setup();
+
+    // Safety net: if the window loses focus while a drag is in progress
+    // (e.g. Alt+Tab, Escape on Windows), Tauri may not fire leave/drop,
+    // so we reset the overlay state on blur.
+    const handleBlur = () => setIsDragOver(false);
+    window.addEventListener('blur', handleBlur);
+
     return () => {
       cancelled = true;
       if (unlisten) unlisten();
+      window.removeEventListener('blur', handleBlur);
     };
-  }, [isTauri, openFileInTab]);
+  }, [isTauri, openFileInTab, setIsDragOver]);
 }

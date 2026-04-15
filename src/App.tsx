@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect, useMemo, lazy, Suspense } from 'react';
 import { EditorView } from '@codemirror/view';
+import { undo, redo } from '@codemirror/commands';
 import './App.css';
 
 import { I18nContext, useI18nProvider } from './i18n';
@@ -31,6 +32,8 @@ import { useTabActions } from './hooks/useTabActions';
 import { useNavigation } from './hooks/useNavigation';
 import { useAppLifecycle } from './hooks/useAppLifecycle';
 import { usePendingImageMigration } from './hooks/usePendingImageMigration';
+import { useFileWatcher, markSelfSave } from './hooks/useFileWatcher';
+import { FileChangeToast } from './components/FileChangeToast';
 import { usePreviewRenderers } from './hooks/usePreviewRenderers';
 import { usePluginRuntime } from './hooks/usePluginRuntime';
 import { usePluginPanels } from './hooks/usePluginPanels';
@@ -65,6 +68,7 @@ import { EditorContentArea } from './components/EditorContentArea';
 import { PluginSidebarRenderer } from './components/PluginSidebarRenderer';
 import { FloatingPanel } from './components/FloatingPanel';
 import { createCommandRegistry } from './lib/command-registry';
+import { revealInExplorer } from './lib/reveal-in-explorer';
 
 
 export default function App() {
@@ -84,7 +88,7 @@ export default function App() {
   const { activePanel, setActivePanel, showFileTree, showToc, showSearchPanel, showGitPanel, showPluginsPanel } = useSidebarPanel();
   const [showAIPanel, setShowAIPanel] = useLocalStorageBool('marklite-ai-panel', false);
   const AI_PANEL_ID = 'ai-copilot-official';
-  const { spellCheck, setSpellCheck, vimMode, setVimMode, autoSave, setAutoSave, autoSaveDelay, setAutoSaveDelay, gitMdOnly, setGitMdOnly, milkdownPreview, setMilkdownPreview, theme, setThemeState } = usePreferences();
+  const { spellCheck, setSpellCheck, vimMode, setVimMode, autoSave, setAutoSave, autoSaveDelay, setAutoSaveDelay, gitMdOnly, setGitMdOnly, milkdownPreview, setMilkdownPreview, theme, setThemeState, fileWatch, setFileWatch, fileWatchBehavior, setFileWatchBehavior } = usePreferences();
 
   // ── Core hooks ───────────────────────────────────────────────────
   const { focusMode, setFocusMode, isChromeless, hideStatusBar } = useFocusMode();
@@ -108,7 +112,7 @@ export default function App() {
   const recentFilesHook = useRecentFiles({ openFileInTab });
   const { recentFiles, handleOpenRecent, handleClearRecent, handleRemoveRecent } = recentFilesHook;
 
-  const { handleCloseTab, handleCloseAllTabs, renamingTabId, setRenamingTabId, handleOpenSample } = useTabActions({
+  const { handleCloseTab, handleCloseAllTabs, handleCloseOtherTabs, handleCloseToLeft, handleCloseToRight, renamingTabId, setRenamingTabId, handleOpenSample } = useTabActions({
     tabs, closeTab, closeMultipleTabs, setTabDisplayName, handleDismissWelcome, t,
   });
 
@@ -125,6 +129,49 @@ export default function App() {
   const { handleOpenFile, handleSaveFile: rawHandleSaveFile, handleSaveAsFile, handleExportDocx, handleExportPdf, handleExportHtml, handleExportEpub, handleExportPng, exporting } = useFileOps({
     getActiveTab, tabs, openFileInTab, markSaved, markSavedAs, t, onFirstSave: handleFirstSave,
   });
+
+  // ── File watcher state ────────────────────────────────────────
+  const [fileChangeToast, setFileChangeToast] = useState<{ type: 'modified' | 'deleted'; tabId: string; filePath: string; } | null>(null);
+
+  const handleReloadFile = useCallback(async (tabId: string, filePath: string) => {
+    try {
+      const content = await invoke<string>('read_file_text', { path: filePath });
+      const tab = tabs.find(t => t.id === tabId);
+      if (tab) {
+        updateTabDoc(tabId, content);
+      }
+    } catch (err) {
+      console.warn('[App] reload file failed:', err);
+    }
+  }, [tabs, updateTabDoc]);
+
+  useFileWatcher({
+    tabs,
+    enabled: fileWatch,
+    onFileChanged: (tabId, filePath) => {
+      if (fileWatchBehavior) {
+        // Auto-reload unless tab is dirty
+        const tab = tabs.find(t => t.id === tabId);
+        if (tab?.isDirty) {
+          setFileChangeToast({ type: 'modified', tabId, filePath });
+        } else {
+          handleReloadFile(tabId, filePath);
+        }
+      } else {
+        setFileChangeToast({ type: 'modified', tabId, filePath });
+      }
+    },
+    onFileDeleted: (tabId, filePath) => {
+      setFileChangeToast({ type: 'deleted', tabId, filePath });
+    },
+  });
+
+  // Wrap handleSaveFile to mark self-save for file watcher
+  const handleSaveWithWatchMark = useCallback(async (tabId?: string) => {
+    await handleSaveFile(tabId);
+    const tab = tabId ? tabs.find(t => t.id === tabId) : getActiveTab();
+    if (tab?.filePath) markSelfSave(tab.filePath);
+  }, [handleSaveFile, tabs, getActiveTab]);
 
   // F012 - Version history wraps rawHandleSaveFile to create snapshots on manual save
   const { snapshots, handleSaveFile } = useVersionHistory({
@@ -148,7 +195,7 @@ export default function App() {
     handleSnippetInsert, openSnippetPicker,
   } = useSnippetFlow({ cmViewRef, updateActiveDoc, setEditorCtxMenu });
 
-  const { docRef: _docRef, editorExtensions, editorTheme, handleCreateEditor, handleEditorUpdate, cursorCount } = useEditorInstance({
+  const { docRef: _docRef, editorExtensions, editorTheme, handleCreateEditor, handleEditorUpdate, cursorCount, canUndo, canRedo } = useEditorInstance({
     cmViewRef, activeTabId, theme, vimMode, spellCheck, autoSave, autoSaveDelay,
     cursorExtension, searchHighlightExtension,
     activeDoc: activeTab.doc, getActiveTab, rawHandleSaveFile,
@@ -170,7 +217,7 @@ export default function App() {
     tabId: activeTabId,
   });
 
-  useDragDrop({ isTauri, setIsDragOver, openFileInTab, onImageDrop: saveAndInsertImage });
+  useDragDrop({ isTauri, setIsDragOver, openFileInTab, onImageDrop: saveAndInsertImage, onFolderDrop: (path) => setFileTreeRoot(path) });
   useWindowTitle(activeTab, isTauri);
   useWindowInit(isTauri, theme);
 
@@ -267,6 +314,11 @@ export default function App() {
       const tag = (e.target as HTMLElement).tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (e.target as HTMLElement).isContentEditable) return;
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'P') { e.preventDefault(); setShowCommandPalette(v => !v); }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'E') {
+        e.preventDefault();
+        const tab = tabs.find(t => t.id === activeTabId);
+        if (tab?.filePath) revealInExplorer(tab.filePath).catch(console.error);
+      }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
@@ -316,13 +368,17 @@ export default function App() {
               onPin={(id) => { pinTab(id); setCtxMenu(null); }}
               onUnpin={(id) => { unpinTab(id); setCtxMenu(null); }}
               tabs={tabs} onDismiss={() => setCtxMenu(null)} onCloseAll={handleCloseAllTabs}
+              onReveal={(id) => { const tab = tabs.find(t => t.id === id); if (tab?.filePath) revealInExplorer(tab.filePath).catch(console.error); }}
+              onCloseOthers={(id) => { handleCloseOtherTabs(id); setCtxMenu(null); }}
+              onCloseLeft={(id) => { handleCloseToLeft(id); setCtxMenu(null); }}
+              onCloseRight={(id) => { handleCloseToRight(id); setCtxMenu(null); }}
             />
           )}
 
           <Toolbar
             viewMode={viewMode} focusMode={focusMode}
             onNewTab={createNewTab} onOpenFile={handleOpenFile}
-            onSaveFile={() => handleSaveFile()} onSaveAsFile={() => handleSaveAsFile()}
+            onSaveFile={() => handleSaveWithWatchMark()} onSaveAsFile={() => handleSaveAsFile()}
             onExportDocx={handleExportDocx} onExportPdf={handleExportPdf}
             onExportHtml={handleExportHtml} onExportEpub={handleExportEpub}
             onExportPng={() => handleExportPng(previewRef.current)}
@@ -334,6 +390,9 @@ export default function App() {
             onFormatAction={handleFormatAction} onImageLocal={() => handleFormatAction('image-local')}
             onOpenHelp={() => setShowHelp(true)}
             onInsertSnippet={openSnippetPicker}
+            canUndo={canUndo} canRedo={canRedo}
+            onUndo={() => { const v = cmViewRef.current; if (v) undo(v); }}
+            onRedo={() => { const v = cmViewRef.current; if (v) redo(v); }}
             tabs={tabs} activeTabId={activeTabId} onActivateTab={setActiveTabId}
           />
 
@@ -346,6 +405,8 @@ export default function App() {
             autoSaveDelay={autoSaveDelay} onAutoSaveDelayChange={setAutoSaveDelay}
             gitMdOnly={gitMdOnly} onGitMdOnlyChange={setGitMdOnly}
             milkdownPreview={milkdownPreview} onMilkdownPreviewChange={setMilkdownPreview}
+            fileWatch={fileWatch} onFileWatchChange={setFileWatch}
+            fileWatchBehavior={fileWatchBehavior} onFileWatchBehaviorChange={setFileWatchBehavior}
           />
 
           {showHelp && (
@@ -516,6 +577,18 @@ export default function App() {
       <SnippetPicker visible={showSnippetPicker} onClose={() => setShowSnippetPicker(false)} onSelect={handleSnippetInsert} />
 
       <SnippetManager visible={showSnippetManager} onClose={() => setShowSnippetManager(false)} />
+
+      {fileChangeToast && (
+        <FileChangeToast
+          type={fileChangeToast.type}
+          filePath={fileChangeToast.filePath}
+          tabId={fileChangeToast.tabId}
+          onReload={(tabId) => { handleReloadFile(tabId, fileChangeToast.filePath); setFileChangeToast(null); }}
+          onKeep={() => setFileChangeToast(null)}
+          onSaveAs={(tabId) => { handleSaveAsFile(tabId); setFileChangeToast(null); }}
+          onClose={() => setFileChangeToast(null)}
+        />
+      )}
 
       {viewMode === 'slide' && activeTab && (
         <Suspense fallback={null}>

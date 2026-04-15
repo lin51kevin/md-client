@@ -104,6 +104,8 @@ export const zhCN = {
   'toolbar.link': '插入链接',
   'toolbar.imageLocal': '打开本地图片',
   'toolbar.imageLink': '插入图片链接',
+  'toolbar.undo': '撤销 (Ctrl+Z)',
+  'toolbar.redo': '重做 (Ctrl+Y)',
   'toolbar.table': '插入表格',
   'toolbar.codeblock': '代码块 (Ctrl+Shift+K)',
   'toolbar.hr': '分隔线',
@@ -275,6 +277,10 @@ export const zhCN = {
   'tabCtx.unpin': '取消固定',
   'tabCtx.rename': '重命名',
   'tabCtx.close': '关闭',
+  'tabCtx.reveal': '在文件管理器中显示',
+  'tabCtx.closeOthers': '关闭其他',
+  'tabCtx.closeLeft': '关闭左侧',
+  'tabCtx.closeRight': '关闭右侧',
 
   // ── Drag Overlay ──────────────────────────────────────────────────────────
   'drag.dropToOpen': '释放以打开文件',
@@ -496,6 +502,19 @@ export const zhCN = {
   'aiCopilot.prompt.editLabel.workspace': '工作区上下文',
   'aiCopilot.prompt.editLabel.document': '文档内容',
   'aiCopilot.prompt.editInstruction': '用户指令: {instruction}\n\n当前{targetLabel}:\n---\n{content}\n---\n\n请根据指令修改上述内容，直接给出修改后的文本 (用 ```markdown 代码块包裹)。',
+
+  // ── File Watcher ──────────────────────────────────────────────────────────
+  'fileWatcher.modified': '文件已被外部修改',
+  'fileWatcher.deleted': '文件已被删除',
+  'fileWatcher.reload': '重载',
+  'fileWatcher.keep': '保留',
+  'fileWatcher.saveAs': '另存为',
+  'settings.editor.fileWatch': '文件变更检测',
+  'settings.editor.fileWatchDesc': '检测外部程序对已打开文件的修改或删除',
+  'settings.editor.fileWatchBehavior': '变更行为',
+  'settings.editor.fileWatchBehaviorDesc': '检测到文件变更时的默认行为',
+  'settings.editor.fileWatchAlwaysAsk': '始终询问',
+  'settings.editor.fileWatchAutoReload': '自动重载（有未保存修改时询问）',
 };
 
 export type TranslationKey = keyof typeof zhCN;

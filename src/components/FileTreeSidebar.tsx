@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { TreeNodeView } from './FileTreeNode';
 import { FileTreeContextMenu } from './FileTreeContextMenu';
+import { revealInExplorer } from '../lib/reveal-in-explorer';
 
 
 /** Rust 后端返回的目录条目结构 */
@@ -513,6 +514,7 @@ export function FileTreeSidebar({
           menu={contextMenu}
           onRename={handleStartRename}
           onDelete={handleDelete}
+          onReveal={(node) => { revealInExplorer(node.path).catch(console.error); setContextMenu(null); }}
           onClose={() => setContextMenu(null)}
         />
       )}

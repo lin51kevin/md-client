@@ -11,6 +11,37 @@ use base64::Engine as _;
 use tauri::Manager;
 use tauri::Emitter;
 
+#[tauri::command]
+fn reveal_in_explorer(path: String) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("explorer")
+            .args(["/select,", &path])
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .args(["-R", &path])
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    #[cfg(target_os = "linux")]
+    {
+        let dir = std::path::Path::new(&path)
+            .parent()
+            .ok_or("No parent directory")?
+            .to_str()
+            .ok_or("Invalid path")?;
+        std::process::Command::new("xdg-open")
+            .arg(dir)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
 /// Read a file as text, automatically detecting encoding.
 /// Tries UTF-8 first; on failure uses chardetng to detect encoding
 /// (handles GBK, GB18030, Shift-JIS, etc.) and converts to UTF-8.
@@ -649,6 +680,12 @@ fn delete_file(path: String) -> Result<(), String> {
     }
 }
 
+/// Check if a path is a directory.
+#[tauri::command]
+fn is_directory(path: String) -> bool {
+    std::path::Path::new(&path).is_dir()
+}
+
 #[tauri::command]
 fn rename_file(old_path: String, new_path: String) -> Result<(), String> {
     validate_user_path(&old_path)?;
@@ -691,7 +728,7 @@ pub fn run() {
                 }
             }
         }))
-        .invoke_handler(tauri::generate_handler![greet, get_open_file, export_document, read_file_text, read_file_bytes, write_file_text, write_image_bytes, create_file, delete_file, rename_file, list_directory, read_dir_recursive, search_files, replace_in_files, git::git_get_repo, git::git_get_status, git::git_diff, git::git_commit, git::git_pull, git::git_push, git::git_stage, git::git_unstage, git::git_restore])
+        .invoke_handler(tauri::generate_handler![greet, get_open_file, export_document, read_file_text, read_file_bytes, write_file_text, write_image_bytes, create_file, delete_file, rename_file, list_directory, read_dir_recursive, search_files, replace_in_files, reveal_in_explorer, is_directory, git::git_get_repo, git::git_get_status, git::git_diff, git::git_commit, git::git_pull, git::git_push, git::git_stage, git::git_unstage, git::git_restore])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

@@ -106,6 +106,8 @@ export const en: Record<TranslationKey, string> = {
   'toolbar.link': 'Insert Link',
   'toolbar.imageLocal': 'Insert Local Image',
   'toolbar.imageLink': 'Insert Image URL',
+  'toolbar.undo': 'Undo (Ctrl+Z)',
+  'toolbar.redo': 'Redo (Ctrl+Y)',
   'toolbar.table': 'Insert Table',
   'toolbar.codeblock': 'Code Block (Ctrl+Shift+K)',
   'toolbar.hr': 'Horizontal Rule',
@@ -278,6 +280,10 @@ export const en: Record<TranslationKey, string> = {
   'tabCtx.unpin': 'Unpin Tab',
   'tabCtx.rename': 'Rename',
   'tabCtx.close': 'Close',
+  'tabCtx.reveal': 'Reveal in File Explorer',
+  'tabCtx.closeOthers': 'Close Others',
+  'tabCtx.closeLeft': 'Close to Left',
+  'tabCtx.closeRight': 'Close to Right',
 
   // ── Drag Overlay ──────────────────────────────────────────────────────────
   'drag.dropToOpen': 'Drop to open file',

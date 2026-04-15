@@ -18,12 +18,21 @@ interface TabContextMenuProps {
   onDismiss: () => void;
   /** 关闭所有非固定标签页 */
   onCloseAll?: () => void;
+  /** 在文件管理器中显示 */
+  onReveal?: (tabId: string) => void;
+  /** 关闭其他标签页 */
+  onCloseOthers?: (tabId: string) => void;
+  /** 关闭左侧标签页 */
+  onCloseLeft?: (tabId: string) => void;
+  /** 关闭右侧标签页 */
+  onCloseRight?: (tabId: string) => void;
 }
 
-export function TabContextMenu({ x, y, tabId, tabs, onSave, onSaveAs, onClose, onRename, onPin, onUnpin, onDismiss, onCloseAll }: TabContextMenuProps) {
+export function TabContextMenu({ x, y, tabId, tabs, onSave, onSaveAs, onClose, onRename, onPin, onUnpin, onDismiss, onCloseAll, onReveal, onCloseOthers, onCloseLeft, onCloseRight }: TabContextMenuProps) {
   const { t } = useI18n();
   const tab = tabs.find(t => t.id === tabId);
   const isPinned = tab?.isPinned ?? false;
+  const hasFilePath = !!tab?.filePath;
 
   return (
     <>
@@ -114,6 +123,25 @@ export function TabContextMenu({ x, y, tabId, tabs, onSave, onSaveAs, onClose, o
 <span>{t('tabCtx.rename')}</span>
         </button>
         <div className="my-1" style={{ borderTop: '1px solid var(--border-color)' }} />
+        {/* Reveal in File Explorer */}
+        {hasFilePath && onReveal && (
+          <button
+            className="w-full flex items-center gap-2 px-4 py-1.5"
+            style={{ color: 'var(--text-primary)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--accent-color)';
+              e.currentTarget.style.color = 'var(--bg-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '';
+              e.currentTarget.style.color = 'var(--text-primary)';
+            }}
+            onPointerDown={() => { onReveal(tabId); onDismiss(); }}
+          >
+            <span>{t('tabCtx.reveal')}</span><span className="text-xs opacity-60">Ctrl+Shift+E</span>
+          </button>
+        )}
+        <div className="my-1" style={{ borderTop: '1px solid var(--border-color)' }} />
         {/* F013: 固定标签不可关闭（按钮禁用） */}
         <button
           className={`w-full flex items-center justify-between px-4 py-1.5 gap-6 ${isPinned ? 'cursor-not-allowed opacity-30' : ''}`}
@@ -133,6 +161,52 @@ export function TabContextMenu({ x, y, tabId, tabs, onSave, onSaveAs, onClose, o
           onPointerDown={() => { if (!isPinned) { onClose(tabId); onDismiss(); } }}
         >
           <span>{t('tabCtx.close')}</span><span className="text-xs opacity-60">Ctrl+W</span>
+        </button>
+        {/* Close Others / Left / Right */}
+        <button
+          className="w-full flex items-center gap-2 px-4 py-1.5"
+          style={{ color: 'var(--text-primary)' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--accent-color)';
+            e.currentTarget.style.color = 'var(--bg-primary)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '';
+            e.currentTarget.style.color = 'var(--text-primary)';
+          }}
+          onPointerDown={() => { onCloseOthers?.(tabId); onDismiss(); }}
+        >
+          <span>{t('tabCtx.closeOthers')}</span>
+        </button>
+        <button
+          className="w-full flex items-center gap-2 px-4 py-1.5"
+          style={{ color: 'var(--text-primary)' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--accent-color)';
+            e.currentTarget.style.color = 'var(--bg-primary)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '';
+            e.currentTarget.style.color = 'var(--text-primary)';
+          }}
+          onPointerDown={() => { onCloseLeft?.(tabId); onDismiss(); }}
+        >
+          <span>{t('tabCtx.closeLeft')}</span>
+        </button>
+        <button
+          className="w-full flex items-center gap-2 px-4 py-1.5"
+          style={{ color: 'var(--text-primary)' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--accent-color)';
+            e.currentTarget.style.color = 'var(--bg-primary)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '';
+            e.currentTarget.style.color = 'var(--text-primary)';
+          }}
+          onPointerDown={() => { onCloseRight?.(tabId); onDismiss(); }}
+        >
+          <span>{t('tabCtx.closeRight')}</span>
         </button>
         <div className="my-1" style={{ borderTop: '1px solid var(--border-color)' }} />
         <button
