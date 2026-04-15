@@ -11,6 +11,10 @@ export function activate(context: PluginContext) {
   });
 
   // Register commands
+  const polishCmd = context.commands.register('ai.polish', () => {
+    panelContent.sendMessage('/polish');
+  });
+
   const explainCmd = context.commands.register('ai.explain', () => {
     panelContent.sendMessage('/explain');
   });
@@ -30,6 +34,7 @@ export function activate(context: PluginContext) {
   return {
     deactivate: () => {
       panel.dispose();
+      polishCmd.dispose();
       explainCmd.dispose();
       rewriteCmd.dispose();
       summarizeCmd.dispose();

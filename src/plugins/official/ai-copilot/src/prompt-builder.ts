@@ -64,6 +64,9 @@ export function buildChatPrompt(
     case 'format':
       return t('aiCopilot.prompt.format', { content: truncated });
 
+    case 'polish':
+      return t('aiCopilot.prompt.polish', { content: truncated });
+
     case 'edit': {
       const instruction = intent.params.instruction || intent.originalText;
       const targetLabel =
@@ -84,10 +87,6 @@ export function buildChatPrompt(
 /**
  * Try to extract the modified text from an AI response.
  * Looks for ```markdown code blocks.
-    case 'create_document': {
-      const description = intent.params.instruction || intent.originalText;
-      return `请根据以下需求，创建一个完整的 Markdown 文档:\n\n${description}\n\n请用 \`\`\`markdown 代码块包裹文档内容。`;
-    }
  */
 export function extractModifiedText(response: string): string | null {
   const match = response.match(/```(?:markdown|md)?\s*\n([\s\S]*?)```/);

@@ -544,6 +544,7 @@ export const en: Record<TranslationKey, string> = {
   'aiCopilot.prompt.summarize': 'Please summarize the key points of this document:\n\n{content}',
   'aiCopilot.prompt.translate': 'Please translate the following into {language}:\n\n{content}',
   'aiCopilot.prompt.format': 'Please format the following Markdown content while preserving its meaning:\n\n{content}',
+  'aiCopilot.prompt.polish': 'Please polish the following text to make it more fluent and professional. Return only the polished result wrapped in a ```markdown code block, without explanations or prefixes.\n\n{content}',
   'aiCopilot.prompt.editLabel.selection': 'selected text',
   'aiCopilot.prompt.editLabel.workspace': 'workspace context',
   'aiCopilot.prompt.editLabel.document': 'document content',
