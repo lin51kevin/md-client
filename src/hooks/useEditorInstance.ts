@@ -83,6 +83,12 @@ export function useEditorInstance({
         // the old CM theme extensions. Only restore the cursor selection.
         view.dispatch({ selection: saved.state.selection });
       }
+      // Sync undo/redo button state for the restored history
+      setCanUndo(undoDepth(saved.state) > 0);
+      setCanRedo(redoDepth(saved.state) > 0);
+    } else {
+      setCanUndo(false);
+      setCanRedo(false);
     }
   }, [activeTabId, theme]);
 

@@ -1,4 +1,5 @@
 import { Download, X, RotateCw } from 'lucide-react';
+import { useI18n } from '../i18n';
 
 interface UpdateNotificationProps {
   version: string;
@@ -21,6 +22,7 @@ export function UpdateNotification({
   readyToRestart,
   onRestart,
 }: UpdateNotificationProps) {
+  const { t } = useI18n();
 
   return (
     <div
@@ -34,7 +36,7 @@ export function UpdateNotification({
         <div className="flex items-center gap-2">
           <Download size={14} style={{ color: 'var(--accent-color)' }} />
           <span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
-            新版本 v{version} 可用
+            {t('update.available', { version })}
           </span>
         </div>
         <button onClick={onDismiss} style={{ color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer' }}>
@@ -70,7 +72,7 @@ export function UpdateNotification({
             style={{ backgroundColor: 'var(--accent-color)', color: '#fff', border: 'none', cursor: 'pointer' }}
           >
             <RotateCw size={12} />
-            重启更新
+            {t('update.restart')}
           </button>
         ) : (
           <button
@@ -85,7 +87,7 @@ export function UpdateNotification({
             }}
           >
             <Download size={12} />
-            {downloading ? '下载中...' : '更新'}
+            {downloading ? t('update.downloading') : t('update.install')}
           </button>
         )}
         <button
@@ -93,7 +95,7 @@ export function UpdateNotification({
           className="text-xs px-3 py-1 rounded"
           style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', cursor: 'pointer' }}
         >
-          忽略
+          {t('update.dismiss')}
         </button>
       </div>
     </div>

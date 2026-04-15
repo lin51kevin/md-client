@@ -226,16 +226,16 @@ export function SettingsModal({
             {activeTab === 'general' && (
               <div className="space-y-4">
                 <SettingItem
-                  label="自动检查更新"
-                  description="启动时自动检查是否有新版本可用"
+                  label={t('update.autoCheck')}
+                  description={t('update.autoCheckDesc')}
                 >
                   <ToggleSwitch checked={autoUpdateCheck} onChange={onAutoUpdateCheckChange ?? (() => {})} />
                 </SettingItem>
 
                 {autoUpdateCheck && (
                   <SettingItem
-                    label="检查频率"
-                    description="设置自动检查更新的频率"
+                    label={t('update.checkFrequency')}
+                    description={t('update.checkFrequencyDesc')}
                   >
                     <select
                       value={updateCheckFrequency}
@@ -247,8 +247,8 @@ export function SettingsModal({
                         color: 'var(--text-primary)',
                       }}
                     >
-                      <option value="startup">每次启动</option>
-                      <option value="24h">每 24 小时</option>
+                      <option value="startup">{t('update.frequencyStartup')}</option>
+                      <option value="24h">{t('update.frequency24h')}</option>
                     </select>
                   </SettingItem>
                 )}

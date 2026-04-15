@@ -41,7 +41,7 @@ export function FileChangeToast({
 
   if (!visible) return null;
 
-  const fileName = filePath.replace(/[/\\][^/\\]+$/, '').split('/').pop() || filePath.split(/[/\\]/).pop() || filePath;
+  const fileName = filePath.split(/[/\\]/).pop() || filePath;
 
   return (
     <div

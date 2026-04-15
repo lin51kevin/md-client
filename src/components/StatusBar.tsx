@@ -57,7 +57,7 @@ export function StatusBar({ filePath, isDirty, line, col, wordCount, cursorCount
           {updateAvailable && (
             <button
               onClick={onUpdateClick}
-              title={`新版本 v${updateAvailable.version} 可用`}
+              title={t('update.statusBarTitle', { version: updateAvailable.version })}
               className="flex items-center gap-1 transition-colors"
               onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent-color)')}
               onMouseLeave={e => (e.currentTarget.style.color = '')}

@@ -8,6 +8,15 @@ export function usePreferences() {
   const [vimMode, setVimMode] = useLocalStorageBool('marklite-vimmode', false);
   const [autoSave, setAutoSave] = useLocalStorageBool('marklite-autosave', false);
   const [autoSaveDelay, setAutoSaveDelay] = useLocalStorageNumber('marklite-autosave-delay', 1000);
+  const [autoUpdateCheck, setAutoUpdateCheck] = useLocalStorageBool('marklite-auto-update-check', true);
+  const [updateCheckFrequency, setUpdateCheckFrequency] = useState<'startup' | '24h'>(() => {
+    const saved = localStorage.getItem('marklite-update-check-frequency');
+    return (saved === 'startup' || saved === '24h') ? saved : '24h';
+  });
+  const setUpdateCheckFrequencyPersisted = (freq: 'startup' | '24h') => {
+    setUpdateCheckFrequency(freq);
+    localStorage.setItem('marklite-update-check-frequency', freq);
+  };
   const [gitMdOnly, setGitMdOnly] = useLocalStorageBool('marklite-git-md-only', false);
   const [milkdownPreview, setMilkdownPreview] = useLocalStorageBool('marklite-milkdown-preview', true);
   const [fileWatch, setFileWatch] = useLocalStorageBool('marklite-file-watch', true);
@@ -33,6 +42,8 @@ export function usePreferences() {
     autoSave, setAutoSave,
     autoSaveDelay, setAutoSaveDelay,
     gitMdOnly, setGitMdOnly,
+    autoUpdateCheck, setAutoUpdateCheck,
+    updateCheckFrequency, setUpdateCheckFrequency: setUpdateCheckFrequencyPersisted,
     milkdownPreview, setMilkdownPreview,
     fileWatch, setFileWatch,
     fileWatchBehavior, setFileWatchBehavior,

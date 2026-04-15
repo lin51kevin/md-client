@@ -13,6 +13,7 @@ use tauri::Emitter;
 
 #[tauri::command]
 fn reveal_in_explorer(path: String) -> Result<(), String> {
+    validate_user_path(&path)?;
     #[cfg(target_os = "windows")]
     {
         std::process::Command::new("explorer")
@@ -680,6 +681,12 @@ fn delete_file(path: String) -> Result<(), String> {
     }
 }
 
+/// Restart the application (used after update installation).
+#[tauri::command]
+fn restart_app(app: tauri::AppHandle) {
+    app.restart();
+}
+
 /// Check if a path is a directory.
 #[tauri::command]
 fn is_directory(path: String) -> bool {
@@ -729,7 +736,7 @@ pub fn run() {
                 }
             }
         }))
-        .invoke_handler(tauri::generate_handler![greet, get_open_file, export_document, read_file_text, read_file_bytes, write_file_text, write_image_bytes, create_file, delete_file, rename_file, list_directory, read_dir_recursive, search_files, replace_in_files, reveal_in_explorer, is_directory, git::git_get_repo, git::git_get_status, git::git_diff, git::git_commit, git::git_pull, git::git_push, git::git_stage, git::git_unstage, git::git_restore])
+        .invoke_handler(tauri::generate_handler![greet, get_open_file, export_document, read_file_text, read_file_bytes, write_file_text, write_image_bytes, create_file, delete_file, rename_file, list_directory, read_dir_recursive, search_files, replace_in_files, reveal_in_explorer, is_directory, restart_app, git::git_get_repo, git::git_get_status, git::git_diff, git::git_commit, git::git_pull, git::git_push, git::git_stage, git::git_unstage, git::git_restore])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

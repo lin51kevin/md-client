@@ -10,6 +10,8 @@ export interface UpdateInfo {
 export interface UseAutoUpgradeOptions {
   /** 是否启用自动检查 */
   enabled: boolean;
+  /** 检查频率：每次启动('startup') 或每24小时('24h'，默认) */
+  checkFrequency?: 'startup' | '24h';
   /** 检查到更新后的回调 */
   onUpdateAvailable?: (info: UpdateInfo) => void;
   /** 下载进度回调 (0-100) */
@@ -23,7 +25,8 @@ export interface UseAutoUpgradeOptions {
 const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
 const STORAGE_KEY = 'marklite-last-update-check';
 
-function shouldCheck(): boolean {
+function shouldCheck(frequency: 'startup' | '24h'): boolean {
+  if (frequency === 'startup') return true;
   try {
     const lastCheck = localStorage.getItem(STORAGE_KEY);
     if (!lastCheck) return true;
@@ -42,16 +45,19 @@ function recordCheck() {
 }
 
 export function useAutoUpgrade(options: UseAutoUpgradeOptions) {
-  const { enabled, onUpdateAvailable, onDownloadProgress, onUpdateReady, onError } = options;
+  const { enabled, checkFrequency = '24h', onUpdateAvailable, onDownloadProgress, onUpdateReady, onError } = options;
   const [checking, setChecking] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
   const updateRef = useRef<any>(null); // the Tauri update object
+  const checkingRef = useRef(false);   // guard against concurrent calls
+  const downloadingRef = useRef(false);
 
   const checkForUpdate = useCallback(async () => {
-    if (checking) return;
-    if (!shouldCheck()) return;
+    if (checkingRef.current) return;
+    if (!shouldCheck(checkFrequency)) return;
 
+    checkingRef.current = true;
     setChecking(true);
     try {
       const update = await tauriCheck();
@@ -70,12 +76,14 @@ export function useAutoUpgrade(options: UseAutoUpgradeOptions) {
     } catch (err) {
       onError?.(err instanceof Error ? err.message : String(err));
     } finally {
+      checkingRef.current = false;
       setChecking(false);
     }
-  }, [checking, onUpdateAvailable, onError]);
+  }, [onUpdateAvailable, onError, checkFrequency]);
 
   const downloadAndInstall = useCallback(async () => {
-    if (!updateRef.current || downloading) return;
+    if (!updateRef.current || downloadingRef.current) return;
+    downloadingRef.current = true;
     setDownloading(true);
     try {
       await updateRef.current.downloadAndInstall((event: any) => {
@@ -88,9 +96,10 @@ export function useAutoUpgrade(options: UseAutoUpgradeOptions) {
     } catch (err) {
       onError?.(err instanceof Error ? err.message : String(err));
     } finally {
+      downloadingRef.current = false;
       setDownloading(false);
     }
-  }, [downloading, onDownloadProgress, onUpdateReady, onError]);
+  }, [onDownloadProgress, onUpdateReady, onError]);
 
   // Auto-check on mount if enabled
   useEffect(() => {

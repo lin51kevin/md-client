@@ -91,7 +91,7 @@ export default function App() {
   const { activePanel, setActivePanel, showFileTree, showToc, showSearchPanel, showGitPanel, showPluginsPanel } = useSidebarPanel();
   const [showAIPanel, setShowAIPanel] = useLocalStorageBool('marklite-ai-panel', false);
   const AI_PANEL_ID = 'ai-copilot-official';
-  const { spellCheck, setSpellCheck, vimMode, setVimMode, autoSave, setAutoSave, autoSaveDelay, setAutoSaveDelay, gitMdOnly, setGitMdOnly, milkdownPreview, setMilkdownPreview, theme, setThemeState, fileWatch, setFileWatch, fileWatchBehavior, setFileWatchBehavior } = usePreferences();
+  const { spellCheck, setSpellCheck, vimMode, setVimMode, autoSave, setAutoSave, autoSaveDelay, setAutoSaveDelay, gitMdOnly, setGitMdOnly, milkdownPreview, setMilkdownPreview, theme, setThemeState, fileWatch, setFileWatch, fileWatchBehavior, setFileWatchBehavior, autoUpdateCheck, setAutoUpdateCheck, updateCheckFrequency, setUpdateCheckFrequency } = usePreferences();
 
   // ── Core hooks ───────────────────────────────────────────────────
   const { focusMode, setFocusMode, isChromeless, hideStatusBar } = useFocusMode();
@@ -230,7 +230,8 @@ export default function App() {
   const [readyToRestart, setReadyToRestart] = useState(false);
 
   const { downloadAndInstall, updateInfo, downloading: isDownloading } = useAutoUpgrade({
-    enabled: true,
+    enabled: autoUpdateCheck,
+    checkFrequency: updateCheckFrequency,
     onUpdateAvailable: () => setShowUpdateNotification(true),
     onDownloadProgress: setDownloadProgress,
     onUpdateReady: () => { setReadyToRestart(true); setDownloadProgress(100); },
@@ -305,7 +306,7 @@ export default function App() {
   }, [_baseCtxAction, openSnippetPicker]);
 
   useKeyboardShortcuts({
-    createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile,
+    createNewTab, handleOpenFile, handleSaveFile: handleSaveWithWatchMark, handleSaveAsFile,
     closeTab: handleCloseTab, setViewMode, activeTabIdRef,
     toggleFindReplace: () => setActivePanel(activePanel === 'search' ? null : 'search'),
     focusMode, setFocusMode,
@@ -317,13 +318,13 @@ export default function App() {
 
   // ── Command Palette registry ─────────────────────────────────────
   const commandRegistry = useMemo(() => createCommandRegistry({
-    createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile,
+    createNewTab, handleOpenFile, handleSaveFile: handleSaveWithWatchMark, handleSaveAsFile,
     setViewMode, focusMode, setFocusMode,
     handleFormatAction, handleExportDocx, handleExportPdf, handleExportHtml,
     handleExportPng, previewRef, setShowSnippetPicker, setShowSnippetManager,
     toggleSearchPanel: () => setActivePanel(activePanel === 'search' ? null : 'search'),
     cmViewRef, isTauri,
-  }), [createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile, setViewMode, focusMode, setFocusMode, handleFormatAction, handleExportDocx, handleExportPdf, handleExportHtml, handleExportPng, previewRef, setShowSnippetPicker, setShowSnippetManager, activePanel, setActivePanel, cmViewRef, isTauri]);
+  }), [createNewTab, handleOpenFile, handleSaveWithWatchMark, handleSaveAsFile, setViewMode, focusMode, setFocusMode, handleFormatAction, handleExportDocx, handleExportPdf, handleExportHtml, handleExportPng, previewRef, setShowSnippetPicker, setShowSnippetManager, activePanel, setActivePanel, cmViewRef, isTauri]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -379,7 +380,7 @@ export default function App() {
           {ctxMenu && (
             <TabContextMenu
               x={ctxMenu.x} y={ctxMenu.y} tabId={ctxMenu.tabId}
-              onSave={handleSaveFile} onSaveAs={handleSaveAsFile} onClose={handleCloseTab}
+              onSave={handleSaveWithWatchMark} onSaveAs={handleSaveAsFile} onClose={handleCloseTab}
               onRename={(id) => { setCtxMenu(null); setRenamingTabId(id); }}
               onPin={(id) => { pinTab(id); setCtxMenu(null); }}
               onUnpin={(id) => { unpinTab(id); setCtxMenu(null); }}
@@ -423,6 +424,8 @@ export default function App() {
             milkdownPreview={milkdownPreview} onMilkdownPreviewChange={setMilkdownPreview}
             fileWatch={fileWatch} onFileWatchChange={setFileWatch}
             fileWatchBehavior={fileWatchBehavior} onFileWatchBehaviorChange={setFileWatchBehavior}
+            autoUpdateCheck={autoUpdateCheck} onAutoUpdateCheckChange={setAutoUpdateCheck}
+            updateCheckFrequency={updateCheckFrequency} onUpdateCheckFrequencyChange={setUpdateCheckFrequency}
           />
 
           {showHelp && (
@@ -600,7 +603,7 @@ export default function App() {
             downloadProgress={downloadProgress}
             downloading={isDownloading}
             readyToRestart={readyToRestart}
-            onRestart={() => window.location.reload()}
+            onRestart={() => invoke('restart_app')}
           />
         </div>
       )}
