@@ -57,11 +57,12 @@ export function checkEngineVersion(manifest: PluginManifest): boolean {
 
   const parse = (v: string) =>
     v.replace(/^[\^~>=<\s]*/, '').split('.').map(Number);
-  const [cMajor = 0, cMinor = 0] = parse(current);
-  const [rMajor = 0, rMinor = 0] = parse(required);
+  const [cMajor = 0, cMinor = 0, cPatch = 0] = parse(current);
+  const [rMajor = 0, rMinor = 0, rPatch = 0] = parse(required);
 
   if (cMajor !== rMajor) return cMajor > rMajor;
-  return cMinor >= rMinor;
+  if (cMinor !== rMinor) return cMinor > rMinor;
+  return cPatch >= rPatch;
 }
 
 /**

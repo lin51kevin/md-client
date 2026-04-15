@@ -226,7 +226,7 @@ export class AICopilotPanelContent {
   }
 
   async testConnection(providerConfig: ProviderConfig): Promise<{ success: boolean; error?: string }> {
-    console.info(`[AI] Testing connection: provider=${providerConfig.provider}, baseUrl=${providerConfig.baseUrl}, model=${providerConfig.model}`);
+
     
     // 验证配置
     if (!providerConfig.apiKey) {
@@ -251,7 +251,7 @@ export class AICopilotPanelContent {
     
     try {
       const result = await provider.healthCheck();
-      console.info(`[AI] Test connection result: ${result ? 'OK' : 'FAILED'}`);
+
       
       if (result) {
         return { success: true };
@@ -263,7 +263,7 @@ export class AICopilotPanelContent {
       }
       
     } catch (err) {
-      console.warn(`[AI] Test connection error:`, err);
+
       
       // 提供详细的错误信息
       let errorMessage = 'Unknown error';

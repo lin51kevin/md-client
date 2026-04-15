@@ -125,7 +125,6 @@ function EditableBlockWrapper({
   const [editing, setEditing] = React.useState(false);
   const [editValue, setEditValue] = React.useState('');
   const nodeRef = React.useRef<PositionedNode | null>(null);
-  const originalSourceRef = React.useState(() => '')[0];
   const originalTextRef = React.useRef('');
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
@@ -168,7 +167,6 @@ function EditableBlockWrapper({
 
     if (bestEntry) {
       nodeRef.current = bestEntry.node;
-      originalSourceRef as unknown as string; // no-op
       originalTextRef.current = bestEntry.sourceText;
       setEditValue(bestEntry.sourceText);
       setEditing(true);

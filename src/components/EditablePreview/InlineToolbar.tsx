@@ -51,14 +51,16 @@ export const InlineToolbar: React.FC<InlineToolbarProps> = ({ visible, position,
       {FORMAT_BUTTONS.map(({ type, label }) => (
         <button
           key={type}
-          onClick={() => onFormat(type)}
+          disabled
+          title="Inline formatting coming in Phase 2"
           data-testid={`format-btn-${type}`}
           style={{
             padding: '2px 8px',
-            cursor: 'pointer',
+            cursor: 'not-allowed',
             border: 'none',
             background: 'transparent',
             fontSize: 14,
+            opacity: 0.4,
           }}
         >
           {label}

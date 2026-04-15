@@ -56,6 +56,8 @@ export const EditablePreview: React.FC<EditablePreviewProps> = ({ content, onCon
   // For now, render the markdown content with editable block wrappers
   // We use react-markdown's component overrides
   const components = useMemo(() => {
+    // Reset consumed-key tracking so duplicate AST nodes are assigned sequentially
+    resetFindBestMatchState();
     const result: Record<string, React.ComponentType<any>> = {};
 
     for (const [astType, tag] of Object.entries(NODE_TYPE_TO_TAG)) {
@@ -125,11 +127,24 @@ export const EditablePreview: React.FC<EditablePreviewProps> = ({ content, onCon
   );
 };
 
-// Simple matching: find first entry with matching AST type that hasn't been used yet
+// Track consumed entry keys per render cycle to avoid assigning the same node twice.
+// Each call pops the first unconsumed entry of the requested type.
+const _consumedKeys = new Set<string>();
+
+export function resetFindBestMatchState(): void {
+  _consumedKeys.clear();
+}
+
 function findBestMatch(
   entries: { key: string; entry: PositionMapEntry }[],
   astType: string,
   _props: any,
 ): { key: string; entry: PositionMapEntry } | null {
-  return entries.find((e) => e.entry.node.type === astType) || null;
+  const match = entries.find(
+    (e) => e.entry.node.type === astType && !_consumedKeys.has(e.key),
+  );
+  if (match) {
+    _consumedKeys.add(match.key);
+  }
+  return match ?? null;
 }
