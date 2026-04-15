@@ -10,6 +10,13 @@ const host = process.env.TAURI_DEV_HOST;
 export default defineConfig(async () => ({
   plugins: [react(), tailwindcss()],
 
+  // Milkdown Crepe bundles Vue-based UI internally; suppress esm-bundler warnings
+  define: {
+    __VUE_OPTIONS_API__: JSON.stringify(true),
+    __VUE_PROD_DEVTOOLS__: JSON.stringify(false),
+    __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: JSON.stringify(false),
+  },
+
   build: {
     chunkSizeWarningLimit: 700,
     rollupOptions: {

@@ -130,6 +130,10 @@ describe('Unified Theme System', () => {
         onAutoSaveChange={() => {}}
         autoSaveDelay={1000}
         onAutoSaveDelayChange={() => {}}
+        gitMdOnly={false}
+        onGitMdOnlyChange={() => {}}
+        milkdownPreview={true}
+        onMilkdownPreviewChange={() => {}}
       />
     );
 
@@ -163,6 +167,10 @@ describe('Unified Theme System', () => {
         onAutoSaveChange={() => {}}
         autoSaveDelay={1000}
         onAutoSaveDelayChange={() => {}}
+        gitMdOnly={false}
+        onGitMdOnlyChange={() => {}}
+        milkdownPreview={true}
+        onMilkdownPreviewChange={() => {}}
       />
     );
 

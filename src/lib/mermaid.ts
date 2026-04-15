@@ -24,13 +24,22 @@ export function resetMermaidInit(): void {
 export async function initMermaid(): Promise<typeof import('mermaid')> {
   const m = await import('mermaid');
   if (!mermaidInitialized) {
-    // 在非浏览器环境下使用 SVG 字符串输出
+    // htmlLabels: true (default) → 使用 <foreignObject> 渲染标签。
+    // 配合 themeVariables.primaryTextColor 显式设置文字颜色，
+    // 避免外层 CSS color 变量 (dark-mode) 通过继承使文字不可见。
     m.default.initialize({
       startOnLoad: false,
       theme: 'default',
       securityLevel: 'strict',
-      fontFamily: 'monospace',
+      fontFamily: 'sans-serif',
       suppressErrorRendering: false,
+      flowchart: { htmlLabels: true },
+      sequence: { useMaxWidth: false },
+      themeVariables: {
+        primaryTextColor: '#1f1f1f',
+        nodeTextColor: '#1f1f1f',
+        lineColor: '#333',
+      },
     });
     mermaidInitialized = true;
   }

@@ -6,7 +6,7 @@
  *
  * Keeping this file as a stub so the plugin registry doesn't break.
  */
-import type { PluginContext } from '../../../../plugin-sandbox';
+import type { PluginContext } from '../../../plugin-sandbox';
 
 export function activate(_ctx: PluginContext) {
   // Deprecated: Milkdown now provides native WYSIWYG editing

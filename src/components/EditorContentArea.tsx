@@ -1,5 +1,5 @@
-import { lazy, Suspense } from 'react';
-import type { RefObject } from 'react';
+import { lazy, Suspense, Component } from 'react';
+import type { RefObject, ReactNode, ErrorInfo } from 'react';
 import type { Extension } from '@codemirror/state';
 import type { ViewUpdate } from '@uiw/react-codemirror';
 import CodeMirror from '@uiw/react-codemirror';
@@ -62,6 +62,29 @@ const PreviewFallback = (
   </div>
 );
 
+/** Catches Milkdown init errors and falls back to MarkdownPreview */
+class PreviewErrorBoundary extends Component<
+  { children: ReactNode; fallback: ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('[MilkdownPreview] Initialization failed, falling back:', error, info);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+    return this.props.children;
+  }
+}
+
 export function EditorContentArea({
   isPristine,
   welcomeDismissed,
@@ -112,6 +135,34 @@ export function EditorContentArea({
   const previewClass = `markdown-preview max-w-full min-h-full ${THEMES[theme].previewClass}`;
   const PreviewComponent = useMilkdownPreview ? MilkdownPreview : MarkdownPreview;
 
+  const previewFallbackEl = (
+    <Suspense fallback={PreviewFallback}>
+      <MarkdownPreview
+        content={debouncedDoc}
+        filePath={activeTab.filePath ?? undefined}
+        onOpenFile={openFileInTab}
+        className={previewClass}
+        pluginRenderers={pluginRenderers}
+      />
+    </Suspense>
+  );
+
+  const renderPreview = () => (
+    <PreviewErrorBoundary fallback={previewFallbackEl}>
+      <Suspense fallback={PreviewFallback}>
+        <PreviewComponent
+          content={debouncedDoc}
+          filePath={activeTab.filePath ?? undefined}
+          onOpenFile={openFileInTab}
+          onContentChange={updateActiveDoc}
+          onWikiLinkNavigate={handleWikiLinkNavigate}
+          className={previewClass}
+          {...(!useMilkdownPreview ? { pluginRenderers } : {})}
+        />
+      </Suspense>
+    </PreviewErrorBoundary>
+  );
+
   if (viewMode === 'split') {
     return (
       <Split
@@ -157,17 +208,7 @@ export function EditorContentArea({
           onScroll={handlePreviewScroll}
         >
           <div className="p-8">
-            <Suspense fallback={PreviewFallback}>
-              <PreviewComponent
-                content={debouncedDoc}
-                filePath={activeTab.filePath ?? undefined}
-                onOpenFile={openFileInTab}
-                onContentChange={updateActiveDoc}
-                onWikiLinkNavigate={handleWikiLinkNavigate}
-                className={previewClass}
-                {...(!useMilkdownPreview ? { pluginRenderers } : {})}
-              />
-            </Suspense>
+            {renderPreview()}
           </div>
         </div>
       </Split>
@@ -199,17 +240,7 @@ export function EditorContentArea({
           style={{ backgroundColor: 'var(--bg-primary)' }}
         >
           <div className="p-8">
-            <Suspense fallback={PreviewFallback}>
-              <PreviewComponent
-                content={debouncedDoc}
-                filePath={activeTab.filePath ?? undefined}
-                onOpenFile={openFileInTab}
-                onContentChange={updateActiveDoc}
-                onWikiLinkNavigate={handleWikiLinkNavigate}
-                className={previewClass}
-                {...(!useMilkdownPreview ? { pluginRenderers } : {})}
-              />
-            </Suspense>
+            {renderPreview()}
           </div>
         </div>
       )}

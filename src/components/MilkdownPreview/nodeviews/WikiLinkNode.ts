@@ -1,1 +1,1 @@
-export { wikiLinkPlugin, wikiLinkSchema, wikiLinkId } from './wikiLinkPlugin';
+export { wikiLinkPlugin, wikiLinkSchema, wikiLinkId, remarkWikiLinkPlugin } from './wikiLinkPlugin';

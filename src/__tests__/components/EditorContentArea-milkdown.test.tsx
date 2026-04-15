@@ -18,12 +18,13 @@ vi.mock('@milkdown/crepe', () => ({
   Crepe: vi.fn().mockImplementation(() => ({
     on: vi.fn(),
     setReadonly: vi.fn(),
+    editor: { use: vi.fn().mockReturnThis() },
   })),
   CrepeFeature: {},
 }));
 
-vi.mock('@milkdown/prose/state', () => ({
-  EditorState: { create: vi.fn() },
+vi.mock('@milkdown/kit/utils', () => ({
+  replaceAll: vi.fn(() => vi.fn()),
 }));
 
 // We need to test the integration at a higher level since MilkdownPreview

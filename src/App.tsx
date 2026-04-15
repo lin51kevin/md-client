@@ -84,7 +84,7 @@ export default function App() {
   const { activePanel, setActivePanel, showFileTree, showToc, showSearchPanel, showGitPanel, showPluginsPanel } = useSidebarPanel();
   const [showAIPanel, setShowAIPanel] = useLocalStorageBool('marklite-ai-panel', false);
   const AI_PANEL_ID = 'ai-copilot-official';
-  const { spellCheck, setSpellCheck, vimMode, setVimMode, autoSave, setAutoSave, autoSaveDelay, setAutoSaveDelay, gitMdOnly, setGitMdOnly, theme, setThemeState } = usePreferences();
+  const { spellCheck, setSpellCheck, vimMode, setVimMode, autoSave, setAutoSave, autoSaveDelay, setAutoSaveDelay, gitMdOnly, setGitMdOnly, milkdownPreview, setMilkdownPreview, theme, setThemeState } = usePreferences();
 
   // ── Core hooks ───────────────────────────────────────────────────
   const { focusMode, setFocusMode, isChromeless, hideStatusBar } = useFocusMode();
@@ -344,6 +344,7 @@ export default function App() {
             autoSave={autoSave} onAutoSaveChange={setAutoSave}
             autoSaveDelay={autoSaveDelay} onAutoSaveDelayChange={setAutoSaveDelay}
             gitMdOnly={gitMdOnly} onGitMdOnlyChange={setGitMdOnly}
+            milkdownPreview={milkdownPreview} onMilkdownPreviewChange={setMilkdownPreview}
           />
 
           {showHelp && (
@@ -465,6 +466,7 @@ export default function App() {
           onOpenRecent={handleOpenRecent} onOpenSample={handleOpenSample}
           onDismiss={handleDismissWelcome} onShowWelcome={handleShowWelcome}
           pluginRenderers={pluginRenderers}
+          useMilkdownPreview={milkdownPreview}
         />
 
         {/* Floating AI Chat Panel */}

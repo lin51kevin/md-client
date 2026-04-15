@@ -88,6 +88,7 @@ function makeProps(overrides: Record<string, unknown> = {}) {
     onOpenSample: vi.fn(),
     onDismiss: vi.fn(),
     onShowWelcome: vi.fn(),
+    useMilkdownPreview: false,
     ...overrides,
   };
 }

@@ -27,6 +27,16 @@ export function renderMermaidPreview(
       const wrapper = document.createElement('div');
       wrapper.className = 'mermaid-diagram';
       wrapper.innerHTML = svg;
+
+      // Force text visibility: override fill/color on generated SVG elements
+      // to avoid CSS inheritance issues (dark-mode color leaking into SVG).
+      wrapper.querySelectorAll('text, tspan').forEach((el) => {
+        (el as SVGElement).setAttribute('fill', '#1f1f1f');
+      });
+      wrapper.querySelectorAll('foreignObject div, .nodeLabel').forEach((el) => {
+        (el as HTMLElement).style.color = '#1f1f1f';
+      });
+
       applyPreview(wrapper);
     })
     .catch((err) => {

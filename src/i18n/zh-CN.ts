@@ -21,6 +21,8 @@ export const zhCN = {
   'settings.editor.delay2s': '2 秒',
   'settings.editor.delay5s': '5 秒',
   'settings.editor.delayCustom': '自定义',
+  'settings.editor.milkdownPreview': '预览窗口可编辑',
+  'settings.editor.milkdownPreviewDesc': '在预览区启用 Milkdown 富文本编辑器（关闭后仅显示只读预览）',
   'settings.appearance.theme': '主题',
   'settings.appearance.themeDesc': '选择统一主题（同时影响编辑器和预览区域）',
   'settings.appearance.themeLight': '浅色',

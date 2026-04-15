@@ -23,6 +23,8 @@ export const en: Record<TranslationKey, string> = {
   'settings.editor.delay2s': '2 seconds',
   'settings.editor.delay5s': '5 seconds',
   'settings.editor.delayCustom': 'Custom',
+  'settings.editor.milkdownPreview': 'Editable Preview',
+  'settings.editor.milkdownPreviewDesc': 'Enable Milkdown rich-text editor in the preview pane (disable for read-only preview)',
   'settings.appearance.theme': 'Theme',
   'settings.appearance.themeDesc': 'Choose unified theme (applies to both editor and preview)',
   'settings.appearance.themeLight': 'Light',

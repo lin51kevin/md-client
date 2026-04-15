@@ -6,7 +6,7 @@ import React from 'react';
 
 const mockSetReadonly = vi.fn().mockReturnThis();
 const mockCreate = vi.fn().mockResolvedValue({});
-const mockEditor = { action: vi.fn() };
+const mockEditor = { action: vi.fn(), use: vi.fn().mockReturnThis() };
 
 /** Stores the callback registered via listener.markdownUpdated() so tests can invoke it. */
 let registeredMarkdownCallback: ((_ctx: unknown, _newMd: string, _prevMd: string) => void) | null = null;

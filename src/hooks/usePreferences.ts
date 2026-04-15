@@ -9,6 +9,7 @@ export function usePreferences() {
   const [autoSave, setAutoSave] = useLocalStorageBool('marklite-autosave', false);
   const [autoSaveDelay, setAutoSaveDelay] = useLocalStorageNumber('marklite-autosave-delay', 1000);
   const [gitMdOnly, setGitMdOnly] = useLocalStorageBool('marklite-git-md-only', false);
+  const [milkdownPreview, setMilkdownPreview] = useLocalStorageBool('marklite-milkdown-preview', true);
   const [theme, setThemeState] = useState<ThemeName>(() => getSavedTheme() || 'light');
 
   // F011 - Theme: apply CSS vars synchronously before paint
@@ -30,6 +31,7 @@ export function usePreferences() {
     autoSave, setAutoSave,
     autoSaveDelay, setAutoSaveDelay,
     gitMdOnly, setGitMdOnly,
+    milkdownPreview, setMilkdownPreview,
     theme, setThemeState,
   };
 }

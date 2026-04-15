@@ -8,65 +8,142 @@
   color: var(--text-primary, inherit);
 }
 
-/* Ensure headings match existing markdown-body style */
-.milkdown-preview h1,
-.milkdown-preview h2,
-.milkdown-preview h3,
-.milkdown-preview h4,
-.milkdown-preview h5,
-.milkdown-preview h6 {
-  margin-top: 1.5em;
-  margin-bottom: 0.5em;
-  font-weight: 600;
-  line-height: 1.3;
+/* ── Override Crepe defaults to match existing markdown-preview style ── */
+
+/* Remove excessive ProseMirror padding from Crepe reset */
+.milkdown-preview .milkdown .ProseMirror {
+  padding: 0;
 }
 
-.milkdown-preview h1 { font-size: 2em; border-bottom: 1px solid var(--border-color, #e0e0e0); padding-bottom: 0.3em; }
-.milkdown-preview h2 { font-size: 1.5em; border-bottom: 1px solid var(--border-color, #e0e0e0); padding-bottom: 0.3em; }
-.milkdown-preview h3 { font-size: 1.25em; }
+/* Use app fonts instead of Crepe's Noto Serif / Noto Sans */
+.milkdown-preview .milkdown {
+  font-family: inherit;
+  color: var(--text-primary, inherit);
+  background: transparent;
+}
+
+/* Remove ALL borders/outlines that appear on focus or selection */
+.milkdown-preview .milkdown .milkdown-code-block,
+.milkdown-preview .milkdown .milkdown-code-block.selected {
+  outline: none !important;
+}
+
+.milkdown-preview .milkdown .ProseMirror:focus,
+.milkdown-preview .milkdown .ProseMirror.ProseMirror-focused {
+  outline: none;
+}
+
+/* Suppress any focus-within outline on the root container */
+.milkdown-preview [data-milkdown-root]:focus-within {
+  outline: none;
+}
+
+/* Ensure headings match existing markdown-preview style */
+.milkdown-preview .milkdown .ProseMirror h1,
+.milkdown-preview .milkdown .ProseMirror h2,
+.milkdown-preview .milkdown .ProseMirror h3,
+.milkdown-preview .milkdown .ProseMirror h4,
+.milkdown-preview .milkdown .ProseMirror h5,
+.milkdown-preview .milkdown .ProseMirror h6 {
+  font-family: inherit;
+  font-weight: 600;
+  line-height: 1.25;
+  margin-top: 24px;
+  margin-bottom: 16px;
+}
+
+.milkdown-preview .milkdown .ProseMirror h1 {
+  font-size: 2em;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+  padding-bottom: 0.3em;
+}
+.milkdown-preview .milkdown .ProseMirror h2 {
+  font-size: 1.5em;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+  padding-bottom: 0.3em;
+}
+.milkdown-preview .milkdown .ProseMirror h3 { font-size: 1.25em; }
+
+/* Paragraph sizing to match markdown-preview */
+.milkdown-preview .milkdown .ProseMirror p {
+  font-size: inherit;
+  line-height: 1.6;
+  padding: 0;
+  margin-bottom: 16px;
+}
 
 /* Code blocks */
-.milkdown-preview pre {
+.milkdown-preview .milkdown .ProseMirror pre {
   background: var(--bg-secondary, #f6f8fa);
   border-radius: 6px;
   padding: 16px;
   overflow-x: auto;
 }
 
-.milkdown-preview code {
-  font-family: 'Fira Code', 'JetBrains Mono', monospace;
-  font-size: 0.9em;
-}
-
-.milkdown-preview :not(pre) > code {
+.milkdown-preview .milkdown .ProseMirror code {
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 85%;
+  color: inherit;
   background: var(--bg-secondary, #f6f8fa);
   padding: 0.2em 0.4em;
   border-radius: 3px;
 }
 
+.milkdown-preview .milkdown .ProseMirror pre code {
+  background: transparent;
+  padding: 0;
+}
+
+/* Links */
+.milkdown-preview .milkdown .ProseMirror a {
+  color: var(--accent-color, var(--link-color, #0969da));
+  text-decoration: none;
+}
+
+.milkdown-preview .milkdown .ProseMirror a:hover {
+  text-decoration: underline;
+}
+
+/* Blockquotes */
+.milkdown-preview .milkdown .ProseMirror blockquote {
+  border-left: 0.25em solid var(--border-color, #d0d7de);
+  padding: 0 1em;
+  padding-left: 1em;
+  margin: 0 0 16px 0;
+  color: var(--text-secondary, #656d76);
+}
+
+.milkdown-preview .milkdown .ProseMirror blockquote::before {
+  display: none;
+}
+
+/* Lists */
+.milkdown-preview .milkdown .ProseMirror ul,
+.milkdown-preview .milkdown .ProseMirror ol {
+  padding-left: 2em;
+  margin-bottom: 16px;
+}
+
 /* Tables */
-.milkdown-preview table {
+.milkdown-preview .milkdown .ProseMirror table {
   border-collapse: collapse;
   width: 100%;
+  margin-bottom: 16px;
 }
 
-.milkdown-preview th,
-.milkdown-preview td {
+.milkdown-preview .milkdown .ProseMirror th,
+.milkdown-preview .milkdown .ProseMirror td {
   border: 1px solid var(--border-color, #d0d7de);
-  padding: 8px 12px;
+  padding: 6px 13px;
 }
 
-.milkdown-preview th {
+.milkdown-preview .milkdown .ProseMirror th {
   background: var(--bg-secondary, #f6f8fa);
   font-weight: 600;
 }
 
-/* Blockquotes */
-.milkdown-preview blockquote {
-  border-left: 4px solid var(--border-color, #d0d7de);
-  padding: 0.5em 1em;
-  margin: 1em 0;
-  color: var(--text-secondary, #656d76);
+.milkdown-preview .milkdown .ProseMirror tr:nth-child(2n) {
+  background-color: var(--bg-secondary, #f6f8fa);
 }
 
 /* Task list checkboxes */
@@ -81,24 +158,78 @@
 }
 
 /* Readonly mode */
-.milkdown-preview.ProseMirror[contenteditable='false'] {
+.milkdown-preview .ProseMirror[contenteditable='false'] {
   cursor: default;
 }
 
-/* Links */
-.milkdown-preview a {
-  color: var(--link-color, #0969da);
-  text-decoration: none;
-}
-
-.milkdown-preview a:hover {
-  text-decoration: underline;
-}
-
 /* Images */
-.milkdown-preview img {
+.milkdown-preview .milkdown .ProseMirror img {
   max-width: 100%;
   height: auto;
+}
+
+/* Horizontal rule */
+.milkdown-preview .milkdown .ProseMirror hr {
+  border: none;
+  border-top: 1px solid var(--border-color, #d0d7de);
+  margin: 2em 0;
+  height: auto;
+  padding: 0;
+  background: transparent;
+}
+
+/* ── Mermaid diagrams ── */
+/* Reset Crepe's "* { margin:0; padding:0; box-sizing:border-box }" which clips
+   <foreignObject> labels, and reset `color` so SVG <text fill="currentColor">
+   nodes are readable on mermaid's light-colored node shapes (theme: 'default').
+   The app's dark-mode sets color: var(--text-primary) = white on .milkdown,
+   which propagates into SVG text via fill:currentColor → invisible text. */
+.milkdown-preview .mermaid-diagram {
+  display: flex;
+  justify-content: center;
+  margin: 16px 0;
+  /* Break the CSS color inheritance chain: mermaid uses theme:'default' which
+     renders light-background nodes, so text must always be dark. */
+  color: #1f1f1f;
+}
+.milkdown-preview .mermaid-diagram svg,
+.milkdown-preview .mermaid-diagram svg * {
+  margin: initial;
+  padding: initial;
+  box-sizing: initial;
+}
+.milkdown-preview .mermaid-diagram svg {
+  max-width: 100%;
+  height: auto;
+  overflow: visible !important;
+}
+/* Ensure SVG <text> elements are visible (fill overrides currentColor
+   inheritance from dark-mode).  Also cover <tspan> for nested labels. */
+.milkdown-preview .mermaid-diagram svg text,
+.milkdown-preview .mermaid-diagram svg tspan {
+  fill: #1f1f1f !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+/* Node labels rendered via <foreignObject> (htmlLabels: true) */
+.milkdown-preview .mermaid-diagram .nodeLabel,
+.milkdown-preview .mermaid-diagram .label div,
+.milkdown-preview .mermaid-diagram .label span {
+  color: #1f1f1f !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+/* Ensure <foreignObject> content is not clipped */
+.milkdown-preview .mermaid-diagram svg foreignObject {
+  overflow: visible !important;
+}
+.milkdown-preview .mermaid-diagram svg foreignObject > div {
+  color: #1f1f1f !important;
+}
+/* Edge labels inherit from .mermaid-diagram via color or foreignObject */
+.milkdown-preview .mermaid-diagram .edgeLabel .label {
+  color: #1f1f1f;
+  background-color: transparent;
 }
 
 /* Frontmatter metadata panel */
@@ -129,9 +260,113 @@
   border-bottom: 1px solid var(--border-color, #d0d7de);
 }
 
-/* Horizontal rule */
-.milkdown-preview hr {
-  border: none;
-  border-top: 1px solid var(--border-color, #d0d7de);
-  margin: 2em 0;
+/* ── Remap Crepe palette → app theme variables ── */
+/* Overriding Crepe's own CSS vars at .milkdown-preview scope makes all
+   Crepe elements (code block, picker popup, search box, etc.) inherit the
+   correct colours for every app theme (light / dark / sepia / high-contrast). */
+.milkdown-preview {
+  --crepe-color-surface:           var(--bg-secondary,  #f6f8fa);
+  --crepe-color-surface-low:       var(--bg-tertiary,   #eaecef);
+  --crepe-color-background:        var(--bg-primary,    #ffffff);
+  --crepe-color-on-surface:        var(--text-primary,  #1f2328);
+  --crepe-color-on-surface-variant:var(--text-secondary,#656d76);
+  --crepe-color-primary:           var(--accent-color,  #0969da);
+  --crepe-color-outline:           var(--border-color,  #d0d7de);
+  --crepe-color-hover:             var(--hover-bg,      #f3f4f6);
+  --crepe-color-secondary:         var(--bg-tertiary,   #eaecef);
+}
+
+/* ── Crepe CodeMirror code block: theme adaptation ── */
+.milkdown-preview .milkdown-code-block {
+  background: var(--bg-secondary, #f6f8fa) !important;
+  border-color: var(--border-color, #e0e0e0) !important;
+  color: var(--text-primary, inherit) !important;
+}
+
+/* Toolbar row */
+.milkdown-preview .milkdown-code-block-toolbar,
+.milkdown-preview .milkdown-code-block [class*="toolbar"] {
+  background: var(--bg-secondary, #f6f8fa) !important;
+  border-bottom-color: var(--border-color, #e0e0e0) !important;
+  color: var(--text-secondary, #666) !important;
+}
+
+/* Language selector label chip */
+.milkdown-preview .milkdown-code-block [data-element="code-block-lang-select"],
+.milkdown-preview .milkdown-code-block select {
+  background: var(--bg-primary, #fff) !important;
+  color: var(--text-primary, inherit) !important;
+  border-color: var(--border-color, #e0e0e0) !important;
+}
+
+/* Buttons inside the code block toolbar */
+.milkdown-preview .milkdown-code-block button {
+  background: transparent !important;
+  color: var(--text-secondary, #666) !important;
+  border-color: var(--border-color, #e0e0e0) !important;
+}
+.milkdown-preview .milkdown-code-block button:hover {
+  background: var(--hover-bg, rgba(0,0,0,0.06)) !important;
+  color: var(--text-primary, inherit) !important;
+}
+
+/* ── Language picker popup (dropdown) ── */
+/* .list-wrapper is the actual visual popup container (not .language-picker) */
+.milkdown-preview .milkdown-code-block .list-wrapper {
+  background: var(--bg-secondary, #f6f8fa) !important;
+  border: 1px solid var(--border-color, #d0d7de) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18) !important;
+}
+
+.milkdown-preview .milkdown-code-block .language-list-item {
+  color: var(--text-primary, inherit) !important;
+  background: transparent !important;
+}
+
+.milkdown-preview .milkdown-code-block .language-list-item:hover,
+.milkdown-preview .milkdown-code-block .language-list-item[aria-selected="true"] {
+  background: var(--hover-bg, rgba(127, 127, 127, 0.15)) !important;
+}
+
+/* Search box: subtle border by default, accent on focus */
+.milkdown-preview .milkdown-code-block .search-box {
+  outline: 1px solid var(--border-color, #d0d7de) !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+}
+.milkdown-preview .milkdown-code-block .search-box:has(input:focus) {
+  outline: 2px solid var(--accent-color, #0969da) !important;
+}
+.milkdown-preview .milkdown-code-block .search-box .search-input,
+.milkdown-preview .milkdown-code-block .search-box input {
+  color: var(--text-primary, inherit) !important;
+  background: transparent !important;
+}
+
+/* CodeMirror editor area inside the code block */
+.milkdown-preview .milkdown-code-block .cm-editor,
+.milkdown-preview .milkdown-code-block .cm-editor.cm-focused {
+  background: transparent !important;
+  outline: none !important;
+}
+.milkdown-preview .milkdown-code-block .cm-scroller {
+  background: transparent !important;
+}
+.milkdown-preview .milkdown-code-block .cm-content,
+.milkdown-preview .milkdown-code-block .cm-line {
+  color: var(--text-primary, inherit) !important;
+}
+/* Gutter (line numbers) */
+.milkdown-preview .milkdown-code-block .cm-gutters {
+  background: var(--bg-secondary, #f6f8fa) !important;
+  border-right-color: var(--border-color, #e0e0e0) !important;
+  color: var(--text-tertiary, var(--text-secondary, #999)) !important;
+}
+.milkdown-preview .milkdown-code-block .cm-activeLineGutter {
+  background: transparent !important;
+}
+/* Selection highlight */
+.milkdown-preview .milkdown-code-block .cm-selectionBackground {
+  background: var(--selection-bg, rgba(70,130,220,0.25)) !important;
 }

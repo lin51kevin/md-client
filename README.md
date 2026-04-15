@@ -22,6 +22,11 @@
 
 ## ✨ Features
 
+### 🖊️ WYSIWYG 预览编辑
+- **Milkdown WYSIWYG Preview** — 基于 `@milkdown/crepe` 的所见即所得预览区，可直接在预览侧编辑文本，自动双向同步到编辑器
+- **AST 精准编辑（Preview-Edit 插件）** — 通过 Markdown AST 解析器精确定位源码，支持段落、标题、引用块、列表项、代码块的原地编辑，含完整撤销/重做
+- **悬浮 InlineToolbar** — 预览区选中文本后弹出格式化工具栏（加粗、斜体、代码等）
+
 ### 📝 编辑核心
 - **Live Preview** — 实时分栏预览，编辑器与预览区同步滚动
 - **Multi-Tab Editing** — 多标签页同时编辑，支持拖拽排序和右键菜单
@@ -77,6 +82,11 @@
 - **PNG** — 导出为 PNG 图片（基于 html2canvas）
 - **EPUB** — 导出为电子书格式（EPUB2/EPUB3），动态导入 epub-gen，从 YAML Frontmatter 提取元数据（标题、作者、描述）
 
+### 🤖 AI Copilot
+- **AI 辅助编辑面板** — 官方插件，支持智能改写、解释、翻译、总结，兼容 OpenAI 兼容接口（本地模型 + 云端模型）
+- **完整 i18n 覆盖** — 面板所有 UI 文字支持中/英切换
+- **消息气泡布局** — 用户消息右对齐、AI 消息左对齐带 Bot 图标，阅读体验更清晰
+
 ### 📐 富文本预览 (GFM+)
 - **GFM Support** — 表格、任务列表、删除线、自动链接、脚注等
 - **Math / LaTeX** — KaTeX 数学公式渲染（行内 `$...$` 与块级 `$$...$$`）
@@ -130,7 +140,7 @@
 | Desktop Shell | [Tauri 2](https://v2.tauri.app/) (Rust) |
 | Frontend | [React 19](https://react.dev/) + TypeScript ~5.8 |
 | Editor Engine | [CodeMirror 6](https://codemirror.net/) via [@uiw/react-codemirror](https://github.com/uiwjs/react-codemirror) |
-| Preview Renderer | [react-markdown](https://github.com/remarkjs/react-markdown) + remark/rehype 插件链 |
+| Preview Renderer | [Milkdown Crepe](https://milkdown.dev/) (WYSIWYG) + [react-markdown](https://github.com/remarkjs/react-markdown) (fallback) |
 | Styling | [Tailwind CSS 4](https://tailwindcss.com/) (CSS Variables 主题系统) |
 | Build Tool | [Vite 7](https://vite.dev/) |
 | Testing | [Vitest](https://vitest.dev/) + @testing-library/react |
@@ -138,7 +148,8 @@
 ### Key Dependencies
 
 - **Editor:** `@codemirror/*` (autocomplete, commands, fold, lang-*, search, state, view, theme-one-dark)
-- **Preview:** `react-markdown`, `remark-gfm`, `remark-math`, `rehype-highlight`, `rehype-katex`
+- **WYSIWYG Preview:** `@milkdown/crepe`, `@milkdown/react`, `@milkdown/kit`
+- **Markdown Preview (fallback):** `react-markdown`, `remark-gfm`, `remark-math`, `rehype-highlight`, `rehype-katex`
 - **Diagrams:** `mermaid` ^11
 - **Math:** `katex` ^0.16
 - **Icons:** `lucide-react`

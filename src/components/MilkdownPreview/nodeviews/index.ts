@@ -1,2 +1,2 @@
 export { useLocalImage } from './LocalImageView';
-export { wikiLinkPlugin, wikiLinkSchema, wikiLinkId } from './WikiLinkNode';
+export { wikiLinkPlugin, wikiLinkSchema, wikiLinkId, remarkWikiLinkPlugin } from './WikiLinkNode';

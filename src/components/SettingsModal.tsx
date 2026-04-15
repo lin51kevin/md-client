@@ -29,6 +29,8 @@ interface SettingsModalProps {
   onAutoSaveDelayChange: (delay: number) => void;
   gitMdOnly: boolean;
   onGitMdOnlyChange: (enabled: boolean) => void;
+  milkdownPreview: boolean;
+  onMilkdownPreviewChange: (enabled: boolean) => void;
 }
 
 type TabId = 'general' | 'editor' | 'appearance' | 'files' | 'shortcuts' | 'snippets';
@@ -57,6 +59,8 @@ export function SettingsModal({
   onAutoSaveDelayChange,
   gitMdOnly,
   onGitMdOnlyChange,
+  milkdownPreview,
+  onMilkdownPreviewChange,
 }: SettingsModalProps) {
   const { t, locale, setLocale } = useI18n();
   const [activeTab, setActiveTab] = useState<TabId>('general');
@@ -304,6 +308,13 @@ export function SettingsModal({
                     </div>
                   </SettingItem>
                 )}
+
+                <SettingItem
+                  label={t('settings.editor.milkdownPreview')}
+                  description={t('settings.editor.milkdownPreviewDesc')}
+                >
+                  <ToggleSwitch checked={milkdownPreview} onChange={onMilkdownPreviewChange} />
+                </SettingItem>
               </div>
             )}
 

@@ -6,7 +6,56 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [v0.8.0] - 2026-04-14
+## [v0.8.0] - 2026-04-15
+
+### Added
+
+#### Milkdown WYSIWYG 预览（重大架构升级）
+- **MilkdownPreview 组件** — 基于 `@milkdown/crepe` 的全功能 WYSIWYG 富文本预览，替代 react-markdown：
+  - 分栏模式下预览区可直接编辑（所见即所得）
+  - 编辑器（CodeMirror）↔ 预览（Milkdown）双向同步，实时保持一致
+  - 内置 **Toolbar**：加粗、斜体、代码、链接等格式一键应用
+  - 原生支持 GFM 表格、任务列表、LaTeX 数学公式、代码块高亮
+  - **MermaidBlockView** — Crepe renderPreview API 渲染 Mermaid 图表为 SVG
+  - **LocalImageView** — Tauri 本地图片自动加载（解决 file:// 路径问题）
+  - **WikiLinkPlugin** — `[[target]]` 语法通过 Milkdown native Node + remark 插件支持
+  - **FrontmatterPanel** — YAML Frontmatter 以 React 组件形式渲染为表格，不污染编辑区
+  - 保留 MarkdownPreview 作为回退方案（`useMilkdownPreview` prop 控制）
+
+#### 预览编辑增强 — AST 精准定位（Preview-Edit Plugin v2）
+- **MarkdownAST 解析器** — 将 Markdown 源码解析为带字符偏移量的 AST 节点树
+- **PositionMapManager** — 维护 AST 节点到源码偏移量的精确映射
+- **EditHistoryManager** — 完整的撤销/重做支持（含历史状态管理）
+- **自动格式化库（auto-format.ts）** — 智能 Markdown 格式化（列表缩进、代码块对齐等）
+- **EditableBlock 组件** — 基于 textarea 的行内块级编辑，支持键盘确认/取消
+- **InlineToolbar 组件** — 悬浮格式化工具栏（Phase 2 基础，支持选区感知）
+- **EditablePreview 组件** — 整合以上模块，以 AST 偏移量替代脆弱的字符串替换
+- Preview-Edit 插件现支持：段落、标题、引用块、列表项、代码块
+- 新增 103 条测试，完整覆盖所有新增模块
+
+#### AI Copilot 面板国际化 & UI 优化
+- **i18n 完整覆盖** — AI Copilot 面板所有文本改为 `t()` 调用，支持中/英切换：
+  - 面板标题、新建对话、设置、关闭、输入占位符、发送、使用提示
+  - 新增 i18n 键：`aiCopilot.settings.testConnectionError`
+- **消息布局重构** — 用户消息右侧气泡、AI 消息左侧气泡（含 Bot 图标 + 标签行），取消水平分隔线
+- **FloatingPanel 可见性控制** — 幻灯片 / 思维导图 / 设置等视图模式下自动隐藏浮动面板
+- **applyAction** 现通过 `t(aiCopilot.panel.applied)` 传递 i18n 标签
+
+### Fixed
+
+- 修复 Milkdown nodeviews：Mermaid 改用 Crepe renderPreview API（替换 MutationObserver）
+- 修复 WikiLink：改用 Milkdown native Node schema + remark 插件（替换 DOM 后处理）
+- 修复 LocalImage：移除 MutationObserver，改为内容触发式重处理
+- 修复 FrontmatterView：改为 React 组件 + 内容剥离，避免 DOM 污染编辑区
+- 修复 AI Copilot i18n 路径错误（`../../../i18n` → `../../../../i18n`）
+- 修复 v0.8.0 未推送代码中若干代码审查问题
+
+### Tech
+
+- 新增依赖：`@milkdown/crepe`、`@milkdown/react`、`@milkdown/kit`
+- 新增 TypeScript 类型：`src/types/edit.ts`（EditSession、EditRecord、InlineFormat 等）
+
+---
 
 ### Added
 

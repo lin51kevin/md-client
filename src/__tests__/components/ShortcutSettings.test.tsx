@@ -23,6 +23,10 @@ describe('ShortcutSettings', () => {
     onAutoSaveChange: vi.fn(),
     autoSaveDelay: 1000,
     onAutoSaveDelayChange: vi.fn(),
+    gitMdOnly: false,
+    onGitMdOnlyChange: vi.fn(),
+    milkdownPreview: true,
+    onMilkdownPreviewChange: vi.fn(),
   };
 
   beforeEach(() => {

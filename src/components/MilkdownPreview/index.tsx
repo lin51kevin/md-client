@@ -2,13 +2,14 @@ import { useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import YAML from 'js-yaml';
 import { Milkdown, MilkdownProvider, useEditor } from '@milkdown/react';
 import { Crepe, CrepeFeature } from '@milkdown/crepe';
-import { EditorState } from '@milkdown/prose/state';
+import { replaceAll } from '@milkdown/kit/utils';
 import '@milkdown/crepe/theme/frame.css';
+import '@milkdown/crepe/theme/common/style.css';
 import 'katex/dist/katex.min.css';
 import './theme.css';
 import { extractFrontmatter, type Frontmatter } from '../../lib/markdown-extensions';
 import { FrontmatterPanel } from './FrontmatterPanel';
-import { useLocalImage, wikiLinkPlugin } from './nodeviews';
+import { useLocalImage, remarkWikiLinkPlugin, wikiLinkSchema } from './nodeviews';
 import { renderMermaidPreview } from './nodeviews/MermaidBlockView';
 
 /** Convert a Frontmatter object back to YAML string (without --- delimiters) */
@@ -22,6 +23,8 @@ interface MilkdownPreviewProps {
   editable?: boolean;
   className?: string;
   filePath?: string;
+  /** Called when user clicks a markdown link to open a file */
+  onOpenFile?: (path: string) => void;
   /** Called when user clicks a [[wiki-link]] */
   onWikiLinkNavigate?: (target: string) => void;
 }
@@ -31,18 +34,26 @@ function MilkdownEditor({
   onContentChange,
   editable = true,
   filePath,
+  onOpenFile,
   onWikiLinkNavigate,
 }: {
   content: string;
   onContentChange?: (newContent: string) => void;
   editable: boolean;
   filePath?: string;
+  onOpenFile?: (path: string) => void;
   onWikiLinkNavigate?: (target: string) => void;
 }) {
   const isExternalUpdate = useRef(false);
   const crepeRef = useRef<Crepe | null>(null);
-  const lastContentRef = useRef(content);
+  // Initialize to body (without frontmatter) so the first sync check is a no-op.
+  // Updated by markdownUpdated (user edits) and the sync effect (external changes).
+  const lastContentRef = useRef('');
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // P1: Use refs for callbacks to avoid closure staleness in useEditor factory
+  const onContentChangeRef = useRef(onContentChange);
+  onContentChangeRef.current = onContentChange;
 
   // Extract frontmatter once per content change
   const { frontmatter, body } = useMemo(() => {
@@ -55,8 +66,11 @@ function MilkdownEditor({
   const frontmatterRef = useRef(frontmatter);
   frontmatterRef.current = frontmatter;
 
-  const { get } = useEditor((_root) => {
+  const { get } = useEditor((root) => {
+    // Initialize lastContentRef to the initial body so the first sync check passes.
+    lastContentRef.current = body;
     const crepe = new Crepe({
+      root,
       defaultValue: body,
       featureConfigs: {
         [CrepeFeature.CodeMirror]: {
@@ -92,10 +106,13 @@ function MilkdownEditor({
           const fullContent = Object.keys(fm).length > 0
             ? `---\n${frontmatterToYaml(fm)}---\n${newMarkdown}`
             : newMarkdown;
-          onContentChange?.(fullContent);
+          onContentChangeRef.current?.(fullContent);
         }
       });
     });
+
+    // Register wiki-link plugins on the underlying editor before creation
+    crepe.editor.use(remarkWikiLinkPlugin).use(wikiLinkSchema);
 
     if (!editable) {
       crepe.setReadonly(true);
@@ -104,63 +121,74 @@ function MilkdownEditor({
     return crepe;
   }, []);
 
-  // Register wiki-link Milkdown plugin
-  useEffect(() => {
-    const editor = get();
-    if (editor) {
-      editor.use(wikiLinkPlugin as any);
-    }
-  }, [get]);
+  // Keep `get` in a ref so the sync effect below can call it without listing it
+  // as a dependency (the `get` reference from useEditor may change on every render,
+  // which would cause the effect to fire on each re-render and revert user edits).
+  const getRef = useRef(get);
+  getRef.current = get;
 
   // NodeView post-processing hooks
   useLocalImage(filePath, containerRef, content);
 
-  // WikiLink click delegation
+  // Link click delegation (wiki-links + markdown file links)
   useEffect(() => {
     const container = containerRef.current;
-    if (!container || !onWikiLinkNavigate) return;
+    if (!container) return;
 
     const handler = (e: MouseEvent) => {
-      const target = (e.target as HTMLElement).closest('.wiki-link');
-      if (!target) return;
-      e.preventDefault();
-      const wikiTarget = target.getAttribute('data-wiki-target');
-      if (wikiTarget) {
-        onWikiLinkNavigate(wikiTarget);
+      const el = e.target as HTMLElement;
+
+      // Wiki-link clicks
+      const wikiLink = el.closest('.wiki-link');
+      if (wikiLink) {
+        e.preventDefault();
+        const wikiTarget = wikiLink.getAttribute('data-wiki-target');
+        if (wikiTarget) onWikiLinkNavigate?.(wikiTarget);
+        return;
+      }
+
+      // Markdown file link clicks
+      const anchor = el.closest('a[href]') as HTMLAnchorElement | null;
+      if (anchor) {
+        const href = anchor.getAttribute('href') ?? '';
+        // Only handle relative/local file links (not http/https/mailto/hash)
+        if (href && !/^https?:|^mailto:|^#/i.test(href)) {
+          e.preventDefault();
+          onOpenFile?.(href);
+        }
       }
     };
 
     container.addEventListener('click', handler);
     return () => container.removeEventListener('click', handler);
-  }, [containerRef, onWikiLinkNavigate]);
+  }, [containerRef, onWikiLinkNavigate, onOpenFile]);
 
-  // Sync external content changes → Milkdown
+  // Sync external content changes → Milkdown.
+  // Deps: only `body` (derived purely from `content`/`debouncedDoc`).
+  // `get` is intentionally accessed via getRef.current so that an unstable
+  // `get` reference does NOT re-trigger this effect on every render —
+  // which was the root cause of edits immediately reverting.
   useEffect(() => {
     const crepe = crepeRef.current;
-    const editor = get();
+    const editor = getRef.current();
     if (!crepe || !editor) return;
 
-    if (body === lastContentRef.current) return;
+    // lastContentRef tracks what Milkdown last emitted (via markdownUpdated) or
+    // what we last SET into it (via replaceAll). Skip if content hasn't changed.
+    // Trim comparison guards against trailing-newline normalization differences
+    // between Milkdown's serializer and the raw CodeMirror buffer.
+    if (body.trim() === lastContentRef.current.trim()) return;
 
     isExternalUpdate.current = true;
-    editor.action((ctx) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const view = (ctx as any).get('editorView');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const parser = (ctx as any).get('parser');
-      const doc = parser(body);
-      view.update(
-        EditorState.create({
-          doc,
-          plugins: view.state.plugins,
-        })
-      );
-    });
-    lastContentRef.current = content;
-    requestAnimationFrame(() => {
+    editor.action(replaceAll(body));
+    lastContentRef.current = body;
+    // Use microtask to reset flag — tighter than rAF, runs after sync dispatch
+    // but before any subsequent user-initiated transactions
+    queueMicrotask(() => {
       isExternalUpdate.current = false;
     });
-  }, [content, body, get]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [body]);
 
   // Handle editable changes
   useEffect(() => {
@@ -183,6 +211,7 @@ export const MilkdownPreview = memo(function MilkdownPreview({
   editable = true,
   className,
   filePath,
+  onOpenFile,
   onWikiLinkNavigate,
 }: MilkdownPreviewProps) {
   const handleContentChange = useCallback(
@@ -194,12 +223,13 @@ export const MilkdownPreview = memo(function MilkdownPreview({
 
   return (
     <MilkdownProvider>
-      <div className={className ?? 'milkdown-preview'}>
+      <div className={`milkdown-preview${className ? ` ${className}` : ''}`}>
         <MilkdownEditor
           content={content}
           onContentChange={handleContentChange}
           editable={editable}
           filePath={filePath}
+          onOpenFile={onOpenFile}
           onWikiLinkNavigate={onWikiLinkNavigate}
         />
       </div>

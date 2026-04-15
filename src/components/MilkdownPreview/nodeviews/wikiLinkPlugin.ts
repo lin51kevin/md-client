@@ -47,7 +47,7 @@ export const wikiLinkSchema = $nodeSchema(wikiLinkId, () => ({
   toMarkdown: {
     match: (node) => node.type.name === wikiLinkId,
     runner: (state, node) => {
-      (state as any).addText(`[[${node.attrs.target}]]`);
+      state.addNode('text', undefined, `[[${node.attrs.target}]]`);
     },
   },
 }));
