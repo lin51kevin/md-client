@@ -185,8 +185,8 @@ export function EditorContentArea({
         className="flex h-full"
         style={{ flex: 1 }}
       >
-        <div className="h-full overflow-auto" ref={editorRef} onScroll={handleEditorScroll}>
-          <div className="min-h-full">
+        <div className="h-full overflow-y-auto overflow-x-hidden" ref={editorRef} onScroll={handleEditorScroll}>
+          <div className="min-h-full w-full">
             <CodeMirror
               key={activeTabId}
               value={activeTab.doc}
