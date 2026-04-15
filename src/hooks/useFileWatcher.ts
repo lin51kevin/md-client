@@ -72,6 +72,9 @@ export function useFileWatcher({ tabs, enabled = true, onFileChanged, onFileDele
       const tabId = tabs.find((t) => t.filePath === filePath)?.id;
       if (!tabId) continue;
 
+      // Add sentinel so the .then() guard can detect early cancellation
+      watchersRef.current.set(filePath, () => { watchersRef.current.delete(filePath); });
+
       let unwatch: UnwatchFn | undefined;
       watch(filePath, (event: WatchEvent) => {
         // Ignore self-triggered saves
@@ -104,6 +107,9 @@ export function useFileWatcher({ tabs, enabled = true, onFileChanged, onFileDele
           unwatch?.();
           watchersRef.current.delete(filePath);
         });
+      }).catch((err) => {
+        watchersRef.current.delete(filePath);
+        console.error('[useFileWatcher] watch() failed for', filePath, err);
       });
     }
 

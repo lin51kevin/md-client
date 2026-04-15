@@ -532,5 +532,5 @@ export const en: Record<TranslationKey, string> = {
   'settings.editor.fileWatchBehavior': 'Change Behavior',
   'settings.editor.fileWatchBehaviorDesc': 'Default behavior when a file change is detected',
   'settings.editor.fileWatchAlwaysAsk': 'Always ask',
-  'settings.editor.fileWatchAutoReload': 'Auto reload (ask if there are unsaved changes)',
+  'settings.editor.fileWatchAutoReload': 'Auto reload',
 };

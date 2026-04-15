@@ -33,7 +33,7 @@ describe('useFileWatcher', () => {
     );
 
     await vi.advanceTimersByTimeAsync(0);
-    expect(mockWatch).toHaveBeenCalledWith('/path/file.md', expect.any(Function), undefined);
+    expect(mockWatch).toHaveBeenCalledWith('/path/file.md', expect.any(Function));
   });
 
   it('should not watch tabs without filePath', async () => {

@@ -529,7 +529,7 @@ export const zhCN = {
   'settings.editor.fileWatchBehavior': '变更行为',
   'settings.editor.fileWatchBehaviorDesc': '检测到文件变更时的默认行为',
   'settings.editor.fileWatchAlwaysAsk': '始终询问',
-  'settings.editor.fileWatchAutoReload': '自动重载（有未保存修改时询问）',
+  'settings.editor.fileWatchAutoReload': '自动重载',
 };
 
 export type TranslationKey = keyof typeof zhCN;
