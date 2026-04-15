@@ -63,7 +63,7 @@ import { ActivityBar } from './components/ActivityBar';
 import { SidebarContainer } from './components/SidebarContainer';
 import { useLocalStorageBool } from './hooks/useLocalStorage';
 import { useGit } from './hooks/useGit';
-const HelpModal = lazy(() => import('./components/HelpModal').then(m => ({ default: m.HelpModal })));
+// Help button now opens GitHub USER_GUIDE.md instead of in-app modal
 const SlidePreview = lazy(() => import('./components/SlidePreview').then(m => ({ default: m.SlidePreview })));
 const MindmapView = lazy(() => import('./components/MindmapView').then(m => ({ default: m.MindmapView })));
 import { EditorContentArea } from './components/EditorContentArea';
@@ -85,7 +85,7 @@ export default function App() {
   const [editorCtxMenu, setEditorCtxMenu] = useState<{ x: number; y: number; context: import('./lib/context-menu').ContextInfo } | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
-  const [showHelp, setShowHelp] = useState(false);
+  // showHelp removed — help button now opens external URL
 
   // ── Extracted state hooks ────────────────────────────────────────
   const { activePanel, setActivePanel, showFileTree, showToc, showSearchPanel, showGitPanel, showPluginsPanel } = useSidebarPanel();
@@ -405,7 +405,7 @@ export default function App() {
             recentFiles={recentFiles} onOpenRecent={handleOpenRecent} onClearRecent={handleClearRecent} onRemoveRecent={handleRemoveRecent}
             onCloseAll={handleCloseAllTabs}
             onFormatAction={handleFormatAction} onImageLocal={() => handleFormatAction('image-local')}
-            onOpenHelp={() => setShowHelp(true)}
+            onOpenHelp={() => { import('@tauri-apps/plugin-opener').then(m => m.openUrl('https://github.com/lin51kevin/md-client/blob/main/docs/USER_GUIDE.md')).catch(() => window.open('https://github.com/lin51kevin/md-client/blob/main/docs/USER_GUIDE.md')); }}
             onInsertSnippet={openSnippetPicker}
             canUndo={canUndo} canRedo={canRedo}
             onUndo={() => { const v = cmViewRef.current; if (v) undo(v); }}
@@ -428,11 +428,7 @@ export default function App() {
             updateCheckFrequency={updateCheckFrequency} onUpdateCheckFrequencyChange={setUpdateCheckFrequency}
           />
 
-          {showHelp && (
-            <Suspense fallback={null}>
-              <HelpModal visible={showHelp} onClose={() => setShowHelp(false)} />
-            </Suspense>
-          )}
+          {/* Help button now opens external GitHub USER_GUIDE.md */}
 
           <TabBar
             tabs={isPristine ? [] : tabs} activeTabId={activeTabId}
