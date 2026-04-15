@@ -20,12 +20,14 @@ import { useSearchHighlight } from './hooks/useSearchHighlight';
 import { useImagePaste } from './hooks/useImagePaste';
 import { useFormatActions } from './hooks/useFormatActions';
 import { useInputDialog } from './hooks/useInputDialog';
+import { getReadingTime } from './lib/word-count';
 import { useDocMetrics } from './hooks/useDocMetrics';
 import { useVersionHistory } from './hooks/useVersionHistory';
 import { useTableEditor } from './hooks/useTableEditor';
 import { useSnippetFlow } from './hooks/useSnippetFlow';
 import { useEditorInstance } from './hooks/useEditorInstance';
 import { usePreferences } from './hooks/usePreferences';
+import { formatDuration } from './lib/format-duration';
 import { useSidebarPanel } from './hooks/useSidebarPanel';
 import { useRecentFiles } from './hooks/useRecentFiles';
 import { useTabActions } from './hooks/useTabActions';
@@ -34,6 +36,9 @@ import { useAppLifecycle } from './hooks/useAppLifecycle';
 import { useAutoUpgrade } from './hooks/useAutoUpgrade';
 import { usePendingImageMigration } from './hooks/usePendingImageMigration';
 import { useFileWatcher, markSelfSave } from './hooks/useFileWatcher';
+import { useAISelection } from './hooks/useAISelection';
+import { AIResultModal } from './components/AIResultModal';
+import type { AIAction } from './hooks/useAISelection';
 import { invoke } from '@tauri-apps/api/core';
 import { FileChangeToast } from './components/FileChangeToast';
 import { usePreviewRenderers } from './hooks/usePreviewRenderers';
@@ -63,6 +68,7 @@ import { ActivityBar } from './components/ActivityBar';
 import { SidebarContainer } from './components/SidebarContainer';
 import { useLocalStorageBool } from './hooks/useLocalStorage';
 import { useGit } from './hooks/useGit';
+import { useTypewriterOptions } from './hooks/useTypewriterOptions';
 // Help button now opens GitHub USER_GUIDE.md instead of in-app modal
 const SlidePreview = lazy(() => import('./components/SlidePreview').then(m => ({ default: m.SlidePreview })));
 const MindmapView = lazy(() => import('./components/MindmapView').then(m => ({ default: m.MindmapView })));
@@ -92,9 +98,30 @@ export default function App() {
   const [showAIPanel, setShowAIPanel] = useLocalStorageBool('marklite-ai-panel', false);
   const AI_PANEL_ID = 'ai-copilot-official';
   const { spellCheck, setSpellCheck, vimMode, setVimMode, autoSave, setAutoSave, autoSaveDelay, setAutoSaveDelay, gitMdOnly, setGitMdOnly, milkdownPreview, setMilkdownPreview, theme, setThemeState, fileWatch, setFileWatch, fileWatchBehavior, setFileWatchBehavior, autoUpdateCheck, setAutoUpdateCheck, updateCheckFrequency, setUpdateCheckFrequency } = usePreferences();
+  const [typewriterOptions, setTypewriterOptions] = useTypewriterOptions();
 
   // ── Core hooks ───────────────────────────────────────────────────
   const { focusMode, setFocusMode, isChromeless, hideStatusBar } = useFocusMode();
+
+  // When hideUI is enabled in typewriter mode, treat as chromeless + hide status bar
+  const effectiveChromeless = isChromeless || (focusMode === 'typewriter' && typewriterOptions.hideUI);
+  const effectiveHideStatusBar = hideStatusBar || (focusMode === 'typewriter' && typewriterOptions.hideUI);
+
+  // Focus duration timer
+  const focusStartRef = useRef<number | null>(null);
+  const [focusDuration, setFocusDuration] = useState(0);
+  useEffect(() => {
+    if (focusMode === 'typewriter') {
+      if (!focusStartRef.current) focusStartRef.current = Date.now();
+      const timer = setInterval(() => {
+        if (focusStartRef.current) setFocusDuration(Date.now() - focusStartRef.current);
+      }, 1000);
+      return () => clearInterval(timer);
+    } else {
+      focusStartRef.current = null;
+      setFocusDuration(0);
+    }
+  }, [focusMode]);
   const { renderers: pluginRenderers, registerPreviewRenderer, unregisterPreviewRenderer } = usePreviewRenderers();
   const { panels: pluginPanels, registerPanel: registerPluginPanel, unregisterPanel: unregisterPluginPanel } = usePluginPanels();
   const { welcomeDismissed, handleDismissWelcome, handleShowWelcome } = useWelcome();
@@ -105,7 +132,7 @@ export default function App() {
     tabs, activeTabId, setActiveTabId, activeTabIdRef, tabsRef,
     getActiveTab, getTabTitle, updateActiveDoc, updateTabDoc,
     openFileInTab, openFileWithContent, createNewTab, closeTab, closeMultipleTabs, reorderTabs,
-    markSaved, markSavedAs, renameTab, setTabDisplayName, pinTab, unpinTab,
+    markSaved, markSavedAs, renameTab, setTabDisplayName, pinTab, unpinTab, updateTab,
   } = useTabs(t, () => recentFilesHook.refreshRecentFiles());
 
   const isPristine = tabs.length === 1 && !tabs[0].filePath && !tabs[0].isDirty && !tabs[0].displayName;
@@ -184,6 +211,18 @@ export default function App() {
   // ── Editor infrastructure ────────────────────────────────────────
   const cmViewRef = useRef<EditorView | null>(null);
   const { editorRef, previewRef, handleEditorScroll, handlePreviewScroll } = useScrollSync(viewMode);
+
+  // Apply typewriter-dim class to CodeMirror editor
+  useEffect(() => {
+    const editorEl = editorRef.current?.querySelector('.cm-editor');
+    if (editorEl) {
+      if (focusMode === 'typewriter' && typewriterOptions.dimOthers) {
+        editorEl.classList.add('typewriter-dim');
+      } else {
+        editorEl.classList.remove('typewriter-dim');
+      }
+    }
+  }, [focusMode, typewriterOptions.dimOthers, editorRef]);
   const { cursorPos, cursorExtension } = useCursorPosition();
   const { searchHighlightExtension, setMatches, clearMatches } = useSearchHighlight();
 
@@ -289,11 +328,60 @@ export default function App() {
 
   // ── Navigation ───────────────────────────────────────────────────
   const { debouncedDoc, tocEntries, wordCount } = useDocMetrics(activeTab.doc, activeTabId);
+  const readingTime = useMemo(() => getReadingTime(wordCount), [wordCount]);
 
   const { activeTocId, handleTocNavigate, handleWikiLinkNavigate, handleSearchResultClick } = useNavigation({
     cmViewRef, previewRef, activeTab, activeTabId, setActiveTabId,
     getActiveTab, openFileInTab, t,
   });
+
+  // ── AI Selection Processing ──────────────────────────────────────
+  const [aiSelection, setAISelection] = useState<{ action: AIAction; originalText: string; from: number; to: number } | null>(null);
+  const [aiResult, setAIResult] = useState('');
+
+  const handleAIResult = useCallback((result: string) => {
+    setAIResult(result);
+  }, []);
+
+  const handleAIChunk = useCallback((chunk: string) => {
+    setAIResult((prev) => prev + chunk);
+  }, []);
+
+  const { processSelection: aiProcess, loading: aiLoading, abort: aiAbort } = useAISelection({
+    apiEndpoint: '',
+    apiKey: '',
+    onResult: handleAIResult,
+    onChunk: handleAIChunk,
+  });
+
+  const handleAISelection = useCallback((action: AIAction) => {
+    const view = cmViewRef.current;
+    if (!view) return;
+    const sel = view.state.selection.main;
+    if (sel.from === sel.to) return;
+    const text = view.state.doc.sliceString(sel.from, sel.to);
+    setAISelection({ action, originalText: text, from: sel.from, to: sel.to });
+    setAIResult('');
+    void aiProcess(text, action);
+    setEditorCtxMenu(null);
+  }, [aiProcess, cmViewRef, setEditorCtxMenu]);
+
+  const handleAIApply = useCallback((replacement: string) => {
+    if (!aiSelection || !cmViewRef.current) return;
+    const view = cmViewRef.current;
+    view.dispatch({
+      changes: { from: aiSelection.from, to: aiSelection.to, insert: replacement },
+    });
+    setAISelection(null);
+    setAIResult('');
+    view.focus();
+  }, [aiSelection, cmViewRef]);
+
+  const handleAIClose = useCallback(() => {
+    if (aiLoading) aiAbort();
+    setAISelection(null);
+    setAIResult('');
+  }, [aiLoading, aiAbort]);
 
   // F014 — Editor right-click actions
   const { handleEditorCtxAction: _baseCtxAction } = useEditorContextActions({
@@ -352,6 +440,22 @@ export default function App() {
     >
       {isDragOver && <DragOverlay />}
 
+      {/* Exit button for hideUI typewriter mode */}
+      {focusMode === 'typewriter' && typewriterOptions.hideUI && (
+        <button
+          className="fixed top-2 right-2 z-[9999] text-xs px-3 py-1.5 rounded-full transition-all"
+          style={{
+            backgroundColor: 'var(--bg-secondary)',
+            color: 'var(--text-tertiary)',
+            border: '1px solid var(--border-color)',
+          }}
+          onClick={() => setFocusMode('normal')}
+          title={t('focusMode.exitFocus')}
+        >
+          ✕
+        </button>
+      )}
+
       {inputDialogState && (
         <InputDialog
           visible={true}
@@ -366,8 +470,15 @@ export default function App() {
           visible={!!editorCtxMenu}
           x={editorCtxMenu.x} y={editorCtxMenu.y}
           context={editorCtxMenu.context}
+          hasSelection={(() => {
+            const view = cmViewRef.current;
+            if (!view) return false;
+            const sel = view.state.selection.main;
+            return sel.from !== sel.to;
+          })()}
           onClose={() => setEditorCtxMenu(null)}
           onAction={handleEditorCtxAction}
+          onAIAction={handleAISelection}
         />
       )}
 
@@ -375,7 +486,7 @@ export default function App() {
         <TableEditor table={editingTable} onConfirm={handleTableConfirm} onCancel={() => setEditingTable(null)} />
       )}
 
-      {!isChromeless && (
+      {!effectiveChromeless && (
         <>
           {ctxMenu && (
             <TabContextMenu
@@ -389,6 +500,7 @@ export default function App() {
               onCloseOthers={(id) => { handleCloseOtherTabs(id); setCtxMenu(null); }}
               onCloseLeft={(id) => { handleCloseToLeft(id); setCtxMenu(null); }}
               onCloseRight={(id) => { handleCloseToRight(id); setCtxMenu(null); }}
+              onSetColor={(id, color) => { updateTab(id, { color }); setCtxMenu(null); }}
             />
           )}
 
@@ -426,6 +538,7 @@ export default function App() {
             fileWatchBehavior={fileWatchBehavior} onFileWatchBehaviorChange={setFileWatchBehavior}
             autoUpdateCheck={autoUpdateCheck} onAutoUpdateCheckChange={setAutoUpdateCheck}
             updateCheckFrequency={updateCheckFrequency} onUpdateCheckFrequencyChange={setUpdateCheckFrequency}
+            typewriterOptions={typewriterOptions} onTypewriterOptionsChange={setTypewriterOptions}
           />
 
           {/* Help button now opens external GitHub USER_GUIDE.md */}
@@ -449,7 +562,7 @@ export default function App() {
       {/* ── Main body: ActivityBar + panels + editor ──────────────── */}
       <div className="flex-1 overflow-hidden flex">
         {/* Activity Bar (VS Code style) */}
-        {!isChromeless && (
+        {!effectiveChromeless && (
           <ActivityBar
             activePanel={activePanel}
             onPanelChange={setActivePanel}
@@ -567,11 +680,13 @@ export default function App() {
         })()}
       </div>
 
-      {!hideStatusBar && (
+          {!effectiveHideStatusBar && (
         <StatusBar
           filePath={activeTab.filePath} isDirty={activeTab.isDirty}
           line={cursorPos.line} col={cursorPos.col}
-          snapshots={snapshots} wordCount={wordCount} cursorCount={cursorCount}
+          snapshots={snapshots} wordCount={wordCount} readingTime={readingTime} cursorCount={cursorCount}
+          vimMode={vimMode}
+          focusDuration={typewriterOptions.showDuration && focusMode === 'typewriter' ? formatDuration(focusDuration) : undefined}
           updateAvailable={updateInfo}
           onUpdateClick={() => setShowUpdateNotification(prev => !prev)}
           onSnapshotRestore={(id) => {
@@ -639,6 +754,18 @@ export default function App() {
             onNavigate={handleTocNavigate}
           />
         </Suspense>
+      )}
+
+      {aiSelection && (
+        <AIResultModal
+          action={aiSelection.action}
+          originalText={aiSelection.originalText}
+          result={aiResult}
+          loading={aiLoading}
+          onApply={handleAIApply}
+          onCopy={() => navigator.clipboard.writeText(aiResult).catch(() => {})}
+          onClose={handleAIClose}
+        />
       )}
     </div>
     </I18nContext.Provider>

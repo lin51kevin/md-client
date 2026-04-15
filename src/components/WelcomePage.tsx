@@ -1,5 +1,6 @@
-import { useState, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { FilePlus, FolderOpen, FileText, Clock, Keyboard, X } from 'lucide-react';
+import { invoke } from '@tauri-apps/api/core';
 import { useI18n } from '../i18n';
 import type { RecentFile } from '../lib/recent-files';
 import logoUrl from '../../src-tauri/icons/128x128.png';
@@ -150,6 +151,18 @@ export function EmptyEditorState({ onShowWelcome }: EmptyEditorStateProps) {
 export function WelcomePage({ recentFiles, onNew, onOpenFile, onOpenRecent, onOpenSample, onDismiss }: WelcomePageProps) {
   const { t } = useI18n();
   const [showAll, setShowAll] = useState(false);
+  const [previews, setPreviews] = useState<Record<string, string>>({});
+
+  const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+
+  useEffect(() => {
+    if (!isTauri) return;
+    recentFiles.forEach(file => {
+      invoke<string>('read_file_text', { path: file.path })
+        .then(text => setPreviews(prev => ({ ...prev, [file.path]: text.split('\n').slice(0, 3).join(' ').slice(0, 100) })))
+        .catch(() => {});
+    });
+  }, [recentFiles]);
   const visibleRecent = showAll ? recentFiles : recentFiles.slice(0, MAX_VISIBLE_RECENT);
   const hasMore = !showAll && recentFiles.length > MAX_VISIBLE_RECENT;
 
@@ -257,6 +270,14 @@ export function WelcomePage({ recentFiles, onNew, onOpenFile, onOpenRecent, onOp
                           >
                             {getParentDir(file.path)}
                           </div>
+                          {previews[file.path] && (
+                            <div
+                              className="text-xs truncate mt-0.5 italic"
+                              style={{ color: 'var(--text-tertiary)', opacity: 0.7 }}
+                            >
+                              {previews[file.path]}
+                            </div>
+                          )}
                         </button>
                       </li>
                     ))}

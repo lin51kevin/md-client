@@ -175,6 +175,12 @@ export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorde
                 />
               ) : (
                 <>
+                  {tab.color && (
+                    <span
+                      className="shrink-0 rounded-sm"
+                      style={{ width: 3, height: 16, backgroundColor: tab.color, marginRight: 6 }}
+                    />
+                  )}
                   {/* F013: 图钉按钮 — 固定时显示高亮，未固定时 hover 显示灰色图钉 */}
                   <button
                     onClick={(e) => { e.stopPropagation(); isPinned ? onUnpin?.(tab.id) : onPin?.(tab.id); }}

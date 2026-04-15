@@ -219,6 +219,12 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
     );
   }, [activeTabId]);
 
+  const updateTab = useCallback((tabId: string, patch: Partial<Tab>) => {
+    setTabs(prev =>
+      prev.map(t => t.id === tabId ? { ...t, ...patch } : t)
+    );
+  }, []);
+
   const updateTabDoc = useCallback((tabId: string, value: string) => {
     setTabs(prev =>
       prev.map(t => t.id === tabId ? { ...t, doc: value, isDirty: true } : t)
@@ -389,7 +395,7 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
 
   return {
     tabs, activeTabId, setActiveTabId, activeTabIdRef, tabsRef,
-    getActiveTab, getTabTitle, updateActiveDoc, updateTabDoc, openFileInTab, openFileWithContent,
+    getActiveTab, getTabTitle, updateActiveDoc, updateTabDoc, updateTab, openFileInTab, openFileWithContent,
     createNewTab, closeTab, closeMultipleTabs, reorderTabs, markSaved, markSavedAs,
     renameTab, setTabDisplayName,
     pinTab, unpinTab,

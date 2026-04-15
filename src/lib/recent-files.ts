@@ -12,6 +12,8 @@ export interface RecentFile {
   name: string;
   /** 打开时间 (ISO) */
   openedAt: string;
+  /** 文件预览（前几行） */
+  preview?: string;
 }
 
 const STORAGE_KEY = 'marklite-recent-files';

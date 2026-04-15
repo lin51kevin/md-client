@@ -26,9 +26,19 @@ interface TabContextMenuProps {
   onCloseLeft?: (tabId: string) => void;
   /** 关闭右侧标签页 */
   onCloseRight?: (tabId: string) => void;
+  /** 设置标签颜色 */
+  onSetColor?: (tabId: string, color: string | undefined) => void;
 }
 
-export function TabContextMenu({ x, y, tabId, tabs, onSave, onSaveAs, onClose, onRename, onPin, onUnpin, onDismiss, onCloseAll, onReveal, onCloseOthers, onCloseLeft, onCloseRight }: TabContextMenuProps) {
+const TAB_COLORS = [
+  { id: 'red', color: '#ef4444', name: '红色' },
+  { id: 'orange', color: '#f97316', name: '橙色' },
+  { id: 'yellow', color: '#eab308', name: '黄色' },
+  { id: 'green', color: '#22c55e', name: '绿色' },
+  { id: 'blue', color: '#3b82f6', name: '蓝色' },
+];
+
+export function TabContextMenu({ x, y, tabId, tabs, onSave, onSaveAs, onClose, onRename, onPin, onUnpin, onDismiss, onCloseAll, onReveal, onCloseOthers, onCloseLeft, onCloseRight, onSetColor }: TabContextMenuProps) {
   const { t } = useI18n();
   const tab = tabs.find(t => t.id === tabId);
   const isPinned = tab?.isPinned ?? false;
@@ -122,6 +132,28 @@ export function TabContextMenu({ x, y, tabId, tabs, onSave, onSaveAs, onClose, o
         >
 <span>{t('tabCtx.rename')}</span>
         </button>
+        {/* 颜色标记 */}
+        {onSetColor && (
+          <div className="px-4 py-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {TAB_COLORS.map(c => (
+                <button
+                  key={c.id}
+                  className="w-4 h-4 rounded-full border border-transparent hover:border-gray-400 transition-colors"
+                  style={{ backgroundColor: c.color, border: tab?.color === c.color ? '2px solid var(--text-primary)' : undefined }}
+                  onClick={() => { onSetColor(tabId, c.color); onDismiss(); }}
+                  title={c.name}
+                />
+              ))}
+              <button
+                className="w-4 h-4 rounded-full text-xs flex items-center justify-center hover:bg-gray-200 transition-colors"
+                style={{ backgroundColor: 'var(--bg-secondary)' }}
+                onClick={() => { onSetColor(tabId, undefined); onDismiss(); }}
+                title={t('tabCtx.clearColor')}
+              >✕</button>
+            </div>
+          </div>
+        )}
         <div className="my-1" style={{ borderTop: '1px solid var(--border-color)' }} />
         {/* Reveal in File Explorer */}
         {hasFilePath && onReveal && (
