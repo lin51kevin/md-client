@@ -31,6 +31,7 @@ import { useRecentFiles } from './hooks/useRecentFiles';
 import { useTabActions } from './hooks/useTabActions';
 import { useNavigation } from './hooks/useNavigation';
 import { useAppLifecycle } from './hooks/useAppLifecycle';
+import { useAutoUpgrade } from './hooks/useAutoUpgrade';
 import { usePendingImageMigration } from './hooks/usePendingImageMigration';
 import { useFileWatcher, markSelfSave } from './hooks/useFileWatcher';
 import { FileChangeToast } from './components/FileChangeToast';
@@ -69,6 +70,7 @@ import { PluginSidebarRenderer } from './components/PluginSidebarRenderer';
 import { FloatingPanel } from './components/FloatingPanel';
 import { createCommandRegistry } from './lib/command-registry';
 import { revealInExplorer } from './lib/reveal-in-explorer';
+import { UpdateNotification } from './components/UpdateNotification';
 
 
 export default function App() {
@@ -220,6 +222,19 @@ export default function App() {
   useDragDrop({ isTauri, setIsDragOver, openFileInTab, onImageDrop: saveAndInsertImage, onFolderDrop: (path) => setFileTreeRoot(path) });
   useWindowTitle(activeTab, isTauri);
   useWindowInit(isTauri, theme);
+
+  // ── Auto-upgrade ────────────────────────────────────────────────
+  const [showUpdateNotification, setShowUpdateNotification] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
+  const [readyToRestart, setReadyToRestart] = useState(false);
+
+  const { checkForUpdate, downloadAndInstall, updateInfo, downloading: isDownloading } = useAutoUpgrade({
+    enabled: true,
+    onUpdateAvailable: () => setShowUpdateNotification(true),
+    onDownloadProgress: setDownloadProgress,
+    onUpdateReady: () => { setReadyToRestart(true); setDownloadProgress(100); },
+    onError: (err) => console.warn('[AutoUpdate]', err),
+  });
 
   // ── Plugin runtime ───────────────────────────────────────────────
   const pluginRuntimeDeps = useMemo(() => ({
@@ -557,6 +572,8 @@ export default function App() {
           filePath={activeTab.filePath} isDirty={activeTab.isDirty}
           line={cursorPos.line} col={cursorPos.col}
           snapshots={snapshots} wordCount={wordCount} cursorCount={cursorCount}
+          updateAvailable={updateInfo}
+          onUpdateClick={() => setShowUpdateNotification(prev => !prev)}
           onSnapshotRestore={(id) => {
             if (!activeTab.filePath) return;
             const content = restoreSnapshot(activeTab.filePath, id);
@@ -569,6 +586,21 @@ export default function App() {
         <div className="export-loading-indicator">
           <span className="export-spinner" />
           {t('fileOps.exporting', { format: exporting.toUpperCase() })}
+        </div>
+      )}
+
+      {showUpdateNotification && updateInfo && (
+        <div className="fixed bottom-8 right-4 z-[10001]">
+          <UpdateNotification
+            version={updateInfo.version}
+            releaseNotes={updateInfo.releaseNotes}
+            onDownload={() => { downloadAndInstall(); }}
+            onDismiss={() => setShowUpdateNotification(false)}
+            downloadProgress={downloadProgress}
+            downloading={isDownloading}
+            readyToRestart={readyToRestart}
+            onRestart={() => window.location.reload()}
+          />
         </div>
       )}
 

@@ -23,6 +23,14 @@
       "csp": "default-src 'self'; connect-src 'self' https: http://localhost:*; style-src 'self' 'unsafe-inline'; img-src 'self' data:;"
     }
   },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/lin51kevin/md-client/releases/latest/download/latest.json"
+      ],
+      "pubkey": ""
+    }
+  },
   "bundle": {
     "active": true,
     "targets": "all",

@@ -35,6 +35,10 @@ interface SettingsModalProps {
   onFileWatchChange: (enabled: boolean) => void;
   fileWatchBehavior: boolean;
   onFileWatchBehaviorChange: (autoReload: boolean) => void;
+  autoUpdateCheck?: boolean;
+  onAutoUpdateCheckChange?: (enabled: boolean) => void;
+  updateCheckFrequency?: 'startup' | '24h';
+  onUpdateCheckFrequencyChange?: (freq: 'startup' | '24h') => void;
 }
 
 type TabId = 'general' | 'editor' | 'appearance' | 'files' | 'shortcuts' | 'snippets';
@@ -69,6 +73,10 @@ export function SettingsModal({
   onFileWatchChange,
   fileWatchBehavior,
   onFileWatchBehaviorChange,
+  autoUpdateCheck = true,
+  onAutoUpdateCheckChange,
+  updateCheckFrequency = '24h',
+  onUpdateCheckFrequencyChange,
 }: SettingsModalProps) {
   const { t, locale, setLocale } = useI18n();
   const [activeTab, setActiveTab] = useState<TabId>('general');
@@ -217,6 +225,34 @@ export function SettingsModal({
           <div className="flex-1 overflow-y-auto p-4">
             {activeTab === 'general' && (
               <div className="space-y-4">
+                <SettingItem
+                  label="自动检查更新"
+                  description="启动时自动检查是否有新版本可用"
+                >
+                  <ToggleSwitch checked={autoUpdateCheck} onChange={onAutoUpdateCheckChange ?? (() => {})} />
+                </SettingItem>
+
+                {autoUpdateCheck && (
+                  <SettingItem
+                    label="检查频率"
+                    description="设置自动检查更新的频率"
+                  >
+                    <select
+                      value={updateCheckFrequency}
+                      onChange={(e) => onUpdateCheckFrequencyChange?.(e.target.value as 'startup' | '24h')}
+                      className="text-xs px-2 py-1 rounded outline-none"
+                      style={{
+                        backgroundColor: 'var(--bg-secondary)',
+                        border: '1px solid var(--border-color)',
+                        color: 'var(--text-primary)',
+                      }}
+                    >
+                      <option value="startup">每次启动</option>
+                      <option value="24h">每 24 小时</option>
+                    </select>
+                  </SettingItem>
+                )}
+
                 <SettingItem
                   label={t('settings.general.language')}
                   description={t('settings.general.languageDesc')}
