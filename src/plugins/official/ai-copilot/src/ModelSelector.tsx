@@ -1,6 +1,6 @@
 import { createElement, useState, useRef, useEffect, useCallback } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { PROVIDER_PRESETS } from './providers/provider-registry';
+import { PROVIDER_PRESETS, getModelLabel } from './providers/provider-registry';
 import type { AIConfig } from './config-store';
 
 interface ModelSelectorProps {
@@ -16,8 +16,11 @@ export function ModelSelectorView({ config, activeProvider, onSelect }: ModelSel
   const activePreset = PROVIDER_PRESETS.find((p) => p.id === activeProvider);
   const activeUc = activePreset ? config.providerConfigs[activePreset.id] : undefined;
   const activeModel = activeUc?.model || activePreset?.defaultModel;
+  const activeModelLabel = activePreset && activeModel
+    ? getModelLabel(activeProvider, activeModel)
+    : activeModel;
   const label = activePreset
-    ? `${activePreset.label}${activeModel ? ` (${activeModel})` : ''}`
+    ? `${activePreset.label}${activeModelLabel ? ` (${activeModelLabel})` : ''}`
     : activeProvider;
 
   // Close on outside click
@@ -89,45 +92,61 @@ export function ModelSelectorView({ config, activeProvider, onSelect }: ModelSel
               overflow: 'hidden',
             },
           },
-          ...PROVIDER_PRESETS.map((p) => {
-            const uc = config.providerConfigs[p.id];
-            const m = uc?.model || p.defaultModel;
-            const isActive = p.id === activeProvider;
-            return createElement(
-              'div',
-              {
-                key: p.id,
-                onClick: () => {
-                  onSelect(p.id);
-                  setOpen(false);
-                },
-                style: {
-                  padding: '6px 10px',
-                  fontSize: '12px',
-                  color: isActive
-                    ? 'var(--accent-color, #4a9eff)'
-                    : 'var(--text-primary, #e0e0e0)',
-                  background: isActive
-                    ? 'var(--bg-hover, rgba(255,255,255,0.06))'
-                    : 'transparent',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap' as const,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                },
-                onMouseEnter: (e: React.MouseEvent<HTMLDivElement>) => {
-                  (e.currentTarget as HTMLDivElement).style.background =
-                    'var(--bg-hover, rgba(255,255,255,0.08))';
-                },
-                onMouseLeave: (e: React.MouseEvent<HTMLDivElement>) => {
-                  (e.currentTarget as HTMLDivElement).style.background = isActive
-                    ? 'var(--bg-hover, rgba(255,255,255,0.06))'
-                    : 'transparent';
-                },
-              },
-              `${p.label}${m ? ` (${m})` : ''}`,
+          ...(() => {
+            const verified = PROVIDER_PRESETS.filter(
+              (p) => config.providerConfigs[p.id]?.verified === true,
             );
-          }),
+            if (verified.length === 0) {
+              return [createElement('div', {
+                key: '__empty',
+                style: {
+                  padding: '8px 10px',
+                  fontSize: '11px',
+                  color: 'var(--text-muted, #888)',
+                  textAlign: 'center' as const,
+                },
+              }, '请先在设置中配置并测试连接')];
+            }
+            return verified.map((p) => {
+              const uc = config.providerConfigs[p.id];
+              const m = uc?.model || p.defaultModel;
+              const isActive = p.id === activeProvider;
+              return createElement(
+                'div',
+                {
+                  key: p.id,
+                  onClick: () => {
+                    onSelect(p.id);
+                    setOpen(false);
+                  },
+                  style: {
+                    padding: '6px 10px',
+                    fontSize: '12px',
+                    color: isActive
+                      ? 'var(--accent-color, #4a9eff)'
+                      : 'var(--text-primary, #e0e0e0)',
+                    background: isActive
+                      ? 'var(--bg-hover, rgba(255,255,255,0.06))'
+                      : 'transparent',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap' as const,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  },
+                  onMouseEnter: (e: React.MouseEvent<HTMLDivElement>) => {
+                    (e.currentTarget as HTMLDivElement).style.background =
+                      'var(--bg-hover, rgba(255,255,255,0.08))';
+                  },
+                  onMouseLeave: (e: React.MouseEvent<HTMLDivElement>) => {
+                    (e.currentTarget as HTMLDivElement).style.background = isActive
+                      ? 'var(--bg-hover, rgba(255,255,255,0.06))'
+                      : 'transparent';
+                  },
+                },
+                `${p.label}${m ? ` (${getModelLabel(p.id, m)})` : ''}`,
+              );
+            });
+          })(),
         )
       : null,
   );

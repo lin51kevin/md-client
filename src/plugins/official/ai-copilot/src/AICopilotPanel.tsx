@@ -140,13 +140,27 @@ export class AICopilotPanelContent {
       // Build actions if the response contains modified text
       const actions = this.buildActions(fullResponse, editorCtx);
 
-      // Finalize the assistant message
-      const finalMsgs = this.state.messages.map((m) =>
-        m.id === assistantId
-          ? { ...m, content: fullResponse, isStreaming: false, actions }
-          : m,
-      );
-      this.setState({ messages: finalMsgs, isLoading: false });
+      const isBypass = this.config?.general?.applyMode === 'bypass';
+
+      if (isBypass && actions.length > 0) {
+        // Bypass mode: apply immediately, no confirmation buttons
+        const finalMsgs = this.state.messages.map((m) =>
+          m.id === assistantId ? { ...m, content: fullResponse, isStreaming: false } : m,
+        );
+        this.setState({ messages: finalMsgs, isLoading: false });
+        for (const action of actions) {
+          this.context.editor.replaceRange(action.from, action.to, action.newText);
+        }
+        this.context.ui.showMessage('已自动应用修改', 'info');
+      } else {
+        // Default mode: show Apply/Discard buttons
+        const finalMsgs = this.state.messages.map((m) =>
+          m.id === assistantId
+            ? { ...m, content: fullResponse, isStreaming: false, actions }
+            : m,
+        );
+        this.setState({ messages: finalMsgs, isLoading: false });
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
     const finalMsgs = this.state.messages.map((m) =>
@@ -201,6 +215,15 @@ export class AICopilotPanelContent {
       actions: m.actions?.filter((a) => a.id !== action.id),
     }));
     this.setState({ messages: msgs });
+  }
+
+  toggleApplyMode() {
+    if (!this.config) return;
+    const current = this.config.general?.applyMode ?? 'default';
+    const next: 'default' | 'bypass' = current === 'default' ? 'bypass' : 'default';
+    this.config = { ...this.config, general: { ...this.config.general, applyMode: next } };
+    saveConfig(this.context.storage, this.config);
+    this.notify();
   }
 
   discardAction(actionId: string) {
@@ -294,8 +317,13 @@ export class AICopilotPanelContent {
     }
   }
 
+  /** Stable React component reference – created once, reused across render() calls. */
+  private _Component: React.FunctionComponent | null = null;
+
   /** Returns a React function component for the sidebar renderer. */
   render() {
+    if (this._Component) return this._Component;
+
     const self = this;
 
     function AICopilotPanel() {
@@ -606,10 +634,10 @@ export class AICopilotPanelContent {
                   padding: '2px 6px 4px',
                 },
               },
-              // Model selector
+              // Model selector + apply mode toggle
               createElement(
                 'div',
-                { style: { display: 'flex', alignItems: 'center', gap: '4px' } },
+                { style: { display: 'flex', alignItems: 'center', gap: '6px' } },
                 self.config
                   ? createElement(ModelSelectorView, {
                       config: self.config,
@@ -617,6 +645,35 @@ export class AICopilotPanelContent {
                       onSelect: (p: string) => self.setSelectedProvider(p),
                     })
                   : null,
+                // Apply mode toggle pill
+                (() => {
+                  const applyMode = self.config?.general?.applyMode ?? 'default';
+                  const isBypass = applyMode === 'bypass';
+                  return createElement(
+                    'button',
+                    {
+                      onClick: () => self.toggleApplyMode(),
+                      title: isBypass ? '自动应用 — 点击切换为手动确认' : '手动确认 — 点击切换为自动应用',
+                      style: {
+                        display: 'flex',
+                        alignItems: 'center',
+                        height: '16px',
+                        padding: '0 6px',
+                        border: `1px solid ${isBypass ? 'var(--accent-color, #4a9eff)' : 'var(--border-color, #444)'}`,
+                        borderRadius: '8px',
+                        background: isBypass ? 'rgba(74,158,255,0.15)' : 'transparent',
+                        color: isBypass ? 'var(--accent-color, #4a9eff)' : 'var(--text-muted, #666)',
+                        fontSize: '9px',
+                        fontWeight: 700,
+                        letterSpacing: '0.4px',
+                        cursor: 'pointer',
+                        userSelect: 'none' as const,
+                        flexShrink: 0,
+                      },
+                    },
+                    isBypass ? 'AUTO' : 'MANUAL',
+                  );
+                })(),
               ),
               // Send button
               createElement(
@@ -652,6 +709,7 @@ export class AICopilotPanelContent {
       );
     }
 
+    this._Component = AICopilotPanel;
     return AICopilotPanel;
   }
 }

@@ -30,7 +30,10 @@ export function SettingsViewComponent({ config, onSave, onTestConnection, onClos
 
   const updateField = (field: keyof ProviderUserConfig, value: string) => {
     const prev = getUserConfig(selectedId);
-    setDraft({ ...draft, [selectedId]: { ...prev, [field]: value } });
+    // Changing apiKey, baseUrl or model invalidates a previous successful test
+    const credentialFields: Array<keyof ProviderUserConfig> = ['apiKey', 'baseUrl', 'model'];
+    const nextVerified = credentialFields.includes(field) ? undefined : prev.verified;
+    setDraft({ ...draft, [selectedId]: { ...prev, [field]: value, verified: nextVerified } });
     setTestResult(null);
   };
 
@@ -49,6 +52,14 @@ export function SettingsViewComponent({ config, onSave, onTestConnection, onClos
       const result = await onTestConnection(pc);
       setTestResult(result.success);
       setTestError(result.error || null);
+      // Persist verified status into the draft so Save will store it
+      if (result.success) {
+        const prev = getUserConfig(selectedId);
+        setDraft((d) => ({ ...d, [selectedId]: { ...prev, verified: true } }));
+      } else {
+        const prev = getUserConfig(selectedId);
+        setDraft((d) => ({ ...d, [selectedId]: { ...prev, verified: undefined } }));
+      }
     } catch (error) {
       setTestResult(false);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -237,6 +248,27 @@ export function SettingsViewComponent({ config, onSave, onTestConnection, onClos
               style: inputStyle,
               placeholder: (knownPreset ?? preset).apiKeyPlaceholder ?? 'your-api-key',
             }),
+            // Inline format warning for OpenRouter keys
+            selectedId === 'openrouter' &&
+            currentUserConfig.apiKey &&
+            !currentUserConfig.apiKey.startsWith('sk-or-v1-')
+              ? createElement(
+                  'div',
+                  {
+                    style: {
+                      fontSize: '11px',
+                      color: '#b8860b',
+                      background: 'rgba(255, 200, 0, 0.1)',
+                      border: '1px solid rgba(255, 200, 0, 0.3)',
+                      borderRadius: '3px',
+                      padding: '4px 8px',
+                      marginTop: '-6px',
+                      marginBottom: '6px',
+                    },
+                  },
+                  '⚠ OpenRouter API key 应以 sk-or-v1- 开头，请检查密钥是否正确',
+                )
+              : null,
           )
         : null,
 

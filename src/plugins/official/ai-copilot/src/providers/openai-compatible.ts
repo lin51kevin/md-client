@@ -21,7 +21,8 @@ export class OpenAICompatibleProvider implements AIProvider {
 
   configure(config: ProviderConfig): void {
     if (config.baseUrl) this.baseUrl = config.baseUrl.replace(/\/+$/, '');
-    if (config.apiKey) this.apiKey = config.apiKey.trim();
+    // Trim whitespace and strip control characters (\r, \n, \t) that would break HTTP headers
+    if (config.apiKey) this.apiKey = config.apiKey.trim().replace(/[\r\n\t]/g, '');
     if (config.model) this.model = config.model;
     if (config.timeout) this.timeout = config.timeout;
     if (config.customHeaders) this.customHeaders = config.customHeaders;
@@ -38,9 +39,10 @@ export class OpenAICompatibleProvider implements AIProvider {
       const response = await fetch(`${this.baseUrl}/chat/completions`, {
         method: 'POST',
         headers: {
+          // customHeaders spread first so provider-level auth always takes precedence
+          ...this.customHeaders,
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${this.apiKey}`,
-          ...this.customHeaders,
         },
         body: JSON.stringify({
           model: this.model,
@@ -60,6 +62,9 @@ export class OpenAICompatibleProvider implements AIProvider {
             `当前模型: ${this.model}`,
           ];
           if (this.name === 'openrouter') {
+            if (!this.apiKey.startsWith('sk-or-v1-')) {
+              hints.unshift('API Key 格式不正确（OpenRouter 密钥应以 sk-or-v1- 开头）');
+            }
             hints.push('OpenRouter 免费模型请使用带 :free 后缀的 ID，如 meta-llama/llama-3.3-70b-instruct:free');
           }
           try {
@@ -121,7 +126,7 @@ export class OpenAICompatibleProvider implements AIProvider {
     const url = `${this.baseUrl}/models`;
     try {
       const response = await fetch(url, {
-        headers: { 'Authorization': `Bearer ${this.apiKey}`, ...this.customHeaders },
+        headers: { ...this.customHeaders, 'Authorization': `Bearer ${this.apiKey}` },
         signal: AbortSignal.timeout(5000),
       });
       if (!response.ok) {

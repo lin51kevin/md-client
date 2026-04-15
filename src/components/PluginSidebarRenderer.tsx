@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 
 interface PluginSidebarRendererProps {
   content: unknown;
@@ -25,13 +25,27 @@ export function PluginSidebarRenderer({ content }: PluginSidebarRendererProps) {
     'render' in content &&
     typeof (content as Record<string, unknown>).render === 'function'
   ) {
-    const rendered = (content as { render: () => unknown }).render();
-    if (React.isValidElement(rendered)) return rendered;
-    if (typeof rendered === 'function') return React.createElement(rendered as React.FunctionComponent);
+    return <RenderMethodPanel content={content as { render: () => unknown }} />;
   }
 
   // Case 3: DOM element-based panel
   return <DOMPanelMount content={content} />;
+}
+
+/**
+ * Renders content from an object with a render() method.
+ * Memoises the component reference to prevent remounting when
+ * the parent re-renders but the content object hasn't changed.
+ */
+function RenderMethodPanel({ content }: { content: { render: () => unknown } }) {
+  const rendered = useMemo(() => content.render(), [content]);
+
+  if (React.isValidElement(rendered)) return rendered;
+  if (typeof rendered === 'function') {
+    const Comp = rendered as React.FunctionComponent;
+    return <Comp />;
+  }
+  return null;
 }
 
 function DOMPanelMount({ content }: { content: unknown }) {

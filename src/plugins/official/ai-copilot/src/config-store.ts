@@ -10,6 +10,8 @@ export interface ProviderUserConfig {
   baseUrl?: string;
   model?: string;
   customHeaders?: Record<string, string>;
+  /** Set to true once the user has run "Test Connection" and it passed. */
+  verified?: boolean;
 }
 
 export interface AIConfig {
@@ -19,6 +21,11 @@ export interface AIConfig {
   providerConfigs: Record<string, ProviderUserConfig>;
   general: {
     maxHistoryLength: number;
+    /**
+     * 'default'  — AI responses show Apply/Discard buttons (manual approval).
+     * 'bypass'   — AI edits are applied to the editor immediately without confirmation.
+     */
+    applyMode: 'default' | 'bypass';
   };
 }
 
@@ -27,6 +34,7 @@ const DEFAULT_CONFIG: AIConfig = {
   providerConfigs: {},
   general: {
     maxHistoryLength: 50,
+    applyMode: 'default',
   },
 };
 
@@ -71,13 +79,14 @@ function migrateConfig(raw: Record<string, unknown>): AIConfig {
     return {
       activeProvider: (raw.activeProvider as string) || DEFAULT_CONFIG.activeProvider,
       providerConfigs,
-      general: (raw.general as AIConfig['general']) || DEFAULT_CONFIG.general,
+      general: { ...DEFAULT_CONFIG.general, ...(raw.general as Partial<AIConfig['general']>) },
     };
   }
   return {
     ...DEFAULT_CONFIG,
     ...raw,
     providerConfigs: (raw.providerConfigs as Record<string, ProviderUserConfig>) ?? {},
+    general: { ...DEFAULT_CONFIG.general, ...(raw.general as Partial<AIConfig['general']> | undefined) },
   };
 }
 

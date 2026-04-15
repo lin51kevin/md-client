@@ -3,6 +3,47 @@ import { Check, X, AlertTriangle, Bot } from 'lucide-react';
 import type { CopilotMessage } from './providers/types';
 import { useI18n } from '../../../../i18n';
 
+// Inject keyframe animations once
+if (typeof document !== 'undefined' && !document.getElementById('ai-copilot-chat-styles')) {
+  const style = document.createElement('style');
+  style.id = 'ai-copilot-chat-styles';
+  style.textContent = `
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+    @keyframes ai-thinking-dot {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.35; }
+      30% { transform: translateY(-4px); opacity: 1; }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function ThinkingDots() {
+  return createElement(
+    'div',
+    {
+      style: {
+        display: 'flex',
+        gap: '5px',
+        alignItems: 'center',
+        padding: '4px 2px',
+      },
+    },
+    ...[0, 1, 2].map((i) =>
+      createElement('span', {
+        key: i,
+        style: {
+          width: '6px',
+          height: '6px',
+          borderRadius: '50%',
+          background: 'var(--text-muted, #888)',
+          display: 'inline-block',
+          animation: `ai-thinking-dot 1.2s ease-in-out ${i * 0.18}s infinite`,
+        },
+      }),
+    ),
+  );
+}
+
 interface ChatMessageProps {
   message: CopilotMessage;
   onApply?: (action: import('./providers/types').EditAction) => void;
@@ -89,8 +130,10 @@ export function ChatMessageView({ message, onApply, onDiscard }: ChatMessageProp
           paddingLeft: '2px',
         },
       },
-      displayContent,
-      message.isStreaming
+      message.isStreaming && !message.content
+        ? createElement(ThinkingDots, null)
+        : displayContent,
+      message.isStreaming && message.content
         ? createElement('span', {
             style: {
               display: 'inline-block',
