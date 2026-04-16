@@ -15,10 +15,15 @@ import { OllamaProvider } from './providers/ollama';
 import { OpenAICompatibleProvider } from './providers/openai-compatible';
 import { loadConfig, saveConfig, buildProviderConfig, type AIConfig } from './config-store';
 import { parseIntent } from './intent-parser';
+import type { ParsedIntent } from './intent-parser';
 import { buildSystemPrompt, buildChatPrompt, extractModifiedText } from './prompt-builder';
+import { buildStructuredSystemPrompt, buildStructuredChatPrompt } from './structured-prompt-builder';
 import { getEffectiveScope, type ScopeResolution } from './edit-scope';
 import { validateActionAgainstCurrentContent } from './stale-guard';
 import { planEditActions, shouldBuildEditActions } from './edit-action-planner';
+import { parseEditInstructions } from './instruction-parser';
+import { executeInstructions } from './instruction-executor';
+import { choosePromptMode } from './prompt-strategy';
 import { ChatMessageView } from './ChatMessage';
 import { SlashCommandPopup, getFilteredCommandCount, getFilteredCommandAt, getSlashCommandToken } from './QuickCommands';
 import { ModelSelectorView } from './ModelSelector';
@@ -195,12 +200,17 @@ export class AICopilotPanelContent {
 
   /** Build prompts, send to AI, stream chunks into the assistant message. */
   private async streamAIResponse(
-    intent: ReturnType<typeof parseIntent>,
+    intent: ParsedIntent,
     editorCtx: EditorContext,
     assistantId: string,
   ): Promise<string> {
-    const systemPrompt = buildSystemPrompt(editorCtx);
-    const userPrompt = buildChatPrompt(intent, editorCtx);
+    const promptMode = choosePromptMode(intent);
+    const systemPrompt = promptMode === 'structured'
+      ? buildStructuredSystemPrompt(editorCtx)
+      : buildSystemPrompt(editorCtx);
+    const userPrompt = promptMode === 'structured'
+      ? buildStructuredChatPrompt(intent, editorCtx)
+      : buildChatPrompt(intent, editorCtx);
     const chatMessages: AIChatMessage[] = [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt },
@@ -339,6 +349,29 @@ export class AICopilotPanelContent {
   }
 
   private buildActions(response: string, editorCtx: EditorContext, scope: EditScopeMode, intentAction?: string): EditAction[] {
+    // ── Try structured instruction path first ──
+    const instructions = parseEditInstructions(response);
+    if (instructions !== null) {
+      const result = executeInstructions({
+        docSnapshot: editorCtx.content,
+        instructions,
+        filePath: editorCtx.filePath,
+        idFactory: () => this.nextId(),
+      });
+      if (result.allSuccess && result.actions.length > 0) {
+        return result.actions;
+      }
+      // Partial or full failure — log and fall through to traditional path
+      if (result.actions.length > 0) {
+        console.warn(
+          `[AI Copilot] Structured instructions partially failed (${result.results.filter(r => !r.success).length} failed), using ${result.actions.length} successful actions`,
+        );
+        return result.actions;
+      }
+      console.warn('[AI Copilot] All structured instructions failed, falling back to text replace');
+    }
+
+    // ── Traditional full-text replace path ──
     return planEditActions({
       response,
       editorCtx,
