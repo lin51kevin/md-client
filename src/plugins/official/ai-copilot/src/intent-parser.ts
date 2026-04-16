@@ -48,6 +48,7 @@ export function getQuickCommandList(): Array<{ command: string; label: string; d
 function parseScopeMode(input: string): { target: EditScopeMode; targetFilePath?: string } {
   const token = input.trim().toLowerCase();
   if (token === 'selection') return { target: 'selection' };
+  if (token === 'cursor' || token === 'cur') return { target: 'cursor' };
   if (token === 'document' || token === 'doc') return { target: 'document' };
   if (token === 'workspace' || token === 'ws') return { target: 'workspace' };
   if (token.startsWith('tab:')) {
@@ -148,10 +149,11 @@ export function parseIntent(input: string): ParsedIntent {
     }
   }
 
-  // 3. Default to question
+  // 3. Default to question – target 'selection' so that getEffectiveScope
+  //    falls back to 'cursor' when nothing is selected.
   return {
     action: 'question',
-    target: 'document',
+    target: 'selection',
     params: { instruction: trimmed },
     confidence: 0.5,
     originalText: trimmed,

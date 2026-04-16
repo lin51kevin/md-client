@@ -42,7 +42,7 @@ function buildHeadingOutline(content: string): string {
 export interface ScopedContextResult {
   targetText: string;
   outline: string;
-  strategy: 'full' | 'smart-window' | 'selection' | 'workspace';
+  strategy: 'full' | 'smart-window' | 'selection' | 'cursor' | 'workspace';
 }
 
 export function assembleScopedContext(
@@ -55,6 +55,16 @@ export function assembleScopedContext(
       targetText: context.selection.text,
       outline: buildHeadingOutline(context.content),
       strategy: 'selection',
+    };
+  }
+
+  if (scope === 'cursor') {
+    const cursorWindow = getCursorWindow(context.content, context.cursor.line, 15);
+    const outline = buildHeadingOutline(context.content);
+    return {
+      targetText: cursorWindow,
+      outline,
+      strategy: 'cursor',
     };
   }
 

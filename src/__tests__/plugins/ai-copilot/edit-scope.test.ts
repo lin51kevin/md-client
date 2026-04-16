@@ -10,6 +10,11 @@ describe('getEffectiveScope', () => {
     expect(getEffectiveScope('selection', false)).toBe('document');
   });
 
+  it('keeps cursor scope regardless of selection', () => {
+    expect(getEffectiveScope('cursor', false)).toBe('cursor');
+    expect(getEffectiveScope('cursor', true)).toBe('cursor');
+  });
+
   it('keeps document scope', () => {
     expect(getEffectiveScope('document', false)).toBe('document');
   });
@@ -23,7 +28,7 @@ describe('getEffectiveScope', () => {
   });
 
   it('accepts all legal scope values', () => {
-    const all: EditScopeMode[] = ['selection', 'document', 'tab', 'workspace'];
+    const all: EditScopeMode[] = ['selection', 'cursor', 'document', 'tab', 'workspace'];
     expect(all.map((s) => getEffectiveScope(s, true))).toEqual(all);
   });
 });

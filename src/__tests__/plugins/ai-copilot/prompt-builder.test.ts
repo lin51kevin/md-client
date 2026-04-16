@@ -1,9 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
 // Mock i18n to return predictable strings
 vi.mock('../../../i18n', () => ({
   getT: () => (key: string, params?: Record<string, string | number>) => {
-    // Return a stable string containing the key and any interpolated params
     let s = `[${key}]`;
     if (params) {
       Object.entries(params).forEach(([k, v]) => {
@@ -21,31 +20,75 @@ vi.mock('../../../i18n', () => ({
 
 // Mock the context assembler
 vi.mock('../../../plugins/official/ai-copilot/src/context-assembler', () => ({
-  assembleScopedContext: (_ctx: any, scope: string, _max: number) => ({
+  assembleScopedContext: (_ctx: unknown, scope: string, _max: number) => ({
     targetText: `[scoped-text:${scope}]`,
     outline: '[outline]',
     strategy: scope === 'selection' ? 'selection' : scope === 'workspace' ? 'workspace' : 'full',
   }),
 }));
 
-const { buildSystemPrompt, buildChatPrompt, extractModifiedText } = await import(
-  '../../../plugins/official/ai-copilot/src/prompt-builder'
-);
+const {
+  buildSystemPrompt,
+  buildChatPrompt,
+  extractModifiedText,
+  parseEditResponse,
+  getEditResponseMode,
+} = await import('../../../plugins/official/ai-copilot/src/prompt-builder');
+
+describe('parseEditResponse', () => {
+  it('extracts content from ```markdown code block', () => {
+    const response = 'Here is the result:\n```markdown\n# Hello World\n\nSome content.\n```\nDone!';
+    expect(parseEditResponse(response)).toEqual({
+      operation: 'replace_selection',
+      content: '# Hello World\n\nSome content.\n',
+    });
+  });
+
+  it('extracts operation and content from json code block', () => {
+    const response = '```json\n{"operation":"insert_at_cursor","content":"Hello"}\n```';
+    expect(parseEditResponse(response)).toEqual({
+      operation: 'insert_at_cursor',
+      content: 'Hello',
+    });
+  });
+
+  it('preserves leading and trailing whitespace from edit content', () => {
+    const response = '```json\n{"operation":"insert_at_cursor","content":"\\nHello\\n"}\n```';
+    expect(parseEditResponse(response)).toEqual({
+      operation: 'insert_at_cursor',
+      content: '\nHello\n',
+    });
+  });
+
+  it('returns null when no editable block is present', () => {
+    expect(parseEditResponse('Just some plain text')).toBeNull();
+  });
+});
 
 describe('extractModifiedText', () => {
   it('extracts content from ```markdown code block', () => {
     const response = 'Here is the result:\n```markdown\n# Hello World\n\nSome content.\n```\nDone!';
-    expect(extractModifiedText(response)).toBe('# Hello World\n\nSome content.');
+    expect(extractModifiedText(response)).toBe('# Hello World\n\nSome content.\n');
   });
 
   it('extracts content from ```md code block', () => {
     const response = '```md\nContent here\n```';
-    expect(extractModifiedText(response)).toBe('Content here');
+    expect(extractModifiedText(response)).toBe('Content here\n');
   });
 
   it('extracts content from ``` (no language) code block', () => {
     const response = '```\nPlain block\n```';
-    expect(extractModifiedText(response)).toBe('Plain block');
+    expect(extractModifiedText(response)).toBe('Plain block\n');
+  });
+
+  it('extracts content from json code block', () => {
+    const response = '```json\n{"operation":"insert_at_cursor","content":"Padded"}\n```';
+    expect(extractModifiedText(response)).toBe('Padded');
+  });
+
+  it('preserves markdown block newlines', () => {
+    const response = '```markdown\n\nIndented\n\n```';
+    expect(extractModifiedText(response)).toBe('\nIndented\n\n');
   });
 
   it('returns null when no code block present', () => {
@@ -58,12 +101,33 @@ describe('extractModifiedText', () => {
 
   it('extracts only the first matching code block', () => {
     const response = '```markdown\nFirst\n```\n\n```markdown\nSecond\n```';
-    expect(extractModifiedText(response)).toBe('First');
+    expect(extractModifiedText(response)).toBe('First\n');
   });
 
-  it('trims whitespace from extracted content', () => {
+  it('preserves surrounding whitespace from extracted content', () => {
     const response = '```markdown\n  \n  Padded\n  \n```';
-    expect(extractModifiedText(response)).toBe('Padded');
+    expect(extractModifiedText(response)).toBe('  \n  Padded\n  \n');
+  });
+});
+
+describe('getEditResponseMode', () => {
+  const baseContext = {
+    content: '# Test\n\nBody text',
+    cursor: { line: 1, column: 0, offset: 0 },
+    filePath: '/test/file.md',
+  };
+
+  it('uses replace-selection when a selection exists', () => {
+    expect(getEditResponseMode({ ...baseContext, selection: { from: 0, to: 4, text: 'Test' } } as any, 'selection'))
+      .toBe('replace-selection');
+  });
+
+  it('uses insert-at-cursor for active document edits without a selection', () => {
+    expect(getEditResponseMode(baseContext as any, 'document')).toBe('insert-at-cursor');
+  });
+
+  it('uses rewrite-document for tab edits', () => {
+    expect(getEditResponseMode(baseContext as any, 'tab')).toBe('rewrite-document');
   });
 });
 
@@ -162,6 +226,22 @@ describe('buildChatPrompt', () => {
     expect(result).toContain('instruction=rewrite this');
   });
 
+  it('edit prompt uses replace-selection semantics when selection exists', () => {
+    const intent = { action: 'edit', target: 'selection', params: { instruction: 'polish it' }, originalText: 'polish it' };
+    const result = buildChatPrompt(intent as any, {
+      ...baseContext,
+      selection: { from: 0, to: 4, text: 'Test' },
+      scope: 'selection',
+    } as any);
+    expect(result).toContain('responseMode=[aiCopilot.prompt.responseMode.replaceSelection]');
+  });
+
+  it('edit prompt uses insert-at-cursor semantics when no selection exists', () => {
+    const intent = { action: 'edit', target: 'document', params: { instruction: 'add a note' }, originalText: 'add a note' };
+    const result = buildChatPrompt(intent as any, baseContext as any);
+    expect(result).toContain('responseMode=[aiCopilot.prompt.responseMode.insertAtCursor]');
+  });
+
   it('question action returns originalText directly', () => {
     const intent = { action: 'question', target: 'document', params: {}, originalText: 'What is Markdown?' };
     const result = buildChatPrompt(intent as any, baseContext as any);
@@ -177,7 +257,6 @@ describe('buildChatPrompt', () => {
   it('uses intent target as scope when context.scope is missing', () => {
     const intent = { action: 'explain', target: 'selection', params: {}, originalText: '/explain' };
     const result = buildChatPrompt(intent as any, baseContext as any);
-    // The scoped context receives 'selection' as scope
     expect(result).toContain('content=[scoped-text:selection]');
   });
 

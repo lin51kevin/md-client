@@ -5,7 +5,7 @@ export interface ChatMessage {
   content: string;
 }
 
-export type EditScopeMode = 'selection' | 'document' | 'tab' | 'workspace';
+export type EditScopeMode = 'selection' | 'cursor' | 'document' | 'tab' | 'workspace';
 
 export interface ProviderConfig {
   type: 'cloud' | 'local';
@@ -67,5 +67,4 @@ export interface CopilotState {
   messages: CopilotMessage[];
   isLoading: boolean;
   selectedProvider: string;
-  editScope: EditScopeMode;
 }

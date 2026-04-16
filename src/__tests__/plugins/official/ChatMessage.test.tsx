@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import * as React from 'react';
 import { ChatMessageView } from '../../../plugins/official/ai-copilot/src/ChatMessage';
 import type { CopilotMessage } from '../../../plugins/official/ai-copilot/src/providers/types';
@@ -132,6 +132,37 @@ describe('ChatMessageView — VS Code-style layout', () => {
       );
       expect(screen.getByText('Apply')).toBeInTheDocument();
       expect(screen.getByText('Discard')).toBeInTheDocument();
+    });
+
+    it('applies multiple actions from bottom to top', () => {
+      const onApply = vi.fn();
+      render(
+        <ChatMessageView
+          message={makeMsg({
+            role: 'assistant',
+            content: 'Done',
+            isStreaming: false,
+            actions: [
+              {
+                id: 'act-1', type: 'replace',
+                description: 'top', from: 0, to: 1,
+                originalText: 'A', newText: 'AA', sourceFilePath: '/doc.md',
+              },
+              {
+                id: 'act-2', type: 'replace',
+                description: 'bottom', from: 10, to: 11,
+                originalText: 'B', newText: 'BB', sourceFilePath: '/doc.md',
+              },
+            ],
+          })}
+          onApply={onApply}
+        />
+      );
+
+      fireEvent.click(screen.getByText('Apply'));
+
+      expect(onApply).toHaveBeenNthCalledWith(1, expect.objectContaining({ id: 'act-2' }));
+      expect(onApply).toHaveBeenNthCalledWith(2, expect.objectContaining({ id: 'act-1' }));
     });
 
     it('does NOT render action buttons while streaming', () => {

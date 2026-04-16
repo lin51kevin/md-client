@@ -18,7 +18,7 @@ import { parseIntent } from './intent-parser';
 import { buildSystemPrompt, buildChatPrompt, extractModifiedText } from './prompt-builder';
 import { getEffectiveScope } from './edit-scope';
 import { validateActionAgainstCurrentContent } from './stale-guard';
-import { createMarkdownSectionActions } from './markdown-actions';
+import { planEditActions, shouldBuildEditActions } from './edit-action-planner';
 import { ChatMessageView } from './ChatMessage';
 import { SlashCommandPopup, getFilteredCommandCount, getFilteredCommandAt } from './QuickCommands';
 import { ModelSelectorView } from './ModelSelector';
@@ -34,6 +34,7 @@ export class AICopilotPanelContent {
   private router: ProviderRouter;
   private state: CopilotState;
   private config: AIConfig | null = null;
+  private readonly ready: Promise<void>;
   private listeners: Set<() => void> = new Set();
   private idCounter = 0;
   /** Called when the user clicks the close button. Set by the host. */
@@ -44,8 +45,9 @@ export class AICopilotPanelContent {
   constructor(context: PluginContext) {
     this.context = context;
     this.router = new ProviderRouter();
-    this.state = { messages: [], isLoading: false, selectedProvider: '', editScope: 'selection' };
-    this.init().catch((err) => console.error('[AI Copilot] Initialization failed:', err));
+    this.state = { messages: [], isLoading: false, selectedProvider: '' };
+    this.ready = this.init();
+    this.ready.catch((err) => console.error('[AI Copilot] Initialization failed:', err));
   }
 
   private nextId(): string {
@@ -69,7 +71,9 @@ export class AICopilotPanelContent {
   }
 
   private setupProviders(config: AIConfig) {
-    for (const [id, userConfig] of Object.entries(config.providerConfigs)) {
+    const providerIds = new Set([config.activeProvider, ...Object.keys(config.providerConfigs)]);
+    for (const id of providerIds) {
+      const userConfig = config.providerConfigs[id];
       const pc = buildProviderConfig(id, userConfig);
       if (!pc) continue;
       if (id === 'ollama') {
@@ -122,21 +126,16 @@ export class AICopilotPanelContent {
   }
 
   async sendMessage(text: string) {
+    await this.ready;
     if (!text.trim() || this.state.isLoading) return;
 
     const t = getT();
 
     const intent = parseIntent(text);
     const hasSelection = Boolean(this.context.editor.getSelection());
-    // For slash commands, use the command's intended target scope;
-    // for /scope command, use parsed target; otherwise fall back to editScope.
-    const isSlashCommand = text.trim().startsWith('/') && !text.trim().startsWith('/scope ');
-    const requestedScope = text.trim().startsWith('/scope ')
+    const effectiveScope = text.trim().startsWith('/scope ')
       ? intent.target
-      : isSlashCommand
-        ? intent.target
-        : this.state.editScope;
-    const effectiveScope = getEffectiveScope(requestedScope, hasSelection);
+      : getEffectiveScope(intent.target, hasSelection);
     const editorCtx = await this.captureContext(effectiveScope, intent.params.targetFilePath);
 
     // Add user message
@@ -161,7 +160,6 @@ export class AICopilotPanelContent {
     this.setState({
       messages: [...trimmedHistory, userMsg, assistantMsg],
       isLoading: true,
-      editScope: effectiveScope,
     });
 
     try {
@@ -213,9 +211,11 @@ export class AICopilotPanelContent {
       }
 
       // Build actions if the response contains modified text
-      const actions = this.buildActions(fullResponse, editorCtx, effectiveScope);
+      const actions = shouldBuildEditActions(intent.action, effectiveScope)
+        ? this.buildActions(fullResponse, editorCtx, effectiveScope)
+        : [];
 
-      const isBypass = this.config?.general?.applyMode === 'bypass';
+      const isBypass = (this.config?.general?.applyMode ?? 'default') === 'bypass';
 
       if (isBypass && actions.length > 0) {
         // Bypass mode: apply immediately, no confirmation buttons
@@ -224,7 +224,8 @@ export class AICopilotPanelContent {
         );
         this.setState({ messages: finalMsgs, isLoading: false });
         let appliedCount = 0;
-        for (const action of actions) {
+        const orderedActions = [...actions].sort((a, b) => b.from - a.from || b.to - a.to);
+        for (const action of orderedActions) {
           if (this.tryApplyAction(action)) {
             appliedCount += 1;
           }
@@ -272,30 +273,10 @@ export class AICopilotPanelContent {
   }
 
   private buildActions(response: string, editorCtx: EditorContext, scope: EditScopeMode): EditAction[] {
-    const modified = extractModifiedText(response);
-    if (!modified) return [];
-    if (scope === 'workspace') return [];
-
-    if (editorCtx.selection) {
-      return [
-        {
-          id: this.nextId(),
-          type: 'replace',
-          description: '替换选中文本',
-          from: editorCtx.selection.from,
-          to: editorCtx.selection.to,
-          originalText: editorCtx.selection.text,
-          newText: modified,
-          sourceFilePath: editorCtx.filePath,
-        },
-      ];
-    }
-
-    return createMarkdownSectionActions({
-      original: editorCtx.content,
-      modified,
-      baseFrom: 0,
-      filePath: editorCtx.filePath,
+    return planEditActions({
+      response,
+      editorCtx,
+      scope,
       idFactory: () => this.nextId(),
     });
   }
@@ -326,15 +307,32 @@ export class AICopilotPanelContent {
       return false;
     }
 
-    this.context.editor.replaceRange(action.from, action.to, action.newText);
-    return true;
+    switch (action.type) {
+      case 'insert':
+        this.context.editor.insertText(action.newText, action.from, action.to);
+        return true;
+      case 'delete':
+        this.context.editor.replaceRange(action.from, action.to, '');
+        return true;
+      case 'replace':
+      default:
+        this.context.editor.replaceRange(action.from, action.to, action.newText);
+        return true;
+    }
   }
 
   toggleApplyMode() {
     if (!this.config) return;
     const current = this.config.general?.applyMode ?? 'default';
-    const next: 'default' | 'bypass' = current === 'default' ? 'bypass' : 'default';
-    this.config = { ...this.config, general: { ...this.config.general, applyMode: next } };
+    const next = current === 'default' ? 'bypass' : 'default';
+    this.config = {
+      ...this.config,
+      general: {
+        ...this.config.general,
+        maxHistoryLength: this.config.general?.maxHistoryLength ?? 50,
+        applyMode: next,
+      },
+    };
     saveConfig(this.context.storage, this.config);
     this.notify();
   }
@@ -372,7 +370,7 @@ export class AICopilotPanelContent {
 
     
     // 验证配置
-    if (!providerConfig.apiKey) {
+    if (providerConfig.type === 'cloud' && !providerConfig.apiKey) {
       return { 
         success: false, 
         error: 'API Key is required' 
@@ -437,10 +435,6 @@ export class AICopilotPanelContent {
     }
   }
 
-  setEditScope(scope: EditScopeMode) {
-    this.setState({ editScope: scope });
-  }
-
   /** Stable React component reference – created once, reused across render() calls. */
   private _Component: React.FunctionComponent | null = null;
 
@@ -501,7 +495,7 @@ export class AICopilotPanelContent {
         inputRef.current?.focus();
       }, []);
 
-      const { messages, isLoading, selectedProvider, editScope } = self.state;
+      const { messages, isLoading, selectedProvider } = self.state;
 
       // Icon button helper style
       const iconBtn: React.CSSProperties = {
@@ -829,41 +823,6 @@ export class AICopilotPanelContent {
                     isBypass ? t('aiCopilot.applyMode.auto') : t('aiCopilot.applyMode.manual'),
                   );
                 })(),
-                createElement(
-                  'button',
-                  {
-                    onClick: () => {
-                      const order: EditScopeMode[] = ['selection', 'document', 'tab', 'workspace'];
-                      const idx = order.indexOf(editScope);
-                      const next = order[(idx + 1) % order.length];
-                      self.setEditScope(next);
-                    },
-                    title: t('aiCopilot.scope.tooltip', { scope: editScope }),
-                    style: {
-                      display: 'flex',
-                      alignItems: 'center',
-                      height: '16px',
-                      padding: '0 6px',
-                      border: '1px solid var(--border-color, #444)',
-                      borderRadius: '8px',
-                      background: 'transparent',
-                      color: 'var(--text-muted, #666)',
-                      fontSize: '9px',
-                      fontWeight: 700,
-                      letterSpacing: '0.4px',
-                      cursor: 'pointer',
-                      userSelect: 'none' as const,
-                      flexShrink: 0,
-                    },
-                  },
-                  editScope === 'selection'
-                    ? t('aiCopilot.scope.selection')
-                    : editScope === 'document'
-                      ? t('aiCopilot.scope.document')
-                      : editScope === 'tab'
-                        ? t('aiCopilot.scope.tab')
-                        : t('aiCopilot.scope.workspace'),
-                ),
               ),
               // Send / Stop button
               isLoading
@@ -876,8 +835,8 @@ export class AICopilotPanelContent {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        width: '26px',
-                        height: '26px',
+                        width: '16px',
+                        height: '16px',
                         border: '1.5px solid var(--text-muted, #666)',
                         borderRadius: '50%',
                         background: 'var(--bg-secondary, #2d2d2d)',
@@ -887,7 +846,7 @@ export class AICopilotPanelContent {
                         flexShrink: 0,
                       },
                     },
-                    createElement(Square, { size: 9, fill: 'currentColor' }),
+                    createElement(Square, { size: 8, fill: 'currentColor' }),
                   )
                 : createElement(
                     'button',

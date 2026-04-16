@@ -95,17 +95,20 @@ export function SlashCommandPopup({ filter, onSelect, selectedIndex = 0 }: Slash
             padding: '6px 10px',
             fontSize: '12px',
             border: 'none',
+            borderLeft: idx === selectedIndex ? '2px solid var(--accent-color, #0969da)' : '2px solid transparent',
             borderBottom: '1px solid var(--border-color, #2a2a2a)',
-            background: idx === selectedIndex ? 'var(--hover-bg, rgba(255,255,255,0.1))' : 'transparent',
+            background: idx === selectedIndex ? 'var(--accent-bg, rgba(59,130,246,0.12))' : 'transparent',
             color: 'var(--text-primary, #e0e0e0)',
             cursor: 'pointer',
             textAlign: 'left',
           },
           onMouseEnter: (e: React.MouseEvent<HTMLButtonElement>) => {
-            e.currentTarget.style.background = 'var(--hover-bg, rgba(255,255,255,0.06))';
+            e.currentTarget.style.background = idx === selectedIndex
+              ? 'var(--accent-bg, rgba(59,130,246,0.12))'
+              : 'var(--hover-bg, rgba(128,128,128,0.1))';
           },
           onMouseLeave: (e: React.MouseEvent<HTMLButtonElement>) => {
-            e.currentTarget.style.background = idx === selectedIndex ? 'var(--hover-bg, rgba(255,255,255,0.1))' : 'transparent';
+            e.currentTarget.style.background = idx === selectedIndex ? 'var(--accent-bg, rgba(59,130,246,0.12))' : 'transparent';
           },
         },
         createElement(

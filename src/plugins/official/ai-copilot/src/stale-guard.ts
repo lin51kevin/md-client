@@ -14,6 +14,9 @@ export function validateActionAgainstCurrentContent(
   }
 
   if (action.type === 'insert') {
+    if (action.from !== action.to) {
+      return { valid: false, reason: 'stale: insert range must be collapsed' };
+    }
     return { valid: true };
   }
 

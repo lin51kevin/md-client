@@ -34,4 +34,21 @@ describe('validateActionAgainstCurrentContent', () => {
     expect(ok.valid).toBe(true);
     expect(bad.valid).toBe(false);
   });
+
+  it('accepts insert at end of document', () => {
+    const result = validateActionAgainstCurrentContent(
+      makeAction({ type: 'insert', from: 4, to: 4, originalText: '' }),
+      'abcd',
+    );
+    expect(result.valid).toBe(true);
+  });
+
+  it('detects when replace source text moved nearby', () => {
+    const result = validateActionAgainstCurrentContent(
+      makeAction({ from: 0, to: 5, originalText: 'Hello' }),
+      'xHello world',
+    );
+    expect(result.valid).toBe(false);
+    expect(result.reason).toContain('moved');
+  });
 });

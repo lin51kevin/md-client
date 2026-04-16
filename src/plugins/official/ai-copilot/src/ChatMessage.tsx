@@ -250,7 +250,10 @@ export function ChatMessageView({ message, onApply, onDiscardAll }: ChatMessageP
           createElement(
             'button',
             {
-              onClick: () => message.actions!.forEach((a) => onApply?.(a)),
+              onClick: () =>
+                [...message.actions!]
+                  .sort((a, b) => b.from - a.from || b.to - a.to)
+                  .forEach((a) => onApply?.(a)),
               title: t('aiCopilot.panel.apply'),
               style: {
                 display: 'inline-flex',

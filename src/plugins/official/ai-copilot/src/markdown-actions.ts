@@ -40,26 +40,27 @@ function parseSections(markdown: string): MarkdownSection[] {
 
 export function createMarkdownSectionActions(input: CreateMarkdownSectionActionsInput): EditAction[] {
   const { original, modified, baseFrom, filePath, idFactory } = input;
+  const fullReplaceAction: EditAction = {
+    id: idFactory(0),
+    type: 'replace',
+    description: '替换全文',
+    from: baseFrom,
+    to: baseFrom + original.length,
+    originalText: original,
+    newText: modified,
+    sourceFilePath: filePath,
+  };
   const originalSections = parseSections(original);
   const modifiedSections = parseSections(modified);
 
   if (originalSections.length === 0 || modifiedSections.length === 0) {
-    return [
-      {
-        id: idFactory(0),
-        type: 'replace',
-        description: '替换全文',
-        from: baseFrom,
-        to: baseFrom + original.length,
-        originalText: original,
-        newText: modified,
-        sourceFilePath: filePath,
-      },
-    ];
+    return [fullReplaceAction];
   }
 
   const matchedModifiedIndices = new Set<number>();
   const actions: EditAction[] = [];
+  let hasStructuralMismatch = originalSections.length !== modifiedSections.length;
+  let lastMatchedIndex = -1;
 
   for (let i = 0; i < originalSections.length; i += 1) {
     const oldSection = originalSections[i];
@@ -69,9 +70,16 @@ export function createMarkdownSectionActions(input: CreateMarkdownSectionActions
     if (newSectionIndex < 0 && i < modifiedSections.length && !matchedModifiedIndices.has(i)) {
       newSectionIndex = i;
     }
-    if (newSectionIndex < 0) continue;
+    if (newSectionIndex < 0) {
+      hasStructuralMismatch = true;
+      continue;
+    }
     const newSection = modifiedSections[newSectionIndex];
     matchedModifiedIndices.add(newSectionIndex);
+    if (newSectionIndex < lastMatchedIndex) {
+      hasStructuralMismatch = true;
+    }
+    lastMatchedIndex = newSectionIndex;
     if (oldSection.text === newSection.text) continue;
 
     actions.push({
@@ -86,18 +94,12 @@ export function createMarkdownSectionActions(input: CreateMarkdownSectionActions
     });
   }
 
+  if (matchedModifiedIndices.size !== modifiedSections.length) {
+    hasStructuralMismatch = true;
+  }
+
+  if (hasStructuralMismatch) return [fullReplaceAction];
   if (actions.length > 0) return actions;
 
-  return [
-    {
-      id: idFactory(0),
-      type: 'replace',
-      description: '替换全文',
-      from: baseFrom,
-      to: baseFrom + original.length,
-      originalText: original,
-      newText: modified,
-      sourceFilePath: filePath,
-    },
-  ];
+  return [fullReplaceAction];
 }
