@@ -20,7 +20,7 @@ import { getEffectiveScope, type ScopeResolution } from './edit-scope';
 import { validateActionAgainstCurrentContent } from './stale-guard';
 import { planEditActions, shouldBuildEditActions } from './edit-action-planner';
 import { ChatMessageView } from './ChatMessage';
-import { SlashCommandPopup, getFilteredCommandCount, getFilteredCommandAt } from './QuickCommands';
+import { SlashCommandPopup, getFilteredCommandCount, getFilteredCommandAt, getSlashCommandToken } from './QuickCommands';
 import { ModelSelectorView } from './ModelSelector';
 import { SettingsViewComponent } from './SettingsView';
 import { getT, useI18n } from '../../../../i18n';
@@ -147,7 +147,17 @@ export class AICopilotPanelContent {
     }
 
     const editorCtx = await this.captureContext(effectiveScope, intent.params.targetFilePath);
-    const { assistantMsg } = this.appendMessagePair(text);
+    const { assistantMsg } = this.appendMessagePair(text, intent.action, intent.confidence);
+
+    // Delete with selection: no AI call needed — produce action directly
+    if (intent.action === 'delete' && editorCtx.selection) {
+      const actions = this.buildActions('', editorCtx, effectiveScope, intent.action);
+      this.finalizeAssistantMessage('', assistantMsg.id, actions.length > 0 ? actions : undefined);
+      if (actions.length > 0 && (this.config?.general?.applyMode ?? 'default') === 'bypass') {
+        this.handleBypassApply('', actions, assistantMsg.id, t);
+      }
+      return;
+    }
 
     try {
       const fullResponse = await this.streamAIResponse(intent, editorCtx, assistantMsg.id);
@@ -158,7 +168,7 @@ export class AICopilotPanelContent {
   }
 
   /** Create user + placeholder assistant messages and push them to state. */
-  private appendMessagePair(text: string) {
+  private appendMessagePair(text: string, intentAction?: string, intentConfidence?: number) {
     const userMsg: CopilotMessage = {
       id: this.nextId(),
       role: 'user',
@@ -171,6 +181,8 @@ export class AICopilotPanelContent {
       content: '',
       timestamp: Date.now(),
       isStreaming: true,
+      intentAction,
+      intentConfidence,
     };
     const maxHistory = this.config?.general?.maxHistoryLength ?? 50;
     const trimmedHistory = this.state.messages.slice(-(maxHistory - 2));
@@ -242,7 +254,7 @@ export class AICopilotPanelContent {
     }
 
     const actions = shouldBuildEditActions(intent.action)
-      ? this.buildActions(fullResponse, editorCtx, effectiveScope)
+      ? this.buildActions(fullResponse, editorCtx, effectiveScope, intent.action)
       : [];
 
     const isBypass = (this.config?.general?.applyMode ?? 'default') === 'bypass';
@@ -326,11 +338,12 @@ export class AICopilotPanelContent {
     this.setState({ messages: finalMsgs, isLoading: false });
   }
 
-  private buildActions(response: string, editorCtx: EditorContext, scope: EditScopeMode): EditAction[] {
+  private buildActions(response: string, editorCtx: EditorContext, scope: EditScopeMode, intentAction?: string): EditAction[] {
     return planEditActions({
       response,
       editorCtx,
       scope,
+      intentAction: intentAction as import('./intent-parser').ParsedIntent['action'] | undefined,
       idFactory: () => this.nextId(),
     });
   }
@@ -535,6 +548,7 @@ export class AICopilotPanelContent {
       const [showSlashPopup, setShowSlashPopup] = useState(false);
       const [slashFilter, setSlashFilter] = useState('');
       const [slashSelectedIndex, setSlashSelectedIndex] = useState(-1);
+      const [isComposing, setIsComposing] = useState(false);
       const messagesEndRef = useRef<HTMLDivElement>(null);
       const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -552,30 +566,49 @@ export class AICopilotPanelContent {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       });
 
+      const handleSlashSelect = useCallback((command: string) => {
+        setInput(command);
+        setShowSlashPopup(false);
+        inputRef.current?.focus();
+      }, []);
+
+      const resolveOpenSlashCommand = useCallback(() => {
+        if (!showSlashPopup) return false;
+
+        const count = getFilteredCommandCount(slashFilter, t);
+        if (count === 0) return false;
+
+        const idx = slashSelectedIndex >= 0 ? slashSelectedIndex : 0;
+        const cmd = getFilteredCommandAt(slashFilter, idx, t);
+        if (!cmd) return false;
+
+        handleSlashSelect(cmd + ' ');
+        return true;
+      }, [handleSlashSelect, showSlashPopup, slashFilter, slashSelectedIndex, t]);
+
       const handleSend = useCallback(() => {
+        if (isComposing) return;
+        if (resolveOpenSlashCommand()) return;
         if (!input.trim()) return;
         const text = input;
         setInput('');
         setShowSlashPopup(false);
         self.sendMessage(text);
-      }, [input]);
+      }, [input, isComposing, resolveOpenSlashCommand]);
 
       const handleInputChange = useCallback((value: string) => {
         setInput(value);
         // Show slash popup when input starts with /
-        if (value.startsWith('/')) {
+        const slashToken = getSlashCommandToken(value);
+        if (slashToken !== null) {
           setShowSlashPopup(true);
-          setSlashFilter(value);
+          setSlashFilter(slashToken);
           setSlashSelectedIndex(0);
         } else {
           setShowSlashPopup(false);
+          setSlashFilter('');
+          setSlashSelectedIndex(-1);
         }
-      }, []);
-
-      const handleSlashSelect = useCallback((command: string) => {
-        setInput(command);
-        setShowSlashPopup(false);
-        inputRef.current?.focus();
       }, []);
 
       const { messages, isLoading, selectedProvider } = self.state;
@@ -803,26 +836,33 @@ export class AICopilotPanelContent {
               value: input,
               onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) =>
                 handleInputChange(e.target.value),
+              onCompositionStart: () => setIsComposing(true),
+              onCompositionEnd: (e: React.CompositionEvent<HTMLTextAreaElement>) => {
+                setIsComposing(false);
+                handleInputChange(e.currentTarget.value);
+              },
               onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+                const nativeEvent = e.nativeEvent as KeyboardEvent;
+                if (nativeEvent.isComposing || nativeEvent.keyCode === 229) {
+                  return;
+                }
                 if (showSlashPopup) {
-                  const count = getFilteredCommandCount(slashFilter);
+                  const count = getFilteredCommandCount(slashFilter, t);
                   if (e.key === 'ArrowDown') {
+                    if (count === 0) return;
                     e.preventDefault();
                     setSlashSelectedIndex((prev) => (prev + 1) % count);
                     return;
                   }
                   if (e.key === 'ArrowUp') {
+                    if (count === 0) return;
                     e.preventDefault();
                     setSlashSelectedIndex((prev) => (prev <= 0 ? count - 1 : prev - 1));
                     return;
                   }
-                  if (e.key === 'Tab' || (e.key === 'Enter' && !e.shiftKey)) {
-                    const idx = slashSelectedIndex >= 0 ? slashSelectedIndex : 0;
+                  if ((e.key === 'Tab' || (e.key === 'Enter' && !e.shiftKey)) && count > 0) {
                     e.preventDefault();
-                    const cmd = getFilteredCommandAt(slashFilter, idx);
-                    if (cmd) {
-                      handleSlashSelect(cmd + ' ');
-                    }
+                    resolveOpenSlashCommand();
                     return;
                   }
                   if (e.key === 'Escape') {
@@ -935,7 +975,7 @@ export class AICopilotPanelContent {
                     'button',
                     {
                       onClick: handleSend,
-                      disabled: !input.trim(),
+                      disabled: isComposing || !input.trim(),
                       title: t('aiCopilot.panel.send'),
                       style: {
                         display: 'flex',

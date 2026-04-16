@@ -34,6 +34,16 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "windows": {
+      "wix": {
+        "fragmentPaths": [
+          "./wix/remove-stale-shortcuts.wxs"
+        ],
+        "componentRefs": [
+          "CleanupStaleUninstallShortcut"
+        ]
+      }
+    },
     "resources": {
       "../resources/plugins": "plugins"
     },

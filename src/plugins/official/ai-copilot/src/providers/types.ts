@@ -5,7 +5,7 @@ export interface ChatMessage {
   content: string;
 }
 
-export type EditScopeMode = 'selection' | 'cursor' | 'document' | 'tab' | 'workspace';
+export type EditScopeMode = 'selection' | 'cursor' | 'document' | 'tab' | 'workspace' | 'section';
 
 export interface ProviderConfig {
   type: 'cloud' | 'local';
@@ -61,6 +61,10 @@ export interface CopilotMessage {
   error?: string;
   stopped?: boolean;
   isStreaming?: boolean;
+  /** Parsed action type for this reply — used to show low-confidence hints. */
+  intentAction?: string;
+  /** Confidence score [0,1] from the intent parser. */
+  intentConfidence?: number;
 }
 
 export interface CopilotState {

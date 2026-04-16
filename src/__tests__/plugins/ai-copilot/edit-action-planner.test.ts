@@ -38,7 +38,7 @@ describe('planEditActions', () => {
       {
         id: 'id-0',
         type: 'replace',
-        description: '替换选中文本',
+        description: '替换 "Titl" → "Updated text"',
         from: 2,
         to: 6,
         originalText: 'Titl',
@@ -60,7 +60,7 @@ describe('planEditActions', () => {
       {
         id: 'id-0',
         type: 'insert',
-        description: '在光标处插入',
+        description: '在光标处插入 "Inserted"',
         from: 14,
         to: 14,
         originalText: '',
@@ -117,5 +117,73 @@ describe('planEditActions', () => {
       newText: 'Plain text updated',
       sourceFilePath: '/other.md',
     });
+  });
+});
+
+describe('planEditActions delete intent', () => {
+  it('returns a delete action immediately when intentAction=delete and selection exists', () => {
+    const actions = planEditActions({
+      response: '',
+      editorCtx: {
+        ...baseContext,
+        selection: { from: 9, to: 14, text: '\n\nBody' },
+      },
+      scope: 'selection',
+      intentAction: 'delete',
+      idFactory: (index) => `id-${index}`,
+    });
+
+    expect(actions).toHaveLength(1);
+    expect(actions[0]).toMatchObject({
+      type: 'delete',
+      from: 9,
+      to: 14,
+      originalText: '\n\nBody',
+      newText: '',
+    });
+  });
+
+  it('delete action description shows line count for multi-line selection', () => {
+    const actions = planEditActions({
+      response: '',
+      editorCtx: {
+        ...baseContext,
+        selection: { from: 0, to: 14, text: '# Title\n\nBody' },
+      },
+      scope: 'selection',
+      intentAction: 'delete',
+      idFactory: (index) => `id-${index}`,
+    });
+
+    expect(actions[0].description).toMatch(/3 行/);
+  });
+
+  it('delete action description shows preview for single-line selection', () => {
+    const actions = planEditActions({
+      response: '',
+      editorCtx: {
+        ...baseContext,
+        selection: { from: 0, to: 7, text: '# Title' },
+      },
+      scope: 'selection',
+      intentAction: 'delete',
+      idFactory: (index) => `id-${index}`,
+    });
+
+    expect(actions[0].description).toContain('Title');
+  });
+
+  it('falls through to AI path when intentAction=delete but no selection', () => {
+    // Without selection the planner must parse an AI response
+    const actions = planEditActions({
+      response: '```json\n{"operation":"rewrite_document","content":"# Title"}\n```',
+      editorCtx: baseContext,
+      scope: 'document',
+      intentAction: 'delete',
+      idFactory: (index) => `id-${index}`,
+    });
+
+    expect(actions).toHaveLength(1);
+    expect(actions[0].type).toBe('replace');
   });
 });

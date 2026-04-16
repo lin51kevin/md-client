@@ -42,7 +42,45 @@ function buildHeadingOutline(content: string): string {
 export interface ScopedContextResult {
   targetText: string;
   outline: string;
-  strategy: 'full' | 'smart-window' | 'selection' | 'cursor' | 'workspace';
+  strategy: 'full' | 'smart-window' | 'selection' | 'cursor' | 'workspace' | 'section';
+}
+
+/**
+ * Extract the heading section containing the cursor line.
+ * Returns the slice from the nearest heading above the cursor to just before
+ * the next heading of the same or higher level (or end of document).
+ */
+function getCursorSection(content: string, cursorLine: number): { text: string; startLine: number; endLine: number } {
+  const lines = content.split('\n');
+  const lineIndex = Math.max(0, Math.min(lines.length - 1, cursorLine - 1));
+
+  // Find nearest heading at or above cursor
+  let sectionStart = 0;
+  let sectionLevel = 0;
+  for (let i = lineIndex; i >= 0; i -= 1) {
+    const m = lines[i].match(/^(#{1,6})\s/);
+    if (m) {
+      sectionStart = i;
+      sectionLevel = m[1].length;
+      break;
+    }
+  }
+
+  // Find end: next heading of equal or higher level (lower # count)
+  let sectionEnd = lines.length;
+  for (let i = sectionStart + 1; i < lines.length; i += 1) {
+    const m = lines[i].match(/^(#{1,6})\s/);
+    if (m && m[1].length <= sectionLevel) {
+      sectionEnd = i;
+      break;
+    }
+  }
+
+  return {
+    text: lines.slice(sectionStart, sectionEnd).join('\n'),
+    startLine: sectionStart + 1,
+    endLine: sectionEnd,
+  };
 }
 
 export function assembleScopedContext(
@@ -55,6 +93,15 @@ export function assembleScopedContext(
       targetText: context.selection.text,
       outline: buildHeadingOutline(context.content),
       strategy: 'selection',
+    };
+  }
+
+  if (scope === 'section') {
+    const section = getCursorSection(context.content, context.cursor.line);
+    return {
+      targetText: section.text,
+      outline: buildHeadingOutline(context.content),
+      strategy: 'section',
     };
   }
 

@@ -224,6 +224,33 @@ export function ChatMessageView({ message, onApply, onDiscardAll }: ChatMessageP
           t('aiCopilot.panel.stoppedByUser'),
         )
       : null,
+    // Low-confidence badge (shown when AI fell back to Q&A on a low-confidence parse)
+    !message.isStreaming &&
+    !message.error &&
+    message.intentAction === 'question' &&
+    message.intentConfidence !== undefined &&
+    message.intentConfidence < 0.7
+      ? createElement(
+          'div',
+          {
+            style: {
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '5px',
+              fontSize: '11px',
+              color: 'var(--text-muted, #888)',
+              marginTop: '8px',
+              padding: '5px 8px',
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid var(--border-color, #444)',
+              borderRadius: '4px',
+              lineHeight: '1.5',
+            },
+          },
+          createElement(AlertTriangle, { size: 12, style: { flexShrink: 0, marginTop: '2px' } }),
+          t('aiCopilot.panel.lowConfidenceHint'),
+        )
+      : null,
     // Error
     message.error
       ? createElement(

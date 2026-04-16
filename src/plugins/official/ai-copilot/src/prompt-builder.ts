@@ -79,8 +79,30 @@ export function buildChatPrompt(
     case 'polish':
       return t('aiCopilot.prompt.polish', { content: truncated });
 
+    case 'delete': {
+      // When there is a selection, the planner handles delete without calling AI.
+      // When no selection (section/document), ask AI to identify what should be removed
+      // and return the document without that content.
+      const instruction = intent.params.instruction || intent.originalText;
+      return t('aiCopilot.prompt.deleteInstruction', { instruction, content: truncated });
+    }
+
     case 'edit': {
       const instruction = intent.params.instruction || intent.originalText;
+      const { from, to, mode } = intent.params;
+
+      // ── Precise find-replace path ──
+      if (from && to) {
+        return t('aiCopilot.prompt.findReplaceInstruction', { from, to, content: truncated });
+      }
+
+      // ── Inline markdown format modes ──
+      if (mode === 'bold') return t('aiCopilot.prompt.boldInstruction', { content: truncated });
+      if (mode === 'italic') return t('aiCopilot.prompt.italicInstruction', { content: truncated });
+      if (mode === 'heading') return t('aiCopilot.prompt.headingInstruction', { content: truncated });
+      if (mode === 'list') return t('aiCopilot.prompt.listInstruction', { content: truncated });
+      if (mode === 'code') return t('aiCopilot.prompt.codeBlockInstruction2', { content: truncated });
+
       const responseMode = getEditResponseMode(context, scope);
       const targetLabel =
         scope === 'selection'
@@ -89,7 +111,9 @@ export function buildChatPrompt(
             ? t('aiCopilot.prompt.editLabel.workspace')
             : scope === 'cursor'
               ? t('aiCopilot.prompt.editLabel.cursor')
-              : t('aiCopilot.prompt.editLabel.document');
+              : scope === 'section'
+                ? t('aiCopilot.prompt.editLabel.section')
+                : t('aiCopilot.prompt.editLabel.document');
       return t('aiCopilot.prompt.editInstruction', {
         instruction,
         targetLabel,
@@ -105,6 +129,10 @@ export function buildChatPrompt(
 
     case 'insert': {
       const instruction = intent.params.instruction || intent.originalText;
+      const mode = intent.params.mode;
+      if (mode === 'continue') {
+        return t('aiCopilot.prompt.continueInstruction', { content: truncated });
+      }
       return t('aiCopilot.prompt.cursorInsertInstruction', { instruction, content: truncated });
     }
 
@@ -129,6 +157,8 @@ export function getEditResponseMode(
 ): 'replace-selection' | 'insert-at-cursor' | 'rewrite-document' {
   if (context.selection) return 'replace-selection';
   if (scope === 'tab' || scope === 'document') return 'rewrite-document';
+  // section scope: rewrite the section (returned as modified full-doc for diff)
+  if (scope === 'section') return 'rewrite-document';
   return 'insert-at-cursor';
 }
 

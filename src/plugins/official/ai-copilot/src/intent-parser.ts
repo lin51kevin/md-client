@@ -3,15 +3,16 @@ import type { EditScopeMode } from './providers/types';
 
 export interface ParsedIntent {
   /**
-   * Editing actions (insert / replace / transform) produce EditActions and
+   * Editing actions (insert / replace / transform / delete) produce EditActions and
    * show an apply/discard UI (or auto-apply in bypass mode).
    *
    * Informational actions (question / explain / summarize) only show a text
    * reply — no EditAction is generated.
    *
-   * `insert`: generate new content and insert it at the cursor position.
+   * `insert`  : generate new content and insert it at the cursor position.
+   * `delete`  : remove the targeted text (selection / section / document range).
    */
-  action: 'edit' | 'insert' | 'explain' | 'summarize' | 'translate' | 'format' | 'question' | 'create_document' | 'polish';
+  action: 'edit' | 'insert' | 'delete' | 'explain' | 'summarize' | 'translate' | 'format' | 'question' | 'create_document' | 'polish';
   target: EditScopeMode;
   params: Record<string, string>;
   confidence: number;
@@ -27,6 +28,7 @@ const QUICK_COMMANDS: Record<string, Partial<ParsedIntent>> = {
   '/translate': { action: 'translate', target: 'selection' },
   '/format': { action: 'format', target: 'selection' },
   '/insert': { action: 'insert', target: 'cursor' },
+  '/delete': { action: 'delete', target: 'selection' },
   '/todo': { action: 'edit', target: 'selection', params: { mode: 'todo' } },
   '/expand': { action: 'edit', target: 'selection', params: { mode: 'expand' } },
   '/toc': { action: 'edit', target: 'document', params: { mode: 'toc' } },
@@ -46,6 +48,7 @@ export function getQuickCommandList(): Array<{ command: string; label: string; d
     { command: '/translate', label: 'Translate', description: 'Translate selected text' },
     { command: '/format', label: 'Format', description: 'Format markdown content' },
     { command: '/insert', label: 'Insert', description: 'Generate and insert content at cursor' },
+    { command: '/delete', label: 'Delete', description: 'Delete selected text or current section' },
     { command: '/todo', label: 'TODO', description: 'Generate a TODO list' },
     { command: '/expand', label: 'Expand', description: 'Expand abbreviated content' },
     { command: '/toc', label: 'TOC', description: 'Generate table of contents' },
@@ -62,6 +65,7 @@ function parseScopeMode(input: string): { target: EditScopeMode; targetFilePath?
   if (token === 'cursor' || token === 'cur') return { target: 'cursor' };
   if (token === 'document' || token === 'doc') return { target: 'document' };
   if (token === 'workspace' || token === 'ws') return { target: 'workspace' };
+  if (token === 'section' || token === 'sec') return { target: 'section' };
   if (token.startsWith('tab:')) {
     return { target: 'tab', targetFilePath: input.slice(4).trim() };
   }
@@ -132,25 +136,52 @@ export function parseIntent(input: string): ParsedIntent {
     };
   }
 
+  // Detect section-scope hint in the input — if user mentions "这节/这章/this section",
+  // override target to 'section' in the returned intent.
+  const sectionHintRe = /这[节章]|当前[章节]|本[节章]|this section/i;
+  const hasSectionHint = sectionHintRe.test(trimmed);
+
   const patterns: Array<{
     regex: RegExp;
     action: ParsedIntent['action'];
     target: ParsedIntent['target'];
     extract: (m: RegExpMatchArray) => Record<string, string>;
   }> = [
+    // ── Replace / edit ──
     // "把X替换/改/变/换成Y" — non-greedy so "替换" is not swallowed into the from-group
     { regex: /(把|将)(.+?)(替换|改|变|换)(?:为|成)(.+)/, action: 'edit', target: 'selection', extract: (m) => ({ from: m[2].trim(), to: m[4].trim() }) },
     // Standalone replace/change trigger words without explicit from/to
     { regex: /替换|替代|换掉/, action: 'edit', target: 'selection', extract: () => ({}) },
     { regex: /\breplace\b/i, action: 'edit', target: 'selection', extract: () => ({}) },
     { regex: /(改写|重写)/, action: 'edit', target: 'selection', extract: () => ({ mode: 'rewrite' }) },
+
+    // ── Delete ──
+    { regex: /删除|删掉|去掉|移除/, action: 'delete', target: 'selection', extract: () => ({}) },
+    { regex: /\b(delete|remove)\b/i, action: 'delete', target: 'selection', extract: () => ({}) },
+
+    // ── Markdown inline formatting / structural edits ──
+    { regex: /加粗|粗体|\bbold\b/i, action: 'edit', target: 'selection', extract: () => ({ mode: 'bold' }) },
+    { regex: /斜体|\bitalic\b/i, action: 'edit', target: 'selection', extract: () => ({ mode: 'italic' }) },
+    { regex: /改成标题|变成标题|设为标题|\bheading\b/i, action: 'edit', target: 'selection', extract: () => ({ mode: 'heading' }) },
+    { regex: /转为列表|变成列表|改成列表|make (a )?list/i, action: 'edit', target: 'selection', extract: () => ({ mode: 'list' }) },
+    { regex: /加代码块|转为代码|code block/i, action: 'edit', target: 'selection', extract: () => ({ mode: 'code' }) },
+
+    // ── Informational ──
     { regex: /润色/, action: 'polish', target: 'selection', extract: () => ({}) },
     { regex: /(解释|说明|讲讲|什么意思)/, action: 'explain', target: 'selection', extract: () => ({}) },
     { regex: /翻译成?(.*)/, action: 'translate', target: 'selection', extract: (m) => ({ language: m[1].trim() || 'english' }) },
     { regex: /(总结|概括|摘要)/, action: 'summarize', target: 'document', extract: () => ({}) },
     { regex: /(格式化|整理格式)/, action: 'format', target: 'selection', extract: () => ({}) },
-    // Insert-at-cursor: user wants to generate new content at the cursor position.
-    // These patterns are checked AFTER edit/rewrite/translate to avoid mis-classification.
+
+    // ── Insert-at-cursor (continuation & new content) ──
+    // Continuation: user wants the AI to keep writing from where they left off
+    {
+      regex: /继续写|接着写|往下写|继续|接着|\bcontinue\b|\bkeep writing\b/i,
+      action: 'insert',
+      target: 'cursor',
+      extract: () => ({ mode: 'continue' }),
+    },
+    // Generate new content at cursor
     {
       regex: /^(帮我?|请帮我?|请)?(写|生成|创建|补充|添加|插入)(一[段个篇份]?)?/,
       action: 'insert',
@@ -174,10 +205,13 @@ export function parseIntent(input: string): ParsedIntent {
   for (const pattern of patterns) {
     const match = trimmed.match(pattern.regex);
     if (match) {
+      const extracted = pattern.extract(match);
+      // If user mentioned a section hint, prefer section scope over selection
+      const target = hasSectionHint && pattern.target === 'selection' ? 'section' : pattern.target;
       return {
         action: pattern.action,
-        target: pattern.target,
-        params: { ...pattern.extract(match), instruction: trimmed },
+        target,
+        params: { ...extracted, instruction: trimmed },
         confidence: 0.85,
         originalText: trimmed,
       };

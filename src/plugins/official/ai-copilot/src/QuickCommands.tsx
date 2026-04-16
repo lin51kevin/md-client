@@ -11,11 +11,14 @@ interface SlashCommandPopupProps {
 
 const CMD_KEYS: Record<string, { labelKey: TranslationKey; descKey: TranslationKey }> = {
   '/new':      { labelKey: 'aiCopilot.cmd.new',      descKey: 'aiCopilot.cmd.new.desc'      },
+  '/polish':   { labelKey: 'aiCopilot.cmd.polish',   descKey: 'aiCopilot.cmd.polish.desc'   },
   '/explain':  { labelKey: 'aiCopilot.cmd.explain',  descKey: 'aiCopilot.cmd.explain.desc'  },
   '/rewrite':  { labelKey: 'aiCopilot.cmd.rewrite',  descKey: 'aiCopilot.cmd.rewrite.desc'  },
   '/summarize':{ labelKey: 'aiCopilot.cmd.summarize', descKey: 'aiCopilot.cmd.summarize.desc' },
   '/translate':{ labelKey: 'aiCopilot.cmd.translate', descKey: 'aiCopilot.cmd.translate.desc' },
   '/format':   { labelKey: 'aiCopilot.cmd.format',   descKey: 'aiCopilot.cmd.format.desc'   },
+  '/insert':   { labelKey: 'aiCopilot.cmd.insert',   descKey: 'aiCopilot.cmd.insert.desc'   },
+  '/delete':   { labelKey: 'aiCopilot.cmd.delete',   descKey: 'aiCopilot.cmd.delete.desc'   },
   '/todo':     { labelKey: 'aiCopilot.cmd.todo',     descKey: 'aiCopilot.cmd.todo.desc'     },
   '/expand':   { labelKey: 'aiCopilot.cmd.expand',   descKey: 'aiCopilot.cmd.expand.desc'   },
   '/toc':      { labelKey: 'aiCopilot.cmd.toc',      descKey: 'aiCopilot.cmd.toc.desc'      },
@@ -25,6 +28,39 @@ const CMD_KEYS: Record<string, { labelKey: TranslationKey; descKey: TranslationK
   '/heading-promote': { labelKey: 'aiCopilot.cmd.headingPromote', descKey: 'aiCopilot.cmd.headingPromote.desc' },
 };
 
+type TranslateFn = (key: TranslationKey, params?: Record<string, string | number>) => string;
+
+export function getSlashCommandToken(input: string): string | null {
+  const match = input.match(/^\/(\S*)$/);
+  return match ? match[1] : null;
+}
+
+function getLocalizedCommands(t: TranslateFn) {
+  return getQuickCommandList().map((command) => {
+    const keys = CMD_KEYS[command.command];
+    return {
+      ...command,
+      label: keys ? t(keys.labelKey) : command.label,
+      description: keys ? t(keys.descKey) : command.description,
+    };
+  });
+}
+
+function filterCommands(
+  commands: Array<{ command: string; label: string; description: string }>,
+  filter: string,
+) {
+  const normalizedFilter = filter.trim().replace(/^\//, '').toLowerCase();
+  if (!normalizedFilter) return commands;
+
+  return commands.filter(
+    (command) =>
+      command.command.includes(normalizedFilter) ||
+      command.label.toLowerCase().includes(normalizedFilter) ||
+      command.description.toLowerCase().includes(normalizedFilter),
+  );
+}
+
 /**
  * Slash command popup — shown above the input when user types '/'.
  * Filters commands based on what follows the slash.
@@ -32,35 +68,17 @@ const CMD_KEYS: Record<string, { labelKey: TranslationKey; descKey: TranslationK
 export function SlashCommandPopup({ filter, onSelect, selectedIndex = 0 }: SlashCommandPopupProps) {
   const { t } = useI18n();
   const containerRef = useRef<HTMLDivElement>(null);
-  const rawCommands = getQuickCommandList();
-
-  const commands = rawCommands.map((c) => {
-    const keys = CMD_KEYS[c.command];
-    return {
-      ...c,
-      label: keys ? t(keys.labelKey) : c.command,
-      description: keys ? t(keys.descKey) : '',
-    };
-  });
-
-  const filtered = filter
-    ? commands.filter(
-        (c) =>
-          c.command.includes(filter.toLowerCase()) ||
-          c.label.toLowerCase().includes(filter.toLowerCase()) ||
-          c.description.toLowerCase().includes(filter.toLowerCase()),
-      )
-    : commands;
-
-  if (filtered.length === 0) return null;
+  const filtered = filterCommands(getLocalizedCommands(t), filter);
 
   // Scroll selected item into view
   useEffect(() => {
-    if (selectedIndex >= 0 && containerRef.current) {
+    if (filtered.length > 0 && selectedIndex >= 0 && containerRef.current) {
       const el = containerRef.current.querySelector(`[data-index="${selectedIndex}"]`);
       el?.scrollIntoView({ block: 'nearest' });
     }
-  }, [selectedIndex]);
+  }, [filtered.length, selectedIndex]);
+
+  if (filtered.length === 0) return null;
 
   return createElement(
     'div',
@@ -133,29 +151,11 @@ export function SlashCommandPopup({ filter, onSelect, selectedIndex = 0 }: Slash
 }
 
 /** Return the number of commands matching the current filter. */
-export function getFilteredCommandCount(filter: string): number {
-  const commands = getQuickCommandList();
-  if (!filter) return commands.length;
-  const f = filter.toLowerCase();
-  return commands.filter(
-    (c) =>
-      c.command.includes(f) ||
-      c.label.toLowerCase().includes(f) ||
-      c.description.toLowerCase().includes(f),
-  ).length;
+export function getFilteredCommandCount(filter: string, t: TranslateFn): number {
+  return filterCommands(getLocalizedCommands(t), filter).length;
 }
 
 /** Return the command string at a given index in the filtered list. */
-export function getFilteredCommandAt(filter: string, index: number): string | undefined {
-  const commands = getQuickCommandList();
-  const f = filter ? filter.toLowerCase() : '';
-  const filtered = f
-    ? commands.filter(
-        (c) =>
-          c.command.includes(f) ||
-          c.label.toLowerCase().includes(f) ||
-          c.description.toLowerCase().includes(f),
-      )
-    : commands;
-  return filtered[index]?.command;
+export function getFilteredCommandAt(filter: string, index: number, t: TranslateFn): string | undefined {
+  return filterCommands(getLocalizedCommands(t), filter)[index]?.command;
 }
