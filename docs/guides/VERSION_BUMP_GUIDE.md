@@ -16,11 +16,12 @@
 - [x] `src-tauri/tauri.conf.json` — 版本 0.6.0 → 0.7.1
 - [x] `src-tauri/Cargo.toml` — 版本 0.6.0 → 0.7.1
 
-#### 主要文档更新（4个）
+#### 主要文档更新（5个）
 - [x] `README.md` — 添加 v0.7.0 版本标识
 - [x] `CHANGELOG.md` — 新增 v0.7.0 规划条目
 - [x] `FEATURE_COMPARISON.md` — 版本号更新至 0.7.0
 - [x] `USER_GUIDE.md` — 版本号与日期更新
+- [x] `docs/guides/PLUGIN_DEV.md` — 添加版本号与最后更新日期头部信息
 
 #### 代码映射文档（4个）
 - [x] `docs/CODEMAPS/INDEX.md` — 版本号与日期更新
@@ -58,10 +59,10 @@
 
 | 类型 | 数量 | 操作 |
 |------|------|------|
-| 修改文件 | 8 | 版本号/日期更新 |
+| 修改文件 | 9 | 版本号/日期更新 |
 | 新建文件 | 3 | 代码映射文档 |
 | 直接删除 | 0 | — |
-| **总计** | **11** | — |
+| **总计** | **12** | — |
 
 ### 内容增量
 
@@ -90,6 +91,7 @@
 ✅ CODEMAPS/frontend.md:    v0.7.0
 ✅ CODEMAPS/backend.md:     v0.7.0
 ✅ CODEMAPS/integrations:   v0.7.0
+✅ PLUGIN_DEV.md:           v0.7.0
 ```
 
 ### 日期统一
@@ -123,6 +125,7 @@ Changes to be committed:
         modified:   docs/CODEMAPS/ARCHITECTURE.md
         modified:   docs/CODEMAPS/INDEX.md
         modified:   USER_GUIDE.md
+        modified:   docs/guides/PLUGIN_DEV.md
         modified:   package.json
         modified:   src-tauri/tauri.conf.json
         new file:   docs/CODEMAPS/backend.md
