@@ -269,9 +269,13 @@ export const en: Record<TranslationKey, string> = {
   'status.cursorCount': '{count} cursors',
 
   // ── App ───────────────────────────────────────────────────────────────────
-  'app.closeTabUnsaved': '"{name}" has unsaved changes that will be lost.\n\nPath: {path}',
+  'app.closeTabUnsaved': '"{name}" has unsaved changes.\n\nPath: {path}',
   'app.closeTab': 'Close Tab',
   'app.unsavedPath': '(unsaved)',
+  'app.unsavedHint': 'Your changes will be lost if you close without saving.',
+  'app.unsavedSave': 'Save',
+  'app.unsavedDiscard': "Don't Save",
+  'app.unsavedCancel': 'Cancel',
   'app.langSwitchToEn': 'Switch to English',
   'app.langSwitchToZh': 'Switch to Chinese',
 

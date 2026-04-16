@@ -266,9 +266,13 @@ export const zhCN = {
   'status.cursorCount': '{count} 个光标',
 
   // ── App ───────────────────────────────────────────────────────────────────
-  'app.closeTabUnsaved': '"{name}" 有未保存的更改,关闭后将丢失这些更改。\n\n路径: {path}',
+  'app.closeTabUnsaved': '"{name}" 有未保存的更改。\n\n路径: {path}',
   'app.closeTab': '关闭标签页',
   'app.unsavedPath': '(未保存)',
+  'app.unsavedHint': '如果不保存就关闭，更改将会丢失。',
+  'app.unsavedSave': '保存',
+  'app.unsavedDiscard': '不保存',
+  'app.unsavedCancel': '取消',
   'app.langSwitchToEn': 'Switch to English',
   'app.langSwitchToZh': '切换到中文',
 

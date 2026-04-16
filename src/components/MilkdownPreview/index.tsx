@@ -104,15 +104,26 @@ function MilkdownEditor({
         if (isExternalUpdate.current) {
           return;
         }
-        if (newMarkdown !== prevMarkdown) {
-          lastContentRef.current = newMarkdown;
-          // Reconstruct full content with frontmatter
-          const fm = frontmatterRef.current;
-          const fullContent = Object.keys(fm).length > 0
-            ? `---\n${frontmatterToYaml(fm)}---\n${newMarkdown}`
-            : newMarkdown;
-          onContentChangeRef.current?.(fullContent);
+        if (newMarkdown === prevMarkdown) {
+          return;
         }
+        // Milkdown fires markdownUpdated once on startup when it serializes the
+        // defaultValue. The serialized output may differ slightly from the raw
+        // body string (e.g. trailing newline). If the trimmed content is the same
+        // as what we already have, this is an initialization-only normalization —
+        // update our reference but do NOT call onContentChange (which would mark
+        // the document dirty without any user interaction).
+        if (newMarkdown.trim() === lastContentRef.current.trim()) {
+          lastContentRef.current = newMarkdown;
+          return;
+        }
+        lastContentRef.current = newMarkdown;
+        // Reconstruct full content with frontmatter
+        const fm = frontmatterRef.current;
+        const fullContent = Object.keys(fm).length > 0
+          ? `---\n${frontmatterToYaml(fm)}---\n${newMarkdown}`
+          : newMarkdown;
+        onContentChangeRef.current?.(fullContent);
       });
     });
 

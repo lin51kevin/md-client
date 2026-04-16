@@ -133,10 +133,6 @@ export default function App() {
   const recentFilesHook = useRecentFiles({ openFileInTab });
   const { recentFiles, handleOpenRecent, handleClearRecent, handleRemoveRecent } = recentFilesHook;
 
-  const { handleCloseTab, handleCloseAllTabs, handleCloseOtherTabs, handleCloseToLeft, handleCloseToRight, renamingTabId, setRenamingTabId, handleOpenSample } = useTabActions({
-    tabs, closeTab, closeMultipleTabs, setTabDisplayName, handleDismissWelcome, t,
-  });
-
   const { handleFirstSave } = usePendingImageMigration({ tabs, updateTabDoc, markSaved });
 
   // ── Git state (based on opened folder) ──
@@ -219,6 +215,11 @@ export default function App() {
 
   const { inputDialogState, setInputDialogState, promptUser } = useInputDialog();
   const { handleFormatAction } = useFormatActions({ cmViewRef, getActiveTab, promptUser, isTauri });
+
+  const { handleCloseTab, handleCloseAllTabs, handleCloseOtherTabs, handleCloseToLeft, handleCloseToRight, renamingTabId, setRenamingTabId, handleOpenSample } = useTabActions({
+    tabs, closeTab, closeMultipleTabs, setTabDisplayName, handleDismissWelcome, t,
+    handleSaveFile: handleSaveWithWatchMark,
+  });
 
   const { editingTable, setEditingTable, handleTableConfirm } = useTableEditor({ cmViewRef, updateActiveDoc });
 

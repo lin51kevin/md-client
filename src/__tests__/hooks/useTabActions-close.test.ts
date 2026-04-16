@@ -3,14 +3,9 @@ import { renderHook, act } from '@testing-library/react';
 import { useTabActions } from '../../hooks/useTabActions';
 import type { Tab } from '../../types';
 
-// Mock @tauri-apps/api/core
+// Mock @tauri-apps/api/core — invoke('show_unsaved_dialog') returns 'discard' by default
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
-}));
-
-// Mock @tauri-apps/plugin-dialog
-vi.mock('@tauri-apps/plugin-dialog', () => ({
-  confirm: vi.fn(),
 }));
 
 // Mock pending-images
@@ -19,14 +14,18 @@ vi.mock('../../lib/pending-images', () => ({
   clearPendingImages: () => {},
 }));
 
-import { confirm } from '@tauri-apps/plugin-dialog';
-const mockConfirm = confirm as unknown as ReturnType<typeof vi.fn>;
+import { invoke } from '@tauri-apps/api/core';
+const mockInvoke = invoke as ReturnType<typeof vi.fn>;
 
 const mockT = (key: string, params?: Record<string, string | number>) => {
   const map: Record<string, string> = {
     'app.unsavedPath': 'Untitled.md',
-    'app.closeTab': 'Close Tab',
-    'app.closeTabUnsaved': '{name} has unsaved changes. Close anyway?',
+    'common.unsavedChanges': 'Unsaved Changes',
+    'app.closeTabUnsaved': '"{name}" has unsaved changes.\n\nPath: {path}',
+    'app.unsavedHint': 'Your changes will be lost if you close without saving.',
+    'app.unsavedSave': 'Save',
+    'app.unsavedDiscard': "Don't Save",
+    'app.unsavedCancel': 'Cancel',
   };
   let result = map[key] || key;
   if (params) {
@@ -52,16 +51,22 @@ describe('useTabActions - close variants', () => {
   const closeMultipleTabs = vi.fn();
   const setTabDisplayName = vi.fn();
   const handleDismissWelcome = vi.fn();
+  const handleSaveFile = vi.fn<[string], Promise<void>>();
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockConfirm.mockResolvedValue(true);
+    // Default: show_unsaved_dialog resolves to 'discard'
+    mockInvoke.mockImplementation(async (cmd: string) => {
+      if (cmd === 'show_unsaved_dialog') return 'discard';
+      return undefined;
+    });
+    handleSaveFile.mockResolvedValue(undefined);
   });
 
   function render(options?: { tabs?: Tab[] }) {
     const tabs = options?.tabs ?? makeTabs();
     return renderHook(() =>
-      useTabActions({ tabs, closeTab, closeMultipleTabs, setTabDisplayName, handleDismissWelcome, t: mockT })
+      useTabActions({ tabs, closeTab, closeMultipleTabs, setTabDisplayName, handleDismissWelcome, t: mockT, handleSaveFile })
     );
   }
 
@@ -96,8 +101,11 @@ describe('useTabActions - close variants', () => {
       expect(closeMultipleTabs).toHaveBeenCalledWith(['c']);
     });
 
-    it('should confirm before closing dirty tabs', async () => {
-      mockConfirm.mockResolvedValue(false);
+    it('should confirm before closing dirty tabs, abort on cancel', async () => {
+      mockInvoke.mockImplementation(async (cmd: string) => {
+        if (cmd === 'show_unsaved_dialog') return 'cancel';
+        return undefined;
+      });
       const tabs = makeTabs([
         { id: 'a', isDirty: true },
         { id: 'b' },
@@ -109,7 +117,7 @@ describe('useTabActions - close variants', () => {
         await result.current.handleCloseOtherTabs('b');
       });
 
-      expect(mockConfirm).toHaveBeenCalled();
+      expect(mockInvoke).toHaveBeenCalledWith('show_unsaved_dialog', expect.any(Object));
       expect(closeMultipleTabs).not.toHaveBeenCalled();
     });
   });
@@ -181,3 +189,4 @@ describe('useTabActions - close variants', () => {
     });
   });
 });
+

@@ -706,6 +706,105 @@ fn rename_file(old_path: String, new_path: String) -> Result<(), String> {
     std::fs::rename(&old_path, &new_path).map_err(|e| e.to_string())
 }
 
+// ── Native unsaved-changes dialog (3 buttons: Save / Don't Save / Cancel) ───────
+
+#[cfg(target_os = "windows")]
+#[link(name = "user32")]
+extern "system" {
+    fn MessageBoxW(
+        hwnd: *mut std::ffi::c_void,
+        text: *const u16,
+        caption: *const u16,
+        u_type: u32,
+    ) -> i32;
+}
+
+#[cfg(target_os = "windows")]
+fn show_dialog_impl(title: &str, message: &str, _save: &str, _discard: &str, _cancel: &str) -> String {
+    use std::ffi::OsStr;
+    use std::os::windows::ffi::OsStrExt;
+
+    fn to_wide(s: &str) -> Vec<u16> {
+        OsStr::new(s).encode_wide().chain(std::iter::once(0)).collect()
+    }
+
+    const MB_YESNOCANCEL: u32 = 0x0000_0003;
+    const MB_ICONWARNING: u32 = 0x0000_0030;
+    const IDYES: i32 = 6;
+    const IDNO: i32 = 7;
+
+    let msg = to_wide(message);
+    let ttl = to_wide(title);
+    let ret = unsafe {
+        MessageBoxW(std::ptr::null_mut(), msg.as_ptr(), ttl.as_ptr(), MB_YESNOCANCEL | MB_ICONWARNING)
+    };
+    match ret {
+        IDYES => "save".to_string(),
+        IDNO => "discard".to_string(),
+        _ => "cancel".to_string(),
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn show_dialog_impl(title: &str, message: &str, save: &str, discard: &str, cancel: &str) -> String {
+    fn esc(s: &str) -> String {
+        s.replace('\\', "\\\\").replace('"', "\\\"")
+    }
+    let script = format!(
+        r#"display dialog "{}" with title "{}" buttons {{"{}", "{}", "{}"}} default button "{}" cancel button "{}" with icon caution"#,
+        esc(message), esc(title), esc(cancel), esc(discard), esc(save), esc(save), esc(cancel)
+    );
+    match std::process::Command::new("osascript").args(["-e", &script]).output() {
+        Ok(o) if o.status.success() => {
+            let out = String::from_utf8_lossy(&o.stdout);
+            if out.contains(&format!("button returned:{save}")) {
+                "save".to_string()
+            } else {
+                "discard".to_string()
+            }
+        }
+        _ => "cancel".to_string(),
+    }
+}
+
+#[cfg(target_os = "linux")]
+fn show_dialog_impl(title: &str, message: &str, save: &str, discard: &str, cancel: &str) -> String {
+    match std::process::Command::new("zenity")
+        .args(["--question", "--title", title, "--text", message,
+               "--ok-label", save, "--cancel-label", cancel, "--extra-button", discard])
+        .output()
+    {
+        Ok(o) => {
+            if o.status.code() == Some(0) {
+                "save".to_string()
+            } else if String::from_utf8_lossy(&o.stdout).trim() == discard {
+                "discard".to_string()
+            } else {
+                "cancel".to_string()
+            }
+        }
+        Err(_) => "cancel".to_string(),
+    }
+}
+
+#[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+fn show_dialog_impl(_title: &str, _message: &str, _save: &str, _discard: &str, _cancel: &str) -> String {
+    "cancel".to_string()
+}
+
+/// Show a native 3-button unsaved-changes dialog.
+/// Returns "save" | "discard" | "cancel".
+#[tauri::command]
+fn show_unsaved_dialog(
+    title: String,
+    message: String,
+    save_label: String,
+    discard_label: String,
+    cancel_label: String,
+) -> String {
+    show_dialog_impl(&title, &message, &save_label, &discard_label, &cancel_label)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -736,7 +835,7 @@ pub fn run() {
                 }
             }
         }))
-        .invoke_handler(tauri::generate_handler![greet, get_open_file, export_document, read_file_text, read_file_bytes, write_file_text, write_image_bytes, create_file, delete_file, rename_file, list_directory, read_dir_recursive, search_files, replace_in_files, reveal_in_explorer, is_directory, restart_app, git::git_get_repo, git::git_get_status, git::git_diff, git::git_commit, git::git_pull, git::git_push, git::git_stage, git::git_unstage, git::git_restore])
+        .invoke_handler(tauri::generate_handler![greet, get_open_file, export_document, read_file_text, read_file_bytes, write_file_text, write_image_bytes, create_file, delete_file, rename_file, list_directory, read_dir_recursive, search_files, replace_in_files, reveal_in_explorer, is_directory, restart_app, show_unsaved_dialog, git::git_get_repo, git::git_get_status, git::git_diff, git::git_commit, git::git_pull, git::git_push, git::git_stage, git::git_unstage, git::git_restore])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
