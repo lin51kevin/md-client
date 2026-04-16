@@ -2,7 +2,7 @@ export type EditScopeMode = 'selection' | 'cursor' | 'document' | 'tab' | 'works
 
 /** Selection-oriented actions that benefit from document-level fallback. */
 const SELECTION_PREFERRED_ACTIONS = new Set([
-  'polish', 'rewrite', 'format', 'translate',
+  'edit', 'polish', 'rewrite', 'format', 'translate',
 ]);
 
 export interface ScopeResolution {

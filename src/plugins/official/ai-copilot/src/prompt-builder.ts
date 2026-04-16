@@ -103,12 +103,13 @@ export function buildChatPrompt(
       });
     }
 
+    case 'insert': {
+      const instruction = intent.params.instruction || intent.originalText;
+      return t('aiCopilot.prompt.cursorInsertInstruction', { instruction, content: truncated });
+    }
+
     case 'question':
     default: {
-      if (scope === 'cursor') {
-        const instruction = intent.params.instruction || intent.originalText;
-        return t('aiCopilot.prompt.cursorInsertInstruction', { instruction, content: truncated });
-      }
       return intent.originalText;
     }
   }
@@ -127,7 +128,7 @@ export function getEditResponseMode(
   scope: EditScopeMode,
 ): 'replace-selection' | 'insert-at-cursor' | 'rewrite-document' {
   if (context.selection) return 'replace-selection';
-  if (scope === 'tab') return 'rewrite-document';
+  if (scope === 'tab' || scope === 'document') return 'rewrite-document';
   return 'insert-at-cursor';
 }
 

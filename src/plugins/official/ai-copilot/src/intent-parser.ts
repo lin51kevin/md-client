@@ -2,7 +2,16 @@
 import type { EditScopeMode } from './providers/types';
 
 export interface ParsedIntent {
-  action: 'edit' | 'explain' | 'summarize' | 'translate' | 'format' | 'question' | 'create_document' | 'polish';
+  /**
+   * Editing actions (insert / replace / transform) produce EditActions and
+   * show an apply/discard UI (or auto-apply in bypass mode).
+   *
+   * Informational actions (question / explain / summarize) only show a text
+   * reply — no EditAction is generated.
+   *
+   * `insert`: generate new content and insert it at the cursor position.
+   */
+  action: 'edit' | 'insert' | 'explain' | 'summarize' | 'translate' | 'format' | 'question' | 'create_document' | 'polish';
   target: EditScopeMode;
   params: Record<string, string>;
   confidence: number;
@@ -17,6 +26,7 @@ const QUICK_COMMANDS: Record<string, Partial<ParsedIntent>> = {
   '/summarize': { action: 'summarize', target: 'document' },
   '/translate': { action: 'translate', target: 'selection' },
   '/format': { action: 'format', target: 'selection' },
+  '/insert': { action: 'insert', target: 'cursor' },
   '/todo': { action: 'edit', target: 'selection', params: { mode: 'todo' } },
   '/expand': { action: 'edit', target: 'selection', params: { mode: 'expand' } },
   '/toc': { action: 'edit', target: 'document', params: { mode: 'toc' } },
@@ -35,6 +45,7 @@ export function getQuickCommandList(): Array<{ command: string; label: string; d
     { command: '/summarize', label: 'Summarize', description: 'Summarize the document' },
     { command: '/translate', label: 'Translate', description: 'Translate selected text' },
     { command: '/format', label: 'Format', description: 'Format markdown content' },
+    { command: '/insert', label: 'Insert', description: 'Generate and insert content at cursor' },
     { command: '/todo', label: 'TODO', description: 'Generate a TODO list' },
     { command: '/expand', label: 'Expand', description: 'Expand abbreviated content' },
     { command: '/toc', label: 'TOC', description: 'Generate table of contents' },
@@ -127,13 +138,37 @@ export function parseIntent(input: string): ParsedIntent {
     target: ParsedIntent['target'];
     extract: (m: RegExpMatchArray) => Record<string, string>;
   }> = [
-    { regex: /(把|将)(.+)(改|变|换)成(.+)/, action: 'edit', target: 'selection', extract: (m) => ({ from: m[2], to: m[4] }) },
+    // "把X替换/改/变/换成Y" — non-greedy so "替换" is not swallowed into the from-group
+    { regex: /(把|将)(.+?)(替换|改|变|换)(?:为|成)(.+)/, action: 'edit', target: 'selection', extract: (m) => ({ from: m[2].trim(), to: m[4].trim() }) },
+    // Standalone replace/change trigger words without explicit from/to
+    { regex: /替换|替代|换掉/, action: 'edit', target: 'selection', extract: () => ({}) },
+    { regex: /\breplace\b/i, action: 'edit', target: 'selection', extract: () => ({}) },
     { regex: /(改写|重写)/, action: 'edit', target: 'selection', extract: () => ({ mode: 'rewrite' }) },
     { regex: /润色/, action: 'polish', target: 'selection', extract: () => ({}) },
     { regex: /(解释|说明|讲讲|什么意思)/, action: 'explain', target: 'selection', extract: () => ({}) },
     { regex: /翻译成?(.*)/, action: 'translate', target: 'selection', extract: (m) => ({ language: m[1].trim() || 'english' }) },
     { regex: /(总结|概括|摘要)/, action: 'summarize', target: 'document', extract: () => ({}) },
     { regex: /(格式化|整理格式)/, action: 'format', target: 'selection', extract: () => ({}) },
+    // Insert-at-cursor: user wants to generate new content at the cursor position.
+    // These patterns are checked AFTER edit/rewrite/translate to avoid mis-classification.
+    {
+      regex: /^(帮我?|请帮我?|请)?(写|生成|创建|补充|添加|插入)(一[段个篇份]?)?/,
+      action: 'insert',
+      target: 'cursor',
+      extract: () => ({}),
+    },
+    {
+      regex: /^(在这(里|儿|里面)?|这里|此处)(写|补|加|插入)/,
+      action: 'insert',
+      target: 'cursor',
+      extract: () => ({}),
+    },
+    {
+      regex: /^(write me|generate|insert|add here|create)\b/i,
+      action: 'insert',
+      target: 'cursor',
+      extract: () => ({}),
+    },
   ];
 
   for (const pattern of patterns) {
@@ -149,8 +184,9 @@ export function parseIntent(input: string): ParsedIntent {
     }
   }
 
-  // 3. Default to question – target 'selection' so that getEffectiveScope
-  //    falls back to 'cursor' when nothing is selected.
+  // 3. Default to question — informational reply only, no EditAction generated.
+  //    target 'selection' gives the AI selection context when something is selected;
+  //    getEffectiveScope will fall back to 'cursor' for positional context otherwise.
   return {
     action: 'question',
     target: 'selection',

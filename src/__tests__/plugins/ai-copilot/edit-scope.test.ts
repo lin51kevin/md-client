@@ -7,7 +7,9 @@ describe('getEffectiveScope', () => {
     expect(getEffectiveScope('selection', true).downgraded).toBe(false);
   });
 
-  it('falls back to document for polish/rewrite/format/translate without selection', () => {
+  it('falls back to document for edit/polish/rewrite/format/translate without selection', () => {
+    expect(getEffectiveScope('selection', false, 'edit').scope).toBe('document');
+    expect(getEffectiveScope('selection', false, 'edit').downgraded).toBe(true);
     expect(getEffectiveScope('selection', false, 'polish').scope).toBe('document');
     expect(getEffectiveScope('selection', false, 'polish').downgraded).toBe(true);
     expect(getEffectiveScope('selection', false, 'format').scope).toBe('document');

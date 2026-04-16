@@ -27,3 +27,48 @@ describe('intent parser markdown shortcuts', () => {
     expect(intent.params.targetFilePath).toBe('README.md');
   });
 });
+
+describe('intent parser replace/换 patterns', () => {
+  it('parses "把X改成Y" → edit with from/to', () => {
+    const r = parseIntent('把hello改成world');
+    expect(r.action).toBe('edit');
+    expect(r.params.from).toBe('hello');
+    expect(r.params.to).toBe('world');
+  });
+
+  it('parses "把X替换成Y" → edit with correct from (no greedy bleed)', () => {
+    const r = parseIntent('把hello替换成world');
+    expect(r.action).toBe('edit');
+    expect(r.params.from).toBe('hello');
+    expect(r.params.to).toBe('world');
+  });
+
+  it('parses "将X换为Y" → edit with from/to', () => {
+    const r = parseIntent('将foo换为bar');
+    expect(r.action).toBe('edit');
+    expect(r.params.from).toBe('foo');
+    expect(r.params.to).toBe('bar');
+  });
+
+  it('parses standalone "替换" → edit', () => {
+    const r = parseIntent('替换文中所有的旧词');
+    expect(r.action).toBe('edit');
+  });
+
+  it('parses standalone "换掉" → edit', () => {
+    const r = parseIntent('换掉这段话');
+    expect(r.action).toBe('edit');
+  });
+
+  it('parses "把X变成Y" → edit with from/to', () => {
+    const r = parseIntent('把A变成B');
+    expect(r.action).toBe('edit');
+    expect(r.params.from).toBe('A');
+    expect(r.params.to).toBe('B');
+  });
+
+  it('pure question still returns question action', () => {
+    const r = parseIntent('什么是 Markdown？');
+    expect(r.action).toBe('question');
+  });
+});

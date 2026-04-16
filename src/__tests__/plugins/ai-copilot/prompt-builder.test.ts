@@ -125,8 +125,8 @@ describe('getEditResponseMode', () => {
       .toBe('replace-selection');
   });
 
-  it('uses insert-at-cursor for active document edits without a selection', () => {
-    expect(getEditResponseMode(baseContext as any, 'document')).toBe('insert-at-cursor');
+  it('uses rewrite-document for document scope without selection', () => {
+    expect(getEditResponseMode(baseContext as any, 'document')).toBe('rewrite-document');
   });
 
   it('uses rewrite-document for tab edits', () => {
@@ -239,10 +239,10 @@ describe('buildChatPrompt', () => {
     expect(result).toContain('responseMode=[aiCopilot.prompt.responseMode.replaceSelection]');
   });
 
-  it('edit prompt uses insert-at-cursor semantics when no selection exists', () => {
+  it('edit prompt uses rewrite-document semantics when no selection exists', () => {
     const intent = { action: 'edit', target: 'document', params: { instruction: 'add a note' }, originalText: 'add a note' };
     const result = buildChatPrompt(intent as any, baseContext as any);
-    expect(result).toContain('responseMode=[aiCopilot.prompt.responseMode.insertAtCursor]');
+    expect(result).toContain('responseMode=[aiCopilot.prompt.responseMode.rewriteDocument]');
   });
 
   it('question action returns originalText directly', () => {

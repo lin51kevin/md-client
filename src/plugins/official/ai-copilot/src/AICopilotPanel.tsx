@@ -241,7 +241,7 @@ export class AICopilotPanelContent {
       return;
     }
 
-    const actions = shouldBuildEditActions(intent.action, effectiveScope)
+    const actions = shouldBuildEditActions(intent.action)
       ? this.buildActions(fullResponse, editorCtx, effectiveScope)
       : [];
 

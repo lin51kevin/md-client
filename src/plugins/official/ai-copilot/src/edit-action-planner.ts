@@ -10,9 +10,11 @@ export interface PlanEditActionsInput {
   idFactory: (index: number) => string;
 }
 
-export function shouldBuildEditActions(action: ParsedIntent['action'], scope?: EditScopeMode): boolean {
-  if (action === 'edit' || action === 'polish' || action === 'format' || action === 'translate') return true;
-  if (scope === 'cursor') return true;
+export function shouldBuildEditActions(action: ParsedIntent['action']): boolean {
+  // Editing actions always produce EditActions (apply / discard UI or bypass auto-apply).
+  if (action === 'edit' || action === 'insert' || action === 'polish' || action === 'format' || action === 'translate') return true;
+  // Informational actions (question, explain, summarize, create_document) only produce a
+  // text reply — no EditAction is generated, regardless of the resolved scope.
   return false;
 }
 

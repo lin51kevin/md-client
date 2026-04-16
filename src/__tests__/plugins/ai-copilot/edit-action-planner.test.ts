@@ -14,6 +14,7 @@ const baseContext: EditorContext = {
 describe('planEditActions', () => {
   it('only enables editable actions for edit-like intents', () => {
     expect(shouldBuildEditActions('edit')).toBe(true);
+    expect(shouldBuildEditActions('insert')).toBe(true);
     expect(shouldBuildEditActions('polish')).toBe(true);
     expect(shouldBuildEditActions('format')).toBe(true);
     expect(shouldBuildEditActions('translate')).toBe(true);
