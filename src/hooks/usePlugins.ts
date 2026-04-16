@@ -42,6 +42,15 @@ const DEFAULT_PLUGINS: PluginUIItem[] = [
     enabled: false,
     permissions: ['workspace', 'editor.read', 'sidebar.panel', 'storage'],
   },
+  {
+    id: 'marklite-ai-copilot',
+    name: 'AI Copilot',
+    version: '1.0.0',
+    author: 'MarkLite Team',
+    description: 'AI 辅助编辑 — 智能改写、解释、翻译、总结',
+    enabled: true,
+    permissions: ['sidebar.panel', 'editor.read', 'editor.write', 'storage', 'commands', 'ui.message', 'workspace', 'contextmenu.item'],
+  },
 ];
 
 /** Migration map: old plugin IDs → new marklite-* IDs */

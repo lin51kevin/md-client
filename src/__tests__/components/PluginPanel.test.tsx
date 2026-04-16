@@ -58,10 +58,10 @@ describe('PluginPanel', () => {
 
   it('点击启用/禁用按钮切换状态', () => {
     render(<PluginPanel visible={true} onClose={() => {}} />);
-    // Backlinks Panel starts enabled — only one "enabled" button initially
-    const backlinksBtn = screen.getByText('plugins.enabled');
-    fireEvent.click(backlinksBtn);
-    // After disabling Backlinks Panel, both plugins are now disabled
+    // Backlinks Panel and AI Copilot start enabled
+    const enabledBtns = screen.getAllByText('plugins.enabled');
+    fireEvent.click(enabledBtns[0]);
+    // After disabling one, there should be more disabled buttons
     const disabledBtns = screen.getAllByText('plugins.disabled');
     expect(disabledBtns.length).toBeGreaterThanOrEqual(1);
   });
@@ -114,13 +114,13 @@ describe('PluginPanel', () => {
 
   it('切换两次恢复原状态', () => {
     render(<PluginPanel visible={true} onClose={() => {}} />);
-    // Backlinks Panel starts enabled — only one "enabled" button
-    const btn1 = screen.getByText('plugins.enabled');
-    fireEvent.click(btn1); // disable → now all are disabled
-    // Re-enable: click the first disabled button (Backlinks Panel appears first in list)
+    // Backlinks Panel and AI Copilot start enabled — two "enabled" buttons
+    const enabledBtns = screen.getAllByText('plugins.enabled');
+    fireEvent.click(enabledBtns[0]); // disable first enabled plugin
+    // Re-enable: click the first disabled button
     const disabledBtns = screen.getAllByText('plugins.disabled');
-    fireEvent.click(disabledBtns[0]); // re-enable backlinks
-    expect(screen.getByText('plugins.enabled')).toBeTruthy();
+    fireEvent.click(disabledBtns[0]); // re-enable
+    expect(screen.getAllByText('plugins.enabled').length).toBeGreaterThanOrEqual(1);
   });
 
   it('无匹配搜索结果时显示空状态', () => {
