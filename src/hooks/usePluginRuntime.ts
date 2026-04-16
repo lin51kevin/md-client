@@ -2,14 +2,27 @@ import { useCallback, useRef } from 'react';
 import type { PluginContextDeps } from '../plugins/plugin-context-factory';
 import type { PluginContext } from '../plugins/plugin-sandbox';
 import { createPluginContext } from '../plugins/plugin-context-factory';
+import { validateManifest, checkEngineVersion, loadPluginModule } from '../plugins/plugin-loader';
 
-/** Map of official bundled plugin IDs to their module import functions. */
-const OFFICIAL_PLUGIN_MODULES: Record<string, () => Promise<{ activate?: (ctx: PluginContext) => unknown }>> = {
-  'marklite-backlinks': () => import('../plugins/official/backlinks/src/index'),
-  'marklite-graph-view': () => import('../plugins/official/graph-view/src/index'),
-  'marklite-preview-edit': () => import('../plugins/official/preview-edit/src/index'),
-  'marklite-ai-copilot': () => import('../plugins/official/ai-copilot/src/index'),
-};
+/**
+ * In DEV mode, plugins are bundled via Vite's dynamic imports for HMR.
+ * In production, plugins are loaded at runtime from /plugins/{id}/.
+ */
+const DEV_PLUGIN_MODULES: Record<string, () => Promise<{ activate?: (ctx: PluginContext) => unknown }>> =
+  import.meta.env.DEV ? {
+    'marklite-backlinks': () => import('../plugins/official/backlinks/src/index'),
+    'marklite-graph-view': () => import('../plugins/official/graph-view/src/index'),
+    'marklite-preview-edit': () => import('../plugins/official/preview-edit/src/index'),
+    'marklite-ai-copilot': () => import('../plugins/official/ai-copilot/src/index'),
+  } : {};
+
+/** Official plugin IDs — used in production to discover externally-built plugins. */
+const OFFICIAL_PLUGIN_IDS = [
+  'marklite-backlinks',
+  'marklite-graph-view',
+  'marklite-preview-edit',
+  'marklite-ai-copilot',
+];
 
 interface ActivePluginEntry {
   deactivate?: () => void | Promise<void>;
@@ -38,15 +51,41 @@ export function usePluginRuntime(deps: PluginContextDeps) {
       activePlugins.current.delete(id);
     }
 
-    // Resolve the module
-    const officialLoader = OFFICIAL_PLUGIN_MODULES[id];
-    if (!officialLoader) {
-      console.warn(`[PluginRuntime] Unknown plugin "${id}" — only official plugins are supported currently`);
+    // Resolve the module — DEV uses Vite-bundled imports, PROD loads external bundles
+    let mod: { activate?: (ctx: PluginContext) => unknown };
+
+    if (import.meta.env.DEV && DEV_PLUGIN_MODULES[id]) {
+      // Dev mode: bundled via Vite for HMR
+      try {
+        mod = await DEV_PLUGIN_MODULES[id]();
+      } catch (err) {
+        console.error(`[PluginRuntime] Failed to load plugin "${id}" (dev):`, err);
+        return;
+      }
+    } else if (!import.meta.env.DEV && OFFICIAL_PLUGIN_IDS.includes(id)) {
+      // Production: load externally-built plugin from /plugins/{id}/
+      try {
+        const manifestResp = await fetch(`/plugins/${id}/manifest.json`);
+        if (!manifestResp.ok) {
+          console.warn(`[PluginRuntime] Plugin "${id}" manifest not found (${manifestResp.status})`);
+          return;
+        }
+        const manifest = validateManifest(await manifestResp.json());
+        if (!checkEngineVersion(manifest)) {
+          console.warn(`[PluginRuntime] Plugin "${id}" requires newer engine version`);
+          return;
+        }
+        mod = await loadPluginModule(manifest);
+      } catch (err) {
+        console.error(`[PluginRuntime] Failed to load plugin "${id}" (prod):`, err);
+        return;
+      }
+    } else {
+      console.warn(`[PluginRuntime] Unknown plugin "${id}"`);
       return;
     }
 
     try {
-      const mod = await officialLoader();
       if (!mod.activate) {
         console.warn(`[PluginRuntime] Plugin "${id}" has no activate() export`);
         return;

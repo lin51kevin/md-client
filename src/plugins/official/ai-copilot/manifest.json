@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "AI 辅助编辑 — 智能改写、解释、翻译、总结，支持本地模型和云端模型",
   "author": "MarkLite Team",
-  "main": "src/index.ts",
+  "main": "dist/index.js",
   "activationEvents": ["onStartup"],
   "permissions": [
     "sidebar.panel",

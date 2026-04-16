@@ -2,13 +2,36 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import { execSync } from "node:child_process";
 
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vite.dev/config/
 export default defineConfig(async () => ({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    // Build official plugins as external bundles after main build
+    {
+      name: 'build-plugins',
+      closeBundle() {
+        // Only run during production build (not dev server)
+        // @ts-expect-error process is a nodejs global
+        if (process.env.NODE_ENV === 'production' || !host) {
+          try {
+            execSync('node scripts/build-plugins.mjs', {
+              cwd: import.meta.dirname,
+              stdio: 'inherit',
+            });
+          } catch {
+            // Non-fatal: plugins can be rebuilt separately
+            console.warn('\n⚠ Plugin build failed — run "node scripts/build-plugins.mjs" manually\n');
+          }
+        }
+      },
+    },
+  ],
 
   // Milkdown Crepe bundles Vue-based UI internally; suppress esm-bundler warnings
   define: {

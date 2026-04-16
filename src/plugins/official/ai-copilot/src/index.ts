@@ -1,6 +1,9 @@
 import type { PluginContext } from '../../../plugin-sandbox';
 import { AICopilotPanelContent } from './AICopilotPanel';
-import { AI_TOOLBAR_EVENT, type AIToolbarEventDetail } from '../../../../components/MilkdownPreview/ai-toolbar-bridge';
+
+/** Event name dispatched by the Milkdown AI toolbar bridge. */
+const AI_TOOLBAR_EVENT = 'ai-toolbar-action';
+interface AIToolbarEventDetail { command: '/polish' | '/rewrite' | '/translate' | '/summarize'; }
 
 /** AI context menu items — label uses emoji prefix for visual consistency. */
 const AI_MENU_ITEMS = [

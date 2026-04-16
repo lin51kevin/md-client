@@ -32,6 +32,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "build:zip": "node scripts/create-zip.js",
+    "build:plugins": "node scripts/build-plugins.mjs",
     "build:nsis": "makensis deploy/installer.nsi",
     "build:dist": "yarn tauri build && yarn build:zip"
   },
