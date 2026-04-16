@@ -38,3 +38,9 @@ chardetng = "0.1"
 
 [dev-dependencies]
 tempfile = "3"
+
+[profile.release]
+strip = true        # Strip debug symbols
+lto = true           # Link-time optimization
+codegen-units = 1    # Maximize optimization (slower build)
+opt-level = "s"      # Optimize for size
