@@ -59,6 +59,7 @@ export interface CopilotMessage {
   timestamp: number;
   actions?: EditAction[];
   error?: string;
+  stopped?: boolean;
   isStreaming?: boolean;
 }
 

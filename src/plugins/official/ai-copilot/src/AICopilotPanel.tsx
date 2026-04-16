@@ -249,10 +249,14 @@ export class AICopilotPanelContent {
         this.setState({ messages: finalMsgs, isLoading: false });
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-    const finalMsgs = this.state.messages.map((m) =>
+      const isAborted =
+        error instanceof Error &&
+        (error.name === 'AbortError' || error.message.toLowerCase().includes('aborted') || error.message.toLowerCase().includes('abort'));
+      const finalMsgs = this.state.messages.map((m) =>
         m.id === assistantMsg.id
-          ? { ...m, content: '', isStreaming: false, error: errorMessage }
+          ? isAborted
+            ? { ...m, isStreaming: false, stopped: true }
+            : { ...m, content: '', isStreaming: false, error: error instanceof Error ? error.message : String(error) }
           : m,
       );
       this.setState({ messages: finalMsgs, isLoading: false });
@@ -340,6 +344,13 @@ export class AICopilotPanelContent {
       ...m,
       actions: m.actions?.filter((a) => a.id !== actionId),
     }));
+    this.setState({ messages: msgs });
+  }
+
+  discardMessage(messageId: string) {
+    const msgs = this.state.messages.map((m) =>
+      m.id === messageId ? { ...m, actions: [] } : m,
+    );
     this.setState({ messages: msgs });
   }
 
@@ -659,6 +670,7 @@ export class AICopilotPanelContent {
               message: msg,
               onApply: (action: EditAction) => self.applyAction(action, t('aiCopilot.panel.applied')),
               onDiscard: (id: string) => self.discardAction(id),
+              onDiscardAll: () => self.discardMessage(msg.id),
             }),
           ),
           createElement('div', { ref: messagesEndRef }),
@@ -864,17 +876,18 @@ export class AICopilotPanelContent {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        width: '24px',
-                        height: '24px',
-                        border: 'none',
-                        borderRadius: '4px',
-                        background: 'var(--error-color, #e55)',
-                        color: '#fff',
+                        width: '26px',
+                        height: '26px',
+                        border: '1.5px solid var(--text-muted, #666)',
+                        borderRadius: '50%',
+                        background: 'var(--bg-secondary, #2d2d2d)',
+                        color: 'var(--text-secondary, #ccc)',
                         cursor: 'pointer',
                         padding: 0,
+                        flexShrink: 0,
                       },
                     },
-                    createElement(Square, { size: 10, fill: 'currentColor' }),
+                    createElement(Square, { size: 9, fill: 'currentColor' }),
                   )
                 : createElement(
                     'button',
@@ -886,19 +899,20 @@ export class AICopilotPanelContent {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        width: '24px',
-                        height: '24px',
+                        width: '26px',
+                        height: '26px',
                         border: 'none',
-                        borderRadius: '4px',
-                        background: !input.trim()
-                          ? 'transparent'
-                          : 'var(--accent-color, #4a9eff)',
-                        color: !input.trim() ? 'var(--text-muted, #555)' : '#fff',
+                        borderRadius: 0,
+                        background: 'transparent',
+                        color: 'var(--text-primary, #e0e0e0)',
                         cursor: !input.trim() ? 'default' : 'pointer',
                         padding: 0,
+                        flexShrink: 0,
+                        opacity: !input.trim() ? 0.3 : 1,
+                        transition: 'opacity 0.15s',
                       },
                     },
-                    createElement(ArrowUp, { size: 14 }),
+                    createElement(ArrowUp, { size: 16, strokeWidth: 2 }),
                   ),
             ),
           ),

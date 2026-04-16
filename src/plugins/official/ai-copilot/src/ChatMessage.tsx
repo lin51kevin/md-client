@@ -1,5 +1,5 @@
 import { createElement } from 'react';
-import { Check, X, AlertTriangle, Bot } from 'lucide-react';
+import { AlertTriangle, Bot } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
@@ -105,9 +105,10 @@ interface ChatMessageProps {
   message: CopilotMessage;
   onApply?: (action: import('./providers/types').EditAction) => void;
   onDiscard?: (actionId: string) => void;
+  onDiscardAll?: () => void;
 }
 
-export function ChatMessageView({ message, onApply, onDiscard }: ChatMessageProps) {
+export function ChatMessageView({ message, onApply, onDiscardAll }: ChatMessageProps) {
   const { t } = useI18n();
   const isUser = message.role === 'user';
   const displayContent = message.content || (message.error ? t('aiCopilot.panel.errorOccurred') : '');
@@ -206,6 +207,23 @@ export function ChatMessageView({ message, onApply, onDiscard }: ChatMessageProp
           })
         : null,
     ),
+    // Stopped by user
+    message.stopped
+      ? createElement(
+          'div',
+          {
+            style: {
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              fontSize: '12px',
+              color: 'var(--text-muted, #888)',
+              marginTop: '6px',
+            },
+          },
+          t('aiCopilot.panel.stoppedByUser'),
+        )
+      : null,
     // Error
     message.error
       ? createElement(
@@ -224,56 +242,52 @@ export function ChatMessageView({ message, onApply, onDiscard }: ChatMessageProp
           message.error,
         )
       : null,
-    // Actions (apply/discard)
+    // Actions (apply/discard) — single pair applies/discards all hunks
     message.actions && message.actions.length > 0 && !message.isStreaming
       ? createElement(
           'div',
-          { style: { display: 'flex', gap: '6px', marginTop: '10px' } },
-          ...message.actions.map((action) =>
-            createElement(
-              'div',
-              { key: action.id, style: { display: 'flex', gap: '6px' } },
-              createElement(
-                'button',
-                {
-                  onClick: () => onApply?.(action),
-                  style: {
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    padding: '3px 10px',
-                    fontSize: '12px',
-                    border: 'none',
-                    borderRadius: '3px',
-                    background: 'var(--accent-color, #4a9eff)',
-                    color: '#fff',
-                    cursor: 'pointer',
-                  },
-                },
-                createElement(Check, { size: 12 }),
-                t('aiCopilot.panel.apply'),
-              ),
-              createElement(
-                'button',
-                {
-                  onClick: () => onDiscard?.(action.id),
-                  style: {
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    padding: '3px 10px',
-                    fontSize: '12px',
-                    border: '1px solid var(--border-color, #444)',
-                    borderRadius: '3px',
-                    background: 'transparent',
-                    color: 'var(--text-secondary, #ccc)',
-                    cursor: 'pointer',
-                  },
-                },
-                createElement(X, { size: 12 }),
-                t('aiCopilot.panel.discard'),
-              ),
-            ),
+          { style: { display: 'flex', gap: '6px', marginTop: '8px' } },
+          createElement(
+            'button',
+            {
+              onClick: () => message.actions!.forEach((a) => onApply?.(a)),
+              title: t('aiCopilot.panel.apply'),
+              style: {
+                display: 'inline-flex',
+                alignItems: 'center',
+                padding: '1px 8px',
+                fontSize: '11px',
+                border: 'none',
+                borderRadius: '3px',
+                background: 'var(--accent-color, #0078d4)',
+                color: '#fff',
+                cursor: 'pointer',
+                fontWeight: 500,
+                lineHeight: '16px',
+              },
+            },
+            t('aiCopilot.panel.apply'),
+          ),
+          createElement(
+            'button',
+            {
+              onClick: () => onDiscardAll?.(),
+              title: t('aiCopilot.panel.discard'),
+              style: {
+                display: 'inline-flex',
+                alignItems: 'center',
+                padding: '1px 8px',
+                fontSize: '11px',
+                border: '1px solid var(--border-color, #555)',
+                borderRadius: '3px',
+                background: 'var(--bg-tertiary, #2d2d2d)',
+                color: 'var(--text-secondary, #ccc)',
+                cursor: 'pointer',
+                fontWeight: 500,
+                lineHeight: '16px',
+              },
+            },
+            t('aiCopilot.panel.discard'),
           ),
         )
       : null,
