@@ -84,26 +84,38 @@ export function buildChatPrompt(
       // When no selection (section/document), ask AI to identify what should be removed
       // and return the document without that content.
       const instruction = intent.params.instruction || intent.originalText;
-      return t('aiCopilot.prompt.deleteInstruction', { instruction, content: truncated });
+      const deleteRM = getEditResponseMode(context, scope);
+      const deleteResponseModeLabel =
+        deleteRM === 'replace-selection'
+          ? t('aiCopilot.prompt.responseMode.replaceSelection')
+          : deleteRM === 'rewrite-document'
+            ? t('aiCopilot.prompt.responseMode.rewriteDocument')
+            : t('aiCopilot.prompt.responseMode.insertAtCursor');
+      const deleteTargetLabel =
+        scope === 'selection'
+          ? t('aiCopilot.prompt.editLabel.selection')
+          : scope === 'section'
+            ? t('aiCopilot.prompt.editLabel.section')
+            : t('aiCopilot.prompt.editLabel.document');
+      return t('aiCopilot.prompt.deleteInstruction', {
+        instruction,
+        targetLabel: deleteTargetLabel,
+        content: truncated,
+        responseMode: deleteResponseModeLabel,
+      });
     }
 
     case 'edit': {
       const instruction = intent.params.instruction || intent.originalText;
       const { from, to, mode } = intent.params;
 
-      // ── Precise find-replace path ──
-      if (from && to) {
-        return t('aiCopilot.prompt.findReplaceInstruction', { from, to, content: truncated });
-      }
-
-      // ── Inline markdown format modes ──
-      if (mode === 'bold') return t('aiCopilot.prompt.boldInstruction', { content: truncated });
-      if (mode === 'italic') return t('aiCopilot.prompt.italicInstruction', { content: truncated });
-      if (mode === 'heading') return t('aiCopilot.prompt.headingInstruction', { content: truncated });
-      if (mode === 'list') return t('aiCopilot.prompt.listInstruction', { content: truncated });
-      if (mode === 'code') return t('aiCopilot.prompt.codeBlockInstruction2', { content: truncated });
-
       const responseMode = getEditResponseMode(context, scope);
+      const responseModeLabel =
+        responseMode === 'replace-selection'
+          ? t('aiCopilot.prompt.responseMode.replaceSelection')
+          : responseMode === 'rewrite-document'
+            ? t('aiCopilot.prompt.responseMode.rewriteDocument')
+            : t('aiCopilot.prompt.responseMode.insertAtCursor');
       const targetLabel =
         scope === 'selection'
           ? t('aiCopilot.prompt.editLabel.selection')
@@ -114,15 +126,24 @@ export function buildChatPrompt(
               : scope === 'section'
                 ? t('aiCopilot.prompt.editLabel.section')
                 : t('aiCopilot.prompt.editLabel.document');
+
+      // ── Precise find-replace path ──
+      if (from && to) {
+        return t('aiCopilot.prompt.findReplaceInstruction', { from, to, content: truncated, responseMode: responseModeLabel });
+      }
+
+      // ── Inline markdown format modes ──
+      const formatParams = { instruction, targetLabel, content: truncated, responseMode: responseModeLabel };
+      if (mode === 'bold') return t('aiCopilot.prompt.boldInstruction', formatParams);
+      if (mode === 'italic') return t('aiCopilot.prompt.italicInstruction', formatParams);
+      if (mode === 'heading') return t('aiCopilot.prompt.headingInstruction', formatParams);
+      if (mode === 'list') return t('aiCopilot.prompt.listInstruction', formatParams);
+      if (mode === 'code') return t('aiCopilot.prompt.codeBlockInstruction2', formatParams);
+
       return t('aiCopilot.prompt.editInstruction', {
         instruction,
         targetLabel,
-        responseMode:
-          responseMode === 'replace-selection'
-            ? t('aiCopilot.prompt.responseMode.replaceSelection')
-            : responseMode === 'rewrite-document'
-              ? t('aiCopilot.prompt.responseMode.rewriteDocument')
-              : t('aiCopilot.prompt.responseMode.insertAtCursor'),
+        responseMode: responseModeLabel,
         content: truncated,
       });
     }
@@ -131,7 +152,7 @@ export function buildChatPrompt(
       const instruction = intent.params.instruction || intent.originalText;
       const mode = intent.params.mode;
       if (mode === 'continue') {
-        return t('aiCopilot.prompt.continueInstruction', { content: truncated });
+        return t('aiCopilot.prompt.continueInstruction', { instruction, content: truncated });
       }
       return t('aiCopilot.prompt.cursorInsertInstruction', { instruction, content: truncated });
     }

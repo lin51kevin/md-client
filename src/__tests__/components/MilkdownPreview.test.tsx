@@ -51,7 +51,12 @@ vi.mock('@milkdown/react', () => ({
   Milkdown: () => React.createElement('div', { 'data-testid': 'milkdown-editor' }),
   MilkdownProvider: ({ children }: { children: React.ReactNode }) => children,
   useEditor: (factory: (root: string) => Promise<unknown>) => {
-    act(() => { factory('mock-root'); });
+    // Do NOT wrap in act() here — calling act() during the render phase flushes
+    // effects before the DOM is committed, so containerRef.current is null when
+    // the interaction-detection useEffect runs and the keydown listener is never
+    // attached. Call factory directly; testing-library's render() wraps the full
+    // mount in act() and will flush effects correctly after DOM commit.
+    factory('mock-root');
     return { get: mockGet };
   },
 }));
@@ -175,11 +180,11 @@ describe('MilkdownPreview', () => {
     expect(mockSetReadonly).toHaveBeenCalledWith(true);
   });
 
-  it('does not call setReadonly when editable=true (default)', async () => {
+  it('does not call setReadonly(true) when editable=true (default)', async () => {
     await import('@milkdown/crepe');
     render(<MilkdownPreview content="test" onContentChange={noop} editable={true} />);
-    // editable=true is the default; setReadonly is only called when switching to false
-    expect(mockSetReadonly).not.toHaveBeenCalledWith(false);
+    // editable=true: the editable-sync effect calls setReadonly(false), not setReadonly(true)
+    expect(mockSetReadonly).not.toHaveBeenCalledWith(true);
   });
 
   it('handles empty content without crashing', () => {
