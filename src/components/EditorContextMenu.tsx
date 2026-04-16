@@ -107,14 +107,21 @@ function buildMenuItems(context: ContextInfo, t: (key: TranslationKey) => string
   const result: MenuItem[] = [...base, ...contextual];
 
   // Plugin-contributed context menu items (e.g. AI actions from AI Copilot plugin)
+  // Split emoji prefix from label so it renders in the icon column for alignment
   if (pluginItems.length > 0) {
+    const emojiRe = /^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F?)\s*/u;
     result.push(
-      ...pluginItems.map((pi, idx) => ({
-        id: `plugin:${pi.id}`,
-        label: pi.label,
-        icon: <Pencil size={14} strokeWidth={1.8} />,
-        divider: idx === 0,
-      })),
+      ...pluginItems.map((pi, idx) => {
+        const match = pi.label.match(emojiRe);
+        const emoji = match?.[0]?.trim() ?? '';
+        const text = match ? pi.label.slice(match[0].length) : pi.label;
+        return {
+          id: `plugin:${pi.id}`,
+          label: text,
+          icon: emoji ? <span style={{ fontSize: 14 }}>{emoji}</span> : null as React.ReactNode,
+          divider: idx === 0,
+        };
+      }),
     );
   }
 
