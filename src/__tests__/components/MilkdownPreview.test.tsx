@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, act, fireEvent } from '@testing-library/react';
 import React from 'react';
 
 // ─── Mocks ──────────────────────────────────────────────────────────
@@ -56,6 +56,13 @@ vi.mock('@milkdown/react', () => ({
   },
 }));
 
+/** Simulate a user keydown in the Milkdown container to set hasUserInteractedRef. */
+function simulateUserInteraction() {
+  const editorEl = screen.getByTestId('milkdown-editor');
+  const container = editorEl.parentElement!;
+  fireEvent.keyDown(container, { key: 'a', code: 'KeyA', bubbles: true });
+}
+
 vi.mock('@milkdown/crepe/theme/frame.css', () => ({}));
 vi.mock('katex/dist/katex.min.css', () => ({}));
 vi.mock('./theme.css', () => ({}));
@@ -103,6 +110,7 @@ describe('MilkdownPreview', () => {
     const onChange = vi.fn();
     render(<MilkdownPreview content="---\ntitle: Foo\n---\ninitial" onContentChange={onChange} />);
 
+    simulateUserInteraction();
     act(() => {
       registeredMarkdownCallback!({}, 'edited content', 'initial');
     });
@@ -117,16 +125,29 @@ describe('MilkdownPreview', () => {
     const onChange = vi.fn();
     render(<MilkdownPreview content="initial" onContentChange={onChange} />);
 
+    simulateUserInteraction();
     act(() => {
       registeredMarkdownCallback!({}, 'edited content', 'initial');
     });
     expect(onChange).toHaveBeenCalledWith('edited content');
   });
 
+  it('does not trigger onContentChange before user has interacted (init normalization)', () => {
+    const onChange = vi.fn();
+    render(<MilkdownPreview content="initial" onContentChange={onChange} />);
+
+    // Simulate Milkdown init normalization — no user interaction yet
+    act(() => {
+      registeredMarkdownCallback!({}, 'initial\n', '');
+    });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
   it('does not trigger duplicate callbacks for same content', () => {
     const onChange = vi.fn();
     render(<MilkdownPreview content="initial" onContentChange={onChange} />);
 
+    simulateUserInteraction();
     act(() => {
       registeredMarkdownCallback!({}, 'same', 'same');
     });

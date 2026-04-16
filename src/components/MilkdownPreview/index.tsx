@@ -46,10 +46,13 @@ function MilkdownEditor({
   onOpenFile?: (path: string) => void;
   onWikiLinkNavigate?: (target: string) => void;
 }) {
+  // isExternalUpdate: guards replaceAll-triggered markdownUpdated events (tab switch etc.)
   const isExternalUpdate = useRef(false);
   const crepeRef = useRef<Crepe | null>(null);
-  // Initialize to body (without frontmatter) so the first sync check is a no-op.
-  // Updated by markdownUpdated (user edits) and the sync effect (external changes).
+  // hasUserInteractedRef: the core guard — onContentChange is NEVER called until the
+  // user actually types or composes in the editor. This is the only reliable way to
+  // prevent Milkdown's init normalization pass(es) from marking the file dirty.
+  const hasUserInteractedRef = useRef(false);
   const lastContentRef = useRef('');
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -102,21 +105,19 @@ function MilkdownEditor({
     crepe.on((listener) => {
       listener.markdownUpdated((_ctx, newMarkdown, prevMarkdown) => {
         if (isExternalUpdate.current) {
-          return;
-        }
-        if (newMarkdown === prevMarkdown) {
-          return;
-        }
-        // Milkdown fires markdownUpdated once on startup when it serializes the
-        // defaultValue. The serialized output may differ slightly from the raw
-        // body string (e.g. trailing newline). If the trimmed content is the same
-        // as what we already have, this is an initialization-only normalization —
-        // update our reference but do NOT call onContentChange (which would mark
-        // the document dirty without any user interaction).
-        if (newMarkdown.trim() === lastContentRef.current.trim()) {
+          // External sync (replaceAll on tab switch) — update baseline, never dirty.
           lastContentRef.current = newMarkdown;
           return;
         }
+        if (!hasUserInteractedRef.current) {
+          // Milkdown can fire markdownUpdated multiple times during initialization
+          // (once per plugin/extension normalization pass). Until the user has
+          // actually typed something, all of these are init noise — update the
+          // baseline so the sync effect stays accurate, but never mark dirty.
+          lastContentRef.current = newMarkdown;
+          return;
+        }
+        if (newMarkdown === prevMarkdown) return;
         lastContentRef.current = newMarkdown;
         // Reconstruct full content with frontmatter
         const fm = frontmatterRef.current;
@@ -145,6 +146,20 @@ function MilkdownEditor({
 
   // NodeView post-processing hooks
   useLocalImage(filePath, containerRef, content);
+
+  // Detect real user interaction — set flag so markdownUpdated knows to fire onContentChange.
+  // Using capture phase so we intercept events before Milkdown's own handlers.
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const onInteract = () => { hasUserInteractedRef.current = true; };
+    container.addEventListener('keydown', onInteract, true);
+    container.addEventListener('compositionstart', onInteract, true);
+    return () => {
+      container.removeEventListener('keydown', onInteract, true);
+      container.removeEventListener('compositionstart', onInteract, true);
+    };
+  }, []);
 
   // Link click delegation (wiki-links + markdown file links)
   useEffect(() => {
@@ -195,6 +210,9 @@ function MilkdownEditor({
     // between Milkdown's serializer and the raw CodeMirror buffer.
     if (body.trim() === lastContentRef.current.trim()) return;
 
+    // External content change (tab switch / file reload) — reset interaction state
+    // so the newly loaded content isn't immediately marked dirty.
+    hasUserInteractedRef.current = false;
     isExternalUpdate.current = true;
     editor.action(replaceAll(body));
     lastContentRef.current = body;
