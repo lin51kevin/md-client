@@ -215,7 +215,11 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
 
   const updateActiveDoc = useCallback((value: string) => {
     setTabs(prev =>
-      prev.map(t => t.id === activeTabId ? { ...t, doc: value, isDirty: true } : t)
+      // Only mark dirty when content actually changed — prevents CodeMirror's
+      // programmatic onChange (triggered by external reload) from re-dirtying the tab.
+      prev.map(t => t.id === activeTabId
+        ? { ...t, doc: value, isDirty: t.doc !== value ? true : t.isDirty }
+        : t)
     );
   }, [activeTabId]);
 

@@ -34,7 +34,7 @@ import { useNavigation } from './hooks/useNavigation';
 import { useAppLifecycle } from './hooks/useAppLifecycle';
 import { useAutoUpgrade } from './hooks/useAutoUpgrade';
 import { usePendingImageMigration } from './hooks/usePendingImageMigration';
-import { useFileWatcher, markSelfSave } from './hooks/useFileWatcher';
+import { useFileWatcher } from './hooks/useFileWatcher';
 import { invoke } from '@tauri-apps/api/core';
 import { FileChangeToast } from './components/FileChangeToast';
 import { usePreviewRenderers } from './hooks/usePreviewRenderers';
@@ -161,19 +161,16 @@ export default function App() {
       const content = await invoke<string>('read_file_text', { path: filePath });
       const tab = tabs.find(t => t.id === tabId);
       if (tab) {
-        updateTabDoc(tabId, content);
+        // Use updateTab (not updateTabDoc) to preserve isDirty: false after reload
+        updateTab(tabId, { doc: content, isDirty: false });
       }
     } catch (err) {
       console.warn('[App] reload file failed:', err);
     }
-  }, [tabs, updateTabDoc]);
+  }, [tabs, updateTab]);
 
-  // Wrap handleSaveFile to mark self-save for file watcher
-  const handleSaveWithWatchMark = useCallback(async (tabId?: string) => {
-    await handleSaveFile(tabId);
-    const tab = tabId ? tabs.find(t => t.id === tabId) : getActiveTab();
-    if (tab?.filePath) markSelfSave(tab.filePath);
-  }, [handleSaveFile, tabs, getActiveTab]);
+  // Wrap handleSaveFile for compatibility (markSelfSave is now called inside useFileOps)
+  const handleSaveWithWatchMark = handleSaveFile;
 
   useFileWatcher({
     tabs,

@@ -2,7 +2,7 @@
 
 ## 概述
 
-**版本**：v0.9.1（当前版本）| **最后更新**：2026-04-16
+**版本**：v0.9.2（当前版本）| **最后更新**：2026-04-16
 
 MarkLite 是一个基于 Tauri 2 + React 19 的桌面 Markdown 编辑器，采用前后端分离架构：
 - **前端（WebView）**：React 19 + TypeScript + Vite 6 + Tailwind CSS 4

@@ -3,6 +3,7 @@ import { open, save, message } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
 import { Tab } from '../types';
 import type { TranslationKey } from '../i18n/zh-CN';
+import { markSelfSave } from './useFileWatcher';
 
 type TFn = (key: TranslationKey, params?: Record<string, string | number>) => string;
 
@@ -65,6 +66,7 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
         await invoke('write_file_text', { path: savePath, content: tab.doc });
         const wasUnsaved = !tab.filePath;
         markSavedAs(tab.id, savePath);
+        markSelfSave(savePath);
         // 首次保存：转存待处理图片并重写路径
         if (wasUnsaved && onFirstSave) {
           await onFirstSave(tab.id, savePath);
@@ -83,6 +85,7 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
       if (tab.filePath) {
         await invoke('write_file_text', { path: tab.filePath, content: tab.doc });
         markSaved(tab.id);
+        markSelfSave(tab.filePath);
       } else {
         await handleSaveAsFile(tab.id);
       }

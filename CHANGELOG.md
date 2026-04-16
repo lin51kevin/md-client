@@ -6,6 +6,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [v0.9.2] - 2026-04-16
+
+### Added
+
+#### AI 深度集成（AI Deep Integration）
+- **Milkdown 浮动工具栏 AI 操作** — 集成润色 / 改写 / 翻译 / 总结到 Milkdown 浮动 toolbar
+- **AI 聊天 Markdown 渲染** — 聊天面板 AI 回复以格式化 Markdown 渲染
+- **AI 上下文菜单插件化** — AI 右键菜单项迁移至 AI Copilot 插件
+
+#### 文件拖拽增强（Drag & Drop Enhancement）
+- **文件夹拖拽** — 增强文件夹拖拽功能与相关测试
+
+### Changed
+
+- **插件外置架构** — 官方插件从主 bundle 中分离，独立打包至 Tauri 资源目录加载
+- **原生对话框** — 未保存变更对话框改用原生 OS 对话框
+- **AI 聊天 UI** — 优化聊天窗口按钮风格与交互
+- 移除废弃的 preview-edit 和 snippet-manager 插件
+
+### Fixed
+
+- 修复快速打开同一文件时产生重复标签页的问题
+- 修复 viewMode 在保存和重新挂载后无法持久化的问题
+- 修复 tauri-plugin-fs watch 功能未启用的问题
+- 修复打包构建中 AI Copilot 不加载的问题
+- 修复 AI 聊天斜杠命令键盘导航与选择范围
+- 修复 Milkdown 内联工具栏 CSS 样式
+- 移除插件右键菜单硬编码图标
+
+### Performance
+
+- **Bundle 瘦身** — 裁剪 Mermaid、KaTeX 字体、CodeMirror 语言包
+- **Rust 优化** — Release profile 优化，减小二进制体积
+
+---
+
 ## [v0.9.1] - 2026-04-16
 
 ### Added
