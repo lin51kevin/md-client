@@ -4,7 +4,7 @@ import type { Extension } from '@codemirror/state';
 import type { EditorState, ViewUpdate } from '@uiw/react-codemirror';
 import { EditorView } from '@codemirror/view';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
-import { languages } from '@codemirror/language-data';
+import { commonLanguages } from '../lib/cm-languages';
 import { foldGutter } from '@codemirror/language';
 import { undoDepth, redoDepth } from '@codemirror/commands';
 import { THEMES, type ThemeName } from '../lib/theme';
@@ -189,7 +189,7 @@ export function useEditorInstance({
   }, [activeDoc, activeTabId, autoSave]);
 
   const editorExtensions = useMemo(() => [
-    markdown({ base: markdownLanguage, codeLanguages: languages }),
+    markdown({ base: markdownLanguage, codeLanguages: commonLanguages }),
     foldGutter(),
     cursorExtension,
     autoCloseBrackets(),

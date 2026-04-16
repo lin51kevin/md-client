@@ -1,15 +1,115 @@
 /// <reference types="vitest" />
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { execSync } from "node:child_process";
+import path from "node:path";
 
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
 
+// ── Mermaid slim: exclude rarely-used diagram types ──────────────────
+// These diagram chunks are lazily imported by mermaid.core.mjs.
+// By resolving them to an empty stub, Rollup won't generate chunks for
+// them.  If a user tries to render one of these types, mermaid will
+// show a "diagram not registered" error instead of silently crashing.
+const EXCLUDED_MERMAID_DIAGRAMS = [
+  'wardleyDiagram',      // 507 KB (+ chevrotain parser)
+  'architectureDiagram', // 146 KB (+ cytoscape 442 KB + cose-bilkent 82 KB)
+  'c4Diagram',           //  70 KB
+  'blockDiagram',        //  72 KB
+  'vennDiagram',         //  42 KB
+  'xychartDiagram',      //  39 KB
+  'quadrantDiagram',     //  34 KB
+  'requirementDiagram',  //  31 KB
+  'sankeyDiagram',       //  22 KB
+  'kanban-definition',   //  21 KB
+  'ishikawaDiagram',     //  18 KB
+];
+
+// Parser module names in @mermaid-js/parser (shorter, no "Diagram" suffix)
+const EXCLUDED_PARSER_MODULES = [
+  'wardley',
+  'architecture',
+  'block',
+  'kanban',
+  'packet',        // packet diagram parser
+  'radar',         // radar diagram parser
+];
+
+function mermaidSlimPlugin(): Plugin {
+  return {
+    name: 'mermaid-slim',
+    enforce: 'pre',
+    resolveId(source, importer) {
+      if (!importer) return null;
+      const normalized = importer.replace(/\\/g, '/');
+
+      // Intercept mermaid's internal diagram imports
+      if (normalized.includes('node_modules/mermaid/')) {
+        if (EXCLUDED_MERMAID_DIAGRAMS.some(d => source.includes(d))) {
+          return '\0mermaid-excluded-diagram';
+        }
+        // Also exclude cose-bilkent layout (only used by architectureDiagram)
+        if (source.includes('cose-bilkent')) {
+          return '\0mermaid-excluded-diagram';
+        }
+      }
+
+      // Intercept @mermaid-js/parser lazy grammar imports
+      if (normalized.includes('node_modules/@mermaid-js/parser/')) {
+        // Match parser module names like "wardley-RL74JXVD" or "architecture-YZFGNWBL"
+        const basename = source.split('/').pop() || '';
+        if (EXCLUDED_PARSER_MODULES.some(m => basename.startsWith(m + '-') || basename === m)) {
+          return '\0mermaid-excluded-diagram';
+        }
+      }
+
+      return null;
+    },
+    load(id) {
+      if (id === '\0mermaid-excluded-diagram') {
+        return 'export const diagram = undefined;';
+      }
+      return null;
+    },
+  };
+}
+
+// ── KaTeX font filter: keep only WOFF2 format ──────────────────────
+function katexFontFilterPlugin(): Plugin {
+  return {
+    name: 'katex-font-filter',
+    enforce: 'pre',
+    resolveId(source) {
+      // Block .ttf and .woff (non-woff2) font imports from KaTeX
+      if (/katex.*\.(ttf|woff)$/i.test(source) && !/\.woff2$/i.test(source)) {
+        return '\0empty-font';
+      }
+      return null;
+    },
+    load(id) {
+      if (id === '\0empty-font') {
+        return 'export default "";';
+      }
+      return null;
+    },
+    // Also clean up already-resolved font assets
+    generateBundle(_options, bundle) {
+      for (const key of Object.keys(bundle)) {
+        if (/KaTeX_.*\.(ttf|woff)$/i.test(key) && !/\.woff2$/i.test(key)) {
+          delete bundle[key];
+        }
+      }
+    },
+  };
+}
+
 // https://vite.dev/config/
 export default defineConfig(async () => ({
   plugins: [
+    mermaidSlimPlugin(),
+    katexFontFilterPlugin(),
     react(),
     tailwindcss(),
     // Build official plugins as external bundles after main build
@@ -33,6 +133,14 @@ export default defineConfig(async () => ({
     },
   ],
 
+  // Redirect @codemirror/language-data to our curated subset (~20 languages).
+  // @milkdown/crepe imports it transitively; this avoids bundling 89+ grammars.
+  resolve: {
+    alias: {
+      '@codemirror/language-data': path.resolve(import.meta.dirname, 'src/lib/cm-languages.ts'),
+    },
+  },
+
   // Milkdown Crepe bundles Vue-based UI internally; suppress esm-bundler warnings
   define: {
     __VUE_OPTIONS_API__: JSON.stringify(true),
@@ -50,7 +158,6 @@ export default defineConfig(async () => ({
             "@codemirror/view",
             "@codemirror/language",
             "@codemirror/lang-markdown",
-            "@codemirror/language-data",
             "@codemirror/autocomplete",
             "@codemirror/search",
             "@codemirror/lint",
