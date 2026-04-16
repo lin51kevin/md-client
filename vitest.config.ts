@@ -7,11 +7,9 @@ export default defineConfig({
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
     alias: {
-      // Tauri APIs are unavailable in the Node/jsdom test environment.
-      // Redirect them to empty stubs so tests that import usePlugins or other
-      // Tauri-aware modules can load without a resolution error.
       '@tauri-apps/api/dialog': path.resolve('./src/__mocks__/tauri-dialog.ts'),
       '@tauri-apps/api/fs': path.resolve('./src/__mocks__/tauri-fs.ts'),
+      '@tauri-apps/plugin-updater': path.resolve('./src/__mocks__/tauri-updater.ts'),
     },
   },
   test: {

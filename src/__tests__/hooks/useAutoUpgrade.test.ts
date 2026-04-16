@@ -131,9 +131,9 @@ describe('useAutoUpgrade', () => {
       await result.current.downloadAndInstall();
     });
 
-    expect(onDownloadProgress).toHaveBeenCalledWith(0);
     expect(onDownloadProgress).toHaveBeenCalledWith(50);
     expect(onDownloadProgress).toHaveBeenCalledWith(100);
+    expect(onDownloadProgress).toHaveBeenCalledTimes(2);
     expect(onUpdateReady).toHaveBeenCalled();
   });
 
