@@ -12,6 +12,7 @@ import { FrontmatterPanel } from './FrontmatterPanel';
 import { useLocalImage, remarkWikiLinkPlugin, wikiLinkSchema } from './nodeviews';
 import { renderMermaidPreview } from './nodeviews/MermaidBlockView';
 import { CodeBlockFoldOverlay } from './CodeBlockFoldOverlay';
+import { buildAIToolbar } from './ai-toolbar-bridge';
 
 /** Convert a Frontmatter object back to YAML string (without --- delimiters) */
 function frontmatterToYaml(fm: Frontmatter): string {
@@ -76,6 +77,9 @@ function MilkdownEditor({
       featureConfigs: {
         [CrepeFeature.CodeMirror]: {
           renderPreview: renderMermaidPreview,
+        },
+        [CrepeFeature.Toolbar]: {
+          buildToolbar: buildAIToolbar,
         },
       },
       features: {

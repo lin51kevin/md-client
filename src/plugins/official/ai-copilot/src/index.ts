@@ -1,5 +1,6 @@
 import type { PluginContext } from '../../../plugin-sandbox';
 import { AICopilotPanelContent } from './AICopilotPanel';
+import { AI_TOOLBAR_EVENT, type AIToolbarEventDetail } from '../../../../components/MilkdownPreview/ai-toolbar-bridge';
 
 /** AI context menu items — label uses emoji prefix for visual consistency. */
 const AI_MENU_ITEMS = [
@@ -43,11 +44,19 @@ export function activate(context: PluginContext) {
     }),
   );
 
+  // Bridge: listen for AI toolbar button clicks from Milkdown's floating toolbar
+  const toolbarHandler = (e: Event) => {
+    const { command } = (e as CustomEvent<AIToolbarEventDetail>).detail;
+    panelContent.sendMessage(command);
+  };
+  document.addEventListener(AI_TOOLBAR_EVENT, toolbarHandler);
+
   return {
     deactivate: () => {
       panel.dispose();
       menuDisposables.forEach((d) => d.dispose());
       commandDisposables.forEach((d) => d.dispose());
+      document.removeEventListener(AI_TOOLBAR_EVENT, toolbarHandler);
     },
   };
 }
