@@ -1,4 +1,4 @@
-import { createElement } from 'react';
+import { createElement, useEffect, useRef } from 'react';
 import { getQuickCommandList } from './intent-parser';
 import { useI18n } from '../../../../i18n';
 import type { TranslationKey } from '../../../../i18n';
@@ -6,6 +6,7 @@ import type { TranslationKey } from '../../../../i18n';
 interface SlashCommandPopupProps {
   filter: string;
   onSelect: (command: string) => void;
+  selectedIndex?: number;
 }
 
 const CMD_KEYS: Record<string, { labelKey: TranslationKey; descKey: TranslationKey }> = {
@@ -28,8 +29,9 @@ const CMD_KEYS: Record<string, { labelKey: TranslationKey; descKey: TranslationK
  * Slash command popup — shown above the input when user types '/'.
  * Filters commands based on what follows the slash.
  */
-export function SlashCommandPopup({ filter, onSelect }: SlashCommandPopupProps) {
+export function SlashCommandPopup({ filter, onSelect, selectedIndex = 0 }: SlashCommandPopupProps) {
   const { t } = useI18n();
+  const containerRef = useRef<HTMLDivElement>(null);
   const rawCommands = getQuickCommandList();
 
   const commands = rawCommands.map((c) => {
@@ -52,9 +54,18 @@ export function SlashCommandPopup({ filter, onSelect }: SlashCommandPopupProps) 
 
   if (filtered.length === 0) return null;
 
+  // Scroll selected item into view
+  useEffect(() => {
+    if (selectedIndex >= 0 && containerRef.current) {
+      const el = containerRef.current.querySelector(`[data-index="${selectedIndex}"]`);
+      el?.scrollIntoView({ block: 'nearest' });
+    }
+  }, [selectedIndex]);
+
   return createElement(
     'div',
     {
+      ref: containerRef,
       style: {
         position: 'absolute',
         bottom: '100%',
@@ -70,11 +81,12 @@ export function SlashCommandPopup({ filter, onSelect }: SlashCommandPopupProps) 
         boxShadow: '0 -2px 8px rgba(0,0,0,0.3)',
       },
     },
-    ...filtered.map((cmd) =>
+    ...filtered.map((cmd, idx) =>
       createElement(
         'button',
         {
           key: cmd.command,
+          'data-index': idx,
           onClick: () => onSelect(cmd.command + ' '),
           style: {
             display: 'flex',
@@ -84,7 +96,7 @@ export function SlashCommandPopup({ filter, onSelect }: SlashCommandPopupProps) 
             fontSize: '12px',
             border: 'none',
             borderBottom: '1px solid var(--border-color, #2a2a2a)',
-            background: 'transparent',
+            background: idx === selectedIndex ? 'var(--hover-bg, rgba(255,255,255,0.1))' : 'transparent',
             color: 'var(--text-primary, #e0e0e0)',
             cursor: 'pointer',
             textAlign: 'left',
@@ -93,7 +105,7 @@ export function SlashCommandPopup({ filter, onSelect }: SlashCommandPopupProps) 
             e.currentTarget.style.background = 'var(--hover-bg, rgba(255,255,255,0.06))';
           },
           onMouseLeave: (e: React.MouseEvent<HTMLButtonElement>) => {
-            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.background = idx === selectedIndex ? 'var(--hover-bg, rgba(255,255,255,0.1))' : 'transparent';
           },
         },
         createElement(
@@ -115,4 +127,32 @@ export function SlashCommandPopup({ filter, onSelect }: SlashCommandPopupProps) 
       ),
     ),
   );
+}
+
+/** Return the number of commands matching the current filter. */
+export function getFilteredCommandCount(filter: string): number {
+  const commands = getQuickCommandList();
+  if (!filter) return commands.length;
+  const f = filter.toLowerCase();
+  return commands.filter(
+    (c) =>
+      c.command.includes(f) ||
+      c.label.toLowerCase().includes(f) ||
+      c.description.toLowerCase().includes(f),
+  ).length;
+}
+
+/** Return the command string at a given index in the filtered list. */
+export function getFilteredCommandAt(filter: string, index: number): string | undefined {
+  const commands = getQuickCommandList();
+  const f = filter ? filter.toLowerCase() : '';
+  const filtered = f
+    ? commands.filter(
+        (c) =>
+          c.command.includes(f) ||
+          c.label.toLowerCase().includes(f) ||
+          c.description.toLowerCase().includes(f),
+      )
+    : commands;
+  return filtered[index]?.command;
 }

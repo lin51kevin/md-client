@@ -20,7 +20,7 @@ import { getEffectiveScope } from './edit-scope';
 import { validateActionAgainstCurrentContent } from './stale-guard';
 import { createMarkdownSectionActions } from './markdown-actions';
 import { ChatMessageView } from './ChatMessage';
-import { SlashCommandPopup } from './QuickCommands';
+import { SlashCommandPopup, getFilteredCommandCount, getFilteredCommandAt } from './QuickCommands';
 import { ModelSelectorView } from './ModelSelector';
 import { SettingsViewComponent } from './SettingsView';
 import { getT, useI18n } from '../../../../i18n';
@@ -128,7 +128,14 @@ export class AICopilotPanelContent {
 
     const intent = parseIntent(text);
     const hasSelection = Boolean(this.context.editor.getSelection());
-    const requestedScope = text.trim().startsWith('/scope ') ? intent.target : this.state.editScope;
+    // For slash commands, use the command's intended target scope;
+    // for /scope command, use parsed target; otherwise fall back to editScope.
+    const isSlashCommand = text.trim().startsWith('/') && !text.trim().startsWith('/scope ');
+    const requestedScope = text.trim().startsWith('/scope ')
+      ? intent.target
+      : isSlashCommand
+        ? intent.target
+        : this.state.editScope;
     const effectiveScope = getEffectiveScope(requestedScope, hasSelection);
     const editorCtx = await this.captureContext(effectiveScope, intent.params.targetFilePath);
 
@@ -439,6 +446,7 @@ export class AICopilotPanelContent {
       const [input, setInput] = useState('');
       const [showSlashPopup, setShowSlashPopup] = useState(false);
       const [slashFilter, setSlashFilter] = useState('');
+      const [slashSelectedIndex, setSlashSelectedIndex] = useState(-1);
       const messagesEndRef = useRef<HTMLDivElement>(null);
       const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -470,6 +478,7 @@ export class AICopilotPanelContent {
         if (value.startsWith('/')) {
           setShowSlashPopup(true);
           setSlashFilter(value);
+          setSlashSelectedIndex(0);
         } else {
           setShowSlashPopup(false);
         }
@@ -696,6 +705,7 @@ export class AICopilotPanelContent {
               ? createElement(SlashCommandPopup, {
                   filter: slashFilter,
                   onSelect: handleSlashSelect,
+                  selectedIndex: slashSelectedIndex,
                 })
               : null,
             // Textarea (borderless)
@@ -705,12 +715,37 @@ export class AICopilotPanelContent {
               onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) =>
                 handleInputChange(e.target.value),
               onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+                if (showSlashPopup) {
+                  const count = getFilteredCommandCount(slashFilter);
+                  if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    setSlashSelectedIndex((prev) => (prev + 1) % count);
+                    return;
+                  }
+                  if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    setSlashSelectedIndex((prev) => (prev <= 0 ? count - 1 : prev - 1));
+                    return;
+                  }
+                  if (e.key === 'Tab' || (e.key === 'Enter' && !e.shiftKey)) {
+                    const idx = slashSelectedIndex >= 0 ? slashSelectedIndex : 0;
+                    e.preventDefault();
+                    const cmd = getFilteredCommandAt(slashFilter, idx);
+                    if (cmd) {
+                      handleSlashSelect(cmd + ' ');
+                    }
+                    return;
+                  }
+                  if (e.key === 'Escape') {
+                    e.preventDefault();
+                    setShowSlashPopup(false);
+                    setSlashSelectedIndex(-1);
+                    return;
+                  }
+                }
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
                   handleSend();
-                }
-                if (e.key === 'Escape') {
-                  setShowSlashPopup(false);
                 }
               },
               placeholder: t('aiCopilot.panel.placeholder'),
