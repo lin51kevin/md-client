@@ -18,6 +18,7 @@ describe('useDragDrop', () => {
     renderHook(() => useDragDrop({
       isTauri: false,
       setIsDragOver,
+      setDragKind: vi.fn(),
       openFileInTab,
     }));
     expect(mockOnDragDrop).not.toHaveBeenCalled();
@@ -30,6 +31,7 @@ describe('useDragDrop', () => {
     renderHook(() => useDragDrop({
       isTauri: true,
       setIsDragOver,
+      setDragKind: vi.fn(),
       openFileInTab,
     }));
 

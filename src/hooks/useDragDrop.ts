@@ -5,9 +5,13 @@ import { getCurrentWebview } from '@tauri-apps/api/webview';
 /** 支持的图片扩展名 */
 const IMAGE_EXT_RE = /\.(png|jpe?g|gif|webp|bmp)$/i;
 
+export type DragKind = 'file' | 'folder';
+
 interface DragDropParams {
   isTauri: boolean;
   setIsDragOver: (v: boolean) => void;
+  /** 设置当前拖拽内容的类型（文件 or 文件夹），用于 DragOverlay 展示 */
+  setDragKind: (v: DragKind) => void;
   openFileInTab: (path: string) => Promise<void>;
   /** 处理拖入的图片（由 useImagePaste 提供）。Tauri 的 onDragDropEvent 拦截了原生
    *  drop 事件，导致 DOM dataTransfer.files 可能为空，因此需在此处理图片拖入。 */
@@ -16,7 +20,7 @@ interface DragDropParams {
   onFolderDrop?: (path: string) => void;
 }
 
-export function useDragDrop({ isTauri, setIsDragOver, openFileInTab, onImageDrop, onFolderDrop }: DragDropParams) {
+export function useDragDrop({ isTauri, setIsDragOver, setDragKind, openFileInTab, onImageDrop, onFolderDrop }: DragDropParams) {
   // Ref 让 Tauri 事件回调始终读到最新的 onImageDrop / onFolderDrop，无需重新订阅
   const onImageDropRef = useRef(onImageDrop);
   const onFolderDropRef = useRef(onFolderDrop);
@@ -34,6 +38,23 @@ export function useDragDrop({ isTauri, setIsDragOver, openFileInTab, onImageDrop
         const { type } = event.payload;
         if (type === 'enter' || type === 'over') {
           setIsDragOver(true);
+          // Detect drag kind from paths in enter event
+          if (type === 'enter') {
+            const paths = (event.payload as { type: 'enter'; paths: string[] }).paths;
+            if (paths && paths.length > 0) {
+              // Check first path: if it has no file extension, likely a folder
+              // We do async is_directory check for accuracy
+              (async () => {
+                try {
+                  const isDir = await invoke<boolean>('is_directory', { path: paths[0] });
+                  setDragKind(isDir ? 'folder' : 'file');
+                } catch {
+                  // Fallback: check if path has a file extension
+                  setDragKind(/\.[^/\\]+$/.test(paths[0]) ? 'file' : 'folder');
+                }
+              })();
+            }
+          }
         } else if (type === 'drop') {
           setIsDragOver(false);
           const paths = (event.payload as { type: 'drop'; paths: string[] }).paths;

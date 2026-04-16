@@ -52,7 +52,7 @@ import { SettingsModal } from './components/SettingsModal';
 import { DragOverlay } from './components/DragOverlay';
 import { SearchPanel } from './components/SearchPanel';
 import { TocSidebar } from './components/TocSidebar';
-import { FileTreeSidebar } from './components/FileTreeSidebar';
+import { FileTreeSidebar, type FileTreeSidebarHandle } from './components/FileTreeSidebar';
 import { TableEditor } from './components/TableEditor';
 import { InputDialog } from './components/InputDialog';
 import { CommandPalette } from './components/CommandPalette';
@@ -83,6 +83,7 @@ export default function App() {
   // ── UI visibility state ──────────────────────────────────────────
   const [viewMode, setViewMode] = useState<ViewMode>('split');
   const [isDragOver, setIsDragOver] = useState(false);
+  const [dragKind, setDragKind] = useState<import('./hooks/useDragDrop').DragKind>('file');
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; tabId: string } | null>(null);
   const [editorCtxMenu, setEditorCtxMenu] = useState<{ x: number; y: number; context: import('./lib/context-menu').ContextInfo } | null>(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -249,7 +250,14 @@ export default function App() {
     tabId: activeTabId,
   });
 
-  useDragDrop({ isTauri, setIsDragOver, openFileInTab, onImageDrop: saveAndInsertImage, onFolderDrop: (path) => setFileTreeRoot(path) });
+  // fileTreeSidebarRef allows triggering loadRoot from outside (e.g. folder drag-drop)
+  const fileTreeSidebarRef = useRef<FileTreeSidebarHandle>(null);
+
+  useDragDrop({ isTauri, setIsDragOver, setDragKind, openFileInTab, onImageDrop: saveAndInsertImage, onFolderDrop: (path) => {
+    setFileTreeRoot(path);
+    setActivePanel('filetree');
+    fileTreeSidebarRef.current?.loadRoot(path);
+  } });
   useWindowTitle(activeTab, isTauri);
   useWindowInit(isTauri, theme);
 
@@ -382,7 +390,7 @@ export default function App() {
       onContextMenu={(e) => e.preventDefault()}
       style={{ fontFamily: 'Segoe UI, system-ui, sans-serif', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
     >
-      {isDragOver && <DragOverlay />}
+      {isDragOver && <DragOverlay dragKind={dragKind} />}
 
       {/* Exit button for hideUI typewriter mode */}
       {focusMode === 'typewriter' && typewriterOptions.hideUI && (
@@ -517,7 +525,7 @@ export default function App() {
 
         {/* Left sidebar panels — wrapped in resizable container */}
         <SidebarContainer activePanel={activePanel}>
-          <FileTreeSidebar visible={showFileTree} onFileOpen={(path) => openFileInTab(path)} activeFilePath={activeTab.filePath ?? null} onClose={() => setActivePanel(null)} onRootChange={setFileTreeRoot} />
+          <FileTreeSidebar ref={fileTreeSidebarRef} visible={showFileTree} onFileOpen={(path) => openFileInTab(path)} activeFilePath={activeTab.filePath ?? null} onClose={() => setActivePanel(null)} onRootChange={setFileTreeRoot} />
           <TocSidebar key={activeTabId} toc={isPristine ? [] : tocEntries} onNavigate={handleTocNavigate} activeId={activeTocId} visible={showToc} onClose={() => setActivePanel(null)} />
 
           <SearchPanel

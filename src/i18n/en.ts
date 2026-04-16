@@ -329,6 +329,8 @@ export const en: Record<TranslationKey, string> = {
 
   // ── Drag Overlay ──────────────────────────────────────────────────────────
   'drag.dropToOpen': 'Drop to open file',
+  'drag.dropToOpenFolder': 'Drop to open folder',
+  'drag.supportedFormats': 'Supports .md · .markdown · .txt',
 
   // ── Welcome Page ────────────────────────────────────────────────────────
   'welcome.title': 'Welcome to MarkLite',

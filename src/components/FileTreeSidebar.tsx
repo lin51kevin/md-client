@@ -4,7 +4,7 @@
  * 树形展示目录结构，支持懒加载子目录、点击文件打开、切换根目录。
  * 使用 Tauri invoke 调用 Rust 后端 list_directory 命令。
  */
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { message, open as openDialog } from '@tauri-apps/plugin-dialog';
 import {
@@ -91,13 +91,18 @@ function loadSavedExpanded(): Set<string> {
   return new Set();
 }
 
-export function FileTreeSidebar({
+/** FileTreeSidebar 通过 ref 暴露的方法 */
+export interface FileTreeSidebarHandle {
+  loadRoot: (path: string) => void;
+}
+
+export const FileTreeSidebar = forwardRef<FileTreeSidebarHandle, FileTreeSidebarProps>(function FileTreeSidebar({
   visible = true,
   onFileOpen,
   activeFilePath,
   onClose,
   onRootChange,
-}: FileTreeSidebarProps) {
+}, ref) {
   const [rootPath, setRootPath] = useState<string>(() => {
     try { return localStorage.getItem('marklite-filetree-root') || ''; }
     catch { return ''; }
@@ -207,6 +212,9 @@ export function FileTreeSidebar({
       setLoading(false);
     }
   }, [rootPath, onRootChange]);
+
+  // Expose loadRoot to parent via ref
+  useImperativeHandle(ref, () => ({ loadRoot: (path: string) => { loadRoot(path); } }), [loadRoot]);
 
   /** 切换到父目录 */
   const goParent = useCallback(() => {
@@ -520,4 +528,4 @@ export function FileTreeSidebar({
       )}
     </div>
   );
-}
+});

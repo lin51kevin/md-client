@@ -326,6 +326,8 @@ export const zhCN = {
 
   // ── Drag Overlay ──────────────────────────────────────────────────────────
   'drag.dropToOpen': '释放以打开文件',
+  'drag.dropToOpenFolder': '释放以打开文件夹',
+  'drag.supportedFormats': '支持 .md · .markdown · .txt',
 
   // ── Welcome Page ────────────────────────────────────────────────────────
   'welcome.title': '欢迎使用 MarkLite',

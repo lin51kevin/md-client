@@ -31,6 +31,7 @@ describe('useDragDrop folder handling', () => {
     renderHook(() => useDragDrop({
       isTauri: true,
       setIsDragOver,
+      setDragKind: vi.fn(),
       openFileInTab: vi.fn(),
       onFolderDrop,
     }));
@@ -52,6 +53,7 @@ describe('useDragDrop folder handling', () => {
     renderHook(() => useDragDrop({
       isTauri: true,
       setIsDragOver: vi.fn(),
+      setDragKind: vi.fn(),
       openFileInTab: vi.fn(),
       onFolderDrop,
     }));
@@ -71,6 +73,7 @@ describe('useDragDrop folder handling', () => {
     renderHook(() => useDragDrop({
       isTauri: true,
       setIsDragOver: vi.fn(),
+      setDragKind: vi.fn(),
       openFileInTab: vi.fn(),
     }));
 
