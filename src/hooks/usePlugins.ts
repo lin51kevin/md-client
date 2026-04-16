@@ -21,7 +21,7 @@ export interface PendingPermissionRequest {
 const STORAGE_KEY = 'marklite-installed-plugins';
 
 /** Plugin IDs that are hidden from the UI (built-in features supersede them). */
-const HIDDEN_PLUGIN_IDS = new Set(['marklite-preview-edit']);
+const HIDDEN_PLUGIN_IDS = new Set<string>([]);
 
 const DEFAULT_PLUGINS: PluginUIItem[] = [
   {
@@ -48,7 +48,6 @@ const DEFAULT_PLUGINS: PluginUIItem[] = [
 const ID_MIGRATION: Record<string, string> = {
   'backlinks-panel': 'marklite-backlinks',
   'graph-view': 'marklite-graph-view',
-  'preview-edit': 'marklite-preview-edit',
 };
 
 function migratePluginIds(plugins: PluginUIItem[]): PluginUIItem[] {

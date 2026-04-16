@@ -12,7 +12,6 @@ const DEV_PLUGIN_MODULES: Record<string, () => Promise<{ activate?: (ctx: Plugin
   import.meta.env.DEV ? {
     'marklite-backlinks': () => import('../plugins/official/backlinks/src/index'),
     'marklite-graph-view': () => import('../plugins/official/graph-view/src/index'),
-    'marklite-preview-edit': () => import('../plugins/official/preview-edit/src/index'),
     'marklite-ai-copilot': () => import('../plugins/official/ai-copilot/src/index'),
   } : {};
 
@@ -20,7 +19,6 @@ const DEV_PLUGIN_MODULES: Record<string, () => Promise<{ activate?: (ctx: Plugin
 const OFFICIAL_PLUGIN_IDS = [
   'marklite-backlinks',
   'marklite-graph-view',
-  'marklite-preview-edit',
   'marklite-ai-copilot',
 ];
 

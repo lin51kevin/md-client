@@ -186,7 +186,6 @@ describe('usePlugins - ID migration', () => {
     // Should have all default plugins merged in
     expect(ids).toContain('marklite-backlinks');
     expect(ids).toContain('marklite-graph-view');
-    expect(ids).not.toContain('marklite-preview-edit');
   });
 });
 
