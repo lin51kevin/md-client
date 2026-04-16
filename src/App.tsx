@@ -62,7 +62,7 @@ import { GitPanel } from './components/GitPanel';
 import { PluginPanel } from './components/PluginPanel';
 import { ActivityBar } from './components/ActivityBar';
 import { SidebarContainer } from './components/SidebarContainer';
-import { useLocalStorageBool } from './hooks/useLocalStorage';
+import { useLocalStorageBool, useLocalStorageString } from './hooks/useLocalStorage';
 import { useGit } from './hooks/useGit';
 import { useTypewriterOptions } from './hooks/useTypewriterOptions';
 // Help button now opens GitHub USER_GUIDE.md instead of in-app modal
@@ -81,7 +81,7 @@ export default function App() {
   const { t } = i18n;
 
   // ── UI visibility state ──────────────────────────────────────────
-  const [viewMode, setViewMode] = useState<ViewMode>('split');
+  const [viewMode, setViewMode] = useLocalStorageString('marklite-view-mode', 'split') as [ViewMode, (v: ViewMode) => void];
   const [isDragOver, setIsDragOver] = useState(false);
   const [dragKind, setDragKind] = useState<import('./hooks/useDragDrop').DragKind>('file');
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; tabId: string } | null>(null);
