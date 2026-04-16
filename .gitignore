@@ -39,3 +39,6 @@ docs/DEVELOPMENT*.md
 sample.md
 
  src-tauri/assets/images/*.jpg
+
+# Built plugin bundles (output of scripts/build-plugins.mjs)
+resources/plugins/

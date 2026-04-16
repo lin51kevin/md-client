@@ -20,7 +20,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 const PLUGINS_SRC = path.join(ROOT, 'src', 'plugins', 'official');
-const DIST_PLUGINS = path.join(ROOT, 'dist', 'plugins');
+const DIST_PLUGINS = path.join(ROOT, 'resources', 'plugins');
 
 // ── Shared dependency handling ──────────────────────────────────────
 //
@@ -205,7 +205,7 @@ async function main() {
   );
 
   const built = results.filter(Boolean);
-  console.log(`\nDone! ${built.length} plugin(s) built to dist/plugins/`);
+  console.log(`\nDone! ${built.length} plugin(s) built to resources/plugins/`);
 }
 
 main().catch(err => {

@@ -2,7 +2,7 @@ import { useCallback, useRef } from 'react';
 import type { PluginContextDeps } from '../plugins/plugin-context-factory';
 import type { PluginContext } from '../plugins/plugin-sandbox';
 import { createPluginContext } from '../plugins/plugin-context-factory';
-import { validateManifest, checkEngineVersion, loadPluginModule } from '../plugins/plugin-loader';
+import { validateManifest, checkEngineVersion, loadPluginModuleFromResource } from '../plugins/plugin-loader';
 
 /**
  * In DEV mode, plugins are bundled via Vite's dynamic imports for HMR.
@@ -61,19 +61,19 @@ export function usePluginRuntime(deps: PluginContextDeps) {
         return;
       }
     } else if (!import.meta.env.DEV && OFFICIAL_PLUGIN_IDS.includes(id)) {
-      // Production: load externally-built plugin from /plugins/{id}/
+      // Production: load plugin from Tauri resource directory
       try {
-        const manifestResp = await fetch(`/plugins/${id}/manifest.json`);
-        if (!manifestResp.ok) {
-          console.warn(`[PluginRuntime] Plugin "${id}" manifest not found (${manifestResp.status})`);
-          return;
-        }
-        const manifest = validateManifest(await manifestResp.json());
+        const { resolveResource } = await import('@tauri-apps/api/path');
+        const { readTextFile } = await import('@tauri-apps/plugin-fs');
+
+        const manifestPath = await resolveResource(`plugins/${id}/manifest.json`);
+        const manifestText = await readTextFile(manifestPath);
+        const manifest = validateManifest(JSON.parse(manifestText));
         if (!checkEngineVersion(manifest)) {
           console.warn(`[PluginRuntime] Plugin "${id}" requires newer engine version`);
           return;
         }
-        mod = await loadPluginModule(manifest);
+        mod = await loadPluginModuleFromResource(manifest);
       } catch (err) {
         console.error(`[PluginRuntime] Failed to load plugin "${id}" (prod):`, err);
         return;

@@ -134,7 +134,6 @@ export async function loadPluginModule(
   }
 
   try {
-    // 预期插件被打包到 /plugins/{id}/dist/index.js
     const moduleUrl = `/plugins/${manifest.id}/${manifest.main}`;
     const mod = await import(/* @vite-ignore */ moduleUrl);
     return {
@@ -144,6 +143,51 @@ export async function loadPluginModule(
   } catch (err) {
     console.warn(
       `[PluginHost] Failed to load module for plugin "${manifest.id}": ${err instanceof Error ? err.message : String(err)}`,
+    );
+    return {};
+  }
+}
+
+/**
+ * Load a plugin module from Tauri's resource directory.
+ * Reads the JS source via Tauri FS and creates a blob URL for import().
+ */
+export async function loadPluginModuleFromResource(
+  manifest: PluginManifest,
+): Promise<{ activate?: () => Promise<void>; deactivate?: () => Promise<void> }> {
+  validatePluginId(manifest.id);
+  validatePluginMain(manifest.main);
+
+  const sigResult = verifyPluginSignature(manifest, { publicKeys: [] });
+  if (sigResult.status === SignatureStatus.Failed) {
+    throw new Error(
+      `[PluginHost] Signature verification failed for plugin "${manifest.id}": ${sigResult.message}`,
+    );
+  }
+  if (sigResult.status === SignatureStatus.Missing || sigResult.status === SignatureStatus.Skipped) {
+    console.warn(`[PluginHost] Plugin "${manifest.id}" loaded without signature verification: ${sigResult.message}`);
+  }
+
+  try {
+    const { resolveResource } = await import('@tauri-apps/api/path');
+    const { readTextFile } = await import('@tauri-apps/plugin-fs');
+
+    const modulePath = await resolveResource(`plugins/${manifest.id}/${manifest.main}`);
+    const source = await readTextFile(modulePath);
+    const blob = new Blob([source], { type: 'application/javascript' });
+    const blobUrl = URL.createObjectURL(blob);
+    try {
+      const mod = await import(/* @vite-ignore */ blobUrl);
+      return {
+        activate: mod.activate as (() => Promise<void>) | undefined,
+        deactivate: mod.deactivate as (() => Promise<void>) | undefined,
+      };
+    } finally {
+      URL.revokeObjectURL(blobUrl);
+    }
+  } catch (err) {
+    console.warn(
+      `[PluginHost] Failed to load resource plugin "${manifest.id}": ${err instanceof Error ? err.message : String(err)}`,
     );
     return {};
   }
