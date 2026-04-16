@@ -95,7 +95,8 @@ export async function loadConfig(storage: StorageAPI): Promise<AIConfig> {
     const raw = await storage.get(CONFIG_KEY);
     if (!raw) return { ...DEFAULT_CONFIG };
     return migrateConfig(JSON.parse(raw));
-  } catch {
+  } catch (err) {
+    console.error('[AI Copilot] Failed to load config, using defaults:', err);
     return { ...DEFAULT_CONFIG };
   }
 }

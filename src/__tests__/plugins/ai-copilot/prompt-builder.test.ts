@@ -60,8 +60,11 @@ describe('parseEditResponse', () => {
     });
   });
 
-  it('returns null when no editable block is present', () => {
-    expect(parseEditResponse('Just some plain text')).toBeNull();
+  it('returns content from plain text when no code block present (raw fallback)', () => {
+    expect(parseEditResponse('Just some plain text')).toEqual({
+      operation: 'replace_selection',
+      content: 'Just some plain text',
+    });
   });
 });
 
@@ -91,8 +94,8 @@ describe('extractModifiedText', () => {
     expect(extractModifiedText(response)).toBe('\nIndented\n\n');
   });
 
-  it('returns null when no code block present', () => {
-    expect(extractModifiedText('Just some plain text')).toBeNull();
+  it('extracts plain text when no code block present (raw fallback)', () => {
+    expect(extractModifiedText('Just some plain text')).toBe('Just some plain text');
   });
 
   it('returns null for empty string', () => {

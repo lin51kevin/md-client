@@ -80,7 +80,7 @@ describe('planEditActions', () => {
     expect(actions).toEqual([]);
   });
 
-  it('returns no actions when no editable content is found', () => {
+  it('returns a full-replace action when response is plain text (raw fallback)', () => {
     const actions = planEditActions({
       response: 'plain assistant text',
       editorCtx: baseContext,
@@ -88,7 +88,10 @@ describe('planEditActions', () => {
       idFactory: (index) => `id-${index}`,
     });
 
-    expect(actions).toEqual([]);
+    // The raw text fallback returns content with replace_selection operation,
+    // which triggers the section-diff path → full replace since no sections matched.
+    expect(actions).toHaveLength(1);
+    expect(actions[0].type).toBe('replace');
   });
 
   it('keeps document rewrite flow for tab scope', () => {

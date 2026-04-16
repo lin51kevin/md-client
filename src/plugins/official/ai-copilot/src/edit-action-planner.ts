@@ -23,6 +23,22 @@ export function planEditActions(input: PlanEditActionsInput): EditAction[] {
   const parsed = parseEditResponse(response);
   if (!parsed) return [];
 
+  // Respect explicit insert_at_cursor from AI response
+  if (parsed.operation === 'insert_at_cursor') {
+    return [
+      {
+        id: idFactory(0),
+        type: 'insert',
+        description: '在光标处插入',
+        from: editorCtx.cursor.offset,
+        to: editorCtx.cursor.offset,
+        originalText: '',
+        newText: parsed.content,
+        sourceFilePath: editorCtx.filePath,
+      },
+    ];
+  }
+
   if (editorCtx.selection) {
     return [
       {

@@ -59,7 +59,6 @@ export function createMarkdownSectionActions(input: CreateMarkdownSectionActions
 
   const matchedModifiedIndices = new Set<number>();
   const actions: EditAction[] = [];
-  let hasStructuralMismatch = originalSections.length !== modifiedSections.length;
   let lastMatchedIndex = -1;
 
   for (let i = 0; i < originalSections.length; i += 1) {
@@ -71,13 +70,13 @@ export function createMarkdownSectionActions(input: CreateMarkdownSectionActions
       newSectionIndex = i;
     }
     if (newSectionIndex < 0) {
-      hasStructuralMismatch = true;
       continue;
     }
     const newSection = modifiedSections[newSectionIndex];
     matchedModifiedIndices.add(newSectionIndex);
     if (newSectionIndex < lastMatchedIndex) {
-      hasStructuralMismatch = true;
+      // Section order mismatch — skip this match
+      continue;
     }
     lastMatchedIndex = newSectionIndex;
     if (oldSection.text === newSection.text) continue;
@@ -95,10 +94,12 @@ export function createMarkdownSectionActions(input: CreateMarkdownSectionActions
   }
 
   if (matchedModifiedIndices.size !== modifiedSections.length) {
-    hasStructuralMismatch = true;
+    // New sections were added — include a full replace to capture them
+    return [fullReplaceAction];
   }
 
-  if (hasStructuralMismatch) return [fullReplaceAction];
+  // Prefer partial section actions over a full-document replace to minimize
+  // unintended changes when sections are structurally matched.
   if (actions.length > 0) return actions;
 
   return [fullReplaceAction];

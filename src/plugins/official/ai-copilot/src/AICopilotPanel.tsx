@@ -16,7 +16,7 @@ import { OpenAICompatibleProvider } from './providers/openai-compatible';
 import { loadConfig, saveConfig, buildProviderConfig, type AIConfig } from './config-store';
 import { parseIntent } from './intent-parser';
 import { buildSystemPrompt, buildChatPrompt, extractModifiedText } from './prompt-builder';
-import { getEffectiveScope } from './edit-scope';
+import { getEffectiveScope, type ScopeResolution } from './edit-scope';
 import { validateActionAgainstCurrentContent } from './stale-guard';
 import { planEditActions, shouldBuildEditActions } from './edit-action-planner';
 import { ChatMessageView } from './ChatMessage';
@@ -85,6 +85,7 @@ export class AICopilotPanelContent {
   }
 
   private async captureContext(scope: EditScopeMode, targetFilePath?: string): Promise<EditorContext> {
+    const t = getT();
     const activeContent = this.context.editor.getContent();
     const cursor = this.context.editor.getCursorPosition();
     const selection = this.context.editor.getSelection() ?? undefined;
@@ -119,7 +120,7 @@ export class AICopilotPanelContent {
           targetFilePath,
         };
       }
-      this.context.ui.showMessage(`未找到目标文件: ${targetFilePath}，已回退到当前文档`, 'warning');
+      this.context.ui.showMessage(t('aiCopilot.panel.targetNotFound', { path: targetFilePath }), 'warning');
     }
 
     return { filePath: activeFilePath, content: activeContent, cursor, selection, scope, targetFilePath };
@@ -133,20 +134,37 @@ export class AICopilotPanelContent {
 
     const intent = parseIntent(text);
     const hasSelection = Boolean(this.context.editor.getSelection());
-    const effectiveScope = text.trim().startsWith('/scope ')
-      ? intent.target
-      : getEffectiveScope(intent.target, hasSelection);
-    const editorCtx = await this.captureContext(effectiveScope, intent.params.targetFilePath);
+    const scopeResolution: ScopeResolution = text.trim().startsWith('/scope ')
+      ? { scope: intent.target, downgraded: false }
+      : getEffectiveScope(intent.target, hasSelection, intent.action);
+    const effectiveScope = scopeResolution.scope;
 
-    // Add user message
+    if (scopeResolution.downgraded) {
+      this.context.ui.showMessage(
+        t('aiCopilot.panel.scopeDowngraded', { fallback: effectiveScope }),
+        'warning',
+      );
+    }
+
+    const editorCtx = await this.captureContext(effectiveScope, intent.params.targetFilePath);
+    const { assistantMsg } = this.appendMessagePair(text);
+
+    try {
+      const fullResponse = await this.streamAIResponse(intent, editorCtx, assistantMsg.id);
+      this.handleAIResponse(fullResponse, intent, editorCtx, effectiveScope, assistantMsg.id, t);
+    } catch (error) {
+      this.handleStreamError(error, assistantMsg.id);
+    }
+  }
+
+  /** Create user + placeholder assistant messages and push them to state. */
+  private appendMessagePair(text: string) {
     const userMsg: CopilotMessage = {
       id: this.nextId(),
       role: 'user',
       content: text,
       timestamp: Date.now(),
     };
-
-    // Add streaming assistant message placeholder
     const assistantMsg: CopilotMessage = {
       id: this.nextId(),
       role: 'assistant',
@@ -154,114 +172,150 @@ export class AICopilotPanelContent {
       timestamp: Date.now(),
       isStreaming: true,
     };
-
     const maxHistory = this.config?.general?.maxHistoryLength ?? 50;
     const trimmedHistory = this.state.messages.slice(-(maxHistory - 2));
     this.setState({
       messages: [...trimmedHistory, userMsg, assistantMsg],
       isLoading: true,
     });
+    return { userMsg, assistantMsg };
+  }
 
-    try {
-      const systemPrompt = buildSystemPrompt(editorCtx);
-      const userPrompt = buildChatPrompt(intent, editorCtx);
+  /** Build prompts, send to AI, stream chunks into the assistant message. */
+  private async streamAIResponse(
+    intent: ReturnType<typeof parseIntent>,
+    editorCtx: EditorContext,
+    assistantId: string,
+  ): Promise<string> {
+    const systemPrompt = buildSystemPrompt(editorCtx);
+    const userPrompt = buildChatPrompt(intent, editorCtx);
+    const chatMessages: AIChatMessage[] = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ];
 
-      const chatMessages: AIChatMessage[] = [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ];
+    // Accumulate chunks and flush on the next animation frame to avoid
+    // triggering a React re-render for every tiny streaming chunk.
+    let pendingChunks = '';
+    let rafId = 0;
 
-      const assistantId = assistantMsg.id;
-
-      const fullResponse = await this.router.chat(
-        chatMessages,
-        (chunk) => {
-          // Update the streaming message with each chunk
-          const msgs = this.state.messages.map((m) =>
-            m.id === assistantId ? { ...m, content: m.content + chunk } : m,
-          );
-          this.setState({ messages: msgs });
-        },
-        this.state.selectedProvider || undefined,
+    const flushChunks = () => {
+      if (!pendingChunks) return;
+      const batch = pendingChunks;
+      pendingChunks = '';
+      const msgs = this.state.messages.map((m) =>
+        m.id === assistantId ? { ...m, content: m.content + batch } : m,
       );
+      this.setState({ messages: msgs });
+    };
 
-      // Build actions if the response contains modified text
-
-      // ── create_document: open a new untitled tab with the generated content ──
-      if (intent.action === 'create_document') {
-        const newDocContent = extractModifiedText(fullResponse) ?? fullResponse;
-        const finalMsgs = this.state.messages.map((m) =>
-          m.id === assistantId ? { ...m, content: fullResponse, isStreaming: false } : m,
-        );
-        this.setState({ messages: finalMsgs, isLoading: false });
-
-        if (!newDocContent.trim()) {
-          this.context.ui.showMessage(t('aiCopilot.panel.newDocEmpty'), 'warning');
-          return;
+    return this.router.chat(
+      chatMessages,
+      (chunk) => {
+        pendingChunks += chunk;
+        if (!rafId) {
+          rafId = requestAnimationFrame(() => {
+            rafId = 0;
+            flushChunks();
+          });
         }
+      },
+      this.state.selectedProvider || undefined,
+    ).finally(() => {
+      if (rafId) cancelAnimationFrame(rafId);
+      flushChunks();
+    });
+  }
 
-        try {
-          this.context.workspace.createNewDoc(newDocContent);
-          this.context.ui.showMessage(t('aiCopilot.panel.newDocCreated'), 'info');
-        } catch (err) {
-          const reason = err instanceof Error ? err.message : String(err);
-          this.context.ui.showMessage(t('aiCopilot.panel.newDocCreateFailed', { reason }), 'error');
-        }
-        return;
-      }
-
-      // Build actions if the response contains modified text
-      const actions = shouldBuildEditActions(intent.action, effectiveScope)
-        ? this.buildActions(fullResponse, editorCtx, effectiveScope)
-        : [];
-
-      const isBypass = (this.config?.general?.applyMode ?? 'default') === 'bypass';
-
-      if (isBypass && actions.length > 0) {
-        // Bypass mode: apply immediately, no confirmation buttons
-        const finalMsgs = this.state.messages.map((m) =>
-          m.id === assistantId ? { ...m, content: fullResponse, isStreaming: false } : m,
-        );
-        this.setState({ messages: finalMsgs, isLoading: false });
-        let appliedCount = 0;
-        const orderedActions = [...actions].sort((a, b) => b.from - a.from || b.to - a.to);
-        for (const action of orderedActions) {
-          if (this.tryApplyAction(action)) {
-            appliedCount += 1;
-          }
-        }
-        if (appliedCount === actions.length) {
-          this.context.ui.showMessage(t('aiCopilot.panel.autoApplied'), 'info');
-        } else if (appliedCount > 0) {
-          this.context.ui.showMessage(
-            t('aiCopilot.panel.autoAppliedPartial', { appliedCount, totalCount: actions.length }),
-            'warning',
-          );
-        } else {
-          this.context.ui.showMessage(t('aiCopilot.panel.autoApplyFailed'), 'warning');
-        }
-      } else {
-        // Default mode: show Apply/Discard buttons
-        const finalMsgs = this.state.messages.map((m) =>
-          m.id === assistantId
-            ? { ...m, content: fullResponse, isStreaming: false, actions }
-            : m,
-        );
-        this.setState({ messages: finalMsgs, isLoading: false });
-      }
-    } catch (error) {
-      const isAborted =
-        error instanceof Error &&
-        (error.name === 'AbortError' || error.message.toLowerCase().includes('aborted') || error.message.toLowerCase().includes('abort'));
-      const finalMsgs = this.state.messages.map((m) =>
-        m.id === assistantMsg.id
-          ? isAborted
-            ? { ...m, isStreaming: false, stopped: true }
-            : { ...m, content: '', isStreaming: false, error: error instanceof Error ? error.message : String(error) }
-          : m,
-      );
-      this.setState({ messages: finalMsgs, isLoading: false });
+  /** Route completed AI response to the appropriate handler. */
+  private handleAIResponse(
+    fullResponse: string,
+    intent: ReturnType<typeof parseIntent>,
+    editorCtx: EditorContext,
+    effectiveScope: EditScopeMode,
+    assistantId: string,
+    t: ReturnType<typeof getT>,
+  ) {
+    if (intent.action === 'create_document') {
+      this.handleCreateDocument(fullResponse, assistantId, t);
+      return;
     }
+
+    const actions = shouldBuildEditActions(intent.action, effectiveScope)
+      ? this.buildActions(fullResponse, editorCtx, effectiveScope)
+      : [];
+
+    const isBypass = (this.config?.general?.applyMode ?? 'default') === 'bypass';
+
+    if (isBypass && actions.length > 0) {
+      this.handleBypassApply(fullResponse, actions, assistantId, t);
+    } else {
+      this.finalizeAssistantMessage(fullResponse, assistantId, actions);
+    }
+  }
+
+  /** Handle /new document creation. */
+  private handleCreateDocument(fullResponse: string, assistantId: string, t: ReturnType<typeof getT>) {
+    const newDocContent = extractModifiedText(fullResponse) ?? fullResponse;
+    this.finalizeAssistantMessage(fullResponse, assistantId);
+
+    if (!newDocContent.trim()) {
+      this.context.ui.showMessage(t('aiCopilot.panel.newDocEmpty'), 'warning');
+      return;
+    }
+    try {
+      this.context.workspace.createNewDoc(newDocContent);
+      this.context.ui.showMessage(t('aiCopilot.panel.newDocCreated'), 'info');
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err);
+      this.context.ui.showMessage(t('aiCopilot.panel.newDocCreateFailed', { reason }), 'error');
+    }
+  }
+
+  /** Bypass mode: auto-apply all actions immediately. */
+  private handleBypassApply(
+    fullResponse: string,
+    actions: EditAction[],
+    assistantId: string,
+    t: ReturnType<typeof getT>,
+  ) {
+    this.finalizeAssistantMessage(fullResponse, assistantId);
+    const { appliedCount, totalCount } = this.applyActionsBatch(actions);
+    if (appliedCount === totalCount) {
+      this.context.ui.showMessage(t('aiCopilot.panel.autoApplied'), 'info');
+    } else if (appliedCount > 0) {
+      this.context.ui.showMessage(
+        t('aiCopilot.panel.autoAppliedPartial', { appliedCount, totalCount }),
+        'warning',
+      );
+    } else {
+      this.context.ui.showMessage(t('aiCopilot.panel.autoApplyFailed'), 'warning');
+    }
+  }
+
+  /** Mark the assistant streaming message as done and optionally attach actions. */
+  private finalizeAssistantMessage(fullResponse: string, assistantId: string, actions?: EditAction[]) {
+    const finalMsgs = this.state.messages.map((m) =>
+      m.id === assistantId
+        ? { ...m, content: fullResponse, isStreaming: false, ...(actions ? { actions } : {}) }
+        : m,
+    );
+    this.setState({ messages: finalMsgs, isLoading: false });
+  }
+
+  /** Handle errors from streaming, distinguishing user-initiated aborts. */
+  private handleStreamError(error: unknown, assistantId: string) {
+    const isAborted =
+      error instanceof Error &&
+      (error.name === 'AbortError' || error.message.toLowerCase().includes('aborted') || error.message.toLowerCase().includes('abort'));
+    const finalMsgs = this.state.messages.map((m) =>
+      m.id === assistantId
+        ? isAborted
+          ? { ...m, isStreaming: false, stopped: true }
+          : { ...m, content: '', isStreaming: false, error: error instanceof Error ? error.message : String(error) }
+        : m,
+    );
+    this.setState({ messages: finalMsgs, isLoading: false });
   }
 
   stopGeneration() {
@@ -281,7 +335,9 @@ export class AICopilotPanelContent {
     });
   }
 
-  applyAction(action: EditAction, successMessage = '已应用修改') {
+  applyAction(action: EditAction, successMessage?: string) {
+    const t = getT();
+    successMessage = successMessage ?? t('aiCopilot.panel.applied');
     if (!this.tryApplyAction(action)) return;
     this.context.ui.showMessage(successMessage, 'info');
 
@@ -294,16 +350,17 @@ export class AICopilotPanelContent {
   }
 
   private tryApplyAction(action: EditAction): boolean {
+    const t = getT();
     const currentPath = this.context.editor.getActiveFilePath();
     if (action.sourceFilePath && currentPath !== action.sourceFilePath) {
       this.context.workspace.openFile(action.sourceFilePath);
-      this.context.ui.showMessage('检测到文件已切换，已跳转回建议来源文件，请再次点击应用', 'warning');
+      this.context.ui.showMessage(t('aiCopilot.panel.fileSwitched'), 'warning');
       return false;
     }
 
     const validation = validateActionAgainstCurrentContent(action, this.context.editor.getContent());
     if (!validation.valid) {
-      this.context.ui.showMessage('文档已变化，当前建议已过期，请重新生成。', 'warning');
+      this.context.ui.showMessage(t('aiCopilot.panel.staleAction'), 'warning');
       return false;
     }
 
@@ -321,7 +378,33 @@ export class AICopilotPanelContent {
     }
   }
 
-  toggleApplyMode() {
+  /**
+   * Validate all actions first, then apply in reverse offset order.
+   * Stops before applying if any validation fails (prevents partial edits).
+   */
+  private applyActionsBatch(actions: EditAction[]): { appliedCount: number; totalCount: number } {
+    const currentContent = this.context.editor.getContent();
+    const ordered = [...actions].sort((a, b) => b.from - a.from || b.to - a.to);
+
+    // Pre-validate all actions against current content
+    for (const action of ordered) {
+      const validation = validateActionAgainstCurrentContent(action, currentContent);
+      if (!validation.valid) {
+        return { appliedCount: 0, totalCount: actions.length };
+      }
+    }
+
+    // All validated — apply in reverse order so offsets stay valid
+    let appliedCount = 0;
+    for (const action of ordered) {
+      if (this.tryApplyAction(action)) {
+        appliedCount += 1;
+      }
+    }
+    return { appliedCount, totalCount: actions.length };
+  }
+
+  async toggleApplyMode() {
     if (!this.config) return;
     const current = this.config.general?.applyMode ?? 'default';
     const next = current === 'default' ? 'bypass' : 'default';
@@ -333,7 +416,7 @@ export class AICopilotPanelContent {
         applyMode: next,
       },
     };
-    saveConfig(this.context.storage, this.config);
+    await saveConfig(this.context.storage, this.config);
     this.notify();
   }
 
@@ -426,12 +509,12 @@ export class AICopilotPanelContent {
     }
   }
 
-  setSelectedProvider(provider: string) {
+  async setSelectedProvider(provider: string) {
     this.setState({ selectedProvider: provider });
     if (this.config) {
       const updated = { ...this.config, activeProvider: provider };
       this.config = updated;
-      saveConfig(this.context.storage, updated);
+      await saveConfig(this.context.storage, updated);
     }
   }
 
