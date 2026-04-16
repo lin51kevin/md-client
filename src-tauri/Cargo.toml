@@ -24,7 +24,7 @@ tauri-plugin-single-instance = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tauri-plugin-dialog = "2.7"
-tauri-plugin-fs = "2.5"
+tauri-plugin-fs = { version = "2.5", features = ["watch"] }
 tauri-plugin-updater = "2"
 pulldown-cmark = { version = "0.12", features = ["html"] }
 docx-rs = "0.4"
