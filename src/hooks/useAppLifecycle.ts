@@ -6,20 +6,24 @@ import type { TranslationKey } from '../i18n';
 
 interface UseAppLifecycleOptions {
   isTauri: boolean;
+  isRestoringSession: boolean;
   openFileWithContent: (filePath: string, content: string) => void;
   tabsRef: MutableRefObject<Tab[]>;
   t: (key: TranslationKey, params?: Record<string, string | number>) => string;
 }
 
-export function useAppLifecycle({ isTauri, openFileWithContent, tabsRef, t }: UseAppLifecycleOptions) {
-  // CLI file open (double-click from file explorer)
+export function useAppLifecycle({ isTauri, isRestoringSession, openFileWithContent, tabsRef, t }: UseAppLifecycleOptions) {
+  // CLI file open (double-click from file explorer).
+  // Deferred until session restore completes to avoid a race where both
+  // restoreSession and get_open_file create a tab for the same file.
   useEffect(() => {
-    if (!isTauri) return;
+    if (!isTauri || isRestoringSession) return;
     invoke<{ path: string; content: string } | null>('get_open_file')
       .then((result) => { if (result) openFileWithContent(result.path, result.content); })
       .catch(() => {});
+  // openFileWithContent is stable; run exactly once after session restore finishes
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isTauri, isRestoringSession]);
 
   // Single-instance: listen for "open-file" event from second instance
   useEffect(() => {

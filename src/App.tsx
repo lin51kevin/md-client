@@ -121,6 +121,7 @@ export default function App() {
 
   const {
     tabs, activeTabId, setActiveTabId, activeTabIdRef, tabsRef,
+    isRestoringSession,
     getActiveTab, getTabTitle, updateActiveDoc, updateTabDoc,
     openFileInTab, openFileWithContent, createNewTab, closeTab, closeMultipleTabs, reorderTabs,
     markSaved, markSavedAs, renameTab, setTabDisplayName, pinTab, unpinTab, updateTab,
@@ -323,7 +324,7 @@ export default function App() {
   }, [pluginPanels, activePanel, setActivePanel]);
 
   // ── App lifecycle effects ────────────────────────────────────────
-  useAppLifecycle({ isTauri, openFileWithContent, tabsRef, t });
+  useAppLifecycle({ isTauri, isRestoringSession, openFileWithContent, tabsRef, t });
 
   // ── Navigation ───────────────────────────────────────────────────
   const { debouncedDoc, tocEntries, wordCount } = useDocMetrics(activeTab.doc, activeTabId);

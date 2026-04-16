@@ -369,6 +369,15 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
       setActiveTabId(existing.id);
       return;
     }
+    // Guard against concurrent calls (e.g. open-file event fired twice, or
+    // session restore + get_open_file race before tabsRef is updated)
+    if (openingPaths.current.has(normalized)) return;
+    openingPaths.current.add(normalized);
+    // Schedule cleanup: once React re-renders and tabsRef reflects the new tab,
+    // the "existing" check above will catch future calls — so we just need to
+    // keep the guard alive until the next render cycle.
+    Promise.resolve().then(() => openingPaths.current.delete(normalized));
+
     // If the only tab is an untouched Untitled, replace it instead of adding alongside
     const current = tabsRef.current;
     if (current.length === 1 && !current[0].filePath && !current[0].isDirty) {
@@ -395,6 +404,7 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
 
   return {
     tabs, activeTabId, setActiveTabId, activeTabIdRef, tabsRef,
+    isRestoringSession,
     getActiveTab, getTabTitle, updateActiveDoc, updateTabDoc, updateTab, openFileInTab, openFileWithContent,
     createNewTab, closeTab, closeMultipleTabs, reorderTabs, markSaved, markSavedAs,
     renameTab, setTabDisplayName,
