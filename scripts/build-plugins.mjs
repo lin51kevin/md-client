@@ -45,6 +45,9 @@ async function makeShim(key, moduleSpecifier) {
 const SHARED_MODULES = {
   'react': 'react',
   'react/jsx-runtime': 'react/jsx-runtime',
+  'react-markdown': 'react-markdown',
+  'remark-gfm': 'remark-gfm',
+  'rehype-highlight': 'rehype-highlight',
 };
 
 // App-internal modules exposed as shared

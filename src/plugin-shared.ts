@@ -14,6 +14,9 @@
 import * as React from 'react';
 import * as ReactJSXRuntime from 'react/jsx-runtime';
 import * as i18n from './i18n';
+import * as ReactMarkdown from 'react-markdown';
+import * as remarkGfm from 'remark-gfm';
+import * as rehypeHighlight from 'rehype-highlight';
 
 declare global {
   interface Window {
@@ -25,4 +28,7 @@ window.__MARKLITE_SHARED__ = {
   'react': React,
   'react/jsx-runtime': ReactJSXRuntime,
   '@marklite/i18n': i18n,
+  'react-markdown': ReactMarkdown,
+  'remark-gfm': remarkGfm,
+  'rehype-highlight': rehypeHighlight,
 };
