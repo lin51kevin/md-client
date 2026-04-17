@@ -388,7 +388,7 @@ export const FileTreeSidebar = forwardRef<FileTreeSidebarHandle, FileTreeSidebar
           borderBottom: '1px solid var(--border-color)',
         }}
       >
-        <FolderTree size={14} style={{ color: 'var(--text-secondary)' }} />
+        <FolderTree className="shrink-0" size={14} style={{ color: 'var(--text-secondary)' }} />
         <span
           className="text-xs font-medium truncate max-w-25"
           style={{ color: 'var(--text-primary)' }}

@@ -30,7 +30,9 @@ const DIST_PLUGINS = path.join(ROOT, 'resources', 'plugins');
 /** Build an ESM shim: `const m = window.__MARKLITE_SHARED__[key]; export const {a,b,...} = m;` */
 async function makeShim(key, moduleSpecifier) {
   const mod = await import(moduleSpecifier);
-  const names = Object.keys(mod).filter(n => /^[a-zA-Z_$]/.test(n) && n !== 'default');
+  // Only include valid identifiers in destructured exports.
+  // Some CJS interop exports (e.g. "module.exports") are not valid binding names.
+  const names = Object.keys(mod).filter(n => /^[A-Za-z_$][\w$]*$/.test(n) && n !== 'default');
   const lines = [`const __m = window.__MARKLITE_SHARED__["${key}"];`];
   if (mod.default !== undefined) {
     lines.push(`export default __m.default !== undefined ? __m.default : __m;`);
