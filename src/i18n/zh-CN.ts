@@ -88,6 +88,8 @@ export const zhCN = {
   'settings.shortcuts.saveFile': '保存文件',
   'settings.shortcuts.saveAsFile': '另存为',
   'settings.shortcuts.closeTab': '关闭标签页',
+  'settings.shortcuts.nextTab': '下一个标签页',
+  'settings.shortcuts.previousTab': '上一个标签页',
   'settings.shortcuts.findReplace': '查找与替换',
   'settings.shortcuts.editMode': '仅编辑模式',
   'settings.shortcuts.splitMode': '分栏模式',

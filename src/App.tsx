@@ -126,6 +126,7 @@ export default function App() {
     getActiveTab, getTabTitle, updateActiveDoc, updateTabDoc,
     openFileInTab, openFileWithContent, createNewTab, closeTab, closeMultipleTabs, reorderTabs,
     markSaved, markSavedAs, renameTab, setTabDisplayName, pinTab, unpinTab, updateTab,
+    nextTab, previousTab,
   } = useTabs(t, () => recentFilesHook.refreshRecentFiles());
 
   const isPristine = tabs.length === 1 && !tabs[0].filePath && !tabs[0].isDirty && !tabs[0].displayName;
@@ -368,6 +369,7 @@ export default function App() {
     toggleFileTree: () => setActivePanel(activePanel === 'filetree' ? null : 'filetree'),
     toggleToc: () => setActivePanel(activePanel === 'toc' ? null : 'toc'),
     toggleAIPanel: () => setShowAIPanel(!showAIPanel),
+    nextTab, previousTab,
   });
 
   // ── Command Palette registry ─────────────────────────────────────

@@ -351,6 +351,24 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
     setTabs(prev => prev.map(t => t.id === id ? { ...t, isPinned: false } : t));
   };
 
+  const nextTab = useCallback(() => {
+    const current = tabsRef.current;
+    if (current.length <= 1) return;
+    const currentIdx = current.findIndex(t => t.id === activeTabIdRef.current);
+    if (currentIdx < 0) return;
+    const nextIdx = (currentIdx + 1) % current.length;
+    setActiveTabId(current[nextIdx].id);
+  }, []);
+
+  const previousTab = useCallback(() => {
+    const current = tabsRef.current;
+    if (current.length <= 1) return;
+    const currentIdx = current.findIndex(t => t.id === activeTabIdRef.current);
+    if (currentIdx < 0) return;
+    const prevIdx = (currentIdx - 1 + current.length) % current.length;
+    setActiveTabId(current[prevIdx].id);
+  }, []);
+
   const reorderTabs = (fromId: string, toId: string) => {
     setTabs(prev => {
       const fromIdx = prev.findIndex(t => t.id === fromId);
@@ -412,6 +430,6 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
     getActiveTab, getTabTitle, updateActiveDoc, updateTabDoc, updateTab, openFileInTab, openFileWithContent,
     createNewTab, closeTab, closeMultipleTabs, reorderTabs, markSaved, markSavedAs,
     renameTab, setTabDisplayName,
-    pinTab, unpinTab,
+    pinTab, unpinTab, nextTab, previousTab,
   };
 }

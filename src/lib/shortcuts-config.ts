@@ -20,6 +20,8 @@ export const DEFAULT_SHORTCUTS: ShortcutAction[] = [
   { id: 'saveFile', labelKey: 'settings.shortcuts.saveFile', defaultKeys: 'Ctrl+S', category: 'file' },
   { id: 'saveAsFile', labelKey: 'settings.shortcuts.saveAsFile', defaultKeys: 'Ctrl+Shift+S', category: 'file' },
   { id: 'closeTab', labelKey: 'settings.shortcuts.closeTab', defaultKeys: 'Ctrl+W', category: 'file' },
+  { id: 'nextTab', labelKey: 'settings.shortcuts.nextTab', defaultKeys: 'Ctrl+Tab', category: 'file' },
+  { id: 'previousTab', labelKey: 'settings.shortcuts.previousTab', defaultKeys: 'Ctrl+Shift+Tab', category: 'file' },
   { id: 'findReplace', labelKey: 'settings.shortcuts.findReplace', defaultKeys: 'Ctrl+F', category: 'edit' },
   { id: 'editMode', labelKey: 'settings.shortcuts.editMode', defaultKeys: 'Ctrl+1', category: 'view' },
   { id: 'splitMode', labelKey: 'settings.shortcuts.splitMode', defaultKeys: 'Ctrl+2', category: 'view' },

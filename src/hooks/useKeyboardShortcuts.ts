@@ -30,6 +30,10 @@ interface ShortcutsParams {
   toggleAIPanel?: () => void;
   /** 折叠/展开代码块 */
   toggleCodeBlockFold?: () => void;
+  /** 切换到下一个标签页 */
+  nextTab?: () => void;
+  /** 切换到前一个标签页 */
+  previousTab?: () => void;
 }
 
 /** 根据 actionId 获取当前快捷键（用户自定义优先） */
@@ -50,6 +54,7 @@ export function useKeyboardShortcuts(params: ShortcutsParams) {
         closeTab, setViewMode, activeTabIdRef, toggleFindReplace,
         setFocusMode, focusMode, openSnippetPicker,
         toggleFileTree, toggleToc, toggleAIPanel, toggleCodeBlockFold,
+        nextTab, previousTab,
       } = paramsRef.current;
 
       // F009 — ESC 退出任何焦点模式（优先处理，无需 Ctrl）
@@ -96,6 +101,8 @@ export function useKeyboardShortcuts(params: ShortcutsParams) {
             case 'saveFile': handleSaveFile(); break;
             case 'saveAsFile': handleSaveAsFile(); break;
             case 'closeTab': closeTab(activeTabIdRef.current); break;
+            case 'nextTab': nextTab?.(); break;
+            case 'previousTab': previousTab?.(); break;
             case 'findReplace': toggleFindReplace?.(); break;
             case 'editMode': setViewMode('edit'); break;
             case 'splitMode': setViewMode('split'); break;

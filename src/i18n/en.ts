@@ -90,6 +90,8 @@ export const en: Record<TranslationKey, string> = {
   'settings.shortcuts.saveFile': 'Save File',
   'settings.shortcuts.saveAsFile': 'Save As',
   'settings.shortcuts.closeTab': 'Close Tab',
+  'settings.shortcuts.nextTab': 'Next Tab',
+  'settings.shortcuts.previousTab': 'Previous Tab',
   'settings.shortcuts.findReplace': 'Find & Replace',
   'settings.shortcuts.editMode': 'Edit Only Mode',
   'settings.shortcuts.splitMode': 'Split View Mode',
