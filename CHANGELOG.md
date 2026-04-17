@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### 标签页快捷键切换（Tab Keyboard Shortcuts）
+- **Ctrl+Tab** — 切换到下一个标签页（循环）
+- **Ctrl+Shift+Tab** — 切换到前一个标签页（循环）
+- 支持用户自定义快捷键（Settings > Keyboard Shortcuts）
+- 包括固定标签页在循环中
+- 单个标签页时安全（无操作）
+
 #### AI Agent 工具调用（AI Agent Tool Use）
 - **工具注册中心（Tool Registry）** — 设计工具抽象层，支持结构化工具调用
 - **Tauri 后端工具实现** — Rust 跨平台实现以下工具：
