@@ -6,6 +6,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [v0.9.3] - 2026-04-17
+
+### Added
+
+#### AI Agent 工具调用（AI Agent Tool Use）
+- **工具注册中心（Tool Registry）** — 设计工具抽象层，支持结构化工具调用
+- **Tauri 后端工具实现** — Rust 跨平台实现以下工具：
+  - `search` — 在文档中搜索文本，返回匹配位置和上下文
+  - `replace` — 替换文档指定文本（第一个或全部）
+  - `get_lines` — 获取指定行号范围内容
+  - `replace_lines` — 替换指定行号范围
+  - `insert` — 在指定行号位置插入内容
+  - `delete_lines` — 删除指定行号范围
+  - `get_outline` — 获取文档大纲（所有标题及行号）
+  - `regex_replace` — 正则表达式替换
+  - `get_headings` — 获取标题层级结构
+- **AI Agent 循环** — 支持 OpenAI function calling 工作流：
+  - Tool calling response 自动提取，填充 tool_call_id
+  - 执行工具链，累积 ToolResult
+  - 循环调用 AI，直到 stop_reason=stop
+- **编辑差异预览（Diff Preview）** — Tool 执行结果以 Diff 形式可视化预览
+- **批量应用（Batch Apply）** — 一键应用所有编辑变更
+
+### Fixed
+
+- 修复 AI 工具调用中的文本编码问题
+- 优化大文件处理时的性能
+
+### Performance
+
+- Tauri 后端工具调用直接操作文本，性能显著提升
+
+---
+
 ## [v0.9.2] - 2026-04-16
 
 ### Added

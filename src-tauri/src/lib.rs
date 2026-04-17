@@ -4,6 +4,8 @@ mod markdown_preprocess;
 mod export_pdf;
 mod export_docx;
 mod git;
+mod commands;
+pub use commands::editor_tools;
 
 use export_pdf::export_pdf;
 use export_docx::export_docx;
@@ -835,7 +837,7 @@ pub fn run() {
                 }
             }
         }))
-        .invoke_handler(tauri::generate_handler![greet, get_open_file, export_document, read_file_text, read_file_bytes, write_file_text, write_image_bytes, create_file, delete_file, rename_file, list_directory, read_dir_recursive, search_files, replace_in_files, reveal_in_explorer, is_directory, restart_app, show_unsaved_dialog, git::git_get_repo, git::git_get_status, git::git_diff, git::git_commit, git::git_pull, git::git_push, git::git_stage, git::git_unstage, git::git_restore])
+        .invoke_handler(tauri::generate_handler![greet, get_open_file, export_document, read_file_text, read_file_bytes, write_file_text, write_image_bytes, create_file, delete_file, rename_file, list_directory, read_dir_recursive, search_files, replace_in_files, reveal_in_explorer, is_directory, restart_app, show_unsaved_dialog, git::git_get_repo, git::git_get_status, git::git_diff, git::git_commit, git::git_pull, git::git_push, git::git_stage, git::git_unstage, git::git_restore, editor_tools::tool_search, editor_tools::tool_replace, editor_tools::tool_get_lines, editor_tools::tool_replace_lines, editor_tools::tool_insert, editor_tools::tool_delete_lines, editor_tools::tool_get_outline, editor_tools::tool_regex_replace])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
