@@ -1,11 +1,7 @@
-/** AI Agent Loop - Core engine for tool-based editing
- * Max 10 iterations to prevent infinite loops
- */
-
-import type { ToolDef, ToolExecutor } from '../tools/registry';
+import type { ToolDef, ToolExecutor } from "../tools/registry";
 
 export interface ChatMessage {
-  role: 'system' | 'user' | 'assistant' | 'tool';
+  role: "system" | "user" | "assistant" | "tool";
   content: string;
   name?: string; // for tool responses
 }
@@ -29,14 +25,33 @@ export interface AgentOptions {
 
 const DEFAULT_MAX_ITERATIONS = 10;
 
+/**
+ * AI Agent Loop - Core engine for tool-based editing
+ *
+ * DIAG-001 Fix: toolCalls is now declared inside run() to prevent accumulation
+ * across multiple calls. Previously it was a class field that grew unbounded.
+ *
+ * @example
+ * ```typescript
+ * const agent = new AgentLoop({ maxIterations: 5 });
+ * const result = await agent.run(message, content, tools, executors, chatWithTools);
+ * // toolCalls is fresh for each run() call
+ * ```
+ */
 export class AgentLoop {
   private maxIterations: number;
-  private toolCalls: ToolCall[] = [];
 
   constructor(options: AgentOptions = {}) {
     this.maxIterations = options.maxIterations ?? DEFAULT_MAX_ITERATIONS;
   }
 
+  /**
+   * Execute the agent loop with tool calling
+   *
+   * DIAG-001 Fix: toolCalls is declared fresh inside each iteration to prevent
+   * stale accumulation. Additionally, the overall toolCalls accumulator is
+   * scoped to this run() call only — never a class field.
+   */
   async run(
     userMessage: string,
     docContent: string,
@@ -48,47 +63,53 @@ export class AgentLoop {
     ) => Promise<{ content: string; toolCalls?: ToolCall[] }>,
     systemPrompt?: string
   ): Promise<AgentResult> {
+    // DIAG-001 Fix: Fresh array scoped to this run() — never leaks across calls
+    const toolCalls: ToolCall[] = [];
+    // Reset any iteration-level state
+    const aiToolCalls: ToolCall[] = [];
+
     const messages: ChatMessage[] = [];
 
     if (systemPrompt) {
-      messages.push({ role: 'system', content: systemPrompt });
+      messages.push({ role: "system", content: systemPrompt });
     }
 
     messages.push({
-      role: 'user',
-      content: `${userMessage}\n\n当前文档内容:\n${docContent.slice(0, 2000)}${
-        docContent.length > 2000 ? '...' : ''
-      }`,
+      role: "user",
+      content: `${userMessage}\n\n当前文档内容:\n${docContent.slice(0, 2000)}${docContent.length > 2000 ? "..." : ""}`,
     });
 
     for (let iteration = 0; iteration < this.maxIterations; iteration++) {
       // Call AI with tools
       const aiResponse = await chatWithTools(messages, tools);
 
+      // DIAG-001: Fresh array per iteration — prevents stale tool calls from accumulating
+      const iterToolCalls: ToolCall[] = aiResponse.toolCalls ?? [];
+
       // AI returned text without tool calls -> done
-      if (!aiResponse.toolCalls || aiResponse.toolCalls.length === 0) {
+      if (iterToolCalls.length === 0) {
         return {
           done: true,
           finalContent: aiResponse.content,
           iterations: iteration + 1,
-          toolCalls: this.toolCalls,
+          toolCalls, // Return the local array
         };
       }
 
       // Add AI response to messages
       messages.push({
-        role: 'assistant',
-        content: aiResponse.content || '我将使用工具来完成这个任务。',
+        role: "assistant",
+        content: aiResponse.content || "我将使用工具来完成这个任务。",
       });
 
-      // Execute each tool call
-      for (const toolCall of aiResponse.toolCalls) {
-        this.toolCalls.push(toolCall);
+      // Execute each tool call (iterToolCalls is fresh per iteration)
+      for (const toolCall of iterToolCalls) {
+        toolCalls.push(toolCall); // Push to run-scoped accumulator
 
         const executor = executors[toolCall.name];
         if (!executor) {
           messages.push({
-            role: 'tool',
+            role: "tool",
             name: toolCall.name,
             content: `错误：未知工具 "${toolCall.name}"`,
           });
@@ -99,15 +120,15 @@ export class AgentLoop {
           const args = JSON.parse(toolCall.arguments);
           const result = await executor(args, docContent);
           messages.push({
-            role: 'tool',
+            role: "tool",
             name: toolCall.name,
             content: result.success
               ? `结果：\n${result.content}`
-              : `错误：${result.error || '执行失败'}`,
+              : `错误：${result.error || "执行失败"}`,
           });
         } catch (err) {
           messages.push({
-            role: 'tool',
+            role: "tool",
             name: toolCall.name,
             content: `执行错误：${String(err)}`,
           });
@@ -118,20 +139,23 @@ export class AgentLoop {
     // Max iterations reached
     return {
       done: false,
-      finalContent: 'Agent 在达到最大迭代次数后结束',
+      finalContent: "Agent 在达到最大迭代次数后结束",
       iterations: this.maxIterations,
-      toolCalls: this.toolCalls,
+      toolCalls, // Return the local array
     };
   }
 }
 
+/**
+ * Build system prompt with tool descriptions
+ */
 export function buildAgentSystemPrompt(tools: ToolDef[]): string {
   const toolDescriptions = tools
     .map(
       (t) =>
         `- ${t.name}: ${t.description}\n  参数: ${JSON.stringify(t.parameters)}`
     )
-    .join('\n');
+    .join("\n");
 
   return `你是一个 Markdown 文档编辑助手。你可以使用以下工具来精确修改文档：
 
