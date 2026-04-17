@@ -155,6 +155,8 @@ export const en: Record<TranslationKey, string> = {
   'toolbar.spellCheckOff': 'Disable Spell Check',
   'toolbar.vimModeOn': 'Enable Vim Mode',
   'toolbar.vimModeOff': 'Disable Vim Mode',
+  'toolbar.aiCopilotOpen': 'Open AI Assistant',
+  'toolbar.aiCopilotClose': 'Close AI Assistant',
   'toolbar.themeDark': 'Switch to Dark Theme',
   'toolbar.themeLight': 'Switch to Light Theme',
   'toolbar.typewriter': 'Typewriter Mode (center current line)',
@@ -423,6 +425,17 @@ export const en: Record<TranslationKey, string> = {
   'snippet.fieldDescPlaceholder': 'Optional description (e.g., meeting template)',
   'snippet.fieldContent': 'Content',
   'help.title': 'User Guide',
+
+  // ── About Modal ────────────────────────────────────────────────────────────
+  'about.title': 'About MarkLite',
+  'about.version': 'Version',
+  'about.links': 'Links',
+  'about.homepage': 'Homepage',
+  'about.userGuide': 'User Guide',
+  'about.reportIssue': 'Report Issue',
+  'about.builtWith': 'Built With',
+  'about.license': 'License',
+  'about.ok': 'OK',
 
   // ── Mindmap ──────────────────────────────────────────────────────────────────────────
   'mindmap.title': 'Mindmap',

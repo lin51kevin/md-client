@@ -67,6 +67,7 @@ import { useLocalStorageBool, useLocalStorageString } from './hooks/useLocalStor
 import { useGit } from './hooks/useGit';
 import { useTypewriterOptions } from './hooks/useTypewriterOptions';
 // Help button now opens GitHub USER_GUIDE.md instead of in-app modal
+import { AboutModal } from './components/AboutModal';
 const SlidePreview = lazy(() => import('./components/SlidePreview').then(m => ({ default: m.SlidePreview })));
 const MindmapView = lazy(() => import('./components/MindmapView').then(m => ({ default: m.MindmapView })));
 import { EditorContentArea } from './components/EditorContentArea';
@@ -88,6 +89,7 @@ export default function App() {
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; tabId: string } | null>(null);
   const [editorCtxMenu, setEditorCtxMenu] = useState<{ x: number; y: number; context: import('./lib/context-menu').ContextInfo } | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   // showHelp removed — help button now opens external URL
 
@@ -485,6 +487,10 @@ export default function App() {
             onCloseAll={handleCloseAllTabs}
             onFormatAction={handleFormatAction} onImageLocal={() => handleFormatAction('image-local')}
             onOpenHelp={() => { import('@tauri-apps/plugin-opener').then(m => m.openUrl('https://github.com/lin51kevin/md-client/blob/main/docs/guides/USER_GUIDE.md')).catch(() => window.open('https://github.com/lin51kevin/md-client/blob/main/docs/guides/USER_GUIDE.md')); }}
+            onOpenAbout={() => setShowAbout(true)}
+            aiCopilotEnabled={pluginPanels.some(pp => pp.id === AI_PANEL_ID)}
+            showAIPanel={showAIPanel}
+            onToggleAIPanel={() => setShowAIPanel(!showAIPanel)}
             onInsertSnippet={openSnippetPicker}
             canUndo={canUndo} canRedo={canRedo}
             onUndo={() => { const v = cmViewRef.current; if (v) undo(v); }}
@@ -509,6 +515,8 @@ export default function App() {
           />
 
           {/* Help button now opens external GitHub USER_GUIDE.md */}
+
+          <AboutModal visible={showAbout} onClose={() => setShowAbout(false)} version="0.9.3" />
 
           <TabBar
             tabs={isPristine ? [] : tabs} activeTabId={activeTabId}

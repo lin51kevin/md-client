@@ -153,6 +153,8 @@ export const zhCN = {
   'toolbar.spellCheckOff': '关闭拼写检查',
   'toolbar.vimModeOn': '开启 Vim 模式',
   'toolbar.vimModeOff': '关闭 Vim 模式',
+  'toolbar.aiCopilotOpen': '打开 AI 助手',
+  'toolbar.aiCopilotClose': '关闭 AI 助手',
   'toolbar.themeDark': '切换到暗色主题',
   'toolbar.themeLight': '切换到亮色主题',
   'toolbar.typewriter': '打字机模式 (当前行居中)',
@@ -420,6 +422,17 @@ export const zhCN = {
   'snippet.fieldDescPlaceholder': '可选描述（如：会议纪要模板）',
   'snippet.fieldContent': '内容',
   'help.title': '用户指南',
+
+  // ── About Modal ────────────────────────────────────────────────────────────
+  'about.title': '关于 MarkLite',
+  'about.version': '版本',
+  'about.links': '相关链接',
+  'about.homepage': '项目主页',
+  'about.userGuide': '用户指南',
+  'about.reportIssue': '反馈问题',
+  'about.builtWith': '技术栈',
+  'about.license': '许可证',
+  'about.ok': '确定',
 
   // ── Mindmap ──────────────────────────────────────────────────────────────────────────
   'mindmap.title': '思维导图',

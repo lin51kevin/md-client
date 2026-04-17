@@ -1,6 +1,6 @@
 
 import { useRef, useState } from 'react';
-import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, SpellCheck, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, HelpCircle, FilePlus, FileText, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight, Table2, FileCode2, Minus, ListChecks, Sigma, Presentation, Library, List, Brain, Undo2, Redo2 } from 'lucide-react';
+import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, SpellCheck, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, HelpCircle, FilePlus, FileText, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight, Table2, FileCode2, Minus, ListChecks, Sigma, Presentation, Library, List, Brain, Undo2, Redo2, Bot } from 'lucide-react';
 import { ViewMode, FocusMode } from '../types';
 
 import { FileMenuDropdown } from './FileMenuDropdown';
@@ -35,6 +35,14 @@ interface ToolbarProps {
   onToggleVimMode?: () => void;
   /** 打开帮助/用户指南 */
   onOpenHelp?: () => void;
+  /** 打开关于对话框 */
+  onOpenAbout?: () => void;
+  /** AI Copilot: 是否已启用（插件已激活） */
+  aiCopilotEnabled?: boolean;
+  /** AI Copilot: 聊天面板当前是否打开 */
+  showAIPanel?: boolean;
+  /** AI Copilot: 切换聊天面板 */
+  onToggleAIPanel?: () => void;
   /** F013: 最近文件列表 */
   recentFiles?: import('../lib/recent-files').RecentFile[];
   /** F013: 打开最近文件 */
@@ -72,7 +80,8 @@ export function Toolbar({
   spellCheck, onToggleSpellCheck,
   onFormatAction,
   recentFiles, onOpenRecent, onClearRecent, onRemoveRecent,
-  vimMode, onToggleVimMode, onImageLocal, onOpenHelp,
+  vimMode, onToggleVimMode, onImageLocal, onOpenAbout,
+  aiCopilotEnabled, showAIPanel, onToggleAIPanel,
   tabs, activeTabId, onActivateTab, onCloseAll, onInsertSnippet,
   canUndo, canRedo, onUndo, onRedo,
 }: ToolbarProps & { onImageLocal?: () => void }) {
@@ -278,6 +287,18 @@ export function Toolbar({
 
       {/* ── Right: toggles + view mode + settings ── */}
       <div className="flex items-center gap-0.5">
+        {/* AI Copilot 聊天面板切换 — 仅插件启用时展示 */}
+        {aiCopilotEnabled && (
+          <ToolbarButton
+            variant="toggle"
+            active={!!showAIPanel}
+            onClick={onToggleAIPanel}
+            title={showAIPanel ? t('toolbar.aiCopilotClose') : t('toolbar.aiCopilotOpen')}
+          >
+            <Bot size={14} strokeWidth={1.8} />
+          </ToolbarButton>
+        )}
+
         {/* F013 — 拼写检查 */}
         <ToolbarButton
           variant="toggle"
@@ -380,8 +401,8 @@ export function Toolbar({
 
         <div className="w-px h-5 mx-1 shrink-0" style={{ backgroundColor: 'var(--border-color)' }} />
 
-        {/* 帮助 — 用户指南 */}
-        <ToolbarButton onClick={onOpenHelp} title={t('help.title')}>
+        {/* 帮助 — 关于 */}
+        <ToolbarButton onClick={onOpenAbout} title={t('about.title')}>
           <HelpCircle size={14} strokeWidth={1.8} />
         </ToolbarButton>
       </div>
