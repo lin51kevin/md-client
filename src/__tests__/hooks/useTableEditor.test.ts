@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useRef } from 'react';
 import { useTableEditor } from '../../hooks/useTableEditor';
-import type { TableData } from '../../lib/table-parser';
+import type { TableData } from '../../lib/markdown';
 
 const mockTableData: TableData = {
   rawStart: 0,

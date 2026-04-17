@@ -12,7 +12,7 @@ import {
   gitRestore,
   type GitFileStatus,
   type GitRepo,
-} from '../lib/git-commands';
+} from '../lib/file';
 
 export interface GitState {
   isRepo: boolean;

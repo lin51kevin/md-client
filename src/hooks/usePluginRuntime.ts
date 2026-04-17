@@ -3,7 +3,7 @@ import type { PluginContextDeps } from '../plugins/plugin-context-factory';
 import type { PluginContext } from '../plugins/plugin-sandbox';
 import { createPluginContext } from '../plugins/plugin-context-factory';
 import { validateManifest, checkEngineVersion, loadPluginModuleFromResource } from '../plugins/plugin-loader';
-import { StorageKeys } from '../lib/storage-keys';
+import { StorageKeys } from '../lib/storage';
 
 /**
  * In DEV mode, plugins are bundled via Vite's dynamic imports for HMR.

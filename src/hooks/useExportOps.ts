@@ -59,7 +59,7 @@ export function useExportOps({ getActiveTab, t }: ExportOpsParams) {
         });
         if (savePath) {
           onProgress?.('Writing file...', 70);
-          const { generateHtmlDocument } = await import('../lib/html-export');
+          const { generateHtmlDocument } = await import('../lib/markdown');
           const html = await generateHtmlDocument(tab.doc);
           await invoke('write_file_text', { path: savePath, content: html });
           onProgress?.('Complete!', 100);
@@ -75,7 +75,7 @@ export function useExportOps({ getActiveTab, t }: ExportOpsParams) {
         });
         if (savePath) {
           onProgress?.('Converting content...', 50);
-          const { generateEpub } = await import('../lib/html-export');
+          const { generateEpub } = await import('../lib/markdown');
           const epubData = await generateEpub(tab.doc);
           await invoke('write_image_bytes', { path: savePath, data: Array.from(epubData) });
           onProgress?.('Complete!', 100);
@@ -90,7 +90,7 @@ export function useExportOps({ getActiveTab, t }: ExportOpsParams) {
       });
       if (savePath) {
         onProgress?.('Pre-rendering diagrams and formulas...', 20);
-        const { prerenderExportAssets } = await import('../lib/export-prerender');
+        const { prerenderExportAssets } = await import('../lib/markdown');
         const preRenderedImages = await prerenderExportAssets(tab.doc);
         onProgress?.('Exporting document...', 60);
         await invoke('export_document', { markdown: tab.doc, outputPath: savePath, format, preRenderedImages });

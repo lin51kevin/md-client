@@ -11,11 +11,11 @@ import {
   insertImage,
   type SelectionInfo,
   type FormatResult,
-} from '../lib/text-format';
-import { getImageSaveDir, generateImageFileName } from '../lib/image-paste';
-import { addPendingImage } from '../lib/pending-images';
+} from '../lib/editor';
+import { getImageSaveDir, generateImageFileName } from '../lib/utils';
+import { addPendingImage } from '../lib/file';
 
-import type { InputDialogConfig } from '../components/InputDialog';
+import type { InputDialogConfig } from '../components/modal/InputDialog';
 
 interface UseFormatActionsParams {
   cmViewRef: MutableRefObject<EditorView | null>;

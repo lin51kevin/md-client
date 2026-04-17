@@ -4,10 +4,10 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSlug from 'rehype-slug';
 import rehypeHighlight from 'rehype-highlight';
-import { useI18n } from '../i18n';
-import { extractToc, type TocEntry } from '../lib/toc';
+import { useI18n } from '../../i18n';
+import { extractToc, type TocEntry } from '../../lib/markdown';
 // Vite ?raw import — USER_GUIDE.md bundled as a plain string
-import userGuideZh from '../../docs/guides/USER_GUIDE.md?raw';
+import userGuideZh from '../../../docs/guides/USER_GUIDE.md?raw';
 
 const REMARK_PLUGINS = [remarkGfm];
 const REHYPE_PLUGINS = [rehypeSlug, rehypeHighlight];

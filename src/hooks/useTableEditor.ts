@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import type { RefObject } from 'react';
 import type { EditorView } from '@codemirror/view';
-import type { TableData } from '../lib/table-parser';
+import type { TableData } from '../lib/markdown';
 
 interface UseTableEditorOptions {
   cmViewRef: RefObject<EditorView | null>;

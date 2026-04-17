@@ -6,8 +6,8 @@
  */
 import { useState, useMemo } from 'react';
 import { List, ChevronRight, X } from 'lucide-react';
-import type { TocEntry } from '../lib/toc';
-import { useI18n } from '../i18n';
+import type { TocEntry } from '../../lib/markdown';
+import { useI18n } from '../../i18n';
 
 interface TocSidebarProps {
   /** 提取的标题列表 */

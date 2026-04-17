@@ -2,7 +2,7 @@
  * css-templates — CSS 模板的 CRUD 与持久化
  */
 
-import { StorageKeys } from './storage-keys';
+import { StorageKeys } from '../storage';
 
 export const CSS_TEMPLATES_KEY = StorageKeys.CSS_TEMPLATES;
 

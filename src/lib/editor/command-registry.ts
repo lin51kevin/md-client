@@ -18,9 +18,9 @@ export interface CommandRegistryDeps {
   handleOpenFile: () => void;
   handleSaveFile: () => void;
   handleSaveAsFile: () => void;
-  setViewMode: (m: import('../types').ViewMode) => void;
+  setViewMode: (m: import('../../types').ViewMode) => void;
   focusMode: string;
-  setFocusMode: (m: import('../types').FocusMode) => void;
+  setFocusMode: (m: import('../../types').FocusMode) => void;
   handleFormatAction: (action: string) => void;
   handleExportDocx: () => void;
   handleExportPdf: () => void;

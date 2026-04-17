@@ -1,5 +1,5 @@
-import { useI18n } from '../i18n';
-import type { DragKind } from '../hooks/useDragDrop';
+import { useI18n } from '../../i18n';
+import type { DragKind } from '../../hooks/useDragDrop';
 
 interface DragOverlayProps {
   dragKind?: DragKind;

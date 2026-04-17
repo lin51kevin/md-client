@@ -7,8 +7,8 @@
 import { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { File, Clock, Search } from 'lucide-react';
-import type { DirEntry } from './FileTreeSidebar';
-import type { RecentFile } from '../lib/recent-files';
+import type { DirEntry } from '../file/FileTreeSidebar';
+import type { RecentFile } from '../../lib/file';
 
 interface QuickOpenProps {
   visible: boolean;

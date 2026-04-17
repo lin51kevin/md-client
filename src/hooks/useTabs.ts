@@ -3,12 +3,12 @@ import { invoke } from '@tauri-apps/api/core';
 import { message } from '@tauri-apps/plugin-dialog';
 import { Tab } from '../types';
 import { INITIAL_TAB_ID, genTabId, DEFAULT_MARKDOWN } from '../constants';
-import { addRecentFile, removeRecentFile } from '../lib/recent-files';
-import { moveSnapshots } from '../lib/version-history';
+import { addRecentFile, removeRecentFile } from '../lib/file';
+import { moveSnapshots } from '../lib/storage';
 import type { TranslationKey } from '../i18n/zh-CN';
 import { normalizePath } from '../lib/utils/path';
 import { toErrorMessage } from '../lib/utils/errors';
-import { restoreSession, persistSession } from '../lib/tab-session';
+import { restoreSession, persistSession } from '../lib/storage';
 
 type TFn = (key: TranslationKey, params?: Record<string, string | number>) => string;
 

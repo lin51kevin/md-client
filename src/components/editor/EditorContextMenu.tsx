@@ -7,10 +7,10 @@ import {
   IndentIncrease, IndentDecrease, ListOrdered,
   Quote, Sigma, FileText, Pencil
 } from 'lucide-react';
-import type { ContextInfo } from '../lib/context-menu';
-import { useI18n } from '../i18n';
-import type { TranslationKey } from '../i18n/zh-CN';
-import { getPluginContextMenuItems, onContextMenuItemsChanged, type PluginContextMenuItem } from '../plugins/plugin-context-menu';
+import type { ContextInfo } from '../../lib/editor';
+import { useI18n } from '../../i18n';
+import type { TranslationKey } from '../../i18n/zh-CN';
+import { getPluginContextMenuItems, onContextMenuItemsChanged, type PluginContextMenuItem } from '../../plugins/plugin-context-menu';
 
 interface EditorContextMenuProps {
   visible: boolean;

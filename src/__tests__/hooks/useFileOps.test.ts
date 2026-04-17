@@ -14,7 +14,7 @@ vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
 }));
 
-vi.mock('../../lib/html-export', () => ({
+vi.mock('../../lib/markdown/html-export', () => ({
   generateHtmlDocument: vi.fn(() => Promise.resolve('<html></html>')),
   generateEpub: vi.fn(() => Promise.resolve(new Uint8Array([0x50, 0x4b, 0x03, 0x04]))),
 }));
@@ -320,7 +320,7 @@ describe('useFileOps', () => {
     it('should export to HTML', async () => {
       const { save } = await import('@tauri-apps/plugin-dialog');
       const { invoke } = await import('@tauri-apps/api/core');
-      const { generateHtmlDocument } = await import('../../lib/html-export');
+      const { generateHtmlDocument } = await import('../../lib/markdown/html-export');
       
       vi.mocked(save).mockResolvedValue('/export.html');
       vi.mocked(invoke).mockResolvedValue(undefined);
@@ -411,7 +411,7 @@ describe('useFileOps', () => {
     it('should export to EPUB', async () => {
       const { save } = await import('@tauri-apps/plugin-dialog');
       const { invoke } = await import('@tauri-apps/api/core');
-      const { generateEpub } = await import('../../lib/html-export');
+      const { generateEpub } = await import('../../lib/markdown/html-export');
 
       vi.mocked(save).mockResolvedValue('/export.epub');
       vi.mocked(invoke).mockResolvedValue(undefined);
@@ -437,7 +437,7 @@ describe('useFileOps', () => {
     it('should handle EPUB export cancellation', async () => {
       const { save } = await import('@tauri-apps/plugin-dialog');
       const { invoke } = await import('@tauri-apps/api/core');
-      const { generateEpub } = await import('../../lib/html-export');
+      const { generateEpub } = await import('../../lib/markdown/html-export');
 
       vi.mocked(save).mockResolvedValue(null);
 
@@ -455,7 +455,7 @@ describe('useFileOps', () => {
       const { save } = await import('@tauri-apps/plugin-dialog');
       const { invoke } = await import('@tauri-apps/api/core');
       const { message } = await import('@tauri-apps/plugin-dialog');
-      const { generateEpub } = await import('../../lib/html-export');
+      const { generateEpub } = await import('../../lib/markdown/html-export');
 
       vi.mocked(save).mockResolvedValue('/export.epub');
       vi.mocked(generateEpub).mockRejectedValue(new Error('EPUB error'));

@@ -7,8 +7,8 @@
 import { useCallback } from 'react';
 import type { MutableRefObject } from 'react';
 import { EditorView } from '@codemirror/view';
-import { parseTable, serializeTable, type TableData } from '../lib/table-parser';
-import type { ContextInfo } from '../lib/context-menu';
+import { parseTable, serializeTable, type TableData } from '../lib/markdown';
+import type { ContextInfo } from '../lib/editor';
 
 interface UseEditorContextActionsParams {
   cmViewRef: MutableRefObject<EditorView | null>;

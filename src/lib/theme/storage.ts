@@ -9,7 +9,7 @@
 
 import type { ExternalThemeConfig } from './manager';
 import { isBuiltInTheme } from './manager';
-import { StorageKeys } from '../storage-keys';
+import { StorageKeys } from '../storage';
 
 export const THEME_STORAGE_KEY = StorageKeys.CUSTOM_THEMES;
 

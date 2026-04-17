@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import DOMPurify from 'dompurify';
-import { toErrorMessage } from '../lib/utils/errors';
+import { toErrorMessage } from '../../lib/utils/errors';
 import { X, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
-import { useI18n } from '../i18n';
-import { extractToc, type TocEntry } from '../lib/toc';
-import { tocToMindmap, sanitizeText } from '../lib/mindmap-converter';
-import { initMermaid } from '../lib/mermaid';
+import { useI18n } from '../../i18n';
+import { extractToc, type TocEntry } from '../../lib/markdown';
+import { tocToMindmap, sanitizeText } from '../../lib/markdown';
+import { initMermaid } from '../../lib/markdown';
 
 interface MindmapViewProps {
   markdown: string;

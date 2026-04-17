@@ -4,13 +4,13 @@ import ReactMarkdown from "react-markdown";
 import "katex/dist/katex.min.css";
 import { invoke } from "@tauri-apps/api/core";
 import { openPath, openUrl } from "@tauri-apps/plugin-opener";
-import { PREVIEW_REMARK_PLUGINS, PREVIEW_REHYPE_PLUGINS } from "../lib/markdown/pipeline";
-import { MAX_IMAGE_CACHE } from "../constants";
-import { toErrorMessage } from "../lib/utils/errors";
-import { initMermaid } from "../lib/mermaid";
-import { parseTable, type TableData } from "../lib/table-parser";
-import { extractFrontmatter, type Frontmatter } from "../lib/markdown/extensions";
-import { TableEditor } from "./TableEditor";
+import { PREVIEW_REMARK_PLUGINS, PREVIEW_REHYPE_PLUGINS } from "../../lib/markdown/pipeline";
+import { MAX_IMAGE_CACHE } from "../../constants";
+import { toErrorMessage } from "../../lib/utils/errors";
+import { initMermaid } from "../../lib/markdown";
+import { parseTable, type TableData } from "../../lib/markdown";
+import { extractFrontmatter, type Frontmatter } from "../../lib/markdown/extensions";
+import { TableEditor } from "../modal/TableEditor";
 
 // Stable plugin arrays — imported from markdown-pipeline to ensure single source of truth
 // and prevent ReactMarkdown from re-initializing the pipeline on each render.

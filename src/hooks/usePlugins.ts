@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import type { PluginPermission } from '../plugins/types';
 import { PERMISSION_DESCRIPTIONS } from '../plugins/permissions';
 import { validatePluginId } from '../plugins/plugin-loader';
-import { StorageKeys } from '../lib/storage-keys';
+import { StorageKeys } from '../lib/storage';
 
 export interface PluginUIItem {
   id: string;

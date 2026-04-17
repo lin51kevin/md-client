@@ -1,9 +1,9 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { FilePlus, FolderOpen, FileText, Clock, Keyboard, X, Hash } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
-import { useI18n } from '../i18n';
-import type { RecentFile } from '../lib/recent-files';
-import logoUrl from '../../src-tauri/icons/128x128.png';
+import { useI18n } from '../../i18n';
+import type { RecentFile } from '../../lib/file';
+import logoUrl from '../../../src-tauri/icons/128x128.png';
 
 const MAX_VISIBLE_RECENT = 5;
 

@@ -5,7 +5,7 @@
  * 下次打开时自动恢复。
  */
 
-import { StorageKeys } from './storage-keys';
+import { StorageKeys } from '../storage';
 
 const STORAGE_KEY = StorageKeys.SPLIT_SIZES;
 const DEFAULT_SIZES = [50, 50] as const;

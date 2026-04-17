@@ -6,8 +6,8 @@
  */
 import { useEffect, useRef } from 'react';
 import { Copy, MousePointerClick, ExternalLink, FileCode } from 'lucide-react';
-import { useI18n } from '../i18n';
-import type { TranslationKey } from '../i18n/zh-CN';
+import { useI18n } from '../../i18n';
+import type { TranslationKey } from '../../i18n/zh-CN';
 
 interface PreviewContextMenuProps {
   visible: boolean;

@@ -5,7 +5,7 @@
  * 作为 Toolbar 按钮的下拉弹出层使用。
  */
 import { useState, useRef, useEffect } from 'react';
-import { useI18n } from '../i18n';
+import { useI18n } from '../../i18n';
 
 interface TableSizePickerProps {
   onSelect: (rows: number, cols: number) => void;

@@ -6,3 +6,4 @@ export { QuickOpen } from './QuickOpen';
 export { TabBar } from './TabBar';
 export { TabContextMenu } from './TabContextMenu';
 export { StatusBar } from './StatusBar';
+export { SearchPanel } from './SearchPanel';

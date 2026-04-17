@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { History, X, Download } from 'lucide-react';
-import { useI18n } from '../i18n';
-import { formatDuration } from '../lib/format-duration';
+import { useI18n } from '../../i18n';
+import { formatDuration } from '../../lib/utils';
 
 interface StatusBarProps {
   filePath: string | null;
@@ -19,7 +19,7 @@ interface StatusBarProps {
   /** 多光标数量（>1 时显示） */
   cursorCount?: number;
   /** F012: 快照列表（有值时显示版本历史入口） */
-  snapshots?: import('../lib/version-history').Snapshot[] | null;
+  snapshots?: import('../../lib/storage').Snapshot[] | null;
   onSnapshotRestore?: (snapshotId: string) => void;
   /** Update available info */
   updateAvailable?: { version: string } | null;

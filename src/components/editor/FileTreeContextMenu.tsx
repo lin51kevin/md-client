@@ -5,7 +5,7 @@
  */
 import { useEffect } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
-import type { TreeNode } from './FileTreeSidebar';
+import type { TreeNode } from '../file/FileTreeSidebar';
 
 interface FileTreeContextMenuProps {
   menu: { x: number; y: number; node: TreeNode };

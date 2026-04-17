@@ -4,7 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeKatex from 'rehype-katex';
 import remarkMath from 'remark-math';
-import { parseSlides } from '../lib/slide-parser';
+import { parseSlides } from '../../lib/markdown';
 
 interface SlidePreviewProps {
   markdown: string;

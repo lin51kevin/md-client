@@ -3,12 +3,12 @@ import { renderHook, act } from '@testing-library/react';
 import { useVersionHistory } from '../../hooks/useVersionHistory';
 
 // Mock the version-history lib so tests don't touch localStorage
-vi.mock('../../lib/version-history', () => ({
+vi.mock('../../lib/storage', () => ({
   getSnapshots: vi.fn(() => [{ id: 'snap-1', timestamp: 1000, content: '# Hello' }]),
   createSnapshot: vi.fn(() => [{ id: 'snap-2', timestamp: 2000, content: '# World' }]),
 }));
 
-import { getSnapshots, createSnapshot } from '../../lib/version-history';
+import { getSnapshots, createSnapshot } from '../../lib/storage';
 
 const makeTab = (overrides?: object) => ({
   id: 'tab-1',

@@ -4,7 +4,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { confirm, message } from '@tauri-apps/plugin-dialog';
 import type { Tab } from '../types';
 import type { TranslationKey } from '../i18n';
-import type { TocEntry } from '../lib/toc';
+import type { TocEntry } from '../lib/markdown';
 import type { SearchResultItem } from '../types/search';
 
 interface UseNavigationOptions {

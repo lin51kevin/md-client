@@ -1,7 +1,7 @@
 import { useState, useCallback, createContext, useContext } from 'react';
 import { zhCN, type TranslationKey } from './zh-CN';
 import { en } from './en';
-import { StorageKeys } from '../lib/storage-keys';
+import { StorageKeys } from '../lib/storage';
 
 export type { TranslationKey };
 

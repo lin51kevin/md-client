@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Search } from 'lucide-react';
-import { useI18n } from '../i18n';
-import type { Snippet } from '../lib/snippets';
-import { getSnippets, resolveSnippet } from '../lib/snippets';
+import { useI18n } from '../../i18n';
+import type { Snippet } from '../../lib/storage';
+import { getSnippets, resolveSnippet } from '../../lib/storage';
 
 interface SnippetPickerProps {
   visible: boolean;

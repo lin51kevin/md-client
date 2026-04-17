@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { extractToc, type TocEntry } from '../lib/toc';
-import { countWords } from '../lib/word-count';
+import { extractToc, type TocEntry } from '../lib/markdown';
+import { countWords } from '../lib/utils';
 
 export type { TocEntry };
 

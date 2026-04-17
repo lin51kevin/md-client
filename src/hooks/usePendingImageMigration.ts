@@ -1,8 +1,8 @@
 import { useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import type { Tab } from '../types';
-import { getPendingImages, clearPendingImages } from '../lib/pending-images';
-import { buildImageMarkdownPath } from '../lib/image-paste';
+import { getPendingImages, clearPendingImages } from '../lib/file';
+import { buildImageMarkdownPath } from '../lib/utils';
 
 interface UsePendingImageMigrationOptions {
   tabs: Tab[];

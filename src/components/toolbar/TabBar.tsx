@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { X, Plus, Pin } from 'lucide-react';
-import { Tab } from '../types';
-import { useI18n } from '../i18n';
+import { Tab } from '../../types';
+import { useI18n } from '../../i18n';
 
 interface TabBarProps {
   tabs: Tab[];

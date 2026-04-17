@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 
-vi.mock('../../lib/git-commands', () => ({
+vi.mock('../../lib/file', () => ({
   gitGetRepo: vi.fn(),
   gitGetStatus: vi.fn(),
   gitDiff: vi.fn(),
@@ -22,7 +22,7 @@ import {
   gitStage,
   gitUnstage,
   gitRestore,
-} from '../../lib/git-commands';
+} from '../../lib/file';
 import { useGit } from '../../hooks/useGit';
 
 const mockGetRepo = vi.mocked(gitGetRepo);

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { StorageKeys } from '../lib/storage-keys';
+import { StorageKeys } from '../lib/storage';
 
 export interface TypewriterOptions {
   dimOthers: boolean;

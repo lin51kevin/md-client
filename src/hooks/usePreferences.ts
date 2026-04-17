@@ -1,8 +1,8 @@
 import { useState, useLayoutEffect, useEffect } from 'react';
 import { useLocalStorageBool, useLocalStorageNumber } from './useLocalStorage';
 import { applyTheme, getSavedTheme, saveTheme, type ThemeName } from '../lib/theme';
-import { getCustomCss, applyCustomCss } from '../lib/custom-css';
-import { StorageKeys } from '../lib/storage-keys';
+import { getCustomCss, applyCustomCss } from '../lib/ui';
+import { StorageKeys } from '../lib/storage';
 
 export function usePreferences() {
   const [spellCheck, setSpellCheck] = useLocalStorageBool(StorageKeys.SPELLCHECK, true);

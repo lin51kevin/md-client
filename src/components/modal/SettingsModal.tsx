@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { X, Settings, Palette, Type, FolderOpen, Keyboard, RotateCcw, FileText, FolderInput, Download, Trash2 } from 'lucide-react';
-import { useI18n, type Locale } from '../i18n';
-import { toErrorMessage } from '../lib/utils/errors';
-import type { TranslationKey } from '../i18n/zh-CN';
-import type { ThemeName } from '../lib/theme';
-import { getInstalledThemes, loadThemeFromJson, installTheme, removeTheme, isBuiltInTheme, exportThemeAsJson } from '../lib/theme/manager';
+import { useI18n, type Locale } from '../../i18n';
+import { toErrorMessage } from '../../lib/utils/errors';
+import type { TranslationKey } from '../../i18n/zh-CN';
+import type { ThemeName } from '../../lib/theme';
+import { getInstalledThemes, loadThemeFromJson, installTheme, removeTheme, isBuiltInTheme, exportThemeAsJson } from '../../lib/theme/manager';
 import { save } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
-import { CustomCssEditor } from './CustomCssEditor';
-import { getImageSaveDir, setImageSaveDir } from '../lib/image-paste';
+import { CustomCssEditor } from '../file/CustomCssEditor';
+import { getImageSaveDir, setImageSaveDir } from '../../lib/utils';
 import {
   DEFAULT_SHORTCUTS,
   getCustomShortcuts,
@@ -16,7 +16,7 @@ import {
   formatKeyEvent,
   detectConflict,
   type ShortcutCategory,
-} from '../lib/shortcuts-config';
+} from '../../lib/editor';
 import { SnippetManager } from './SnippetManager';
 
 interface SettingsModalProps {
@@ -44,8 +44,8 @@ interface SettingsModalProps {
   onAutoUpdateCheckChange?: (enabled: boolean) => void;
   updateCheckFrequency?: 'startup' | '24h';
   onUpdateCheckFrequencyChange?: (freq: 'startup' | '24h') => void;
-  typewriterOptions?: import('../hooks/useTypewriterOptions').TypewriterOptions;
-  onTypewriterOptionsChange?: (update: Partial<import('../hooks/useTypewriterOptions').TypewriterOptions>) => void;
+  typewriterOptions?: import('../../hooks/useTypewriterOptions').TypewriterOptions;
+  onTypewriterOptionsChange?: (update: Partial<import('../../hooks/useTypewriterOptions').TypewriterOptions>) => void;
 }
 
 type TabId = 'general' | 'editor' | 'appearance' | 'files' | 'shortcuts' | 'snippets';

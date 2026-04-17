@@ -16,9 +16,9 @@ const LUCIDE_ICON_MAP: Record<string, LucideIcon> = {
   bot: Bot,
   'message-square': MessageSquare,
 };
-import { useI18n, type TranslationKey } from '../i18n';
-import { useLocalStorageString } from '../hooks/useLocalStorage';
-import { StorageKeys } from '../lib/storage-keys';
+import { useI18n, type TranslationKey } from '../../i18n';
+import { useLocalStorageString } from '../../hooks/useLocalStorage';
+import { StorageKeys } from '../../lib/storage';
 
 export type BuiltinPanelId = 'filetree' | 'search' | 'toc' | 'plugins' | 'git';
 export type PanelId = BuiltinPanelId | (string & {});

@@ -13,8 +13,8 @@
 
 import { useEffect, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { getImageSaveDir, generateImageFileName, buildImageMarkdownPath } from '../lib/image-paste';
-import { addPendingImage } from '../lib/pending-images';
+import { getImageSaveDir, generateImageFileName, buildImageMarkdownPath } from '../lib/utils';
+import { addPendingImage } from '../lib/file';
 
 export interface ImagePasteOptions {
   /** 当前 Markdown 文档路径（用于计算相对路径） */

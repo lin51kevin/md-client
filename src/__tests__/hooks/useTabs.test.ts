@@ -14,12 +14,12 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({
   save: vi.fn(),
 }));
 
-vi.mock('../../lib/recent-files', () => ({
+vi.mock('../../lib/file/recent-files', () => ({
   addRecentFile: vi.fn(),
   removeRecentFile: vi.fn(),
 }));
 
-vi.mock('../../lib/version-history', () => ({
+vi.mock('../../lib/storage/version-history', () => ({
   moveSnapshots: vi.fn(),
 }));
 
@@ -238,8 +238,8 @@ describe('useTabs', () => {
     it('should invoke rename_file for saved files', async () => {
       const { result } = renderHook(() => useTabs(mockT));
       const { invoke } = await import('@tauri-apps/api/core');
-      const { moveSnapshots } = await import('../../lib/version-history');
-      const { addRecentFile, removeRecentFile } = await import('../../lib/recent-files');
+      const { moveSnapshots } = await import('../../lib/storage/version-history');
+      const { addRecentFile, removeRecentFile } = await import('../../lib/file/recent-files');
       
       // Mock reading a file to create a saved tab
       vi.mocked(invoke).mockResolvedValue('# File content');

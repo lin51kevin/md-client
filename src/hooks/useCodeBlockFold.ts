@@ -5,7 +5,7 @@
  * block's language + first line, so it survives across sessions.
  */
 import { useState, useCallback } from 'react';
-import { StorageKeys } from '../lib/storage-keys';
+import { StorageKeys } from '../lib/storage';
 
 const STORAGE_KEY = StorageKeys.CODEBLOCK_FOLD;
 

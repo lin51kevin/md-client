@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { Save, Download, FolderInput, Trash2, ChevronDown } from 'lucide-react';
-import { useI18n } from '../i18n';
-import { getCustomCss, setCustomCss, clearCustomCss, applyCustomCss, removeCustomCssStyle } from '../lib/custom-css';
+import { useI18n } from '../../i18n';
+import { getCustomCss, setCustomCss, clearCustomCss, applyCustomCss, removeCustomCssStyle } from '../../lib/ui';
 import { save } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
 import {
@@ -11,7 +11,7 @@ import {
   importCssTemplate,
   exportCssTemplate,
   type CSSTemplate,
-} from '../lib/css-templates';
+} from '../../lib/ui';
 
 export function CustomCssEditor() {
   const { t } = useI18n();

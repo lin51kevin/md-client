@@ -9,7 +9,7 @@
  */
 
 import { BUILT_IN_NAMES, BUILT_IN_THEMES_MAP } from './registry';
-import { StorageKeys } from '../storage-keys';
+import { StorageKeys } from '../storage';
 
 export type ThemeName = 'light' | 'dark' | 'sepia' | 'high-contrast' | (string & {});
 

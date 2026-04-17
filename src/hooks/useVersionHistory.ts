@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getSnapshots, createSnapshot as createVersionSnapshot, type Snapshot } from '../lib/version-history';
+import { getSnapshots, createSnapshot as createVersionSnapshot, type Snapshot } from '../lib/storage';
 import type { Tab } from '../types';
 
 interface UseVersionHistoryOptions {

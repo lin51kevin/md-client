@@ -5,7 +5,7 @@
  * keeping IO concerns out of the useTabs hook.
  */
 import { invoke } from '@tauri-apps/api/core';
-import type { Tab } from '../types';
+import type { Tab } from '../../types';
 import { StorageKeys } from './storage-keys';
 
 const SESSION_KEY = StorageKeys.SESSION_TABS;

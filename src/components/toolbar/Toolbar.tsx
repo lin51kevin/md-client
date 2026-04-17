@@ -1,12 +1,12 @@
 
 import { useRef, useState } from 'react';
 import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, SpellCheck, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, HelpCircle, FilePlus, FileText, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight, Table2, FileCode2, Minus, ListChecks, Sigma, Presentation, Library, List, Brain, Undo2, Redo2, Bot } from 'lucide-react';
-import { ViewMode, FocusMode } from '../types';
+import { ViewMode, FocusMode } from '../../types';
 
-import { FileMenuDropdown } from './FileMenuDropdown';
+import { FileMenuDropdown } from '../editor/FileMenuDropdown';
 import { ToolbarButton } from './ToolbarButton';
-import { TableSizePicker } from './TableSizePicker';
-import { useI18n } from '../i18n';
+import { TableSizePicker } from '../modal/TableSizePicker';
+import { useI18n } from '../../i18n';
 
 interface ToolbarProps {
   viewMode: ViewMode;
@@ -44,7 +44,7 @@ interface ToolbarProps {
   /** AI Copilot: 切换聊天面板 */
   onToggleAIPanel?: () => void;
   /** F013: 最近文件列表 */
-  recentFiles?: import('../lib/recent-files').RecentFile[];
+  recentFiles?: import('../../lib/file').RecentFile[];
   /** F013: 打开最近文件 */
   onOpenRecent?: (filePath: string) => void;
   /** F013: 清空最近文件 */
@@ -54,7 +54,7 @@ interface ToolbarProps {
   /** 关闭所有非固定标签页 */
   onCloseAll?: () => void;
   /** Tab navigation: list of open tabs */
-  tabs?: import('../types').Tab[];
+  tabs?: import('../../types').Tab[];
   /** Tab navigation: current active tab id */
   activeTabId?: string;
   /** Tab navigation: activate a tab by id */

@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import type { Tab } from '../types';
 import type { TranslationKey } from '../i18n';
-import { getPendingImages, clearPendingImages } from '../lib/pending-images';
+import { getPendingImages, clearPendingImages } from '../lib/file';
 
 type UnsavedChoice = 'save' | 'discard' | 'cancel';
 

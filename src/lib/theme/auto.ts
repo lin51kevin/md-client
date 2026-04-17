@@ -10,7 +10,7 @@
  * 但 preference 本身持久化用户的手动选择。
  */
 
-import { StorageKeys } from '../storage-keys';
+import { StorageKeys } from '../storage';
 
 export type ThemePreference = 'system' | 'light' | 'dark';
 export type ResolvedTheme = 'light' | 'dark';

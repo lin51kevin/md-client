@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { getRecentFiles, clearRecentFiles, removeRecentFile, type RecentFile } from '../lib/recent-files';
+import { getRecentFiles, clearRecentFiles, removeRecentFile, type RecentFile } from '../lib/file';
 
 interface UseRecentFilesOptions {
   openFileInTab: (filePath: string) => Promise<void>;

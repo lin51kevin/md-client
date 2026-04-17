@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, Trash2, Save, X, AlertCircle, RotateCcw } from 'lucide-react';
-import { useI18n } from '../i18n';
-import type { Snippet } from '../lib/snippets';
+import { useI18n } from '../../i18n';
+import type { Snippet } from '../../lib/storage';
 import {
   getSnippets,
   saveSnippets,
   generateSnippetId,
   getDefaultSnippets,
-} from '../lib/snippets';
+} from '../../lib/storage';
 
 interface SnippetManagerProps {
   visible: boolean;

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
-import { useI18n } from '../i18n';
+import { useI18n } from '../../i18n';
 
 export interface InputDialogConfig {
   title: string;

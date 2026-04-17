@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useLocalStorageString } from './useLocalStorage';
-import { StorageKeys } from '../lib/storage-keys';
-import { PANEL_ITEMS, type PanelId } from '../components/ActivityBar';
+import { StorageKeys } from '../lib/storage';
+import { PANEL_ITEMS, type PanelId } from '../components/editor/ActivityBar';
 
 export function useSidebarPanel() {
   const [activePanelRaw, setActivePanelRaw] = useLocalStorageString(StorageKeys.ACTIVE_PANEL, '');

@@ -1,5 +1,5 @@
-import { registerCustomCommand, unregisterCustomCommand } from '../lib/command-registry';
-import type { Command } from '../lib/commands';
+import { registerCustomCommand, unregisterCustomCommand } from '../lib/editor';
+import type { Command } from '../lib/editor';
 
 /**
  * Create the commands API for plugin contexts.

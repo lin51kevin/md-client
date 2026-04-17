@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import { X, GitBranch, RefreshCw, ArrowUp, ArrowDown, AlertCircle, GitCommit, FileDiff, Plus, Minus, Undo2, ExternalLink, Check } from 'lucide-react';
-import type { GitFileStatus, GitFileStatusType } from '../lib/git-commands';
+import type { GitFileStatus, GitFileStatusType } from '../../lib/file';
 import { DiffViewer } from './DiffViewer';
-import { useI18n } from '../i18n';
+import { useI18n } from '../../i18n';
 
 interface GitPanelProps {
   isRepo: boolean;

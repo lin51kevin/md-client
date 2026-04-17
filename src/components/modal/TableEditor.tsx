@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { X, Plus, Trash2, AlignLeft, AlignCenter, AlignRight, Check } from 'lucide-react';
-import type { TableData, Alignment } from '../lib/table-parser';
-import { serializeTable } from '../lib/table-parser';
-import { useI18n } from '../i18n';
+import type { TableData, Alignment } from '../../lib/markdown';
+import { serializeTable } from '../../lib/markdown';
+import { useI18n } from '../../i18n';
 
 interface TableEditorProps {
   table: TableData;

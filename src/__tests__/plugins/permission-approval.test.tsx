@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { PermissionApprovalModal } from '../../components/PermissionApprovalModal';
+import { PermissionApprovalModal } from '../../components/modal/PermissionApprovalModal';
 import { I18nContext } from '../../i18n';
 import type { Locale, TranslationKey } from '../../i18n';
 import { zhCN } from '../../i18n/zh-CN';

@@ -5,19 +5,19 @@ import type { ViewUpdate } from '@uiw/react-codemirror';
 import CodeMirror from '@uiw/react-codemirror';
 import type { EditorView } from '@codemirror/view';
 import Split from 'react-split';
-import { saveSplitSizes } from '../lib/split-preference';
-import { THEMES, type ThemeName } from '../lib/theme';
-import { WelcomePage, EmptyEditorState } from './WelcomePage';
-import type { Tab } from '../types';
-import type { ViewMode } from '../types';
-import type { RecentFile } from '../lib/recent-files';
+import { saveSplitSizes } from '../../lib/editor';
+import { THEMES, type ThemeName } from '../../lib/theme';
+import { WelcomePage, EmptyEditorState } from '../welcome/WelcomePage';
+import type { Tab } from '../../types';
+import type { ViewMode } from '../../types';
+import type { RecentFile } from '../../lib/file';
 
 const MarkdownPreview = lazy(() =>
-  import('./MarkdownPreview').then((m) => ({ default: m.MarkdownPreview }))
+  import('../preview/MarkdownPreview').then((m) => ({ default: m.MarkdownPreview }))
 );
 
 const MilkdownPreview = lazy(() =>
-  import('./MilkdownPreview').then((m) => ({ default: m.MilkdownPreview }))
+  import('../milkdown').then((m) => ({ default: m.MilkdownPreview }))
 );
 
 const EDITOR_SETUP = { lineNumbers: true, foldGutter: true, highlightActiveLine: true, tabSize: 2 };

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
-import type { Command } from '../lib/commands';
-import { searchCommands, recordCommandExecution, CATEGORY_LABELS } from '../lib/commands';
+import type { Command } from '../../lib/editor';
+import { searchCommands, recordCommandExecution, CATEGORY_LABELS } from '../../lib/editor';
 
 interface CommandPaletteProps {
   visible: boolean;

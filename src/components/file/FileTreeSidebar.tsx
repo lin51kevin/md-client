@@ -18,12 +18,12 @@ import {
   Plus,
 } from 'lucide-react';
 import { TreeNodeView } from './FileTreeNode';
-import { FileTreeContextMenu } from './FileTreeContextMenu';
-import { revealInExplorer } from '../lib/reveal-in-explorer';
+import { FileTreeContextMenu } from '../editor/FileTreeContextMenu';
+import { revealInExplorer } from '../../lib/file';
 
 
 /** Rust 后端返回的目录条目结构 */
-import { StorageKeys } from '../lib/storage-keys';
+import { StorageKeys } from '../../lib/storage';
 export interface DirEntry {
   name: string;
   path: string;

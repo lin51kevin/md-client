@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { InputDialogConfig } from '../components/InputDialog';
+import type { InputDialogConfig } from '../components/modal/InputDialog';
 
 export interface InputDialogState {
   config: InputDialogConfig;

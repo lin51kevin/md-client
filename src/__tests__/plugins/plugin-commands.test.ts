@@ -5,7 +5,7 @@ import {
   unregisterCustomCommand,
   createCommandRegistry,
   customCommands,
-} from '../../lib/command-registry';
+} from '../../lib/editor/command-registry';
 
 const makeMockDeps = () => ({
   createNewTab: vi.fn(), handleOpenFile: vi.fn(), handleSaveFile: vi.fn(),

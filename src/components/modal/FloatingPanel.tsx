@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode, type MouseEvent as ReactMouseEvent } from 'react';
-import { StorageKeys } from '../lib/storage-keys';
+import { StorageKeys } from '../../lib/storage';
 
 /* ── Constants ────────────────────────────────────────────── */
 const STORAGE_KEY = StorageKeys.FLOATING_PANEL;

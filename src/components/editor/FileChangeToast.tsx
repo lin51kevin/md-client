@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AlertTriangle, Trash2, RefreshCw, Download, X } from 'lucide-react';
-import { useI18n } from '../i18n';
+import { useI18n } from '../../i18n';
 
 export interface FileChangeToastProps {
   type: 'modified' | 'deleted';

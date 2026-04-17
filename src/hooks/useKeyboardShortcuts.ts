@@ -6,7 +6,7 @@ import {
   eventMatchesShortcut,
   DEFAULT_SHORTCUTS,
   detectConflict,
-} from '../lib/shortcuts-config';
+} from '../lib/editor';
 
 interface ShortcutsParams {
   createNewTab: () => void;

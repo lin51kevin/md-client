@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { check as tauriCheck } from '@tauri-apps/plugin-updater';
-import { StorageKeys } from '../lib/storage-keys';
+import { StorageKeys } from '../lib/storage';
 import { toErrorMessage } from '../lib/utils/errors';
 
 export interface UpdateInfo {

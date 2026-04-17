@@ -1,5 +1,5 @@
 import { X, Github, Globe, Bug } from 'lucide-react';
-import { useI18n } from '../i18n';
+import { useI18n } from '../../i18n';
 
 interface AboutModalProps {
   visible: boolean;

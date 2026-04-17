@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { FilePlus, Clock, Save, SaveAll, FileText, FolderOpen, FileCode, Trash2, ChevronRight, ArrowUpFromLine, BookMarked, ScrollText, Image, X, Menu } from 'lucide-react';
-import type { RecentFile } from '../lib/recent-files';
-import { useI18n } from '../i18n';
+import type { RecentFile } from '../../lib/file';
+import { useI18n } from '../../i18n';
 
 export interface FileMenuDropdownProps {
   onNewTab: () => void;

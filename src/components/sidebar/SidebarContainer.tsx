@@ -6,7 +6,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { PanelId } from './ActivityBar';
+import type { PanelId } from '../editor/ActivityBar';
 
 const STORAGE_KEY = 'marklite.sidebar-width.v1';
 const LEGACY_KEY = 'marklite-sidebar-width'; // 旧key用于迁移
