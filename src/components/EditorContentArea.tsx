@@ -55,6 +55,8 @@ interface EditorContentAreaProps {
   pluginRenderers?: Map<string, unknown>;
   /** Use Milkdown as the preview engine (default: true) */
   useMilkdownPreview?: boolean;
+  /** Right-click on preview pane */
+  onPreviewContextMenu?: (x: number, y: number) => void;
 }
 
 const PreviewFallback = (
@@ -118,6 +120,7 @@ export function EditorContentArea({
   onShowWelcome,
   pluginRenderers,
   useMilkdownPreview = true,
+  onPreviewContextMenu,
 }: EditorContentAreaProps) {
   if (isPristine) {
     return welcomeDismissed ? (
@@ -209,6 +212,7 @@ export function EditorContentArea({
           style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--bg-primary)' }}
           ref={previewRef}
           onScroll={handlePreviewScroll}
+          onContextMenu={(e) => { e.preventDefault(); onPreviewContextMenu?.(e.clientX, e.clientY); }}
         >
           <div className="p-8">
             {renderPreview()}
@@ -241,6 +245,7 @@ export function EditorContentArea({
           ref={previewRef}
           className="w-full h-full overflow-auto"
           style={{ backgroundColor: 'var(--bg-primary)' }}
+          onContextMenu={(e) => { e.preventDefault(); onPreviewContextMenu?.(e.clientX, e.clientY); }}
         >
           <div className="p-8">
             {renderPreview()}

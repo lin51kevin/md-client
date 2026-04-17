@@ -38,6 +38,7 @@ import { useFileWatcher } from './hooks/useFileWatcher';
 import { invoke } from '@tauri-apps/api/core';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { FileChangeToast } from './components/FileChangeToast';
+import { QuickOpen } from './components/QuickOpen';
 import { usePreviewRenderers } from './hooks/usePreviewRenderers';
 import { usePluginRuntime } from './hooks/usePluginRuntime';
 import { usePluginPanels } from './hooks/usePluginPanels';
@@ -48,6 +49,7 @@ import { Toolbar } from './components/Toolbar';
 import { TabBar } from './components/TabBar';
 import { TabContextMenu } from './components/TabContextMenu';
 import { EditorContextMenu } from './components/EditorContextMenu';
+import { PreviewContextMenu } from './components/PreviewContextMenu';
 import { StatusBar } from './components/StatusBar';
 import { SettingsModal } from './components/SettingsModal';
 import { DragOverlay } from './components/DragOverlay';
@@ -71,6 +73,7 @@ import { AboutModal } from './components/AboutModal';
 const SlidePreview = lazy(() => import('./components/SlidePreview').then(m => ({ default: m.SlidePreview })));
 const MindmapView = lazy(() => import('./components/MindmapView').then(m => ({ default: m.MindmapView })));
 import { EditorContentArea } from './components/EditorContentArea';
+// import { BreadcrumbNav } from './components/BreadcrumbNav';
 import { PluginSidebarRenderer } from './components/PluginSidebarRenderer';
 import { FloatingPanel } from './components/FloatingPanel';
 import { createCommandRegistry } from './lib/command-registry';
@@ -88,9 +91,11 @@ export default function App() {
   const [dragKind, setDragKind] = useState<import('./hooks/useDragDrop').DragKind>('file');
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; tabId: string } | null>(null);
   const [editorCtxMenu, setEditorCtxMenu] = useState<{ x: number; y: number; context: import('./lib/context-menu').ContextInfo } | null>(null);
+  const [previewCtxMenu, setPreviewCtxMenu] = useState<{ x: number; y: number } | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [showQuickOpen, setShowQuickOpen] = useState(false);
   // showHelp removed — help button now opens external URL
 
   // ── Extracted state hooks ────────────────────────────────────────
@@ -389,6 +394,7 @@ export default function App() {
       const tag = (e.target as HTMLElement).tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (e.target as HTMLElement).isContentEditable) return;
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'P') { e.preventDefault(); setShowCommandPalette(v => !v); }
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'p') { e.preventDefault(); setShowQuickOpen(v => !v); }
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'E') {
         e.preventDefault();
         const tab = tabs.find(t => t.id === activeTabId);
@@ -448,6 +454,42 @@ export default function App() {
           })()}
           onClose={() => setEditorCtxMenu(null)}
           onAction={handleEditorCtxAction}
+        />
+      )}
+
+      {previewCtxMenu && (
+        <PreviewContextMenu
+          visible={!!previewCtxMenu}
+          x={previewCtxMenu.x} y={previewCtxMenu.y}
+          hasSelection={!!window.getSelection()?.toString()}
+          onClose={() => setPreviewCtxMenu(null)}
+          onAction={(action) => {
+            setPreviewCtxMenu(null);
+            switch (action) {
+              case 'copy':
+                document.execCommand('copy');
+                break;
+              case 'copyAsMarkdown': {
+                const sel = window.getSelection()?.toString() ?? '';
+                if (sel) navigator.clipboard.writeText(sel).catch(() => {});
+                break;
+              }
+              case 'selectAll': {
+                const preview = previewRef.current;
+                if (preview) {
+                  const range = document.createRange();
+                  range.selectNodeContents(preview);
+                  const sel = window.getSelection();
+                  sel?.removeAllRanges();
+                  sel?.addRange(range);
+                }
+                break;
+              }
+              case 'viewSource':
+                setViewMode('edit');
+                break;
+            }
+          }}
         />
       )}
 
@@ -533,6 +575,16 @@ export default function App() {
           />
         </>
       )}
+
+      {/* ── Breadcrumb ───────────────────────────────────────────── */}
+      {/* {!effectiveChromeless && !isPristine && (
+        <BreadcrumbNav
+          filePath={activeTab.filePath ?? null}
+          fileTreeRoot={fileTreeRoot}
+          onNavigateFolder={(folder) => { setFileTreeRoot(folder); setActivePanel('files'); }}
+          locale={i18n.locale}
+        />
+      )} */}
 
       {/* ── Main body: ActivityBar + panels + editor ──────────────── */}
       <div className="flex-1 overflow-hidden flex">
@@ -632,6 +684,7 @@ export default function App() {
           onDismiss={handleDismissWelcome} onShowWelcome={handleShowWelcome}
           pluginRenderers={pluginRenderers}
           useMilkdownPreview={milkdownPreview}
+          onPreviewContextMenu={(x, y) => setPreviewCtxMenu({ x, y })}
         />
 
         {/* Floating AI Chat Panel */}
@@ -695,6 +748,8 @@ export default function App() {
       )}
 
       <CommandPalette visible={showCommandPalette} commands={commandRegistry} onClose={() => setShowCommandPalette(false)} locale={i18n.locale} />
+
+      <QuickOpen visible={showQuickOpen} onClose={() => setShowQuickOpen(false)} onFileOpen={(path) => openFileInTab(path)} fileTreeRoot={fileTreeRoot} recentFiles={recentFiles} locale={i18n.locale} />
 
       <SnippetPicker visible={showSnippetPicker} onClose={() => setShowSnippetPicker(false)} onSelect={handleSnippetInsert} />
 
