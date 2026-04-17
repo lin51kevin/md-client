@@ -24,6 +24,7 @@ export interface AgentOptions {
 }
 
 const DEFAULT_MAX_ITERATIONS = 10;
+const MAX_DOC_PREVIEW_LENGTH = 2000;
 
 /**
  * AI Agent Loop - Core engine for tool-based editing
@@ -64,9 +65,8 @@ export class AgentLoop {
     systemPrompt?: string
   ): Promise<AgentResult> {
     // DIAG-001 Fix: Fresh array scoped to this run() — never leaks across calls
+    // Note: Array mutation is acceptable here for performance in local accumulator
     const toolCalls: ToolCall[] = [];
-    // Reset any iteration-level state
-    const aiToolCalls: ToolCall[] = [];
 
     const messages: ChatMessage[] = [];
 
@@ -76,7 +76,7 @@ export class AgentLoop {
 
     messages.push({
       role: "user",
-      content: `${userMessage}\n\n当前文档内容:\n${docContent.slice(0, 2000)}${docContent.length > 2000 ? "..." : ""}`,
+      content: `${userMessage}\n\n当前文档内容:\n${docContent.slice(0, MAX_DOC_PREVIEW_LENGTH)}${docContent.length > MAX_DOC_PREVIEW_LENGTH ? "..." : ""}`,
     });
 
     for (let iteration = 0; iteration < this.maxIterations; iteration++) {

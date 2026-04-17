@@ -126,6 +126,14 @@ function validateParam(
 
   // Number constraints
   if (schema.type === 'number' && typeof value === 'number') {
+    // DIAG-008: Validate NaN and Infinity
+    if (isNaN(value) || !isFinite(value)) {
+      throw new ValidationError(
+        `数字不能是 NaN 或 Infinity`,
+        toolName,
+        paramName
+      );
+    }
     if (schema.minimum !== undefined && value < schema.minimum) {
       throw new ValidationError(
         `值过小: 最小 ${schema.minimum}, 实际 ${value}`,
