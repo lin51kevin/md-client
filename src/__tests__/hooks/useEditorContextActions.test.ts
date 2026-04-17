@@ -55,12 +55,14 @@ describe('useEditorContextActions', () => {
     handleFormatAction = vi.fn();
     setEditingTable = vi.fn();
     setEditorCtxMenu = vi.fn();
-    // stub clipboard
-    Object.assign(navigator, {
-      clipboard: {
+    // stub clipboard (Object.defineProperty needed for happy-dom's read-only navigator.clipboard)
+    Object.defineProperty(navigator, 'clipboard', {
+      value: {
         writeText: vi.fn().mockResolvedValue(undefined),
         readText: vi.fn().mockResolvedValue('pasted'),
       },
+      writable: true,
+      configurable: true,
     });
   });
 

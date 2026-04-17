@@ -25,6 +25,9 @@
   "engines": {
     "node": ">=18.0.0"
   },
+  "resolutions": {
+    "html-encoding-sniffer": "4.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -105,6 +108,7 @@
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.6.0",
     "esbuild": "^0.28.0",
+    "happy-dom": "^15.0.0",
     "jsdom": "^29.0.2",
     "symbol-tree": "^3.2.4",
     "tailwindcss": "^4.2.1",

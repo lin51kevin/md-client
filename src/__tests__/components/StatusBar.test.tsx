@@ -276,7 +276,8 @@ describe('StatusBar', () => {
       render(<StatusBar {...defaultProps} isDirty />);
       
       const dirtyIndicator = screen.getByTitle('有未保存的更改');
-      expect(dirtyIndicator).toHaveStyle({ color: 'var(--warning-color)' });
+      // Check inline style attribute directly (CSS var resolution differs across DOM implementations)
+      expect(dirtyIndicator.getAttribute('style')).toContain('var(--warning-color)');
     });
   });
 

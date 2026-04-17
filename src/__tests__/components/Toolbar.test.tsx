@@ -38,6 +38,7 @@ vi.mock('../../i18n', () => ({
         'toolbar.previewOnly': '仅预览',
         'settings.title': '设置',
         'help.title': '帮助',
+        'about.title': '关于 MarkLite',
         'toolbar.prevTab': '上一个标签页',
         'toolbar.nextTab': '下一个标签页',
         'toolbar.table': '插入表格',
@@ -117,7 +118,7 @@ describe('Toolbar', () => {
     expect(screen.getByTitle('保存')).toBeInTheDocument();
     expect(screen.getByTitle('另存为')).toBeInTheDocument();
     expect(screen.getByTitle('粗体')).toBeInTheDocument();
-    expect(screen.getByTitle('帮助')).toBeInTheDocument();
+    expect(screen.getByTitle('关于 MarkLite')).toBeInTheDocument();
   });
 
   it('displays Chinese labels by default (i18n zh-CN)', () => {
@@ -131,12 +132,12 @@ describe('Toolbar', () => {
     render(<Toolbar {...defaultProps} />);
 
     const toolbar = screen.getByRole('toolbar');
-    const helpButton = screen.getByTitle('帮助');
+    const aboutButton = screen.getByTitle('关于 MarkLite');
     toolbar.focus();
 
     fireEvent.keyDown(toolbar, { key: 'ArrowLeft' });
 
-    expect(document.activeElement).toBe(helpButton);
+    expect(document.activeElement).toBe(aboutButton);
   });
 
   it('toolbar 自身聚焦时按 ArrowRight 应跳到第一个按钮', () => {
@@ -306,11 +307,11 @@ describe('Toolbar', () => {
     expect(onFocusModeChange).toHaveBeenCalledWith('normal');
   });
 
-  it('calls onOpenHelp when help button is clicked', () => {
-    const onOpenHelp = vi.fn();
-    render(<Toolbar {...defaultProps} onOpenHelp={onOpenHelp} />);
-    screen.getByTitle('帮助').click();
-    expect(onOpenHelp).toHaveBeenCalledTimes(1);
+  it('calls onOpenAbout when about button is clicked', () => {
+    const onOpenAbout = vi.fn();
+    render(<Toolbar {...defaultProps} onOpenAbout={onOpenAbout} />);
+    screen.getByTitle('关于 MarkLite').click();
+    expect(onOpenAbout).toHaveBeenCalledTimes(1);
   });
 
   it('does not show tab navigation buttons when fewer than 2 tabs', () => {
