@@ -72,21 +72,29 @@ export function TreeNodeView({
           tabIndex={node.is_dir ? 0 : -1}
         >
           {node.loading ? (
-            <Loader2 size={11} strokeWidth={2} className="animate-spin" />
+            <Loader2 size={11} strokeWidth={2} className="animate-spin" style={{ flexShrink: 0 }} />
           ) : (
             <ChevronRight
               size={11}
               strokeWidth={2}
-              style={{ transition: 'transform 0.15s ease', transform: node.expanded ? 'rotate(90deg)' : 'rotate(0deg)' }}
+              style={{ transition: 'transform 0.15s ease', transform: node.expanded ? 'rotate(90deg)' : 'rotate(0deg)', flexShrink: 0 }}
             />
           )}
         </button>
 
         {/* 图标 */}
-        <span className="shrink-0" style={{ color: node.is_dir ? (node.expanded ? 'var(--accent-color)' : 'var(--text-secondary)') : 'var(--text-secondary)' }}>
+        <span
+          className="shrink-0 flex items-center justify-center"
+          style={{
+            width: 16,
+            height: 16,
+            minWidth: 16,
+            color: node.is_dir ? (node.expanded ? 'var(--accent-color)' : 'var(--text-secondary)') : 'var(--text-secondary)',
+          }}
+        >
           {node.is_dir
-            ? (node.expanded ? <FolderOpen size={14} /> : <Folder size={14} />)
-            : <FileText size={13} />
+            ? (node.expanded ? <FolderOpen size={14} style={{ flexShrink: 0 }} /> : <Folder size={14} style={{ flexShrink: 0 }} />)
+            : <FileText size={13} style={{ flexShrink: 0 }} />
           }
         </span>
 
