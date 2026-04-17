@@ -56,7 +56,13 @@ export function TreeNodeView({
       >
         {/* 展开/折叠箭头 */}
         <button
-          onClick={(e) => { e.stopPropagation(); if (node.is_dir) onToggleDir(node.path); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (node.is_dir) {
+              onToggleDir(node.path);
+              if (!node.childrenLoaded) { onLoadChildren(node.path); }
+            }
+          }}
           className="shrink-0 flex items-center justify-center w-5 h-6"
           style={{
             color: 'var(--text-secondary)',

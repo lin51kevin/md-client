@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { FilePlus, Clock, Save, SaveAll, FileText, FolderOpen, FileCode, Trash2, ChevronRight, ArrowUpFromLine, BookMarked, ScrollText, Image, X } from 'lucide-react';
+import { FilePlus, Clock, Save, SaveAll, FileText, FolderOpen, FileCode, Trash2, ChevronRight, ArrowUpFromLine, BookMarked, ScrollText, Image, X, Menu } from 'lucide-react';
 import type { RecentFile } from '../lib/recent-files';
 import { useI18n } from '../i18n';
 
 export interface FileMenuDropdownProps {
   onNewTab: () => void;
   onOpenFile: () => void;
+  onOpenFolder?: () => void;
   onSaveFile: () => void;
   onSaveAsFile: () => void;
   onExportDocx: () => void;
@@ -34,6 +35,7 @@ interface MenuItem {
 export function FileMenuDropdown({
   onNewTab,
   onOpenFile,
+  onOpenFolder,
   onSaveFile,
   onSaveAsFile,
   onExportDocx,
@@ -302,10 +304,16 @@ export function FileMenuDropdown({
     },
     {
       id: 'open',
-      icon: <FolderOpen size={13} strokeWidth={1.8} />,
+      icon: <FileText size={13} strokeWidth={1.8} />,
       label: t('file.open'),
       shortcut: 'Ctrl+O',
       action: onOpenFile,
+    },
+    {
+      id: 'open-folder',
+      icon: <FolderOpen size={13} strokeWidth={1.8} />,
+      label: t('file.openFolder'),
+      action: onOpenFolder,
     },
     {
       id: 'recent',
@@ -379,7 +387,7 @@ export function FileMenuDropdown({
           }
         }}
       >
-        <FileText size={14} strokeWidth={1.8} />
+        <Menu size={14} strokeWidth={1.8} />
         <span>{t('toolbar.fileMenu')}</span>
       </button>
 

@@ -8,7 +8,7 @@ import { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHand
 import { invoke } from '@tauri-apps/api/core';
 import { message, open as openDialog } from '@tauri-apps/plugin-dialog';
 import {
-  Folder,
+  FolderOpen,
   FolderTree,
   RefreshCw,
   ArrowUp,
@@ -420,7 +420,7 @@ export const FileTreeSidebar = forwardRef<FileTreeSidebarHandle, FileTreeSidebar
             className="file-tree-tool-btn"
             style={{ color: 'var(--text-secondary)' }}
           >
-            <Folder size={12} />
+            <FolderOpen size={12} />
           </button>
           <button
             onClick={() => loadRoot()}

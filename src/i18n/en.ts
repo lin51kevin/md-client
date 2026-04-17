@@ -183,6 +183,7 @@ export const en: Record<TranslationKey, string> = {
   // ── File Menu ─────────────────────────────────────────────────────────────
   'file.new': 'New File',
   'file.open': 'Open File…',
+  'file.openFolder': 'Open Folder…',
   'file.openRecent': 'Recent Files',
   'file.save': 'Save',
   'file.saveAs': 'Save As…',
@@ -341,6 +342,7 @@ export const en: Record<TranslationKey, string> = {
   'welcome.subtitle': 'A lightweight Markdown editor',
   'welcome.newFile': 'New',
   'welcome.openFile': 'Open File',
+  'welcome.openFolder': 'Open Folder',
   'welcome.recentFiles': 'Recent Files',
   'welcome.noRecentFiles': 'No recent files',
   'welcome.shortcuts': 'Keyboard Shortcuts',

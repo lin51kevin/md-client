@@ -47,6 +47,7 @@ interface EditorContentAreaProps {
   recentFiles: RecentFile[];
   onNew: () => void;
   onOpenFile: () => void;
+  onOpenFolder?: () => void;
   onOpenRecent: (filePath: string) => Promise<void>;
   onOpenSample: () => void;
   onDismiss: () => void;
@@ -110,6 +111,7 @@ export function EditorContentArea({
   recentFiles,
   onNew,
   onOpenFile,
+  onOpenFolder,
   onOpenRecent,
   onOpenSample,
   onDismiss,
@@ -125,6 +127,7 @@ export function EditorContentArea({
         recentFiles={recentFiles}
         onNew={onNew}
         onOpenFile={onOpenFile}
+        onOpenFolder={onOpenFolder}
         onOpenRecent={onOpenRecent}
         onOpenSample={onOpenSample}
         onDismiss={onDismiss}

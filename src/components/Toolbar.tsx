@@ -1,6 +1,6 @@
 
 import { useRef, useState } from 'react';
-import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, SpellCheck, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, HelpCircle, FilePlus, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight, Table2, FileCode2, Minus, ListChecks, Sigma, Presentation, Library, List, Brain, Undo2, Redo2 } from 'lucide-react';
+import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, SpellCheck, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, HelpCircle, FilePlus, FileText, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight, Table2, FileCode2, Minus, ListChecks, Sigma, Presentation, Library, List, Brain, Undo2, Redo2 } from 'lucide-react';
 import { ViewMode, FocusMode } from '../types';
 
 import { FileMenuDropdown } from './FileMenuDropdown';
@@ -13,6 +13,7 @@ interface ToolbarProps {
   focusMode: FocusMode;
   onNewTab: () => void;
   onOpenFile: () => void;
+  onOpenFolder?: () => void;
   onSaveFile: () => void;
   onSaveAsFile: () => void;
   onExportDocx: () => void;
@@ -65,7 +66,7 @@ const DIVIDER = (
 
 export function Toolbar({
   viewMode, focusMode,
-  onNewTab, onOpenFile, onSaveFile, onSaveAsFile,
+  onNewTab, onOpenFile, onOpenFolder, onSaveFile, onSaveAsFile,
   onExportDocx, onExportPdf, onExportHtml, onExportEpub, onExportPng,
   onSetViewMode, onFocusModeChange,
   spellCheck, onToggleSpellCheck,
@@ -117,6 +118,7 @@ export function Toolbar({
         <FileMenuDropdown
           onNewTab={onNewTab}
           onOpenFile={onOpenFile}
+          onOpenFolder={onOpenFolder}
           onSaveFile={onSaveFile}
           onSaveAsFile={onSaveAsFile}
           onExportDocx={onExportDocx}
@@ -136,6 +138,9 @@ export function Toolbar({
           <FilePlus size={14} strokeWidth={1.8} />
         </ToolbarButton>
         <ToolbarButton onClick={onOpenFile} title={t('file.open')} className="px-2.5">
+          <FileText size={14} strokeWidth={1.8} />
+        </ToolbarButton>
+        <ToolbarButton onClick={onOpenFolder} title={t('file.openFolder')} className="px-2.5">
           <FolderOpenIcon size={14} strokeWidth={1.8} />
         </ToolbarButton>
         <ToolbarButton onClick={onSaveFile} title={t('file.save')} className="px-2.5">

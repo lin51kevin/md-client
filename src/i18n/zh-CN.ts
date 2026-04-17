@@ -181,6 +181,7 @@ export const zhCN = {
   // ── File Menu ─────────────────────────────────────────────────────────────
   'file.new': '新建文件',
   'file.open': '打开文件…',
+  'file.openFolder': '打开文件夹…',
   'file.openRecent': '打开最近文件',
   'file.save': '保存',
   'file.saveAs': '另存为…',
@@ -338,6 +339,7 @@ export const zhCN = {
   'welcome.subtitle': '简洁高效的 Markdown 编辑器',
   'welcome.newFile': '新建',
   'welcome.openFile': '打开文件',
+  'welcome.openFolder': '打开文件夹',
   'welcome.recentFiles': '最近文件',
   'welcome.noRecentFiles': '暂无最近打开的文件',
   'welcome.shortcuts': '快捷键速览',

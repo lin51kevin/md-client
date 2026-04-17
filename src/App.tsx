@@ -36,6 +36,7 @@ import { useAutoUpgrade } from './hooks/useAutoUpgrade';
 import { usePendingImageMigration } from './hooks/usePendingImageMigration';
 import { useFileWatcher } from './hooks/useFileWatcher';
 import { invoke } from '@tauri-apps/api/core';
+import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { FileChangeToast } from './components/FileChangeToast';
 import { usePreviewRenderers } from './hooks/usePreviewRenderers';
 import { usePluginRuntime } from './hooks/usePluginRuntime';
@@ -252,6 +253,20 @@ export default function App() {
   // fileTreeSidebarRef allows triggering loadRoot from outside (e.g. folder drag-drop)
   const fileTreeSidebarRef = useRef<FileTreeSidebarHandle>(null);
 
+  const handleOpenFolder = useCallback(async () => {
+    try {
+      const selected = await openDialog({ directory: true, multiple: false });
+      if (selected) {
+        const folderPath = selected as string;
+        setFileTreeRoot(folderPath);
+        setActivePanel('filetree');
+        fileTreeSidebarRef.current?.loadRoot(folderPath);
+      }
+    } catch (e) {
+      console.warn('[App] handleOpenFolder failed:', e);
+    }
+  }, [setFileTreeRoot, setActivePanel]);
+
   useDragDrop({ isTauri, setIsDragOver, setDragKind, openFileInTab, onImageDrop: saveAndInsertImage, onFolderDrop: (path) => {
     setFileTreeRoot(path);
     setActivePanel('filetree');
@@ -456,7 +471,7 @@ export default function App() {
 
           <Toolbar
             viewMode={viewMode} focusMode={focusMode}
-            onNewTab={createNewTab} onOpenFile={handleOpenFile}
+            onNewTab={createNewTab} onOpenFile={handleOpenFile} onOpenFolder={handleOpenFolder}
             onSaveFile={() => handleSaveWithWatchMark()} onSaveAsFile={() => handleSaveAsFile()}
             onExportDocx={handleExportDocx} onExportPdf={handleExportPdf}
             onExportHtml={handleExportHtml} onExportEpub={handleExportEpub}
@@ -602,7 +617,7 @@ export default function App() {
           spellCheck={spellCheck} debouncedDoc={debouncedDoc}
           openFileInTab={openFileInTab} handleWikiLinkNavigate={handleWikiLinkNavigate}
           theme={theme} recentFiles={recentFiles}
-          onNew={createNewTab} onOpenFile={handleOpenFile}
+          onNew={createNewTab} onOpenFile={handleOpenFile} onOpenFolder={handleOpenFolder}
           onOpenRecent={handleOpenRecent} onOpenSample={handleOpenSample}
           onDismiss={handleDismissWelcome} onShowWelcome={handleShowWelcome}
           pluginRenderers={pluginRenderers}

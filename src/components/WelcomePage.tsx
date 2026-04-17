@@ -1,5 +1,5 @@
 import { useState, useEffect, type ReactNode } from 'react';
-import { FilePlus, FolderOpen, FileText, Clock, Keyboard, X } from 'lucide-react';
+import { FilePlus, FolderOpen, FileText, Clock, Keyboard, X, Hash } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import { useI18n } from '../i18n';
 import type { RecentFile } from '../lib/recent-files';
@@ -33,6 +33,7 @@ interface WelcomePageProps {
   recentFiles: RecentFile[];
   onNew: () => void;
   onOpenFile: () => void;
+  onOpenFolder?: () => void;
   onOpenRecent: (filePath: string) => void;
   /** Opens the sample document in an editable tab */
   onOpenSample?: () => void;
@@ -145,10 +146,10 @@ export function EmptyEditorState({ onShowWelcome }: EmptyEditorStateProps) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// WelcomePage – VS Code-inspired two-column layout
+// WelcomePage – VS Code-inspired three-column layout
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function WelcomePage({ recentFiles, onNew, onOpenFile, onOpenRecent, onOpenSample, onDismiss }: WelcomePageProps) {
+export function WelcomePage({ recentFiles, onNew, onOpenFile, onOpenFolder, onOpenRecent, onOpenSample, onDismiss }: WelcomePageProps) {
   const { t } = useI18n();
   const [showAll, setShowAll] = useState(false);
   const [previews, setPreviews] = useState<Record<string, string>>({});
@@ -189,122 +190,62 @@ export function WelcomePage({ recentFiles, onNew, onOpenFile, onOpenRecent, onOp
 
       {/* Main scrollable content */}
       <div className="flex-1 overflow-auto">
-        <div className="w-full max-w-3xl mx-auto px-12 py-10">
+        <div className="w-full max-w-5xl mx-auto px-12 py-10">
 
           {/* ── Header ──────────────────────────────────────────────── */}
-          <div className="mb-12">
+          <div className="mb-14" style={{ textAlign: 'center' }}>
             <h1
-              className="text-4xl font-light tracking-tight mb-1.5"
-              style={{ color: 'var(--text-primary)' }}
+              className="font-light tracking-tight mb-2"
+              style={{ color: 'var(--text-primary)', fontSize: '4rem' }}
             >
               MarkLite
             </h1>
-            <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
+            <p className="text-base" style={{ color: 'var(--text-tertiary)', fontSize: '1.25rem' }}>
               {t('welcome.subtitle')}
             </p>
           </div>
 
-          {/* ── Two-column layout ────────────────────────────────────── */}
-          <div className="grid gap-12" style={{ gridTemplateColumns: '2fr 3fr' }}>
+          {/* ── Three-column layout ──────────────────────────────────── */}
+          <div className="grid" style={{ gridTemplateColumns: '2fr 4fr 6fr', gap: '2rem' }}>
 
-            {/* Left column – Start + Recent ───────────────────────── */}
-            <div className="space-y-10">
-
-              {/* Start section */}
-              <section>
-                <h2
-                  className="text-xs font-semibold uppercase tracking-widest mb-3"
-                  style={{ color: 'var(--text-tertiary)' }}
-                >
-                  {t('welcome.start')}
-                </h2>
-                <div className="space-y-px">
-                  <ActionLink
-                    icon={<FilePlus size={14} strokeWidth={1.8} />}
-                    label={t('welcome.newFile')}
-                    onClick={onNew}
-                  />
+            {/* Column 1 – Start ───────────────────────────────────── */}
+            <section style={{ minWidth: 0 }}>
+              <h2
+                className="text-xs font-semibold uppercase tracking-widest mb-3"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                {t('welcome.start')}
+              </h2>
+              <div className="space-y-px">
+                <ActionLink
+                  icon={<FilePlus size={14} strokeWidth={1.8} />}
+                  label={t('welcome.newFile')}
+                  onClick={onNew}
+                />
+                <ActionLink
+                  icon={<FileText size={14} strokeWidth={1.8} />}
+                  label={t('welcome.openFile')}
+                  onClick={onOpenFile}
+                />
+                {onOpenFolder && (
                   <ActionLink
                     icon={<FolderOpen size={14} strokeWidth={1.8} />}
-                    label={t('welcome.openFile')}
-                    onClick={onOpenFile}
+                    label={t('welcome.openFolder')}
+                    onClick={onOpenFolder}
                   />
-                  {onOpenSample && (
-                    <ActionLink
-                      icon={<FileText size={14} strokeWidth={1.8} />}
-                      label={t('welcome.sample')}
-                      onClick={onOpenSample}
-                    />
-                  )}
-                </div>
-              </section>
-
-              {/* Recent files section */}
-              <section>
-                <div className="flex items-center gap-1.5 mb-3">
-                  <Clock size={11} strokeWidth={1.8} style={{ color: 'var(--text-tertiary)' }} />
-                  <h2
-                    className="text-xs font-semibold uppercase tracking-widest"
-                    style={{ color: 'var(--text-tertiary)' }}
-                  >
-                    {t('welcome.recentFiles')}
-                  </h2>
-                </div>
-
-                {recentFiles.length > 0 ? (
-                  <ul className="space-y-px">
-                    {visibleRecent.map((file) => (
-                      <li key={file.path}>
-                        <button
-                          onClick={() => onOpenRecent(file.path)}
-                          className="w-full text-left px-2 py-1.5 rounded"
-                          style={{ color: 'var(--text-secondary)' }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-secondary)')}
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '')}
-                          title={file.path}
-                        >
-                          <div className="text-sm truncate">{file.name}</div>
-                          <div
-                            className="text-xs truncate mt-0.5"
-                            style={{ color: 'var(--text-tertiary)' }}
-                          >
-                            {getParentDir(file.path)}
-                          </div>
-                          {previews[file.path] && (
-                            <div
-                              className="text-xs truncate mt-0.5 italic"
-                              style={{ color: 'var(--text-tertiary)', opacity: 0.7 }}
-                            >
-                              {previews[file.path]}
-                            </div>
-                          )}
-                        </button>
-                      </li>
-                    ))}
-                    {hasMore && (
-                      <li>
-                        <button
-                          onClick={() => setShowAll(true)}
-                          className="text-xs px-2 py-1.5"
-                          style={{ color: 'var(--accent-color)' }}
-                          onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
-                          onMouseLeave={(e) => (e.currentTarget.style.textDecoration = '')}
-                        >
-                          {t('welcome.moreFiles')}
-                        </button>
-                      </li>
-                    )}
-                  </ul>
-                ) : (
-                  <p className="text-sm px-2" style={{ color: 'var(--text-tertiary)' }}>
-                    {t('welcome.noRecentFiles')}
-                  </p>
                 )}
-              </section>
-            </div>
+                {onOpenSample && (
+                  <ActionLink
+                    icon={<Hash size={14} strokeWidth={1.8} />}
+                    label={t('welcome.sample')}
+                    onClick={onOpenSample}
+                  />
+                )}
+              </div>
+            </section>
 
-            {/* Right column – Keyboard Shortcuts ─────────────────── */}
-            <div>
+            {/* Column 2 – Keyboard Shortcuts ──────────────────────── */}
+            <section style={{ minWidth: 0 }}>
               <div className="flex items-center gap-1.5 mb-3">
                 <Keyboard size={11} strokeWidth={1.8} style={{ color: 'var(--text-tertiary)' }} />
                 <h2
@@ -322,7 +263,7 @@ export function WelcomePage({ recentFiles, onNew, onOpenFile, onOpenRecent, onOp
                 {SHORTCUTS.map((sc, idx) => (
                   <div
                     key={sc.key}
-                    className="flex items-center justify-between px-4 py-2.5"
+                    className="flex items-center justify-between px-3 py-2"
                     style={{
                       borderTop: idx > 0 ? '1px solid var(--border-color)' : undefined,
                       backgroundColor: idx % 2 === 0 ? 'var(--bg-primary)' : 'var(--bg-secondary)',
@@ -332,7 +273,7 @@ export function WelcomePage({ recentFiles, onNew, onOpenFile, onOpenRecent, onOp
                       {t(sc.i18nKey)}
                     </span>
                     <kbd
-                      className="text-xs px-2 py-0.5 rounded font-mono"
+                      className="text-xs px-1.5 py-0.5 rounded font-mono"
                       style={{
                         backgroundColor: 'var(--bg-tertiary)',
                         border: '1px solid var(--border-color)',
@@ -345,7 +286,70 @@ export function WelcomePage({ recentFiles, onNew, onOpenFile, onOpenRecent, onOp
                   </div>
                 ))}
               </div>
-            </div>
+            </section>
+
+            {/* Column 3 – Recent Files ────────────────────────────── */}
+            <section style={{ minWidth: 0 }}>
+              <div className="flex items-center gap-1.5 mb-3">
+                <Clock size={11} strokeWidth={1.8} style={{ color: 'var(--text-tertiary)' }} />
+                <h2
+                  className="text-xs font-semibold uppercase tracking-widest"
+                  style={{ color: 'var(--text-tertiary)' }}
+                >
+                  {t('welcome.recentFiles')}
+                </h2>
+              </div>
+
+              {recentFiles.length > 0 ? (
+                <ul className="space-y-px">
+                  {visibleRecent.map((file) => (
+                    <li key={file.path}>
+                      <button
+                        onClick={() => onOpenRecent(file.path)}
+                        className="w-full text-left px-2 py-1.5 rounded"
+                        style={{ color: 'var(--text-secondary)' }}
+                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-secondary)')}
+                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '')}
+                        title={file.path}
+                      >
+                        <div className="text-sm truncate">{file.name}</div>
+                        <div
+                          className="text-xs truncate mt-0.5"
+                          style={{ color: 'var(--text-tertiary)' }}
+                        >
+                          {getParentDir(file.path)}
+                        </div>
+                        {previews[file.path] && (
+                          <div
+                            className="text-xs truncate mt-0.5 italic"
+                            style={{ color: 'var(--text-tertiary)', opacity: 0.7 }}
+                          >
+                            {previews[file.path]}
+                          </div>
+                        )}
+                      </button>
+                    </li>
+                  ))}
+                  {hasMore && (
+                    <li>
+                      <button
+                        onClick={() => setShowAll(true)}
+                        className="text-xs px-2 py-1.5"
+                        style={{ color: 'var(--accent-color)' }}
+                        onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
+                        onMouseLeave={(e) => (e.currentTarget.style.textDecoration = '')}
+                      >
+                        {t('welcome.moreFiles')}
+                      </button>
+                    </li>
+                  )}
+                </ul>
+              ) : (
+                <p className="text-sm px-2" style={{ color: 'var(--text-tertiary)' }}>
+                  {t('welcome.noRecentFiles')}
+                </p>
+              )}
+            </section>
 
           </div>
         </div>
