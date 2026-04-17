@@ -5,8 +5,9 @@
  * block's language + first line, so it survives across sessions.
  */
 import { useState, useCallback } from 'react';
+import { StorageKeys } from '../lib/storage-keys';
 
-const STORAGE_KEY = 'marklite-codeblock-fold';
+const STORAGE_KEY = StorageKeys.CODEBLOCK_FOLD;
 
 interface FoldState {
   collapsed: Set<string>;

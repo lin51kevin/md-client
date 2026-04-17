@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import type { Frontmatter } from '../../lib/markdown-extensions';
+import type { Frontmatter } from '../../lib/markdown/extensions';
 
 interface FrontmatterPanelProps {
   frontmatter: Frontmatter;

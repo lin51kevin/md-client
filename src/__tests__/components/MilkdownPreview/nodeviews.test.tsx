@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Test extractFrontmatter (shared dependency)
-import { extractFrontmatter } from '../../../lib/markdown-extensions';
+import { extractFrontmatter } from '../../../lib/markdown/extensions';
 
 // Mock Tauri invoke
 vi.mock('@tauri-apps/api/core', () => ({
@@ -70,7 +70,7 @@ tags:
 
     it('remark-wikilinks correctly parses [[text]]', async () => {
       const { remarkWikiLinks } = await import(
-        '../../../lib/remark-wikilinks'
+        '../../../lib/markdown/remark-wikilinks'
       );
       const { unified } = await import('unified');
       const remarkParse = (await import('remark-parse')).default;
@@ -88,7 +88,7 @@ tags:
 
     it('remark-wikilinks handles multiple links', async () => {
       const { remarkWikiLinks } = await import(
-        '../../../lib/remark-wikilinks'
+        '../../../lib/markdown/remark-wikilinks'
       );
       const { unified } = await import('unified');
       const remarkParse = (await import('remark-parse')).default;

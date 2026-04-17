@@ -1,47 +1,21 @@
 import { useState, useEffect, useMemo, useCallback, useRef, useId, memo } from "react";
 import DOMPurify from "dompurify";
 import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import remarkDirective from "remark-directive";
-import remarkDirectiveRehype from "remark-directive-rehype";
-import remarkMath from "remark-math";
-import remarkFootnotes from "remark-footnotes";
-import remarkFrontmatter from "remark-frontmatter";
-import rehypeHighlight from "rehype-highlight";
-import rehypeRaw from "rehype-raw";
-import rehypeKatex from "rehype-katex";
-import rehypeSlug from "rehype-slug";
 import "katex/dist/katex.min.css";
 import { invoke } from "@tauri-apps/api/core";
 import { openPath, openUrl } from "@tauri-apps/plugin-opener";
-import { rehypeFilterInvalidElements } from "../lib/rehypeFilterInvalidElements";
-import { remarkWikiLinks } from "../lib/remark-wikilinks";
-import { rehypeWikiLinks } from "../lib/rehype-wikilinks";
+import { PREVIEW_REMARK_PLUGINS, PREVIEW_REHYPE_PLUGINS } from "../lib/markdown/pipeline";
+import { MAX_IMAGE_CACHE } from "../constants";
+import { toErrorMessage } from "../lib/utils/errors";
 import { initMermaid } from "../lib/mermaid";
 import { parseTable, type TableData } from "../lib/table-parser";
-import { extractFrontmatter, type Frontmatter } from "../lib/markdown-extensions";
+import { extractFrontmatter, type Frontmatter } from "../lib/markdown/extensions";
 import { TableEditor } from "./TableEditor";
 
-// Stable plugin arrays (module-level) to avoid unnecessary ReactMarkdown re-renders
-const REMARK_PLUGINS = [
-  remarkGfm,
-  remarkDirective,
-  remarkDirectiveRehype,
-  remarkMath,
-  // ts-expect-error: remark-footnotes bundles duplicate vfile types (known issue)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  remarkFootnotes as any,
-  remarkFrontmatter,
-  remarkWikiLinks,
-];
-const REHYPE_PLUGINS = [
-  rehypeSlug,
-  rehypeHighlight,
-  rehypeRaw,
-  rehypeKatex,
-  rehypeWikiLinks,
-  rehypeFilterInvalidElements,
-];
+// Stable plugin arrays — imported from markdown-pipeline to ensure single source of truth
+// and prevent ReactMarkdown from re-initializing the pipeline on each render.
+const REMARK_PLUGINS = PREVIEW_REMARK_PLUGINS;
+const REHYPE_PLUGINS = PREVIEW_REHYPE_PLUGINS;
 
 const MIME_MAP: Record<string, string> = {
   png: "image/png",
@@ -56,7 +30,6 @@ const MIME_MAP: Record<string, string> = {
 const MD_EXTENSIONS = new Set(["md", "markdown", "txt"]);
 
 /** Module-level LRU cache for loaded images. Evicts oldest entries beyond MAX_IMAGE_CACHE. */
-const MAX_IMAGE_CACHE = 100;
 const imageCache = new Map<string, string>();
 
 function imageCacheSet(key: string, value: string): void {
@@ -187,7 +160,7 @@ function MermaidBlock({ code }: { code: string }) {
       }
     }).catch((err) => {
       if (!cancelled) {
-        setError(err instanceof Error ? err.message : String(err));
+        setError(toErrorMessage(err));
       }
     });
     return () => { cancelled = true; };
@@ -430,8 +403,8 @@ export const MarkdownPreview = memo(function MarkdownPreview({
       {(tableCounterRef.current = 0) === 0 && null}
       {Object.keys(frontmatter).length > 0 && <FrontmatterPanel fm={frontmatter} />}
       <ReactMarkdown
-        remarkPlugins={REMARK_PLUGINS}
-        rehypePlugins={REHYPE_PLUGINS}
+        remarkPlugins={[...REMARK_PLUGINS]}
+        rehypePlugins={[...REHYPE_PLUGINS]}
         urlTransform={safeUrlTransform}
         components={customComponents}
       >

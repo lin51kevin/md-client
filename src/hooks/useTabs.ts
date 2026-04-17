@@ -6,29 +6,17 @@ import { INITIAL_TAB_ID, genTabId, DEFAULT_MARKDOWN } from '../constants';
 import { addRecentFile, removeRecentFile } from '../lib/recent-files';
 import { moveSnapshots } from '../lib/version-history';
 import type { TranslationKey } from '../i18n/zh-CN';
+import { normalizePath } from '../lib/utils/path';
+import { toErrorMessage } from '../lib/utils/errors';
+import { restoreSession, persistSession } from '../lib/tab-session';
 
 type TFn = (key: TranslationKey, params?: Record<string, string | number>) => string;
-
-/** Serialized tab state — only save structure, not content (read from disk on restore) */
-interface SerializedTab {
-  id: string;
-  filePath: string | null;
-  displayName?: string;
-  isPinned?: boolean;
-}
-
-interface SerializedSession {
-  tabs: SerializedTab[];
-  activeTabId: string;
-}
-
-const SESSION_KEY = 'marklite-session-tabs';
 
 export function useTabs(t?: TFn, onRecentChange?: () => void) {
   // Fallback: if no t() provided, use identity (raw key)
   const tr = t ?? ((k: string) => k);
   const notifyRecent = useCallback(() => onRecentChange?.(), [onRecentChange]);
-  
+
   // Initialize from session if available
   const [isRestoringSession, setIsRestoringSession] = useState(true);
   const [tabs, setTabs] = useState<Tab[]>([
@@ -43,95 +31,18 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
 
   // Restore session on mount
   useEffect(() => {
-    const restoreSession = async () => {
-      try {
-        const saved = localStorage.getItem(SESSION_KEY);
-        if (!saved) {
-          setIsRestoringSession(false);
-          return;
-        }
-        
-        const session: SerializedSession = JSON.parse(saved);
-        if (!session.tabs || session.tabs.length === 0) {
-          setIsRestoringSession(false);
-          return;
-        }
-        
-        // Read file contents for all tabs with filePath
-        const restoredTabs: Tab[] = [];
-        for (const serialized of session.tabs) {
-          if (serialized.filePath) {
-            try {
-              const content = await invoke<string>('read_file_text', { path: serialized.filePath });
-              restoredTabs.push({
-                id: serialized.id,
-                filePath: serialized.filePath,
-                doc: content,
-                isDirty: false,
-                displayName: serialized.displayName,
-                isPinned: serialized.isPinned,
-              });
-            } catch (err) {
-              // File no longer exists or can't be read — skip this tab
-              console.warn(`Failed to restore tab ${serialized.filePath}:`, err);
-            }
-          } else {
-            // Untitled tab (no filePath) — skip; these are transient welcome-page
-            // tabs that were mistakenly saved by an older version of the app.
-          }
-        }
-        
-        if (restoredTabs.length > 0) {
-          setTabs(restoredTabs);
-          // Restore activeTabId if it exists in restored tabs
-          const activeExists = restoredTabs.some(t => t.id === session.activeTabId);
-          setActiveTabId(activeExists ? session.activeTabId : restoredTabs[0].id);
-        }
-      } catch (err) {
-        console.warn('Failed to restore session:', err);
-      } finally {
-        setIsRestoringSession(false);
+    restoreSession().then(result => {
+      if (result) {
+        setTabs(result.tabs);
+        setActiveTabId(result.activeTabId);
       }
-    };
-    
-    restoreSession();
+    }).finally(() => setIsRestoringSession(false));
   }, []);
-  
+
   // Persist session when tabs or activeTabId changes (debounced)
   useEffect(() => {
-    // Skip persistence during restoration phase
     if (isRestoringSession) return;
-    
-    // Only save tabs that have a real file on disk — untitled tabs (sample.md welcome
-    // state included) cannot be meaningfully restored and must never pollute the session.
-    const tabsToSave = tabs.filter(tab => tab.filePath !== null);
-    if (tabsToSave.length === 0) {
-      try {
-        localStorage.removeItem(SESSION_KEY);
-      } catch {}
-      return;
-    }
-    
-    // Serialize tabs (don't save dirty state or content)
-    const session: SerializedSession = {
-      tabs: tabsToSave.map(tab => ({
-        id: tab.id,
-        filePath: tab.filePath,
-        displayName: tab.displayName,
-        isPinned: tab.isPinned,
-      })),
-      activeTabId,
-    };
-    
-    // Debounce writes to avoid excessive localStorage writes
-    const timer = setTimeout(() => {
-      try {
-        localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-      } catch (err) {
-        console.warn('Failed to persist session:', err);
-      }
-    }, 500);
-    
+    const timer = setTimeout(() => persistSession(tabs, activeTabId), 500);
     return () => clearTimeout(timer);
   }, [tabs, activeTabId, isRestoringSession]);
 
@@ -197,7 +108,7 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
         notifyRecent();
         return true;
       } catch (err) {
-        const errMsg = err instanceof Error ? err.message : String(err);
+        const errMsg = toErrorMessage(err);
         if (errMsg.startsWith('FILE_EXISTS:')) {
           const conflictName = errMsg.slice('FILE_EXISTS:'.length);
           await message(tr('rename.alreadyExists', { name: conflictName }), { title: tr('rename.title'), kind: 'warning' });
@@ -237,9 +148,8 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
 
   const openFileInTab = useCallback(async (filePath: string) => {
     // Normalize separators for cross-platform path comparison
-    const normPath = (p: string) => p.replace(/[\\/]+/g, '/');
-    const normalized = normPath(filePath);
-    const existing = tabsRef.current.find(t => t.filePath && normPath(t.filePath) === normalized);
+    const normalized = normalizePath(filePath);
+    const existing = tabsRef.current.find(t => t.filePath && normalizePath(t.filePath) === normalized);
     if (existing) {
       setActiveTabId(existing.id);
       return;
@@ -252,7 +162,7 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
     try {
       const content = await invoke<string>('read_file_text', { path: filePath });
       // Re-check after async operation to handle concurrent calls with the same file
-      const duplicate = tabsRef.current.find(t => t.filePath && normPath(t.filePath) === normalized);
+      const duplicate = tabsRef.current.find(t => t.filePath && normalizePath(t.filePath) === normalized);
       if (duplicate) {
         setActiveTabId(duplicate.id);
         return;
@@ -271,7 +181,7 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
       addRecentFile(filePath);
       notifyRecent();
     } catch (err) {
-      const errMsg = err instanceof Error ? err.message : String(err);
+      const errMsg = toErrorMessage(err);
       await message(tr('file.cannotRead', { error: errMsg }), { title: tr('file.openFileFailed'), kind: 'error' });
     } finally {
       openingPaths.current.delete(normalized);
@@ -384,9 +294,8 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
   };
 
   const openFileWithContent = useCallback((filePath: string, content: string) => {
-    const normPath = (p: string) => p.replace(/[\\/]+/g, '/');
-    const normalized = normPath(filePath);
-    const existing = tabsRef.current.find(t => t.filePath && normPath(t.filePath) === normalized);
+    const normalized = normalizePath(filePath);
+    const existing = tabsRef.current.find(t => t.filePath && normalizePath(t.filePath) === normalized);
     if (existing) {
       setActiveTabId(existing.id);
       return;

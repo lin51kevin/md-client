@@ -3,6 +3,7 @@
  * 支持用户自定义快捷键，持久化到 localStorage
  */
 import type { TranslationKey } from '../i18n/zh-CN';
+import { StorageKeys } from './storage-keys';
 
 export type ShortcutCategory = 'file' | 'edit' | 'view' | 'ai';
 
@@ -39,7 +40,7 @@ export const DEFAULT_SHORTCUTS: ShortcutAction[] = [
   { id: 'foldCodeBlock', labelKey: 'settings.shortcuts.foldCodeBlock', defaultKeys: 'Ctrl+Shift+.', category: 'edit' },
 ];
 
-const STORAGE_KEY = 'marklite-custom-shortcuts';
+const STORAGE_KEY = StorageKeys.CUSTOM_SHORTCUTS;
 
 export type CustomShortcuts = Record<string, string>;
 

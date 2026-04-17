@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { X, Settings, Palette, Type, FolderOpen, Keyboard, RotateCcw, FileText, FolderInput, Download, Trash2 } from 'lucide-react';
 import { useI18n, type Locale } from '../i18n';
+import { toErrorMessage } from '../lib/utils/errors';
 import type { TranslationKey } from '../i18n/zh-CN';
 import type { ThemeName } from '../lib/theme';
-import { getInstalledThemes, loadThemeFromJson, installTheme, removeTheme, isBuiltInTheme, exportThemeAsJson } from '../lib/theme-manager';
+import { getInstalledThemes, loadThemeFromJson, installTheme, removeTheme, isBuiltInTheme, exportThemeAsJson } from '../lib/theme/manager';
 import { save } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
 import { CustomCssEditor } from './CustomCssEditor';
@@ -122,7 +123,7 @@ export function SettingsModal({
       onThemeChange(theme.name as ThemeName);
       setThemeImportError(null);
     } catch (err) {
-      setThemeImportError(err instanceof Error ? err.message : String(err));
+      setThemeImportError(toErrorMessage(err));
     }
   }, [onThemeChange, refreshThemes]);
 

@@ -5,6 +5,8 @@
  * 用于工具栏「最近文件」下拉菜单。
  */
 
+import { StorageKeys } from './storage-keys';
+
 export interface RecentFile {
   /** 完整文件路径 */
   path: string;
@@ -16,7 +18,7 @@ export interface RecentFile {
   preview?: string;
 }
 
-const STORAGE_KEY = 'marklite-recent-files';
+const STORAGE_KEY = StorageKeys.RECENT_FILES;
 const MAX_RECENT = 8;
 
 /**

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { remarkWikiLinks } from '../../lib/remark-wikilinks';
+import { remarkWikiLinks } from '../../lib/markdown/remark-wikilinks';
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 

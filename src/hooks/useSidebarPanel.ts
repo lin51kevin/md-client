@@ -1,9 +1,10 @@
 import { useCallback } from 'react';
 import { useLocalStorageString } from './useLocalStorage';
+import { StorageKeys } from '../lib/storage-keys';
 import { PANEL_ITEMS, type PanelId } from '../components/ActivityBar';
 
 export function useSidebarPanel() {
-  const [activePanelRaw, setActivePanelRaw] = useLocalStorageString('marklite-active-panel', '');
+  const [activePanelRaw, setActivePanelRaw] = useLocalStorageString(StorageKeys.ACTIVE_PANEL, '');
   const VALID_PANELS = PANEL_ITEMS.map(item => item.id);
   // Accept built-in panel IDs or any string (plugin panel IDs)
   const activePanel: PanelId | null =
@@ -17,6 +18,11 @@ export function useSidebarPanel() {
     setActivePanelRaw(panel ?? '');
   }, [setActivePanelRaw]);
 
+  /** Toggle a panel: open it if not active, close it if already active. */
+  const togglePanel = useCallback((panel: PanelId) => {
+    setActivePanelRaw(activePanelRaw === panel ? '' : panel);
+  }, [activePanelRaw, setActivePanelRaw]);
+
   const showFileTree = activePanel === 'filetree';
   const showToc = activePanel === 'toc';
   const showSearchPanel = activePanel === 'search';
@@ -24,7 +30,7 @@ export function useSidebarPanel() {
   const showPluginsPanel = activePanel === 'plugins';
 
   return {
-    activePanel, setActivePanel,
+    activePanel, setActivePanel, togglePanel,
     showFileTree, showToc, showSearchPanel, showGitPanel, showPluginsPanel,
   };
 }

@@ -137,7 +137,7 @@ export default defineConfig(async () => ({
   // @milkdown/crepe imports it transitively; this avoids bundling 89+ grammars.
   resolve: {
     alias: {
-      '@codemirror/language-data': path.resolve(import.meta.dirname, 'src/lib/cm-languages.ts'),
+      '@codemirror/language-data': path.resolve(import.meta.dirname, 'src/lib/cm/cm-languages.ts'),
     },
   },
 

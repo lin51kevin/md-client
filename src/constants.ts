@@ -1,6 +1,13 @@
 export const INITIAL_TAB_ID = '1';
 export const genTabId = () => crypto.randomUUID();
 
+/** Maximum number of entries in the preview image LRU cache */
+export const MAX_IMAGE_CACHE = 100;
+/** Debounce delay (ms) for the Milkdown editor sync */
+export const MILKDOWN_SYNC_DEBOUNCE_MS = 300;
+/** Maximum delay (ms) for auto-save debounce */
+export const AUTO_SAVE_MAX_DELAY_MS = 5000;
+
 export const DEFAULT_MARKDOWN = `# 欢迎使用 MarkLite 🚀
 
 > 一款轻量、快速的现代化 Markdown 编辑器  

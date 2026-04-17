@@ -34,6 +34,12 @@ interface ShortcutsParams {
   nextTab?: () => void;
   /** 切换到前一个标签页 */
   previousTab?: () => void;
+  /** 打开命令面板 */
+  toggleCommandPalette?: () => void;
+  /** 打开快速打开 */
+  toggleQuickOpen?: () => void;
+  /** 在资源管理器中显示当前文件 */
+  revealActiveFile?: () => void;
 }
 
 /** 根据 actionId 获取当前快捷键（用户自定义优先） */
@@ -55,6 +61,7 @@ export function useKeyboardShortcuts(params: ShortcutsParams) {
         setFocusMode, focusMode, openSnippetPicker,
         toggleFileTree, toggleToc, toggleAIPanel, toggleCodeBlockFold,
         nextTab, previousTab,
+        toggleCommandPalette, toggleQuickOpen, revealActiveFile,
       } = paramsRef.current;
 
       // F009 — ESC 退出任何焦点模式（优先处理，无需 Ctrl）
@@ -86,6 +93,17 @@ export function useKeyboardShortcuts(params: ShortcutsParams) {
         // Allow Alt+1/2 (toggleFileTree/Toc) through to DEFAULT_PARSED
       } else if (!e.ctrlKey && !e.metaKey) {
         // Allow non-modifier keys (but no plain Ctrl/Meta without a target key)
+      }
+
+      // ── Global shortcuts not in DEFAULT_SHORTCUTS ──────────────
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'P') {
+        e.preventDefault(); toggleCommandPalette?.(); return;
+      }
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'p') {
+        e.preventDefault(); toggleQuickOpen?.(); return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'E') {
+        e.preventDefault(); revealActiveFile?.(); return;
       }
 
       // 遍历 DEFAULT_SHORTCUTS 检查匹配（用户自定义优先）

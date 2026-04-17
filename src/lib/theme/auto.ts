@@ -10,10 +10,12 @@
  * 但 preference 本身持久化用户的手动选择。
  */
 
+import { StorageKeys } from '../storage-keys';
+
 export type ThemePreference = 'system' | 'light' | 'dark';
 export type ResolvedTheme = 'light' | 'dark';
 
-const STORAGE_KEY = 'md-client-theme-preference';
+const STORAGE_KEY = StorageKeys.THEME_PREFERENCE;
 
 /**
  * 读取用户主题偏好（默认 system）

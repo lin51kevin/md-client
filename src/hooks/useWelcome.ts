@@ -4,8 +4,9 @@
  * 提取自 App.tsx，集中管理欢迎页的显示/隐藏逻辑和 localStorage 持久化。
  */
 import { useState, useCallback } from 'react';
+import { StorageKeys } from '../lib/storage-keys';
 
-const STORAGE_KEY = 'marklite-welcome-dismissed';
+const STORAGE_KEY = StorageKeys.WELCOME_DISMISSED;
 
 export function useWelcome() {
   const [welcomeDismissed, setWelcomeDismissed] = useState<boolean>(() => {

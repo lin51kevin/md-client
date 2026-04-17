@@ -32,9 +32,9 @@ import { useRecentFiles } from './hooks/useRecentFiles';
 import { useTabActions } from './hooks/useTabActions';
 import { useNavigation } from './hooks/useNavigation';
 import { useAppLifecycle } from './hooks/useAppLifecycle';
-import { useAutoUpgrade } from './hooks/useAutoUpgrade';
+import { useUpdateNotification } from './hooks/useUpdateNotification';
 import { usePendingImageMigration } from './hooks/usePendingImageMigration';
-import { useFileWatcher } from './hooks/useFileWatcher';
+import { useFileWatchState } from './hooks/useFileWatchState';
 import { invoke } from '@tauri-apps/api/core';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { FileChangeToast } from './components/FileChangeToast';
@@ -66,6 +66,7 @@ import { PluginPanel } from './components/PluginPanel';
 import { ActivityBar } from './components/ActivityBar';
 import { SidebarContainer } from './components/SidebarContainer';
 import { useLocalStorageBool, useLocalStorageString } from './hooks/useLocalStorage';
+import { StorageKeys } from './lib/storage-keys';
 import { useGit } from './hooks/useGit';
 import { useTypewriterOptions } from './hooks/useTypewriterOptions';
 // Help button now opens GitHub USER_GUIDE.md instead of in-app modal
@@ -86,7 +87,7 @@ export default function App() {
   const { t } = i18n;
 
   // ── UI visibility state ──────────────────────────────────────────
-  const [viewMode, setViewMode] = useLocalStorageString('marklite-view-mode', 'split') as [ViewMode, (v: ViewMode) => void];
+  const [viewMode, setViewMode] = useLocalStorageString(StorageKeys.VIEW_MODE, 'split') as [ViewMode, (v: ViewMode) => void];
   const [isDragOver, setIsDragOver] = useState(false);
   const [dragKind, setDragKind] = useState<import('./hooks/useDragDrop').DragKind>('file');
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; tabId: string } | null>(null);
@@ -99,8 +100,8 @@ export default function App() {
   // showHelp removed — help button now opens external URL
 
   // ── Extracted state hooks ────────────────────────────────────────
-  const { activePanel, setActivePanel, showFileTree, showToc, showSearchPanel, showGitPanel, showPluginsPanel } = useSidebarPanel();
-  const [showAIPanel, setShowAIPanel] = useLocalStorageBool('marklite-ai-panel', false);
+  const { activePanel, setActivePanel, togglePanel, showFileTree, showToc, showSearchPanel, showGitPanel, showPluginsPanel } = useSidebarPanel();
+  const [showAIPanel, setShowAIPanel] = useLocalStorageBool(StorageKeys.AI_PANEL, false);
   const AI_PANEL_ID = 'ai-copilot-official';
   const { spellCheck, setSpellCheck, vimMode, setVimMode, autoSave, setAutoSave, autoSaveDelay, setAutoSaveDelay, gitMdOnly, setGitMdOnly, milkdownPreview, setMilkdownPreview, theme, setThemeState, fileWatch, setFileWatch, fileWatchBehavior, setFileWatchBehavior, autoUpdateCheck, setAutoUpdateCheck, updateCheckFrequency, setUpdateCheckFrequency } = usePreferences();
   const [typewriterOptions, setTypewriterOptions] = useTypewriterOptions();
@@ -147,7 +148,7 @@ export default function App() {
 
   // ── Git state (based on opened folder) ──
   const [fileTreeRoot, setFileTreeRoot] = useState<string>(() => {
-    try { return localStorage.getItem('marklite-filetree-root') || ''; } catch { return ''; }
+    try { return localStorage.getItem(StorageKeys.FILETREE_ROOT) || ''; } catch { return ''; }
   });
   const gitRepoPath = fileTreeRoot || null;
   const git = useGit(showGitPanel ? gitRepoPath : null);
@@ -163,44 +164,12 @@ export default function App() {
   });
 
   // ── File watcher state ────────────────────────────────────────
-  const [fileChangeToast, setFileChangeToast] = useState<{ type: 'modified' | 'deleted'; tabId: string; filePath: string; } | null>(null);
-
-  const handleReloadFile = useCallback(async (tabId: string, filePath: string) => {
-    try {
-      const content = await invoke<string>('read_file_text', { path: filePath });
-      const tab = tabs.find(t => t.id === tabId);
-      if (tab) {
-        // Use updateTab (not updateTabDoc) to preserve isDirty: false after reload
-        updateTab(tabId, { doc: content, isDirty: false });
-      }
-    } catch (err) {
-      console.warn('[App] reload file failed:', err);
-    }
-  }, [tabs, updateTab]);
+  const { fileChangeToast, setFileChangeToast, handleReloadFile } = useFileWatchState({
+    tabs, enabled: fileWatch, autoReload: fileWatchBehavior, updateTab,
+  });
 
   // Wrap handleSaveFile for compatibility (markSelfSave is now called inside useFileOps)
   const handleSaveWithWatchMark = handleSaveFile;
-
-  useFileWatcher({
-    tabs,
-    enabled: fileWatch,
-    onFileChanged: (tabId, filePath) => {
-      if (fileWatchBehavior) {
-        // Auto-reload unless tab is dirty
-        const tab = tabs.find(t => t.id === tabId);
-        if (tab?.isDirty) {
-          setFileChangeToast({ type: 'modified', tabId, filePath });
-        } else {
-          handleReloadFile(tabId, filePath);
-        }
-      } else {
-        setFileChangeToast({ type: 'modified', tabId, filePath });
-      }
-    },
-    onFileDeleted: (tabId, filePath) => {
-      setFileChangeToast({ type: 'deleted', tabId, filePath });
-    },
-  });
 
   // ── Editor infrastructure ────────────────────────────────────────
   const cmViewRef = useRef<EditorView | null>(null);
@@ -284,17 +253,9 @@ export default function App() {
   useWindowInit(isTauri, theme);
 
   // ── Auto-upgrade ────────────────────────────────────────────────
-  const [showUpdateNotification, setShowUpdateNotification] = useState(false);
-  const [downloadProgress, setDownloadProgress] = useState(0);
-  const [readyToRestart, setReadyToRestart] = useState(false);
-
-  const { downloadAndInstall, updateInfo, downloading: isDownloading } = useAutoUpgrade({
+  const { showUpdateNotification, setShowUpdateNotification, downloadProgress, readyToRestart, downloadAndInstall, updateInfo, isDownloading } = useUpdateNotification({
     enabled: autoUpdateCheck,
     checkFrequency: updateCheckFrequency,
-    onUpdateAvailable: () => setShowUpdateNotification(true),
-    onDownloadProgress: setDownloadProgress,
-    onUpdateReady: () => { setReadyToRestart(true); setDownloadProgress(100); },
-    onError: (err) => console.warn('[AutoUpdate]', err),
   });
 
   // ── Plugin runtime ───────────────────────────────────────────────
@@ -316,23 +277,6 @@ export default function App() {
   }), [getActiveTab, openFileInTab, createNewTab, tabs, cmViewRef, registerPluginPanel, unregisterPluginPanel, registerPreviewRenderer, unregisterPreviewRenderer]);
 
   const { activatePlugin, deactivatePlugin } = usePluginRuntime(pluginRuntimeDeps);
-
-  // ── Auto-activate enabled plugins on startup ─────────────────────
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem('marklite-installed-plugins');
-      if (!raw) return;
-      const plugins = JSON.parse(raw) as { id: string; enabled: boolean }[];
-      for (const p of plugins) {
-        if (p.enabled) {
-          void activatePlugin(p.id);
-        }
-      }
-    } catch {
-      // ignore — plugins will still be activatable via the panel
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // ── Reset active panel if removed plugin panel was selected ──────
   useEffect(() => {
@@ -370,13 +314,19 @@ export default function App() {
   useKeyboardShortcuts({
     createNewTab, handleOpenFile, handleSaveFile: handleSaveWithWatchMark, handleSaveAsFile,
     closeTab: handleCloseTab, setViewMode, activeTabIdRef,
-    toggleFindReplace: () => setActivePanel(activePanel === 'search' ? null : 'search'),
+    toggleFindReplace: () => togglePanel('search'),
     focusMode, setFocusMode,
     openSnippetPicker,
-    toggleFileTree: () => setActivePanel(activePanel === 'filetree' ? null : 'filetree'),
-    toggleToc: () => setActivePanel(activePanel === 'toc' ? null : 'toc'),
+    toggleFileTree: () => togglePanel('filetree'),
+    toggleToc: () => togglePanel('toc'),
     toggleAIPanel: () => setShowAIPanel(!showAIPanel),
     nextTab, previousTab,
+    toggleCommandPalette: () => setShowCommandPalette(v => !v),
+    toggleQuickOpen: () => setShowQuickOpen(v => !v),
+    revealActiveFile: () => {
+      const tab = tabs.find(t => t.id === activeTabId);
+      if (tab?.filePath) revealInExplorer(tab.filePath).catch(console.error);
+    },
   });
 
   // ── Command Palette registry ─────────────────────────────────────
@@ -385,25 +335,9 @@ export default function App() {
     setViewMode, focusMode, setFocusMode,
     handleFormatAction, handleExportDocx, handleExportPdf, handleExportHtml,
     handleExportPng, previewRef, setShowSnippetPicker, setShowSnippetManager,
-    toggleSearchPanel: () => setActivePanel(activePanel === 'search' ? null : 'search'),
+    toggleSearchPanel: () => togglePanel('search'),
     cmViewRef, isTauri,
   }), [createNewTab, handleOpenFile, handleSaveWithWatchMark, handleSaveAsFile, setViewMode, focusMode, setFocusMode, handleFormatAction, handleExportDocx, handleExportPdf, handleExportHtml, handleExportPng, previewRef, setShowSnippetPicker, setShowSnippetManager, activePanel, setActivePanel, cmViewRef, isTauri]);
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement).tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (e.target as HTMLElement).isContentEditable) return;
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'P') { e.preventDefault(); setShowCommandPalette(v => !v); }
-      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'p') { e.preventDefault(); setShowQuickOpen(v => !v); }
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'E') {
-        e.preventDefault();
-        const tab = tabs.find(t => t.id === activeTabId);
-        if (tab?.filePath) revealInExplorer(tab.filePath).catch(console.error);
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, []);
 
   // ── Render ───────────────────────────────────────────────────────
   return (

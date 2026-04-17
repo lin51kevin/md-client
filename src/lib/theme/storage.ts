@@ -7,10 +7,11 @@
  * - 内置主题保护（不可删除）
  */
 
-import type { ExternalThemeConfig } from './theme-manager';
-import { isBuiltInTheme } from './theme-manager';
+import type { ExternalThemeConfig } from './manager';
+import { isBuiltInTheme } from './manager';
+import { StorageKeys } from '../storage-keys';
 
-export const THEME_STORAGE_KEY = 'marklite-themes';
+export const THEME_STORAGE_KEY = StorageKeys.CUSTOM_THEMES;
 
 /** 存储格式版本 */
 const STORAGE_VERSION = 1;

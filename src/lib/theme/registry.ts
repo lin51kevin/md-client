@@ -4,7 +4,7 @@
  * 被 theme.ts 和 theme-manager.ts 共享，避免循环依赖。
  */
 
-import type { ThemeConfig } from './theme';
+import type { ThemeConfig } from '.';
 
 export const BUILT_IN_NAMES = ['light', 'dark', 'sepia', 'high-contrast'] as const;
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getAutoCompletion } from '../../lib/autocomplete';
+import { getAutoCompletion } from '../../lib/cm/autocomplete';
 
 /**
  * F001 — 自动补全功能测试

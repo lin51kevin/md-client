@@ -4,7 +4,7 @@ import {
   getThemePreference,
   setThemePreference,
   resolveEffectiveTheme,
-} from '../../lib/theme-auto';
+} from '../../lib/theme/auto';
 
 describe('theme-auto: getThemePreference / setThemePreference', () => {
   beforeEach(() => {

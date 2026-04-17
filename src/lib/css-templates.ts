@@ -2,7 +2,9 @@
  * css-templates — CSS 模板的 CRUD 与持久化
  */
 
-export const CSS_TEMPLATES_KEY = 'marklite-css-templates';
+import { StorageKeys } from './storage-keys';
+
+export const CSS_TEMPLATES_KEY = StorageKeys.CSS_TEMPLATES;
 
 export interface CSSTemplate {
   id: string;

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { extractFootnotes, buildFootnoteHtml, extractFrontmatter, buildFrontmatterHtml } from '../../lib/markdown-extensions';
+import { extractFootnotes, buildFootnoteHtml, extractFrontmatter, buildFrontmatterHtml } from '../../lib/markdown/extensions';
 
 describe('markdown-extensions: extractFootnotes', () => {
   it('extracts basic footnotes', () => {

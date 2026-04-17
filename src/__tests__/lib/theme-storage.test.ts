@@ -4,11 +4,11 @@ import {
   storeTheme,
   removeStoredTheme,
   THEME_STORAGE_KEY,
-} from '../../lib/theme-storage';
-import type { ExternalThemeConfig } from '../../lib/theme-manager';
+} from '../../lib/theme/storage';
+import type { ExternalThemeConfig } from '../../lib/theme/manager';
 
 // Isolate isBuiltInTheme so tests are not coupled to the real built-in list
-vi.mock('../../lib/theme-manager', () => ({
+vi.mock('../../lib/theme/manager', () => ({
   isBuiltInTheme: (name: string) => ['light', 'dark', 'sepia', 'high-contrast'].includes(name),
 }));
 

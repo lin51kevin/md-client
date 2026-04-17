@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { MilkdownSyncManager } from '../../lib/milkdown-sync';
+import { MilkdownSyncManager } from '../../lib/milkdown/sync';
 
 describe('MilkdownSyncManager', () => {
   let manager: MilkdownSyncManager;

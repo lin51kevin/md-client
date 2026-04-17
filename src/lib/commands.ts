@@ -1,3 +1,5 @@
+import { StorageKeys } from './storage-keys';
+
 export interface Command {
   id: string;
   label: string;
@@ -70,7 +72,7 @@ let recentCommands: string[] = [];
 /** Get recently used command IDs (most recent first) */
 export function getRecentCommandIds(): string[] {
   try {
-    const raw = localStorage.getItem('marklite-recent-commands');
+    const raw = localStorage.getItem(StorageKeys.RECENT_COMMANDS);
     if (raw) recentCommands = JSON.parse(raw);
   } catch { /* ignore */ }
   return recentCommands;
@@ -82,7 +84,7 @@ export function recordCommandExecution(commandId: string): void {
   recentCommands.unshift(commandId);
   recentCommands = recentCommands.slice(0, 20); // keep max 20
   try {
-    localStorage.setItem('marklite-recent-commands', JSON.stringify(recentCommands));
+    localStorage.setItem(StorageKeys.RECENT_COMMANDS, JSON.stringify(recentCommands));
   } catch { /* ignore */ }
 }
 

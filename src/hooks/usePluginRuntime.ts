@@ -1,8 +1,9 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import type { PluginContextDeps } from '../plugins/plugin-context-factory';
 import type { PluginContext } from '../plugins/plugin-sandbox';
 import { createPluginContext } from '../plugins/plugin-context-factory';
 import { validateManifest, checkEngineVersion, loadPluginModuleFromResource } from '../plugins/plugin-loader';
+import { StorageKeys } from '../lib/storage-keys';
 
 /**
  * In DEV mode, plugins are bundled via Vite's dynamic imports for HMR.
@@ -110,6 +111,21 @@ export function usePluginRuntime(deps: PluginContextDeps) {
       console.warn(`[PluginRuntime] Error deactivating plugin "${id}":`, err);
     }
     activePlugins.current.delete(id);
+  }, []);
+
+  // Auto-activate all enabled plugins on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(StorageKeys.INSTALLED_PLUGINS);
+      if (!raw) return;
+      const plugins = JSON.parse(raw) as { id: string; enabled: boolean }[];
+      for (const p of plugins) {
+        if (p.enabled) void activatePlugin(p.id);
+      }
+    } catch {
+      // Plugins remain activatable via the panel
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return { activatePlugin, deactivatePlugin };

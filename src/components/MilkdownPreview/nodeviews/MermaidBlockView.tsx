@@ -6,6 +6,7 @@
  */
 
 import { initMermaid } from '../../../lib/mermaid';
+import { toErrorMessage } from '../../../lib/utils/errors';
 
 /**
  * Milkdown renderPreview 兼容的 Mermaid 渲染函数
@@ -45,7 +46,7 @@ export function renderMermaidPreview(
       const errorDiv = document.createElement('div');
       errorDiv.className = 'mermaid-error';
       errorDiv.style.cssText = 'color:red;padding:8px;border:1px solid red;border-radius:4px';
-      errorDiv.textContent = `Mermaid render error: ${err instanceof Error ? err.message : String(err)}`;
+      errorDiv.textContent = `Mermaid render error: ${toErrorMessage(err)}`;
       applyPreview(errorDiv);
     });
 

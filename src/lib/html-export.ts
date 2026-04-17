@@ -9,13 +9,10 @@ import DOMPurify from 'dompurify';
 import { escapeHtml } from './utils/html-safety';
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
-import remarkGfm from 'remark-gfm';
-import remarkDirective from 'remark-directive';
-import remarkDirectiveRehype from 'remark-directive-rehype';
 import remarkRehype from 'remark-rehype';
 import rehypeStringify from 'rehype-stringify';
-import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
+import { CORE_REMARK_PLUGINS } from './markdown/pipeline';
 import katexCss from 'katex/dist/katex.min.css?raw';
 import highlightCss from 'highlight.js/styles/github.css?raw';
 
@@ -132,10 +129,7 @@ export async function markdownToHtml(markdown: string): Promise<string> {
   if (!markdown.trim()) return '';
   const result = await unified()
     .use(remarkParse)
-    .use(remarkGfm)
-    .use(remarkDirective)
-    .use(remarkDirectiveRehype)
-    .use(remarkMath)
+    .use([...CORE_REMARK_PLUGINS])
     .use(remarkRehype)
     .use(rehypeKatex)
     .use(rehypeStringify)

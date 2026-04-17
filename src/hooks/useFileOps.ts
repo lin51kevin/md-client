@@ -1,9 +1,10 @@
-import { useState } from 'react';
 import { open, save, message } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
 import { Tab } from '../types';
 import type { TranslationKey } from '../i18n/zh-CN';
 import { markSelfSave } from './useFileWatcher';
+import { toErrorMessage } from '../lib/utils/errors';
+import { useExportOps } from './useExportOps';
 
 type TFn = (key: TranslationKey, params?: Record<string, string | number>) => string;
 
@@ -20,23 +21,11 @@ interface FileOpsParams {
 
 export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markSavedAs, t, onFirstSave }: FileOpsParams) {
   const tr = t ?? ((k: string) => k);
-  const [exporting, setExporting] = useState<string | null>(null);
 
-  /** Generate a default filename from the active tab (uses file name or first heading) */
-  const getDefaultFileName = (ext: string): string => {
-    const tab = getActiveTab();
-    if (!tab) return `untitled.${ext}`;
-    // If tab has a file path, derive from that
-    if (tab.filePath) {
-      const parts = tab.filePath.replace(/\\/g, '/').split('/');
-      const base = parts[parts.length - 1].replace(/\.(md|markdown|txt)$/i, '');
-      return `${base}.${ext}`;
-    }
-    // Try to extract first heading
-    const h1Match = tab.doc.match(/^#\s+(.+)$/m);
-    const name = h1Match ? h1Match[1].trim().replace(/[:\\/*?"<>|]/g, '').slice(0, 80) : 'untitled';
-    return `${name || 'untitled'}.${ext}`;
-  };
+  // ── Export operations (separate concern) ──────────────────────────
+  const exportOps = useExportOps({ getActiveTab, t });
+
+  // ── File open ─────────────────────────────────────────────────────
   const handleOpenFile = async () => {
     try {
       const selected = await open({
@@ -48,13 +37,14 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
         await openFileInTab(p);
       }
     } catch (err) {
-      const errMsg = err instanceof Error ? err.message : String(err);
+      const errMsg = toErrorMessage(err);
       if (errMsg !== 'Cancelled' && errMsg !== '') {
         console.warn(`[useFileOps] openFile cancelled/error: ${errMsg}`);
       }
     }
   };
 
+  // ── Save As ───────────────────────────────────────────────────────
   const handleSaveAsFile = async (tabId?: string) => {
     const tab = tabId ? tabs.find(t => t.id === tabId) : getActiveTab();
     if (!tab) return;
@@ -67,17 +57,17 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
         const wasUnsaved = !tab.filePath;
         markSavedAs(tab.id, savePath);
         markSelfSave(savePath);
-        // 首次保存：转存待处理图片并重写路径
         if (wasUnsaved && onFirstSave) {
           await onFirstSave(tab.id, savePath);
         }
       }
     } catch (err) {
-      const errMsg = err instanceof Error ? err.message : String(err);
+      const errMsg = toErrorMessage(err);
       await message(errMsg, { title: tr('fileOps.saveAsFailed'), kind: 'error' });
     }
   };
 
+  // ── Save ──────────────────────────────────────────────────────────
   const handleSaveFile = async (tabId?: string) => {
     const tab = tabId ? tabs.find(t => t.id === tabId) : getActiveTab();
     if (!tab) return;
@@ -90,132 +80,15 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
         await handleSaveAsFile(tab.id);
       }
     } catch (err) {
-      const errMsg = err instanceof Error ? err.message : String(err);
+      const errMsg = toErrorMessage(err);
       await message(errMsg, { title: tr('fileOps.saveFailed'), kind: 'error' });
     }
   };
 
-  /**
-   * [P1-6] Export with progress tracking.
-   * Returns an object with isExporting state that can be used for loading UI.
-   * The actual state is managed via React state (exporting).
-   */
-  const handleExport = async (
-    format: 'docx' | 'pdf' | 'html' | 'epub',
-    onProgress?: (stage: string, progress: number) => void
-  ) => {
-    const tab = getActiveTab();
-    if (!tab) return;
-    
-    if (!tab.doc.trim()) {
-      await message(tr('fileOps.emptyDocExport'), { title: tr('fileOps.hint'), kind: 'warning' });
-      return;
-    }
-
-    setExporting(format);
-
-    try {
-      // HTML 导出走前端生成，无需 Rust 后端
-      if (format === 'html') {
-        onProgress?.('Generating HTML...', 30);
-        const savePath = await save({
-          filters: [{ name: 'HTML Document', extensions: ['html'] }],
-          defaultPath: getDefaultFileName('html'),
-        });
-        if (savePath) {
-          onProgress?.('Writing file...', 70);
-          const { generateHtmlDocument } = await import('../lib/html-export');
-          const html = await generateHtmlDocument(tab.doc);
-          await invoke('write_file_text', { path: savePath, content: html });
-          onProgress?.('Complete!', 100);
-        }
-        return;
-      }
-
-      // [P2 EPUB 导出]
-      if (format === 'epub') {
-        onProgress?.('Generating EPUB...', 20);
-        const savePath = await save({
-          filters: [{ name: 'EPUB Document', extensions: ['epub'] }],
-          defaultPath: getDefaultFileName('epub'),
-        });
-        if (savePath) {
-          onProgress?.('Converting content...', 50);
-          const { generateEpub } = await import('../lib/html-export');
-          const epubData = await generateEpub(tab.doc);
-          await invoke('write_image_bytes', { path: savePath, data: Array.from(epubData) });
-          onProgress?.('Complete!', 100);
-        }
-        return;
-      }
-
-      const filterName = format === 'docx' ? 'Word Document' : 'PDF Document';
-      const savePath = await save({
-        filters: [{ name: filterName, extensions: [format] }],
-        defaultPath: getDefaultFileName(format),
-      });
-      if (savePath) {
-        onProgress?.('Pre-rendering diagrams and formulas...', 20);
-        const { prerenderExportAssets } = await import('../lib/export-prerender');
-        const preRenderedImages = await prerenderExportAssets(tab.doc);
-        onProgress?.('Exporting document...', 60);
-        await invoke('export_document', { markdown: tab.doc, outputPath: savePath, format, preRenderedImages });
-        onProgress?.('Generating file...', 80);
-        onProgress?.('Complete!', 100);
-      }
-    } catch (err) {
-      const errMsg = err instanceof Error ? err.message : String(err);
-      await message(errMsg, { title: tr('fileOps.exportFailed', { format: format.toUpperCase() }), kind: 'error' });
-    } finally {
-      setExporting(null);
-    }
+  return {
+    handleOpenFile,
+    handleSaveFile,
+    handleSaveAsFile,
+    ...exportOps,
   };
-
-  const handleExportDocx = () => handleExport('docx');
-  const handleExportPdf = () => handleExport('pdf');
-  const handleExportPng = async (previewEl: HTMLElement | null) => {
-    const tab = getActiveTab();
-    if (!tab) return;
-    if (!tab.doc.trim()) {
-      await message(tr('fileOps.emptyDocExport'), { title: tr('fileOps.hint'), kind: 'warning' });
-      return;
-    }
-    if (!previewEl) {
-      await message(tr('fileOps.noPreviewArea'), { title: tr('fileOps.error'), kind: 'error' });
-      return;
-    }
-
-    setExporting('png');
-
-    try {
-      const { default: html2canvas } = await import('html2canvas');
-      const canvas = await html2canvas(previewEl, {
-        backgroundColor: getComputedStyle(previewEl).backgroundColor || '#ffffff',
-        scale: 2,
-        useCORS: true,
-        logging: false,
-      });
-      const savePath = await save({
-        filters: [{ name: 'PNG Image', extensions: ['png'] }],
-        defaultPath: getDefaultFileName('png'),
-      });
-      if (savePath) {
-        const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob((b) => b ? resolve(b) : reject(new Error('toBlob returned null')), 'image/png'));
-        const buffer = await blob.arrayBuffer();
-        const bytes = new Uint8Array(buffer);
-        await invoke('write_image_bytes', { path: savePath, data: Array.from(bytes) });
-      }
-    } catch (err) {
-      const errMsg = err instanceof Error ? err.message : String(err);
-      await message(errMsg, { title: tr('fileOps.exportPngFailed'), kind: 'error' });
-    } finally {
-      setExporting(null);
-    }
-  };
-
-  const handleExportHtml = () => handleExport('html');
-  // [P2 EPUB 导出]
-  const handleExportEpub = () => handleExport('epub');
-
-  return { handleOpenFile, handleSaveFile, handleSaveAsFile, handleExportDocx, handleExportPdf, handleExportHtml, handleExportEpub, handleExportPng, exporting };
 }

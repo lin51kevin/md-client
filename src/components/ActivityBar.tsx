@@ -18,6 +18,7 @@ const LUCIDE_ICON_MAP: Record<string, LucideIcon> = {
 };
 import { useI18n, type TranslationKey } from '../i18n';
 import { useLocalStorageString } from '../hooks/useLocalStorage';
+import { StorageKeys } from '../lib/storage-keys';
 
 export type BuiltinPanelId = 'filetree' | 'search' | 'toc' | 'plugins' | 'git';
 export type PanelId = BuiltinPanelId | (string & {});
@@ -72,7 +73,7 @@ interface TooltipState {
 
 export function ActivityBar({ activePanel, onPanelChange, onOpenSettings, pluginPanels = [], floatingPanelId }: ActivityBarProps) {
   const { t } = useI18n();
-  const [orderRaw, setOrderRaw] = useLocalStorageString('marklite-panel-order', DEFAULT_ORDER);
+  const [orderRaw, setOrderRaw] = useLocalStorageString(StorageKeys.PANEL_ORDER, DEFAULT_ORDER);
   const [orderedIds, setOrderedIds] = useState<PanelId[]>(() => parseOrder(orderRaw));
   const [draggingFrom, setDraggingFrom] = useState<number | null>(null);
   const [insertAt, setInsertAt] = useState<number | null>(null);

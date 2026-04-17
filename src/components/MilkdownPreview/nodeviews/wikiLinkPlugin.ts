@@ -10,7 +10,7 @@
  */
 
 import { $nodeSchema, $remark } from '@milkdown/utils';
-import { remarkWikiLinks } from '../../../lib/remark-wikilinks';
+import { remarkWikiLinks } from '../../../lib/markdown/remark-wikilinks';
 
 /// Node schema ID
 export const wikiLinkId = 'wikiLink';

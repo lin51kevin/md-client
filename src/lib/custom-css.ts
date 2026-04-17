@@ -2,7 +2,9 @@
  * custom-css — 用户自定义 CSS 的读写与注入
  */
 
-export const CUSTOM_CSS_KEY = 'marklite-custom-css';
+import { StorageKeys } from './storage-keys';
+
+export const CUSTOM_CSS_KEY = StorageKeys.CUSTOM_CSS;
 const STYLE_TAG_ID = 'marklite-custom-css-style';
 
 /** 读取已保存的自定义 CSS，无数据时返回空字符串 */

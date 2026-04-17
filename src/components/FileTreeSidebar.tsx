@@ -23,6 +23,7 @@ import { revealInExplorer } from '../lib/reveal-in-explorer';
 
 
 /** Rust 后端返回的目录条目结构 */
+import { StorageKeys } from '../lib/storage-keys';
 export interface DirEntry {
   name: string;
   path: string;
@@ -85,7 +86,7 @@ function filterTree(nodes: TreeNode[], query: string): TreeNode[] {
 /** Module-level helper — runs only when the module is first loaded (not on re-renders) */
 function loadSavedExpanded(): Set<string> {
   try {
-    const saved = localStorage.getItem('marklite-filetree-expanded');
+    const saved = localStorage.getItem(StorageKeys.FILETREE_EXPANDED);
     if (saved) return new Set(JSON.parse(saved));
   } catch { /* ignore */ }
   return new Set();
@@ -104,7 +105,7 @@ export const FileTreeSidebar = forwardRef<FileTreeSidebarHandle, FileTreeSidebar
   onRootChange,
 }, ref) {
   const [rootPath, setRootPath] = useState<string>(() => {
-    try { return localStorage.getItem('marklite-filetree-root') || ''; }
+    try { return localStorage.getItem(StorageKeys.FILETREE_ROOT) || ''; }
     catch { return ''; }
   });
   const [rootName, setRootName] = useState<string>(''); // 显示用短名
@@ -173,7 +174,7 @@ export const FileTreeSidebar = forwardRef<FileTreeSidebarHandle, FileTreeSidebar
       }
       next.forEach(collect);
       expandedDirsRef.current = expanded;
-      try { localStorage.setItem('marklite-filetree-expanded', JSON.stringify([...expanded])); } catch { /* ignore */ }
+      try { localStorage.setItem(StorageKeys.FILETREE_EXPANDED, JSON.stringify([...expanded])); } catch { /* ignore */ }
       return next;
     });
   }, []);
@@ -204,7 +205,7 @@ export const FileTreeSidebar = forwardRef<FileTreeSidebarHandle, FileTreeSidebar
       setRootEntries(entries.map(e => buildTreeNode(e, expandedDirsRef.current)));
       setRootPath(target);
       setRootName(displayName(target));
-      try { localStorage.setItem('marklite-filetree-root', target); } catch { /* ignore */ }
+      try { localStorage.setItem(StorageKeys.FILETREE_ROOT, target); } catch { /* ignore */ }
       onRootChange?.(target);
     } catch (e) {
       setError(String(e));
@@ -342,7 +343,7 @@ export const FileTreeSidebar = forwardRef<FileTreeSidebarHandle, FileTreeSidebar
           setRootPath(savedPath);
           setRootName(displayName(savedPath));
           setRootEntries((rootEntry.children || []).map(e => buildTreeNode(e, expandedDirsRef.current)));
-          try { localStorage.setItem('marklite-filetree-root', savedPath); } catch { /* ignore */ }
+          try { localStorage.setItem(StorageKeys.FILETREE_ROOT, savedPath); } catch { /* ignore */ }
         } else {
           setError('无法访问当前目录');
         }

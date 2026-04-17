@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { StorageKeys } from '../lib/storage-keys';
 
 export interface TypewriterOptions {
   dimOthers: boolean;
@@ -6,7 +7,7 @@ export interface TypewriterOptions {
   showDuration: boolean;
 }
 
-const STORAGE_KEY = 'marklite-typewriter-options';
+const STORAGE_KEY = StorageKeys.TYPEWRITER_OPTIONS;
 
 const DEFAULT_OPTIONS: TypewriterOptions = {
   dimOthers: false,

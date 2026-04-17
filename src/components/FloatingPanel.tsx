@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode, type MouseEvent as ReactMouseEvent } from 'react';
+import { StorageKeys } from '../lib/storage-keys';
 
 /* ── Constants ────────────────────────────────────────────── */
-const STORAGE_KEY = 'marklite-floating-panel';
+const STORAGE_KEY = StorageKeys.FLOATING_PANEL;
 const MIN_W = 320;
 const MIN_H = 360;
 const DEFAULT_W = 400;

@@ -5,8 +5,8 @@ import {
   installTheme,
   removeTheme,
   isBuiltInTheme,
-} from '../../lib/theme-manager';
-import type { ExternalThemeConfig } from '../../lib/theme-manager';
+} from '../../lib/theme/manager';
+import type { ExternalThemeConfig } from '../../lib/theme/manager';
 
 const SAMPLE_THEME_JSON = JSON.stringify({
   name: 'custom-ocean',

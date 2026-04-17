@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { check as tauriCheck } from '@tauri-apps/plugin-updater';
+import { StorageKeys } from '../lib/storage-keys';
+import { toErrorMessage } from '../lib/utils/errors';
 
 export interface UpdateInfo {
   version: string;
@@ -23,7 +25,7 @@ export interface UseAutoUpgradeOptions {
 }
 
 const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
-const STORAGE_KEY = 'marklite-last-update-check';
+const STORAGE_KEY = StorageKeys.LAST_UPDATE_CHECK;
 
 function shouldCheck(frequency: 'startup' | '24h'): boolean {
   if (frequency === 'startup') return true;
@@ -74,7 +76,7 @@ export function useAutoUpgrade(options: UseAutoUpgradeOptions) {
         onUpdateAvailable?.(info);
       }
     } catch (err) {
-      onError?.(err instanceof Error ? err.message : String(err));
+      onError?.(toErrorMessage(err));
     } finally {
       checkingRef.current = false;
       setChecking(false);
@@ -94,7 +96,7 @@ export function useAutoUpgrade(options: UseAutoUpgradeOptions) {
       });
       onUpdateReady?.();
     } catch (err) {
-      onError?.(err instanceof Error ? err.message : String(err));
+      onError?.(toErrorMessage(err));
     } finally {
       downloadingRef.current = false;
       setDownloading(false);

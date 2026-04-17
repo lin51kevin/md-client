@@ -1,4 +1,4 @@
-import { escapeHtml } from './utils/html-safety';
+import { escapeHtml } from '../utils/html-safety';
 
 /**
  * F014 — Markdown 扩展支持：脚注 + frontmatter
@@ -203,4 +203,3 @@ export async function extractFrontmatterAsync(md: string): Promise<Frontmatter> 
   }
   return syncResult;
 }
-

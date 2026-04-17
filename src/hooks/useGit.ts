@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { toErrorMessage } from '../lib/utils/errors';
 import {
   gitGetRepo,
   gitGetStatus,
@@ -53,7 +54,7 @@ export function useGit(repoPath: string | null): UseGitReturn {
       }
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(toErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -80,7 +81,7 @@ export function useGit(repoPath: string | null): UseGitReturn {
         await gitCommit(repoPath, message, selectedFiles);
         await loadStatus(repoPath);
       } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
+        setError(toErrorMessage(err));
       }
     },
     [repoPath, loadStatus]
@@ -93,7 +94,7 @@ export function useGit(repoPath: string | null): UseGitReturn {
       await gitPull(repoPath);
       await loadStatus(repoPath);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(toErrorMessage(err));
     }
   }, [repoPath, loadStatus]);
 
@@ -104,7 +105,7 @@ export function useGit(repoPath: string | null): UseGitReturn {
       await gitPush(repoPath);
       await loadStatus(repoPath);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(toErrorMessage(err));
     }
   }, [repoPath, loadStatus]);
 
@@ -124,7 +125,7 @@ export function useGit(repoPath: string | null): UseGitReturn {
         await gitStage(repoPath, selectedFiles);
         await loadStatus(repoPath);
       } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
+        setError(toErrorMessage(err));
       }
     },
     [repoPath, loadStatus]
@@ -138,7 +139,7 @@ export function useGit(repoPath: string | null): UseGitReturn {
         await gitUnstage(repoPath, selectedFiles);
         await loadStatus(repoPath);
       } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
+        setError(toErrorMessage(err));
       }
     },
     [repoPath, loadStatus]
@@ -152,7 +153,7 @@ export function useGit(repoPath: string | null): UseGitReturn {
         await gitRestore(repoPath, filePath);
         await loadStatus(repoPath);
       } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
+        setError(toErrorMessage(err));
       }
     },
     [repoPath, loadStatus]

@@ -1,5 +1,6 @@
 import { createElement, useState, useCallback, useRef, useEffect } from 'react';
 import { Plus, Settings, ArrowUp, X, Square } from 'lucide-react';
+import { toErrorMessage } from '../../../../lib/utils/errors';
 import type { PluginContext } from '../../../plugin-sandbox';
 import type {
   CopilotMessage,
@@ -289,7 +290,7 @@ export class AICopilotPanelContent {
       this.context.workspace.createNewDoc(newDocContent);
       this.context.ui.showMessage(t('aiCopilot.panel.newDocCreated'), 'info');
     } catch (err) {
-      const reason = err instanceof Error ? err.message : String(err);
+      const reason = toErrorMessage(err);
       this.context.ui.showMessage(t('aiCopilot.panel.newDocCreateFailed', { reason }), 'error');
     }
   }

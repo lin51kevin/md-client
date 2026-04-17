@@ -1,23 +1,17 @@
-import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import type { RefObject } from 'react';
 import type { Extension } from '@codemirror/state';
 import type { EditorState, ViewUpdate } from '@uiw/react-codemirror';
 import { EditorView } from '@codemirror/view';
-import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
-import { commonLanguages } from '../lib/cm-languages';
-import { foldGutter } from '@codemirror/language';
 import { undoDepth, redoDepth } from '@codemirror/commands';
-import { THEMES, type ThemeName } from '../lib/theme';
-import { sepiaCmTheme, highContrastCmTheme } from '../lib/cm-themes';
-import { autoCloseBrackets } from '../lib/cmAutocomplete';
-import { multicursorKeymap } from '../lib/multicursor-keymap';
-import { vimKeymap } from '../lib/cmVim';
 import { createAutoSave } from '../lib/auto-save';
 import { detectContext } from '../lib/context-menu';
 import { parseTable } from '../lib/table-parser';
 import type { TableData } from '../lib/table-parser';
 import type { ContextInfo } from '../lib/context-menu';
 import type { Tab } from '../types';
+import type { ThemeName } from '../lib/theme';
+import { useEditorConfig } from './useEditorConfig';
 
 interface UseEditorInstanceOptions {
   /** Shared EditorView ref — created in App and passed to all hooks that need it */
@@ -64,11 +58,13 @@ export function useEditorInstance({
   // Keep docRef up to date for contextmenu listener (avoids stale closure)
   useEffect(() => { docRef.current = activeDoc; }, [activeDoc]);
 
-  // Vim extension is loaded asynchronously
-  const [vimExtension, setVimExtension] = useState<Extension | null>(null);
-  useEffect(() => {
-    vimKeymap().then(setVimExtension).catch(console.error);
-  }, []);
+  // ── Editor extensions and theme (configuration concern) ──────────
+  const { editorExtensions, editorTheme } = useEditorConfig({
+    theme,
+    vimMode,
+    cursorExtension,
+    searchHighlightExtension,
+  });
 
   const handleCreateEditor = useCallback((view: EditorView) => {
     cmViewRef.current = view;
@@ -187,23 +183,6 @@ export function useEditorInstance({
       autoSaveRef.current?.schedule(activeDoc);
     }
   }, [activeDoc, activeTabId, autoSave]);
-
-  const editorExtensions = useMemo(() => [
-    markdown({ base: markdownLanguage, codeLanguages: commonLanguages }),
-    foldGutter(),
-    cursorExtension,
-    autoCloseBrackets(),
-    searchHighlightExtension,
-    multicursorKeymap(),
-    ...(vimMode && vimExtension ? [vimExtension] : []),
-  ], [cursorExtension, vimExtension, vimMode, searchHighlightExtension]);
-
-  const editorTheme = useMemo((): 'light' | 'dark' | Extension => {
-    const cm = THEMES[theme].cmTheme;
-    if (cm === 'sepia') return sepiaCmTheme as unknown as Extension;
-    if (cm === 'high-contrast') return highContrastCmTheme as unknown as Extension;
-    return cm;
-  }, [theme]);
 
   return {
     docRef,

@@ -7,9 +7,9 @@
  * - 获取所有可用主题（内置 + 已安装）
  */
 
-import type { ThemeConfig } from './theme';
-import { getStoredThemes, storeTheme, removeStoredTheme } from './theme-storage';
-import { BUILT_IN_THEMES_MAP } from './theme-registry';
+import type { ThemeConfig } from '.';
+import { getStoredThemes, storeTheme, removeStoredTheme } from './storage';
+import { BUILT_IN_THEMES_MAP } from './registry';
 
 // ─── Required CSS variables that every theme must define ──────────────────
 
@@ -22,7 +22,7 @@ const REQUIRED_CSS_VARS = [
   '--warning-color', '--warning-bg',
 ];
 
-import { BUILT_IN_NAMES } from './theme-registry';
+import { BUILT_IN_NAMES } from './registry';
 
 const BUILT_IN_SET = new Set<string>(BUILT_IN_NAMES);
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { rehypeFilterInvalidElements } from '../../lib/rehypeFilterInvalidElements';
-import { rehypeWikiLinks } from '../../lib/rehype-wikilinks';
+import { rehypeFilterInvalidElements } from '../../lib/markdown/rehype-filter-invalid-elements';
+import { rehypeWikiLinks } from '../../lib/markdown/rehype-wikilinks';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

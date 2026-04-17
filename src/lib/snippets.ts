@@ -27,7 +27,9 @@ export const PREDEFINED_VARIABLES: SnippetVariable[] = [
   { name: 'cursor', label: '光标位置', defaultValue: '' },
 ];
 
-export const SNIPPETS_STORAGE_KEY = 'marklite-snippets';
+import { StorageKeys } from './storage-keys';
+
+export const SNIPPETS_STORAGE_KEY = StorageKeys.SNIPPETS;
 
 /** Generate a simple unique ID */
 export function generateSnippetId(): string {

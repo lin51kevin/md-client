@@ -6,6 +6,7 @@
  */
 
 import { escapeHtml } from './utils/html-safety';
+import { toErrorMessage } from './utils/errors';
 
 let mermaidInitialized = false;
 /** Module-level counter ensures globally unique DOM IDs across repeated renderMermaid calls */
@@ -85,7 +86,7 @@ export async function renderMermaid(text: string): Promise<string> {
         // 渲染失败时返回带错误信息的占位符
         return {
           fullMatch: match[0],
-          replacement: `<div class="mermaid-error" style="color:red;padding:8px;border:1px solid red;">Mermaid render error: ${escapeHtml(err instanceof Error ? err.message : String(err))}</div>`,
+          replacement: `<div class="mermaid-error" style="color:red;padding:8px;border:1px solid red;">Mermaid render error: ${escapeHtml(toErrorMessage(err))}</div>`,
         };
       }
     })

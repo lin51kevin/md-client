@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import DOMPurify from 'dompurify';
+import { toErrorMessage } from '../lib/utils/errors';
 import { X, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import { useI18n } from '../i18n';
 import { extractToc, type TocEntry } from '../lib/toc';
@@ -77,7 +78,7 @@ export function MindmapView({ markdown, onClose, onNavigate }: MindmapViewProps)
       }
     }).catch((err) => {
       if (!cancelled) {
-        setError(err instanceof Error ? err.message : String(err));
+        setError(toErrorMessage(err));
       }
     });
 

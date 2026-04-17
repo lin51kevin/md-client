@@ -1,6 +1,6 @@
 import type { EditorView } from '@codemirror/view';
 import type { PluginContext } from './plugin-sandbox';
-import { milkdownBridge } from '../lib/milkdown-editor-bridge';
+import { milkdownBridge } from '../lib/milkdown/editor-bridge';
 
 /**
  * Dependencies required by the editor API.

@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import type { PluginPermission } from '../plugins/types';
 import { PERMISSION_DESCRIPTIONS } from '../plugins/permissions';
 import { validatePluginId } from '../plugins/plugin-loader';
+import { StorageKeys } from '../lib/storage-keys';
 
 export interface PluginUIItem {
   id: string;
@@ -18,7 +19,7 @@ export interface PendingPermissionRequest {
   permissions: PluginPermission[];
 }
 
-const STORAGE_KEY = 'marklite-installed-plugins';
+const STORAGE_KEY = StorageKeys.INSTALLED_PLUGINS;
 
 /** Plugin IDs that are hidden from the UI (built-in features supersede them). */
 const HIDDEN_PLUGIN_IDS = new Set<string>([]);
@@ -95,7 +96,7 @@ function migratePluginIds(plugins: PluginUIItem[]): PluginUIItem[] {
 
 function loadPlugins(): PluginUIItem[] {
   try {
-    const OLD_STORAGE_KEY = 'marklite-ui-plugins';
+    const OLD_STORAGE_KEY = StorageKeys.INSTALLED_PLUGINS_LEGACY;
     
     // First check new key
     const raw = localStorage.getItem(STORAGE_KEY);

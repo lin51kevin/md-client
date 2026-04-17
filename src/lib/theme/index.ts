@@ -8,7 +8,8 @@
  *   - high-contrast:  高对比度
  */
 
-import { BUILT_IN_NAMES, BUILT_IN_THEMES_MAP } from './theme-registry';
+import { BUILT_IN_NAMES, BUILT_IN_THEMES_MAP } from './registry';
+import { StorageKeys } from '../storage-keys';
 
 export type ThemeName = 'light' | 'dark' | 'sepia' | 'high-contrast' | (string & {});
 
@@ -25,7 +26,7 @@ export const PREVIEW_THEMES: Record<PreviewThemeName, { labelZh: string; labelEn
   highContrast: { labelZh: '高对比', labelEn: 'High Contrast', cssClass: 'markdown-preview-high-contrast' },
 };
 
-const PREVIEW_THEME_KEY = 'marklite-preview-theme';
+const PREVIEW_THEME_KEY = StorageKeys.PREVIEW_THEME;
 
 /** @deprecated */
 export function getSavedPreviewTheme(): PreviewThemeName {
@@ -70,9 +71,6 @@ export const BUILT_IN_THEMES: Record<string, ThemeConfig> = BUILT_IN_THEMES_MAP;
 export const THEMES: Record<string, ThemeConfig> = BUILT_IN_THEMES;
 
 /**
- * 将主题 CSS 变量注入到 document.documentElement
- */
-/**
  * 应用主题（支持内置 + 自定义主题）
  */
 export function applyTheme(theme: string): void {
@@ -94,16 +92,12 @@ export function applyTheme(theme: string): void {
 }
 
 /**
- * 从 localStorage 读取已保存的主题偏好
- */
-import { getInstalledThemes as _getAllThemes } from './theme-manager';
-
-/**
  * 从 localStorage 读取已保存的主题偏好（支持自定义主题）
  */
+import { getInstalledThemes as _getAllThemes } from './manager';
 export function getSavedTheme(): string | null {
   try {
-    const saved = localStorage.getItem('marklite-theme');
+    const saved = localStorage.getItem(StorageKeys.THEME);
     if (!saved) return null;
     // 先查内置主题
     if (saved in BUILT_IN_THEMES) return saved;
@@ -111,7 +105,7 @@ export function getSavedTheme(): string | null {
     const all = _getAllThemes();
     if (all.some(t => t.name === saved)) return saved;
     // 无效值 → 清除并返回 null
-    localStorage.removeItem('marklite-theme');
+    localStorage.removeItem(StorageKeys.THEME);
     return null;
   } catch { /* ignore */ }
   return null;
@@ -121,5 +115,5 @@ export function getSavedTheme(): string | null {
  * 保存主题偏好到 localStorage
  */
 export function saveTheme(theme: string): void {
-  try { localStorage.setItem('marklite-theme', theme); } catch { /* ignore */ }
+  try { localStorage.setItem(StorageKeys.THEME, theme); } catch { /* ignore */ }
 }
