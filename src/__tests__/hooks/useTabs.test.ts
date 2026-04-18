@@ -442,7 +442,11 @@ describe('useTabs', () => {
 
     it('should restore tabs from localStorage on mount', async () => {
       const { invoke } = await import('@tauri-apps/api/core');
-      vi.mocked(invoke).mockResolvedValue('# Restored Content');
+      // restore_session_files returns [[path, content], ...] tuples
+      vi.mocked(invoke).mockResolvedValue([
+        ['/docs/file1.md', '# Restored Content'],
+        ['/docs/file2.md', '# Restored Content'],
+      ]);
 
       // Pre-seed session
       localStorage.setItem(SESSION_KEY, JSON.stringify({
@@ -469,9 +473,11 @@ describe('useTabs', () => {
 
     it('should skip tabs whose files cannot be read during restore', async () => {
       const { invoke } = await import('@tauri-apps/api/core');
-      vi.mocked(invoke)
-        .mockResolvedValueOnce('# Good file')       // first file succeeds
-        .mockRejectedValueOnce(new Error('ENOENT')); // second file missing
+      // restore_session_files returns only successfully read files; missing file omitted
+      vi.mocked(invoke).mockResolvedValue([
+        ['/exists.md', '# Good file'],
+        // /deleted.md not in results → tab skipped
+      ]);
 
       localStorage.setItem(SESSION_KEY, JSON.stringify({
         tabs: [

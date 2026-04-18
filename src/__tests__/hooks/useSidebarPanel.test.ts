@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import { useUIStore } from '../../stores';
 
 // Mock ActivityBar so this test doesn't pull in the full component tree
 vi.mock('../../components/ActivityBar', () => ({
@@ -15,7 +16,11 @@ vi.mock('../../components/ActivityBar', () => ({
 const { useSidebarPanel } = await import('../../hooks/useSidebarPanel');
 
 describe('useSidebarPanel', () => {
-  beforeEach(() => localStorage.clear());
+  beforeEach(() => {
+    localStorage.clear();
+    // Reset Zustand store between tests — IIFE init only runs once at module load
+    useUIStore.setState({ activePanel: null });
+  });
 
   it('defaults to null activePanel when nothing stored', () => {
     const { result } = renderHook(() => useSidebarPanel());
@@ -83,7 +88,8 @@ describe('useSidebarPanel', () => {
   });
 
   it('reads persisted panel from localStorage on mount', () => {
-    localStorage.setItem('marklite-active-panel', 'toc');
+    // Set store state directly — activePanel IIFE only runs at module init, not per render
+    useUIStore.setState({ activePanel: 'toc' });
     const { result } = renderHook(() => useSidebarPanel());
     expect(result.current.activePanel).toBe('toc');
     expect(result.current.showToc).toBe(true);

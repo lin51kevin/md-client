@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import { usePreferencesStore } from '../../stores';
 
 // Mock dependencies used by usePreferences that touch DOM/theme
 vi.mock('../../lib/theme', () => ({
@@ -18,6 +19,8 @@ describe('usePreferences — milkdownPreview', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.clearAllMocks();
+    // Reset Zustand store to defaults between tests
+    usePreferencesStore.setState({ milkdownPreview: true });
   });
   afterEach(() => {
     localStorage.clear();
@@ -29,13 +32,13 @@ describe('usePreferences — milkdownPreview', () => {
   });
 
   it('reads persisted false from localStorage', () => {
-    localStorage.setItem('marklite-milkdown-preview', 'false');
+    usePreferencesStore.setState({ milkdownPreview: false });
     const { result } = renderHook(() => usePreferences());
     expect(result.current.milkdownPreview).toBe(false);
   });
 
   it('reads persisted true from localStorage', () => {
-    localStorage.setItem('marklite-milkdown-preview', 'true');
+    usePreferencesStore.setState({ milkdownPreview: true });
     const { result } = renderHook(() => usePreferences());
     expect(result.current.milkdownPreview).toBe(true);
   });
@@ -46,17 +49,18 @@ describe('usePreferences — milkdownPreview', () => {
       result.current.setMilkdownPreview(false);
     });
     expect(result.current.milkdownPreview).toBe(false);
-    expect(localStorage.getItem('marklite-milkdown-preview')).toBe('false');
+    // Verify Zustand store was updated (stored in 'marklite-preferences-store', not a per-field key)
+    expect(usePreferencesStore.getState().milkdownPreview).toBe(false);
   });
 
   it('setMilkdownPreview toggles back to true', () => {
-    localStorage.setItem('marklite-milkdown-preview', 'false');
+    usePreferencesStore.setState({ milkdownPreview: false });
     const { result } = renderHook(() => usePreferences());
     act(() => {
       result.current.setMilkdownPreview(true);
     });
     expect(result.current.milkdownPreview).toBe(true);
-    expect(localStorage.getItem('marklite-milkdown-preview')).toBe('true');
+    expect(usePreferencesStore.getState().milkdownPreview).toBe(true);
   });
 
   it('milkdownPreview is independent of spellCheck', () => {
