@@ -294,6 +294,7 @@ export function SettingsModal({
                   >
                     <option value="zh-CN">简体中文</option>
                     <option value="en">English</option>
+                    <option value="ja-JP">日本語</option>
                   </select>
                 </SettingItem>
               </div>
