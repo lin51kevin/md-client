@@ -188,10 +188,10 @@ export function EditorContentArea({
         dragInterval={1}
         direction="horizontal"
         cursor="col-resize"
-        className="flex h-full"
+        className="flex h-full min-w-0 overflow-hidden"
         style={{ flex: 1 }}
       >
-        <div className="h-full overflow-y-auto overflow-x-hidden" ref={editorRef} onScroll={handleEditorScroll}>
+        <div className="h-full overflow-y-auto overflow-x-hidden min-w-0" ref={editorRef} onScroll={handleEditorScroll}>
           <div className="min-h-full w-full">
             <CodeMirror
               key={activeTabId}
@@ -208,7 +208,7 @@ export function EditorContentArea({
           </div>
         </div>
         <div
-          className="h-full overflow-auto border-l"
+          className="h-full overflow-auto border-l min-w-0"
           style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--bg-primary)' }}
           ref={previewRef}
           onScroll={handlePreviewScroll}
@@ -223,9 +223,9 @@ export function EditorContentArea({
   }
 
   return (
-    <div className="flex h-full w-full">
+    <div className="flex h-full w-full min-w-0 overflow-hidden">
       {viewMode === 'edit' ? (
-        <div className="w-full h-full overflow-auto">
+        <div className="w-full h-full overflow-auto min-w-0">
           <CodeMirror
             key={activeTabId}
             value={activeTab.doc}
@@ -243,7 +243,7 @@ export function EditorContentArea({
       ) : (
         <div
           ref={previewRef}
-          className="w-full h-full overflow-auto"
+          className="w-full h-full overflow-auto min-w-0"
           style={{ backgroundColor: 'var(--bg-primary)' }}
           onContextMenu={(e) => { e.preventDefault(); onPreviewContextMenu?.(e.clientX, e.clientY); }}
         >
