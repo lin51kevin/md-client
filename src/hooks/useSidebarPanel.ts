@@ -1,27 +1,17 @@
-import { useCallback } from 'react';
-import { useLocalStorageString } from './useLocalStorage';
-import { StorageKeys } from '../lib/storage';
-import { PANEL_ITEMS, type PanelId } from '../components/editor/ActivityBar';
+/**
+ * useSidebarPanel — compatibility wrapper around UI store.
+ *
+ * Reads/writes activePanel from useUIStore.  The derived boolean flags
+ * (showFileTree, showToc, etc.) and togglePanel are preserved so that
+ * all existing consumers continue to work unchanged.
+ */
+
+import { useUIStore } from '../stores';
 
 export function useSidebarPanel() {
-  const [activePanelRaw, setActivePanelRaw] = useLocalStorageString(StorageKeys.ACTIVE_PANEL, '');
-  const VALID_PANELS = PANEL_ITEMS.map(item => item.id);
-  // Accept built-in panel IDs or any string (plugin panel IDs)
-  const activePanel: PanelId | null =
-    activePanelRaw
-      ? (VALID_PANELS as readonly string[]).includes(activePanelRaw)
-        ? (activePanelRaw as PanelId)
-        : activePanelRaw // allow dynamic plugin panel IDs
-      : null;
-
-  const setActivePanel = useCallback((panel: PanelId | null) => {
-    setActivePanelRaw(panel ?? '');
-  }, [setActivePanelRaw]);
-
-  /** Toggle a panel: open it if not active, close it if already active. */
-  const togglePanel = useCallback((panel: PanelId) => {
-    setActivePanelRaw(activePanelRaw === panel ? '' : panel);
-  }, [activePanelRaw, setActivePanelRaw]);
+  const activePanel = useUIStore((s) => s.activePanel);
+  const setActivePanel = useUIStore((s) => s.setActivePanel);
+  const togglePanel = useUIStore((s) => s.togglePanel);
 
   const showFileTree = activePanel === 'filetree';
   const showToc = activePanel === 'toc';
