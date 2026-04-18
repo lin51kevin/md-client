@@ -492,7 +492,7 @@ export default function App() {
 
           {/* Help button now opens external GitHub USER_GUIDE.md */}
 
-          <AboutModal visible={showAbout} onClose={() => setShowAbout(false)} version="0.9.3" />
+          <AboutModal visible={showAbout} onClose={() => setShowAbout(false)} version="0.9.4" />
 
           <TabBar
             tabs={isPristine ? [] : tabs} activeTabId={activeTabId}
