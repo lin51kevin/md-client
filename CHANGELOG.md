@@ -6,6 +6,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [v0.9.4] - 2026-04-18
+
+### Added
+
+#### Quick Open（快速打开文件，Ctrl+P）
+- **VS Code 风格的 Ctrl+P 快速打开** — 模糊搜索工作区内所有文件
+- 最近打开文件优先排列
+- 键盘导航：↑↓ 选择、Enter 打开、Esc 关闭
+
+#### Preview Context Menu（预览区右键菜单）
+- 在预览区右键弹出操作菜单：复制、复制为 Markdown、全选、查看源码
+- 分栏视图与仅预览视图均已接入
+
+#### Breadcrumb Navigation（文件路径面包屑导航）
+- 标签栏与编辑器之间展示当前文件路径面包屑
+- 路径各级文件夹可点击，快速切换文件树根目录
+
+### Refactor
+
+#### 代码结构重组（Components & Lib）
+- **`src/components/`** 按功能子目录拆分：`editor/`、`file/`、`toolbar/`、`modal/`、`sidebar/`、`preview/`、`plugin/`、`welcome/`
+- **`src/lib/`** 按领域子目录拆分：`cm/`、`editor/`、`file/`、`markdown/`、`milkdown/`、`search/`、`storage/`、`theme/`、`ui/`、`utils/`
+- `BreadcrumbNav` 从 `editor/` 迁移至 `sidebar/`（语义更准确）
+- 修正错位的测试文件，使测试目录结构与组件目录完全对齐
+
+### Fixed
+
+- 测试环境 ESM 兼容性：将 vitest 环境从 `jsdom` 切换为 `happy-dom`，解决 `jsdom@29` 依赖链 `@exodus/bytes`（纯 ESM）导致的 `ERR_REQUIRE_ESM` 错误
+- 修正 `Toolbar.test.tsx` 中 i18n mock 缺失 `about.title`、按钮 handler 对应错误等问题
+- 修正 `StatusBar.test.tsx` CSS 变量样式断言方式（改用 `getAttribute('style')`）
+- 修正 `useEditorContextActions.test.ts` 中 `navigator.clipboard` 只读属性赋值问题
+
+---
+
 ## [v0.9.3] - 2026-04-17
 
 ### Added
