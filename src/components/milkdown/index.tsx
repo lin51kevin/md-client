@@ -9,7 +9,7 @@ import 'katex/dist/katex.min.css';
 import './theme.css';
 import { extractFrontmatter, type Frontmatter } from '../../lib/markdown/extensions';
 import { FrontmatterPanel } from './FrontmatterPanel';
-import { useLocalImage, remarkWikiLinkPlugin, wikiLinkSchema } from './nodeviews';
+import { useLocalImage, useHtmlBlocks, remarkWikiLinkPlugin, wikiLinkSchema } from './nodeviews';
 import { renderMermaidPreview } from './nodeviews/MermaidBlockView';
 import { CodeBlockFoldOverlay } from './CodeBlockFoldOverlay';
 import { buildAIToolbar } from './ai-toolbar-bridge';
@@ -243,6 +243,7 @@ function MilkdownEditor({
 
   // NodeView post-processing hooks
   useLocalImage(filePath, containerRef, content);
+  useHtmlBlocks(containerRef, content);
 
   // Detect real user interaction — set flag so markdownUpdated knows to fire onContentChange.
   // Using capture phase so we intercept events before Milkdown's own handlers.
