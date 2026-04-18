@@ -193,12 +193,10 @@ async fn export_document(
     }
 }
 
-/// Batch-read multiple files in parallel for session restore.
+/// Batch-read multiple files for session restore.
 /// Returns a list of (path, content) pairs. Files that fail to read get empty content.
 #[tauri::command]
 fn restore_session_files(paths: Vec<String>) -> Vec<(String, String)> {
-    use std::thread;
-
     paths
         .into_iter()
         .map(|path| {

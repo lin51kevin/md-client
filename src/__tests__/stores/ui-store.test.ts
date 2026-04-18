@@ -5,6 +5,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { useUIStore } from '../../stores/ui-store';
 
 beforeEach(() => {
+  localStorage.clear();
   useUIStore.setState({
     showSettings: false,
     showAbout: false,

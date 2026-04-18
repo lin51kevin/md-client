@@ -1,99 +1,68 @@
 /**
  * AppShell — main layout skeleton for MarkLite.
  *
- * Contains the Toolbar, Sidebar, Editor, StatusBar, and all modals/overlays.
- * This is extracted from the original App.tsx to reduce its hook count and
- * improve readability.
- *
- * State is sourced from:
- *   - useUIStore       → modal/panel/drag/context-menu visibility
- *   - useEditorStore   → viewMode, splitSizes, isRestoringSession
- *   - usePreferencesStore → theme, spellCheck, vimMode, etc.
- *   - useTabs          → tabs, activeTabId, tab CRUD operations
- *   - useFocusMode     → focus mode management
- *   - Various feature hooks (file ops, git, plugins, etc.)
+ * Orchestrates state hooks and renders the primary layout structure.
+ * Editor infrastructure is delegated to useEditorCore.
+ * Context menus and inline modals are rendered via AppContextMenus.
+ * Global overlays (CommandPalette, QuickOpen, etc.) via AppGlobalOverlays.
  */
-
-import { useState, useRef, useCallback, useEffect, useMemo, lazy, Suspense } from 'react';
-import { EditorView } from '@codemirror/view';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { undo, redo } from '@codemirror/commands';
 
 import { useI18n } from '../i18n';
 import type { DragKind as DragOverlayKind } from '../hooks/useDragDrop';
 import { useUpdateNotification } from '../hooks/useUpdateNotification';
-import { useUIStore } from '../stores';
-import { useEditorStore } from '../stores';
+import { useUIStore, useEditorStore } from '../stores';
 import { useTabs } from '../hooks/useTabs';
 import { useFileOps } from '../hooks/useFileOps';
-import { useScrollSync } from '../hooks/useScrollSync';
 import { useDragDrop } from '../hooks/useDragDrop';
 import { useWindowTitle } from '../hooks/useWindowTitle';
 import { useWindowInit } from '../hooks/useWindowInit';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
-import { useCursorPosition } from '../hooks/useCursorPosition';
 import { useFocusMode } from '../hooks/useFocusMode';
 import { useWelcome } from '../hooks/useWelcome';
-import { useEditorContextActions } from '../hooks/useEditorContextActions';
-import { useSearchHighlight } from '../hooks/useSearchHighlight';
-import { useImagePaste } from '../hooks/useImagePaste';
-import { useFormatActions } from '../hooks/useFormatActions';
-import { useInputDialog } from '../hooks/useInputDialog';
-import { getReadingTime } from '../lib/utils/word-count';
 import { useDocMetrics } from '../hooks/useDocMetrics';
 import { useVersionHistory } from '../hooks/useVersionHistory';
-import { useTableEditor } from '../hooks/useTableEditor';
-import { useSnippetFlow } from '../hooks/useSnippetFlow';
-import { useEditorInstance } from '../hooks/useEditorInstance';
-import { usePreferences } from '../hooks/usePreferences';
-import { useSidebarPanel } from '../hooks/useSidebarPanel';
-import { useRecentFiles } from '../hooks/useRecentFiles';
-import { useTabActions } from '../hooks/useTabActions';
 import { useNavigation } from '../hooks/useNavigation';
 import { useAppLifecycle } from '../hooks/useAppLifecycle';
 import { usePendingImageMigration } from '../hooks/usePendingImageMigration';
 import { useFileWatchState } from '../hooks/useFileWatchState';
-import { invoke } from '@tauri-apps/api/core';
-import { open as openDialog } from '@tauri-apps/plugin-dialog';
-import { FileChangeToast } from '../components/editor/FileChangeToast';
-import { QuickOpen } from '../components/toolbar/QuickOpen';
+import { useRecentFiles } from '../hooks/useRecentFiles';
+import { useTabActions } from '../hooks/useTabActions';
+import { useTypewriterOptions } from '../hooks/useTypewriterOptions';
 import { usePreviewRenderers } from '../hooks/usePreviewRenderers';
 import { usePluginRuntime } from '../hooks/usePluginRuntime';
 import { usePluginPanels } from '../hooks/usePluginPanels';
+import { useGit } from '../hooks/useGit';
+import { usePreferences } from '../hooks/usePreferences';
+import { useSidebarPanel } from '../hooks/useSidebarPanel';
+import { useEditorCore } from '../hooks/useEditorCore';
+import { open as openDialog } from '@tauri-apps/plugin-dialog';
+import { getReadingTime } from '../lib/utils/word-count';
 import { restoreSnapshot } from '../lib/storage/version-history';
 import { StorageKeys } from '../lib/storage';
+import { revealInExplorer } from '../lib/file/reveal-in-explorer';
+import { createCommandRegistry } from '../lib/editor/command-registry';
 
 import { Toolbar } from '../components/toolbar/Toolbar';
 import { TabBar } from '../components/toolbar/TabBar';
 import { TabContextMenu } from '../components/toolbar/TabContextMenu';
-import { EditorContextMenu } from '../components/editor/EditorContextMenu';
-import { PreviewContextMenu } from '../components/preview/PreviewContextMenu';
 import { StatusBar } from '../components/toolbar/StatusBar';
 import { SettingsModal } from '../components/modal/SettingsModal';
 import { DragOverlay } from '../components/editor/DragOverlay';
 import { SearchPanel } from '../components/toolbar/SearchPanel';
 import { TocSidebar } from '../components/sidebar/TocSidebar';
 import { FileTreeSidebar, type FileTreeSidebarHandle } from '../components/file/FileTreeSidebar';
-import { TableEditor } from '../components/modal/TableEditor';
-import { InputDialog } from '../components/modal/InputDialog';
-import { CommandPalette } from '../components/toolbar/CommandPalette';
-import { SnippetPicker } from '../components/modal/SnippetPicker';
-import { SnippetManager } from '../components/modal/SnippetManager';
-import { GitPanel } from '../components/modal/GitPanel';
-import { PluginPanel } from '../components/plugin';
 import { ActivityBar } from '../components/editor/ActivityBar';
 import { SidebarContainer } from '../components/sidebar/SidebarContainer';
-
-import { useGit } from '../hooks/useGit';
-import { useTypewriterOptions } from '../hooks/useTypewriterOptions';
+import { GitPanel } from '../components/modal/GitPanel';
+import { PluginPanel } from '../components/plugin';
 import { AboutModal } from '../components/modal/AboutModal';
-const SlidePreview = lazy(() => import('../components/preview/SlidePreview').then(m => ({ default: m.SlidePreview })));
-const MindmapView = lazy(() => import('../components/preview/MindmapView').then(m => ({ default: m.MindmapView })));
 import { EditorContentArea } from '../components/editor/EditorContentArea';
 import { PluginSidebarRenderer } from '../components/plugin';
 import { FloatingPanel } from '../components/modal/FloatingPanel';
-import { createCommandRegistry } from '../lib/editor/command-registry';
-import { revealInExplorer } from '../lib/file/reveal-in-explorer';
-import { UpdateNotification } from '../components/modal/UpdateNotification';
+import { AppContextMenus } from '../components/editor/AppContextMenus';
+import { AppGlobalOverlays } from '../components/AppGlobalOverlays';
 
 export function AppShell() {
   const { t, locale } = useI18n();
@@ -108,13 +77,7 @@ export function AppShell() {
   const setShowSettings = useUIStore((s) => s.setShowSettings);
   const showAbout = useUIStore((s) => s.showAbout);
   const setShowAbout = useUIStore((s) => s.setShowAbout);
-  const showCommandPalette = useUIStore((s) => s.showCommandPalette);
-  const setShowCommandPalette = useUIStore((s) => s.setShowCommandPalette);
-  const showQuickOpen = useUIStore((s) => s.showQuickOpen);
-  const setShowQuickOpen = useUIStore((s) => s.setShowQuickOpen);
   const showAIPanel = useUIStore((s) => s.showAIPanel);
-  const showUpdateNotification = useUIStore((s) => s.showUpdateNotification);
-  const setShowUpdateNotification = useUIStore((s) => s.setShowUpdateNotification);
   const setShowAIPanel = useUIStore((s) => s.setShowAIPanel);
 
   const isDragOver = useUIStore((s) => s.isDragOver);
@@ -123,14 +86,11 @@ export function AppShell() {
   const setDragKind = useUIStore((s) => s.setDragKind);
   const ctxMenu = useUIStore((s) => s.ctxMenu);
   const setCtxMenu = useUIStore((s) => s.setCtxMenu);
-  const editorCtxMenu = useUIStore((s) => s.editorCtxMenu);
-  const setEditorCtxMenu = useUIStore((s) => s.setEditorCtxMenu);
-  const previewCtxMenu = useUIStore((s) => s.previewCtxMenu);
   const setPreviewCtxMenu = useUIStore((s) => s.setPreviewCtxMenu);
 
   // ── Extracted state hooks ────────────────────────────────────────
   const { activePanel, setActivePanel, togglePanel, showFileTree, showToc, showSearchPanel, showGitPanel, showPluginsPanel } = useSidebarPanel();
-  const { spellCheck, setSpellCheck, vimMode, setVimMode, autoSave, setAutoSave, autoSaveDelay, setAutoSaveDelay, gitMdOnly, setGitMdOnly, milkdownPreview, setMilkdownPreview, theme, setThemeState, fileWatch, setFileWatch, fileWatchBehavior, setFileWatchBehavior, autoUpdateCheck, setAutoUpdateCheck, updateCheckFrequency, setUpdateCheckFrequency } = usePreferences();
+  const { spellCheck, setSpellCheck, vimMode, setVimMode, autoSave, setAutoSave, autoSaveDelay, setAutoSaveDelay, gitMdOnly, setGitMdOnly, milkdownPreview, setMilkdownPreview, theme, setTheme, fileWatch, setFileWatch, fileWatchBehavior, setFileWatchBehavior, autoUpdateCheck, setAutoUpdateCheck, updateCheckFrequency, setUpdateCheckFrequency } = usePreferences();
   const [typewriterOptions, setTypewriterOptions] = useTypewriterOptions();
 
   // ── Core hooks ───────────────────────────────────────────────────
@@ -194,8 +154,27 @@ export function AppShell() {
   const handleSaveWithWatchMark = handleSaveFile;
 
   // ── Editor infrastructure ────────────────────────────────────────
-  const cmViewRef = useRef<EditorView | null>(null);
-  const { editorRef, previewRef, handleEditorScroll, handlePreviewScroll } = useScrollSync(viewMode);
+  const {
+    cmViewRef,
+    editorRef, previewRef, handleEditorScroll, handlePreviewScroll,
+    cursorPos,
+    setMatches, clearMatches,
+    inputDialogState, setInputDialogState,
+    handleFormatAction,
+    editingTable, setEditingTable, handleTableConfirm,
+    showSnippetPicker, setShowSnippetPicker,
+    showSnippetManager, setShowSnippetManager,
+    handleSnippetInsert, openSnippetPicker,
+    editorExtensions, editorTheme,
+    handleCreateEditor, handleEditorUpdate,
+    cursorCount, canUndo, canRedo,
+    handleEditorCtxAction,
+    saveAndInsertImage,
+  } = useEditorCore({
+    activeTabId, activeTab, viewMode, theme, vimMode,
+    spellCheck, autoSave, autoSaveDelay, isTauri,
+    rawHandleSaveFile, updateActiveDoc, getActiveTab,
+  });
 
   useEffect(() => {
     const editorEl = editorRef.current?.querySelector('.cm-editor');
@@ -207,44 +186,10 @@ export function AppShell() {
       }
     }
   }, [focusMode, typewriterOptions.dimOthers, editorRef]);
-  const { cursorPos, cursorExtension } = useCursorPosition();
-  const { searchHighlightExtension, setMatches, clearMatches } = useSearchHighlight();
-
-  const { inputDialogState, setInputDialogState, promptUser } = useInputDialog();
-  const { handleFormatAction } = useFormatActions({ cmViewRef, getActiveTab, promptUser, isTauri });
 
   const { handleCloseTab, handleCloseAllTabs, handleCloseOtherTabs, handleCloseToLeft, handleCloseToRight, renamingTabId, setRenamingTabId, handleOpenSample } = useTabActions({
     tabs, closeTab, closeMultipleTabs, setTabDisplayName, handleDismissWelcome, t,
     handleSaveFile: handleSaveWithWatchMark,
-  });
-
-  const { editingTable, setEditingTable, handleTableConfirm } = useTableEditor({ cmViewRef, updateActiveDoc });
-
-  const {
-    showSnippetPicker, setShowSnippetPicker,
-    showSnippetManager, setShowSnippetManager,
-    handleSnippetInsert, openSnippetPicker,
-  } = useSnippetFlow({ cmViewRef, updateActiveDoc, setEditorCtxMenu });
-
-  const { docRef: _docRef, editorExtensions, editorTheme, handleCreateEditor, handleEditorUpdate, cursorCount, canUndo, canRedo } = useEditorInstance({
-    cmViewRef, activeTabId, theme, vimMode, spellCheck, autoSave, autoSaveDelay,
-    cursorExtension, searchHighlightExtension,
-    activeDoc: activeTab.doc, getActiveTab, rawHandleSaveFile,
-    setEditingTable, setEditorCtxMenu,
-  });
-  void _docRef;
-
-  const insertImageMarkdown = useCallback((mdText: string) => {
-    const view = cmViewRef.current;
-    if (!view) return;
-    const pos = view.state.selection.main.head;
-    view.dispatch({ changes: { from: pos, insert: mdText }, selection: { anchor: pos + mdText.length } });
-    view.focus();
-  }, [cmViewRef]);
-
-  const { saveAndInsert: saveAndInsertImage } = useImagePaste({
-    docPath: activeTab.filePath, insertText: insertImageMarkdown, enabled: true, isTauri,
-    tabId: activeTabId,
   });
 
   const fileTreeSidebarRef = useRef<FileTreeSidebarHandle>(null);
@@ -318,15 +263,6 @@ export function AppShell() {
     getActiveTab, openFileInTab, t,
   });
 
-  const { handleEditorCtxAction: _baseCtxAction } = useEditorContextActions({
-    cmViewRef, handleFormatAction, setEditingTable, setEditorCtxMenu,
-  });
-
-  const handleEditorCtxAction = useCallback((action: string) => {
-    if (action === 'insertSnippet') { openSnippetPicker(); return; }
-    _baseCtxAction(action);
-  }, [_baseCtxAction, openSnippetPicker]);
-
   useKeyboardShortcuts({
     createNewTab, handleOpenFile, handleSaveFile: handleSaveWithWatchMark, handleSaveAsFile,
     closeTab: handleCloseTab, setViewMode, activeTabIdRef,
@@ -369,7 +305,7 @@ export function AppShell() {
       {/* Exit button for hideUI typewriter mode */}
       {focusMode === 'typewriter' && typewriterOptions.hideUI && (
         <button
-          className="fixed top-2 right-2 z-[9999] text-xs px-3 py-1.5 rounded-full transition-all"
+          className="fixed top-2 right-2 z-9999 text-xs px-3 py-1.5 rounded-full transition-all"
           style={{
             backgroundColor: 'var(--bg-secondary)',
             color: 'var(--text-tertiary)',
@@ -382,70 +318,16 @@ export function AppShell() {
         </button>
       )}
 
-      {inputDialogState && (
-        <InputDialog
-          visible={true}
-          {...inputDialogState.config}
-          onConfirm={(value) => { inputDialogState.resolve(value); setInputDialogState(null); }}
-          onCancel={() => { inputDialogState.resolve(null); setInputDialogState(null); }}
-        />
-      )}
-
-      {editorCtxMenu && (
-        <EditorContextMenu
-          visible={!!editorCtxMenu}
-          x={editorCtxMenu.x} y={editorCtxMenu.y}
-          context={editorCtxMenu.context}
-          hasSelection={(() => {
-            const view = cmViewRef.current;
-            if (!view) return false;
-            const sel = view.state.selection.main;
-            return sel.from !== sel.to;
-          })()}
-          onClose={() => setEditorCtxMenu(null)}
-          onAction={handleEditorCtxAction}
-        />
-      )}
-
-      {previewCtxMenu && (
-        <PreviewContextMenu
-          visible={!!previewCtxMenu}
-          x={previewCtxMenu.x} y={previewCtxMenu.y}
-          hasSelection={!!window.getSelection()?.toString()}
-          onClose={() => setPreviewCtxMenu(null)}
-          onAction={(action) => {
-            setPreviewCtxMenu(null);
-            switch (action) {
-              case 'copy':
-                document.execCommand('copy');
-                break;
-              case 'copyAsMarkdown': {
-                const sel = window.getSelection()?.toString() ?? '';
-                if (sel) navigator.clipboard.writeText(sel).catch(() => {});
-                break;
-              }
-              case 'selectAll': {
-                const preview = previewRef.current;
-                if (preview) {
-                  const range = document.createRange();
-                  range.selectNodeContents(preview);
-                  const sel = window.getSelection();
-                  sel?.removeAllRanges();
-                  sel?.addRange(range);
-                }
-                break;
-              }
-              case 'viewSource':
-                setViewMode('edit');
-                break;
-            }
-          }}
-        />
-      )}
-
-      {editingTable && (
-        <TableEditor table={editingTable} onConfirm={handleTableConfirm} onCancel={() => setEditingTable(null)} />
-      )}
+      <AppContextMenus
+        inputDialogState={inputDialogState}
+        setInputDialogState={setInputDialogState}
+        editingTable={editingTable}
+        setEditingTable={setEditingTable}
+        handleTableConfirm={handleTableConfirm}
+        cmViewRef={cmViewRef}
+        handleEditorCtxAction={handleEditorCtxAction}
+        previewRef={previewRef}
+      />
 
       {!effectiveChromeless && (
         <>
@@ -492,7 +374,7 @@ export function AppShell() {
 
           <SettingsModal
             visible={showSettings} onClose={() => setShowSettings(false)}
-            currentTheme={theme} onThemeChange={setThemeState}
+            currentTheme={theme} onThemeChange={setTheme}
             spellCheck={spellCheck} onSpellCheckChange={setSpellCheck}
             vimMode={vimMode} onVimModeChange={setVimMode}
             autoSave={autoSave} onAutoSaveChange={setAutoSave}
@@ -659,66 +541,32 @@ export function AppShell() {
         />
       )}
 
-      {exporting && (
-        <div className="export-loading-indicator">
-          <span className="export-spinner" />
-          {t('fileOps.exporting', { format: exporting.toUpperCase() })}
-        </div>
-      )}
-
-      {showUpdateNotification && updateInfo && (
-        <div className="fixed bottom-8 right-4 z-[10001]">
-          <UpdateNotification
-            version={updateInfo.version}
-            releaseNotes={updateInfo.releaseNotes}
-            onDownload={() => { downloadAndInstall(); }}
-            onDismiss={() => setShowUpdateNotification(false)}
-            downloadProgress={downloadProgress}
-            downloading={isDownloading}
-            readyToRestart={readyToRestart}
-            onRestart={() => invoke('restart_app')}
-          />
-        </div>
-      )}
-
-      <CommandPalette visible={showCommandPalette} commands={commandRegistry} onClose={() => setShowCommandPalette(false)} locale={locale} />
-
-      <QuickOpen visible={showQuickOpen} onClose={() => setShowQuickOpen(false)} onFileOpen={(path) => openFileInTab(path)} fileTreeRoot={fileTreeRoot} recentFiles={recentFiles} locale={locale} />
-
-      <SnippetPicker visible={showSnippetPicker} onClose={() => setShowSnippetPicker(false)} onSelect={handleSnippetInsert} />
-
-      <SnippetManager visible={showSnippetManager} onClose={() => setShowSnippetManager(false)} />
-
-      {fileChangeToast && (
-        <FileChangeToast
-          type={fileChangeToast.type}
-          filePath={fileChangeToast.filePath}
-          tabId={fileChangeToast.tabId}
-          onReload={(tabId) => { handleReloadFile(tabId, fileChangeToast.filePath); setFileChangeToast(null); }}
-          onKeep={() => setFileChangeToast(null)}
-          onSaveAs={(tabId) => { handleSaveAsFile(tabId); setFileChangeToast(null); }}
-          onClose={() => setFileChangeToast(null)}
-        />
-      )}
-
-      {viewMode === 'slide' && activeTab && (
-        <Suspense fallback={null}>
-          <SlidePreview
-            markdown={activeTab.doc}
-            onClose={() => setViewMode('split')}
-          />
-        </Suspense>
-      )}
-
-      {viewMode === 'mindmap' && activeTab && (
-        <Suspense fallback={null}>
-          <MindmapView
-            markdown={activeTab.doc}
-            onClose={() => setViewMode('split')}
-            onNavigate={handleTocNavigate}
-          />
-        </Suspense>
-      )}
+      <AppGlobalOverlays
+        commandRegistry={commandRegistry}
+        locale={locale}
+        fileTreeRoot={fileTreeRoot}
+        recentFiles={recentFiles}
+        openFileInTab={openFileInTab}
+        showSnippetPicker={showSnippetPicker}
+        setShowSnippetPicker={setShowSnippetPicker}
+        onSnippetInsert={handleSnippetInsert}
+        showSnippetManager={showSnippetManager}
+        setShowSnippetManager={setShowSnippetManager}
+        activeTabDoc={activeTab.doc}
+        onTocNavigate={handleTocNavigate}
+        fileChangeToast={fileChangeToast}
+        onReloadFile={handleReloadFile}
+        onKeepFile={() => setFileChangeToast(null)}
+        onSaveAsFile={handleSaveAsFile}
+        onCloseToast={() => setFileChangeToast(null)}
+        updateInfo={updateInfo}
+        downloadProgress={downloadProgress}
+        isDownloading={isDownloading}
+        readyToRestart={readyToRestart}
+        onDownloadUpdate={downloadAndInstall}
+        onDismissUpdate={() => {}}
+        exporting={exporting}
+      />
     </div>
   );
 }

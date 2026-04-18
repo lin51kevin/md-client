@@ -25,9 +25,6 @@ export function usePreferences() {
     theme, setTheme,
   } = usePreferencesStore();
 
-  // Alias to match original API name
-  const setThemeState = setTheme;
-
   return {
     spellCheck, setSpellCheck,
     vimMode, setVimMode,
@@ -39,6 +36,6 @@ export function usePreferences() {
     milkdownPreview, setMilkdownPreview,
     fileWatch, setFileWatch,
     fileWatchBehavior, setFileWatchBehavior,
-    theme, setThemeState,
+    theme, setTheme,
   };
 }
