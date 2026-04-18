@@ -32,6 +32,16 @@ export interface RestoredSession {
  * Read the persisted session from localStorage and load file contents from disk.
  * Returns `null` when there is no valid session to restore.
  */
+/**
+ * Batch-read file contents for session restore via a single IPC call.
+ * Returns a Map from file path to content string.
+ * Files that fail to read map to an empty string.
+ */
+async function batchReadFiles(paths: string[]): Promise<Map<string, string>> {
+  const results = await invoke<[string, string][]>('restore_session_files', { paths });
+  return new Map(results);
+}
+
 export async function restoreSession(): Promise<RestoredSession | null> {
   try {
     const saved = localStorage.getItem(SESSION_KEY);
@@ -40,27 +50,26 @@ export async function restoreSession(): Promise<RestoredSession | null> {
     const session: SerializedSession = JSON.parse(saved);
     if (!session.tabs || session.tabs.length === 0) return null;
 
+    // Collect valid file paths for batch read
+    const tabsWithFiles = session.tabs.filter(t => t.filePath);
+    if (tabsWithFiles.length === 0) return null;
+
+    const paths = tabsWithFiles.map(t => t.filePath!);
+    const contents = await batchReadFiles(paths);
+
     const restoredTabs: Tab[] = [];
-    for (const serialized of session.tabs) {
-      if (!serialized.filePath) {
-        // Untitled tabs cannot be meaningfully restored — skip silently.
-        continue;
-      }
-      try {
-        const content = await invoke<string>('read_file_text', { path: serialized.filePath });
-        // Guard against test mocks returning undefined — skip tab if content is not a string.
-        if (typeof content !== 'string') continue;
-        restoredTabs.push({
-          id: serialized.id,
-          filePath: serialized.filePath,
-          doc: content,
-          isDirty: false,
-          displayName: serialized.displayName,
-          isPinned: serialized.isPinned,
-        });
-      } catch {
-        // File no longer exists or can't be read — skip this tab silently.
-      }
+    for (const serialized of tabsWithFiles) {
+      const content = contents.get(serialized.filePath!);
+      // Skip files whose content is empty (read failure) or not a string
+      if (!content || typeof content !== 'string') continue;
+      restoredTabs.push({
+        id: serialized.id,
+        filePath: serialized.filePath!,
+        doc: content,
+        isDirty: false,
+        displayName: serialized.displayName,
+        isPinned: serialized.isPinned,
+      });
     }
 
     if (restoredTabs.length === 0) return null;

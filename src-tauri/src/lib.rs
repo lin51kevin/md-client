@@ -193,6 +193,22 @@ async fn export_document(
     }
 }
 
+/// Batch-read multiple files in parallel for session restore.
+/// Returns a list of (path, content) pairs. Files that fail to read get empty content.
+#[tauri::command]
+fn restore_session_files(paths: Vec<String>) -> Vec<(String, String)> {
+    use std::thread;
+
+    paths
+        .into_iter()
+        .map(|path| {
+            let result = validate_user_path(&path)
+                .and_then(|_| read_text_auto_encoding(&path));
+            (path, result.unwrap_or_default())
+        })
+        .collect()
+}
+
 /// Read any file as UTF-8 text, with automatic encoding detection fallback.
 /// Handles GBK, GB18030, Shift-JIS, and other common non-UTF-8 encodings.
 #[tauri::command]
@@ -837,9 +853,61 @@ pub fn run() {
                 }
             }
         }))
-        .invoke_handler(tauri::generate_handler![greet, get_open_file, export_document, read_file_text, read_file_bytes, write_file_text, write_image_bytes, create_file, delete_file, rename_file, list_directory, read_dir_recursive, search_files, replace_in_files, reveal_in_explorer, is_directory, restart_app, show_unsaved_dialog, git::git_get_repo, git::git_get_status, git::git_diff, git::git_commit, git::git_pull, git::git_push, git::git_stage, git::git_unstage, git::git_restore, editor_tools::tool_search, editor_tools::tool_replace, editor_tools::tool_get_lines, editor_tools::tool_replace_lines, editor_tools::tool_insert, editor_tools::tool_delete_lines, editor_tools::tool_get_outline, editor_tools::tool_regex_replace])
+        .invoke_handler(tauri::generate_handler![greet, get_open_file, export_document, restore_session_files, read_file_text, read_file_bytes, write_file_text, write_image_bytes, create_file, delete_file, rename_file, list_directory, read_dir_recursive, search_files, replace_in_files, reveal_in_explorer, is_directory, restart_app, show_unsaved_dialog, git::git_get_repo, git::git_get_status, git::git_diff, git::git_commit, git::git_pull, git::git_push, git::git_stage, git::git_unstage, git::git_restore, editor_tools::tool_search, editor_tools::tool_replace, editor_tools::tool_get_lines, editor_tools::tool_replace_lines, editor_tools::tool_insert, editor_tools::tool_delete_lines, editor_tools::tool_get_outline, editor_tools::tool_regex_replace])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn tmp_file(name: &str, content: &str) -> String {
+        let path = std::env::temp_dir().join(format!("marklite_test_{}", name));
+        std::fs::write(&path, content).unwrap();
+        path.to_string_lossy().to_string()
+    }
+
+    #[test]
+    fn test_restore_session_files_reads_all() {
+        let p1 = tmp_file("a.md", "hello");
+        let p2 = tmp_file("b.md", "world");
+        let p3 = tmp_file("c.md", "!");
+
+        let results = restore_session_files(vec![p1.clone(), p2.clone(), p3.clone()]);
+        assert_eq!(results.len(), 3);
+
+        let map: std::collections::HashMap<_, _> = results.into_iter().collect();
+        assert_eq!(map.get(&p1).unwrap(), "hello");
+        assert_eq!(map.get(&p2).unwrap(), "world");
+        assert_eq!(map.get(&p3).unwrap(), "!");
+
+        // cleanup
+        let _ = std::fs::remove_file(&p1);
+        let _ = std::fs::remove_file(&p2);
+        let _ = std::fs::remove_file(&p3);
+    }
+
+    #[test]
+    fn test_restore_session_files_skips_missing() {
+        let p1 = tmp_file("exists.md", "ok");
+        let missing = "/tmp/marklite_test_nonexistent_12345.md".to_string();
+
+        let results = restore_session_files(vec![p1.clone(), missing.clone()]);
+        assert_eq!(results.len(), 2);
+
+        let map: std::collections::HashMap<_, _> = results.into_iter().collect();
+        assert_eq!(map.get(&p1).unwrap(), "ok");
+        assert_eq!(map.get(&missing).unwrap(), ""); // empty string for missing
+
+        let _ = std::fs::remove_file(&p1);
+    }
+
+    #[test]
+    fn test_restore_session_files_empty_input() {
+        let results = restore_session_files(vec![]);
+        assert!(results.is_empty());
+    }
 }
 
 
