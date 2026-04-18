@@ -1,24 +1,27 @@
 import { useState, useCallback, createContext, useContext } from 'react';
 import { zhCN, type TranslationKey } from './zh-CN';
 import { en } from './en';
+import { jaJP } from './ja-JP';
 import { StorageKeys } from '../lib/storage';
 
 export type { TranslationKey };
 
-export type Locale = 'zh-CN' | 'en';
+export type Locale = 'zh-CN' | 'en' | 'ja-JP';
 
 const STORAGE_KEY = StorageKeys.LOCALE;
 const LOCALES: Record<Locale, Record<TranslationKey, string>> = {
   'zh-CN': zhCN,
   'en': en,
+  'ja-JP': jaJP,
 };
 
 function getSavedLocale(): Locale {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved === 'en' || saved === 'zh-CN') return saved;
+    if (saved === 'en' || saved === 'zh-CN' || saved === 'ja-JP') return saved;
   } catch { /* ignore */ }
   // Auto-detect from browser language
+  if (navigator.language.startsWith('ja')) return 'ja-JP';
   return navigator.language.startsWith('zh') ? 'zh-CN' : 'en';
 }
 
