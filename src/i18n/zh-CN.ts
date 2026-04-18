@@ -327,6 +327,7 @@ export const zhCN = {
   'tabCtx.rename': '重命名',
   'tabCtx.close': '关闭',
   'tabCtx.reveal': '在文件管理器中显示',
+  'tabCtx.copyFullPath': '复制文件全路径',
   'tabCtx.closeOthers': '关闭其他',
   'tabCtx.closeLeft': '关闭左侧',
   'tabCtx.closeRight': '关闭右侧',

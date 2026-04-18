@@ -330,6 +330,7 @@ export const en: Record<TranslationKey, string> = {
   'tabCtx.rename': 'Rename',
   'tabCtx.close': 'Close',
   'tabCtx.reveal': 'Reveal in File Explorer',
+  'tabCtx.copyFullPath': 'Copy full file path',
   'tabCtx.closeOthers': 'Close Others',
   'tabCtx.closeLeft': 'Close to Left',
   'tabCtx.closeRight': 'Close to Right',

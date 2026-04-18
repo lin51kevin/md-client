@@ -173,6 +173,31 @@ export function TabContextMenu({ x, y, tabId, tabs, onSave, onSaveAs, onClose, o
             <span>{t('tabCtx.reveal')}</span><span className="text-xs opacity-60">Ctrl+Shift+E</span>
           </button>
         )}
+        {/* Copy full file path to clipboard */}
+        {hasFilePath && (
+          <button
+            className="w-full flex items-center gap-2 px-4 py-1.5"
+            style={{ color: 'var(--text-primary)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--accent-color)';
+              e.currentTarget.style.color = 'var(--bg-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '';
+              e.currentTarget.style.color = 'var(--text-primary)';
+            }}
+            onPointerDown={async () => {
+              try {
+                await navigator.clipboard.writeText(tab?.filePath ?? '');
+              } catch (err) {
+                console.error('Copy to clipboard failed', err);
+              }
+              onDismiss();
+            }}
+          >
+            <span>{t('tabCtx.copyFullPath')}</span>
+          </button>
+        )}
         <div className="my-1" style={{ borderTop: '1px solid var(--border-color)' }} />
         {/* F013: 固定标签不可关闭（按钮禁用） */}
         <button
