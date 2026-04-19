@@ -84,16 +84,17 @@ describe('Toolbar — WYSIWYG mode (wysiwygMode=true)', () => {
     vi.clearAllMocks();
   });
 
-  // ── 视图切换按钮应该隐藏 ──
+  // ── 视图切换按钮：编辑/分栏/预览隐藏，幻灯片/思维导图保留 ──
 
-  it('hides view mode switcher buttons (edit/split/preview/slide/mindmap)', () => {
+  it('hides edit/split/preview view buttons but keeps slide/mindmap', () => {
     render(<Toolbar {...defaultProps} wysiwygMode={true} />);
 
     expect(screen.queryByTitle('仅编辑')).not.toBeInTheDocument();
     expect(screen.queryByTitle('分栏预览')).not.toBeInTheDocument();
     expect(screen.queryByTitle('仅预览')).not.toBeInTheDocument();
-    expect(screen.queryByTitle('幻灯片模式')).not.toBeInTheDocument();
-    expect(screen.queryByTitle('思维导图模式')).not.toBeInTheDocument();
+    // slide/mindmap are always visible
+    expect(screen.getByTitle('幻灯片模式')).toBeInTheDocument();
+    expect(screen.getByTitle('思维导图模式')).toBeInTheDocument();
   });
 
   // ── 格式化按钮应该隐藏 ──
@@ -125,13 +126,13 @@ describe('Toolbar — WYSIWYG mode (wysiwygMode=true)', () => {
     expect(screen.queryByTitle('插入片段')).not.toBeInTheDocument();
   });
 
-  // ── Undo/Redo 应该隐藏 ──
+  // ── Undo/Redo 始终可见 ──
 
-  it('hides undo and redo buttons', () => {
+  it('keeps undo and redo buttons in wysiwyg mode', () => {
     render(<Toolbar {...defaultProps} wysiwygMode={true} canUndo canRedo onUndo={vi.fn()} onRedo={vi.fn()} />);
 
-    expect(screen.queryByTitle('撤销')).not.toBeInTheDocument();
-    expect(screen.queryByTitle('重做')).not.toBeInTheDocument();
+    expect(screen.getByTitle('撤销')).toBeInTheDocument();
+    expect(screen.getByTitle('重做')).toBeInTheDocument();
   });
 
   // ── 代码相关按钮应该隐藏 ──
@@ -204,12 +205,14 @@ describe('Toolbar — normal mode (wysiwygMode=false, default)', () => {
     });
   });
 
-  it('shows all view mode buttons', () => {
+  it('shows all view mode buttons including slide and mindmap', () => {
     render(<Toolbar {...defaultProps} wysiwygMode={false} />);
 
     expect(screen.getByTitle('仅编辑')).toBeInTheDocument();
     expect(screen.getByTitle('分栏预览')).toBeInTheDocument();
     expect(screen.getByTitle('仅预览')).toBeInTheDocument();
+    expect(screen.getByTitle('幻灯片模式')).toBeInTheDocument();
+    expect(screen.getByTitle('思维导图模式')).toBeInTheDocument();
   });
 
   it('shows formatting buttons', () => {

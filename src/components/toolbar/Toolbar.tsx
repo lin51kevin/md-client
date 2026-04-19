@@ -164,15 +164,15 @@ export function Toolbar({
 
         {!wysiwygMode && <div className="w-px h-5 mx-1 shrink-0" style={{ backgroundColor: 'var(--border-color)' }} />}
 
-        {!wysiwygMode && (<>
-          {/* Undo / Redo */}
-          <ToolbarButton disabled={!canUndo} onClick={onUndo} title={t('toolbar.undo')}>
-            <Undo2 size={14} strokeWidth={2} />
-          </ToolbarButton>
-          <ToolbarButton disabled={!canRedo} onClick={onRedo} title={t('toolbar.redo')}>
-            <Redo2 size={14} strokeWidth={2} />
-          </ToolbarButton>
+        {/* Undo / Redo — always visible */}
+        <ToolbarButton disabled={!canUndo} onClick={onUndo} title={t('toolbar.undo')}>
+          <Undo2 size={14} strokeWidth={2} />
+        </ToolbarButton>
+        <ToolbarButton disabled={!canRedo} onClick={onRedo} title={t('toolbar.redo')}>
+          <Redo2 size={14} strokeWidth={2} />
+        </ToolbarButton>
 
+        {!wysiwygMode && (<>
           {/* 格式化 */}
           <ToolbarButton onClick={() => onFormatAction?.('bold')} title={t('toolbar.bold')}>
             <Bold size={14} strokeWidth={2} />
@@ -388,23 +388,25 @@ export function Toolbar({
           >
             <PanelLeftClose size={15} strokeWidth={1.8} />
           </ToolbarButton>
-          <ToolbarButton
-            variant="view"
-            active={viewMode === 'slide'}
-            onClick={() => onSetViewMode('slide')}
-            title={t('toolbar.slideMode') || 'Slide Show (Ctrl+4)'}
-          >
-            <Presentation size={15} strokeWidth={1.8} />
-          </ToolbarButton>
-          <ToolbarButton
-            variant="view"
-            active={viewMode === 'mindmap'}
-            onClick={() => onSetViewMode('mindmap')}
-            title={t('toolbar.mindmapMode') || 'Mindmap (Ctrl+5)'}
-          >
-            <Brain size={15} strokeWidth={1.8} />
-          </ToolbarButton>
         </>)}
+
+        {/* 幻灯片/思维导图 — always visible */}
+        <ToolbarButton
+          variant="view"
+          active={viewMode === 'slide'}
+          onClick={() => onSetViewMode('slide')}
+          title={t('toolbar.slideMode') || 'Slide Show (Ctrl+4)'}
+        >
+          <Presentation size={15} strokeWidth={1.8} />
+        </ToolbarButton>
+        <ToolbarButton
+          variant="view"
+          active={viewMode === 'mindmap'}
+          onClick={() => onSetViewMode('mindmap')}
+          title={t('toolbar.mindmapMode') || 'Mindmap (Ctrl+5)'}
+        >
+          <Brain size={15} strokeWidth={1.8} />
+        </ToolbarButton>
 
         <div className="w-px h-5 mx-1 shrink-0" style={{ backgroundColor: 'var(--border-color)' }} />
 
