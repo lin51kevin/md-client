@@ -1,5 +1,5 @@
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, SpellCheck, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, HelpCircle, FilePlus, FileText, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight, Table2, FileCode2, Minus, ListChecks, Sigma, Presentation, Library, List, Brain, Undo2, Redo2, Bot, ArrowUpFromLine } from 'lucide-react';
 import { ViewMode, FocusMode } from '../../types';
 
@@ -92,6 +92,19 @@ export function Toolbar({
   const toolbarRef = useRef<HTMLDivElement>(null);
   const [showTablePicker, setShowTablePicker] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close export menu on click outside
+  useEffect(() => {
+    if (!showExportMenu) return;
+    const handler = (e: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) {
+        setShowExportMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showExportMenu]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
@@ -410,7 +423,7 @@ export function Toolbar({
         </ToolbarButton>
 
         {/* 导出下拉按钮 — always visible */}
-        <div className="relative">
+        <div className="relative" ref={exportMenuRef}>
           <ToolbarButton onClick={() => setShowExportMenu(v => !v)} title={t('toolbar.export') || 'Export'}>
             <ArrowUpFromLine size={14} strokeWidth={1.8} />
           </ToolbarButton>

@@ -4,6 +4,8 @@ import { Search, X, CaseSensitive, Regex, FileText } from 'lucide-react';
 import { useSearchLogic } from '../../hooks/useSearchLogic';
 import type { SearchResultItem } from '../../types/search';
 
+const CONTEXT_LINE_MAX_LEN = 80;
+
 interface SearchPanelProps {
   visible: boolean;
   content: string;
@@ -235,12 +237,12 @@ export function SearchPanel({
                 <div style={{ paddingLeft: 16, fontFamily: 'monospace', fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.6, marginTop: 1 }}>
                   {r.context_before && (
                     <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', opacity: 0.7 }}>
-                      {r.context_before.length > 80 ? r.context_before.slice(0, 80) + '...' : r.context_before}
+                      {r.context_before.length > CONTEXT_LINE_MAX_LEN ? r.context_before.slice(0, CONTEXT_LINE_MAX_LEN) + '...' : r.context_before}
                     </div>
                   )}
                   {r.context_after && (
                     <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', opacity: 0.7 }}>
-                      {r.context_after.length > 80 ? r.context_after.slice(0, 80) + '...' : r.context_after}
+                      {r.context_after.length > CONTEXT_LINE_MAX_LEN ? r.context_after.slice(0, CONTEXT_LINE_MAX_LEN) + '...' : r.context_after}
                     </div>
                   )}
                 </div>

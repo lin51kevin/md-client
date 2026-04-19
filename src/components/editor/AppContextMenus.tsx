@@ -65,6 +65,12 @@ export function AppContextMenus({
       case 'viewSource':
         setViewMode('edit');
         break;
+      default:
+        // AI actions (aiPolish/aiRewrite/aiTranslate/aiSummarize) and formatting
+        // actions are dispatched via CustomEvent — handled by AI Copilot plugin
+        // and Milkdown respectively.
+        document.dispatchEvent(new CustomEvent('preview-action', { detail: { action } }));
+        break;
     }
   }, [previewRef, setPreviewCtxMenu, setViewMode]);
 
