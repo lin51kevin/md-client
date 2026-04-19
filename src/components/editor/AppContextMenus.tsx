@@ -65,7 +65,8 @@ export function AppContextMenus({
   };
 
   const handlePreviewAction = useCallback((action: string) => {
-    setPreviewCtxMenu(null);
+    // Execute formatting/AI commands BEFORE closing the menu so that
+    // ProseMirror's internal selection state is still valid.
     switch (action) {
       case 'copy':
         document.execCommand('copy');
@@ -90,22 +91,17 @@ export function AppContextMenus({
         setViewMode('edit');
         break;
       case 'headingPromote':
-        // Promote = lower level number (h3 → h2). Use wrapInHeadingCommand with level 1
-        // as a simple approach — converts current block to h1.
         milkdownBridge.runCommand?.(wrapInHeadingCommand.key, 1);
         break;
       case 'headingDemote':
         milkdownBridge.runCommand?.(wrapInHeadingCommand.key, 2);
         break;
       case 'headingRemove':
-        // Level 0 converts heading to paragraph
         milkdownBridge.runCommand?.(wrapInHeadingCommand.key, 0);
         break;
       case 'image':
-        // Image insertion in WYSIWYG not yet supported via context menu
         break;
       default: {
-        // AI actions → dispatch ai-toolbar-action event (handled by AI Copilot plugin)
         const aiCommand = AI_ACTION_MAP[action];
         if (aiCommand) {
           document.dispatchEvent(
@@ -113,17 +109,17 @@ export function AppContextMenus({
               detail: { command: aiCommand },
             }),
           );
-          return;
+          break;
         }
-        // Formatting actions → execute Milkdown ProseMirror commands via bridge
         const commandKey = FORMATTING_COMMANDS[action];
-        if (commandKey && milkdownBridge.runCommand) {
-          milkdownBridge.runCommand(commandKey);
-          return;
+        if (commandKey) {
+          milkdownBridge.runCommand?.(commandKey);
         }
         break;
       }
     }
+    // Close the menu after the action completes
+    setPreviewCtxMenu(null);
   }, [previewRef, setPreviewCtxMenu, setViewMode]);
 
   return (

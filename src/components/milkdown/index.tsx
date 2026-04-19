@@ -255,12 +255,18 @@ function MilkdownEditor({
       } catch { /* ignore */ }
     };
 
-    // Bridge command execution for context menu formatting actions
+    // Bridge command execution for context menu formatting actions.
+    // Must restore focus before running ProseMirror commands so the
+    // editor view has a valid DOM selection to operate on.
     milkdownBridge.runCommand = (commandKey: unknown, payload?: unknown) => {
       try {
+        const view = crepe.editor.ctx.get(editorViewCtx);
+        if (!view.hasFocus()) view.focus();
         const commands = crepe.editor.ctx.get(commandsCtx);
         commands.call(commandKey as any, payload);
-      } catch { /* ignore */ }
+      } catch (e) {
+        console.warn('[milkdown-bridge] runCommand failed:', e);
+      }
     };
 
     if (!editable) {
