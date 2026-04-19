@@ -260,6 +260,11 @@ function MilkdownEditor({
     // editor view has a valid DOM selection to operate on.
     milkdownBridge.runCommand = (commandKey: unknown, payload?: unknown) => {
       try {
+        // Mark as user-interacted so markdownUpdated will propagate the change
+        // to onContentChange. Without this, mouse-only interactions (e.g. select
+        // text → right-click → Bold) leave hasUserInteractedRef=false, causing
+        // markdownUpdated to be ignored and the sync effect to revert the edit.
+        hasUserInteractedRef.current = true;
         const view = crepe.editor.ctx.get(editorViewCtx);
         if (!view.hasFocus()) view.focus();
         const commands = crepe.editor.ctx.get(commandsCtx);

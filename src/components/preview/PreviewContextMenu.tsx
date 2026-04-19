@@ -5,7 +5,7 @@
  * Provides copy, select-all, and view-source actions appropriate for the preview context.
  */
 import { useEffect, useRef } from 'react';
-import { Copy, MousePointerClick, ExternalLink, FileCode, Sparkles, ArrowLeftRight, Globe, FileText, Bold, Italic, ArrowUp, ArrowDown, X, Link, Image } from 'lucide-react';
+import { Copy, MousePointerClick, ExternalLink, FileCode, Sparkles, ArrowLeftRight, Globe, FileText } from 'lucide-react';
 import { useI18n } from '../../i18n';
 import type { TranslationKey } from '../../i18n/zh-CN';
 
@@ -14,7 +14,6 @@ interface PreviewContextMenuProps {
   x: number;
   y: number;
   hasSelection: boolean;
-  wysiwygMode?: boolean;
   onClose: () => void;
   onAction: (action: string) => void;
 }
@@ -29,7 +28,6 @@ interface MenuItem {
 
 function buildMenuItems(
   hasSelection: boolean,
-  wysiwygMode: boolean,
   t: (key: TranslationKey) => string,
 ): MenuItem[] {
   const items: MenuItem[] = [];
@@ -71,23 +69,10 @@ function buildMenuItems(
   ];
   items.push(...aiItems);
 
-  // Formatting operations (only in wysiwyg mode)
-  if (wysiwygMode) {
-    items.push(
-      { id: 'bold', label: t('ctx.bold'), icon: <Bold size={14} strokeWidth={1.8} />, divider: true, disabled: !hasSelection },
-      { id: 'italic', label: t('ctx.italic'), icon: <Italic size={14} strokeWidth={1.8} />, disabled: !hasSelection },
-      { id: 'headingPromote', label: t('ctx.headingPromote'), icon: <ArrowUp size={14} strokeWidth={1.8} /> },
-      { id: 'headingDemote', label: t('ctx.headingDemote'), icon: <ArrowDown size={14} strokeWidth={1.8} /> },
-      { id: 'headingRemove', label: t('ctx.headingRemove'), icon: <X size={14} strokeWidth={1.8} /> },
-      { id: 'link', label: t('ctx.link'), icon: <Link size={14} strokeWidth={1.8} />, divider: true },
-      { id: 'image', label: t('ctx.image'), icon: <Image size={14} strokeWidth={1.8} /> },
-    );
-  }
-
   return items;
 }
 
-export function PreviewContextMenu({ visible, x, y, hasSelection, wysiwygMode = false, onClose, onAction }: PreviewContextMenuProps) {
+export function PreviewContextMenu({ visible, x, y, hasSelection, onClose, onAction }: PreviewContextMenuProps) {
   const { t } = useI18n();
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -111,7 +96,7 @@ export function PreviewContextMenu({ visible, x, y, hasSelection, wysiwygMode = 
 
   if (!visible) return null;
 
-  const items = buildMenuItems(hasSelection, wysiwygMode, t);
+  const items = buildMenuItems(hasSelection, t);
 
   const menuWidth = 200;
   const menuHeight = Math.min(items.length * 34 + 16, 400);

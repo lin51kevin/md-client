@@ -154,7 +154,6 @@ export function AppContextMenus({
           visible={!!previewCtxMenu}
           x={previewCtxMenu.x} y={previewCtxMenu.y}
           hasSelection={!!window.getSelection()?.toString()}
-          wysiwygMode={wysiwygMode}
           onClose={() => setPreviewCtxMenu(null)}
           onAction={handlePreviewAction}
         />
