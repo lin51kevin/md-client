@@ -303,20 +303,6 @@ export function SettingsModal({
             {activeTab === 'editor' && (
               <div className="space-y-4">
                 <SettingItem
-                  label={t('settings.editor.spellCheck')}
-                  description={t('settings.editor.spellCheckDesc')}
-                >
-                  <ToggleSwitch checked={spellCheck} onChange={onSpellCheckChange} />
-                </SettingItem>
-
-                <SettingItem
-                  label={t('settings.editor.vimMode')}
-                  description={t('settings.editor.vimModeDesc')}
-                >
-                  <ToggleSwitch checked={vimMode} onChange={onVimModeChange} />
-                </SettingItem>
-
-                <SettingItem
                   label={t('settings.editor.autoSave')}
                   description={t('settings.editor.autoSaveDesc')}
                 >

@@ -162,7 +162,7 @@ export function Toolbar({
           <SaveAll size={14} strokeWidth={1.8} />
         </ToolbarButton>
 
-        {!wysiwygMode && <div className="w-px h-5 mx-1 shrink-0" style={{ backgroundColor: 'var(--border-color)' }} />}
+        <div className="w-px h-5 mx-1 shrink-0" style={{ backgroundColor: 'var(--border-color)' }} />
 
         {/* Undo / Redo — always visible */}
         <ToolbarButton disabled={!canUndo} onClick={onUndo} title={t('toolbar.undo')}>
