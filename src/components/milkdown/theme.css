@@ -129,6 +129,10 @@
   border-collapse: collapse;
   width: 100%;
   margin-bottom: 16px;
+  /* ProseMirror base sets overflow:hidden which clips the text cursor (caret)
+     in Chromium-based WebViews. Override to visible so the caret is always
+     rendered; horizontal scroll is handled by the outer .tableWrapper. */
+  overflow: visible;
 }
 
 .milkdown-preview .milkdown .ProseMirror th,
