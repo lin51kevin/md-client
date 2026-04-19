@@ -137,6 +137,14 @@
 
 .milkdown-preview .milkdown .ProseMirror th,
 .milkdown-preview .milkdown .ProseMirror td {
+  /* position:relative (set by ProseMirror tables base) can clip the text
+     cursor (caret) in Chromium WebViews. Force overflow:visible so the
+     caret is always rendered. */
+  overflow: visible;
+}
+
+.milkdown-preview .milkdown .ProseMirror th,
+.milkdown-preview .milkdown .ProseMirror td {
   border: 1px solid var(--border-color, #d0d7de);
   padding: 6px 13px;
 }
@@ -144,6 +152,11 @@
 .milkdown-preview .milkdown .ProseMirror th {
   background: var(--bg-secondary, #f6f8fa);
   font-weight: 600;
+  /* prosemirror-virtual-cursor sets caret-color:transparent on .ProseMirror
+     and injects a position:absolute virtual cursor in its place. Inside <th>
+     elements (thead stacking context), Chromium fails to paint the virtual
+     cursor. Restore the native browser caret specifically for th cells. */
+  caret-color: var(--text-primary, #1f2328);
 }
 
 .milkdown-preview .milkdown .ProseMirror tr:nth-child(2n) {
