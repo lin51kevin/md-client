@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { X, Settings, Palette, Type, FolderOpen, Keyboard, RotateCcw, FileText, FolderInput, Download, Trash2 } from 'lucide-react';
+import { X, Settings, Palette, Type, FolderOpen, Keyboard, RotateCcw, FileText, FolderInput, Download, Trash2, Eye } from 'lucide-react';
 import { useI18n, type Locale } from '../../i18n';
 import { toErrorMessage } from '../../lib/utils/errors';
 import type { TranslationKey } from '../../i18n/zh-CN';
@@ -36,6 +36,8 @@ interface SettingsModalProps {
   onGitMdOnlyChange: (enabled: boolean) => void;
   milkdownPreview: boolean;
   onMilkdownPreviewChange: (enabled: boolean) => void;
+  mermaidTheme: string;
+  onMermaidThemeChange: (theme: string) => void;
   fileWatch: boolean;
   onFileWatchChange: (enabled: boolean) => void;
   fileWatchBehavior: boolean;
@@ -48,11 +50,12 @@ interface SettingsModalProps {
   onTypewriterOptionsChange?: (update: Partial<import('../../hooks/useTypewriterOptions').TypewriterOptions>) => void;
 }
 
-type TabId = 'general' | 'editor' | 'appearance' | 'files' | 'shortcuts' | 'snippets';
+type TabId = 'general' | 'editor' | 'preview' | 'appearance' | 'files' | 'shortcuts' | 'snippets';
 
 const TABS: { id: TabId; icon: React.ReactNode; labelKey: TranslationKey }[] = [
   { id: 'general', icon: <Settings size={14} />, labelKey: 'settings.tabs.general' },
   { id: 'editor', icon: <Type size={14} />, labelKey: 'settings.tabs.editor' },
+  { id: 'preview', icon: <Eye size={14} />, labelKey: 'settings.tabs.preview' },
   { id: 'appearance', icon: <Palette size={14} />, labelKey: 'settings.tabs.appearance' },
   { id: 'files', icon: <FolderOpen size={14} />, labelKey: 'settings.tabs.files' },
   { id: 'shortcuts', icon: <Keyboard size={14} />, labelKey: 'settings.tabs.shortcuts' },
@@ -64,10 +67,10 @@ export function SettingsModal({
   onClose,
   currentTheme,
   onThemeChange,
-  spellCheck,
-  onSpellCheckChange,
-  vimMode,
-  onVimModeChange,
+  spellCheck: _spellCheck,
+  onSpellCheckChange: _onSpellCheckChange,
+  vimMode: _vimMode,
+  onVimModeChange: _onVimModeChange,
   autoSave,
   onAutoSaveChange,
   autoSaveDelay,
@@ -76,6 +79,8 @@ export function SettingsModal({
   onGitMdOnlyChange,
   milkdownPreview,
   onMilkdownPreviewChange,
+  mermaidTheme,
+  onMermaidThemeChange,
   fileWatch,
   onFileWatchChange,
   fileWatchBehavior,
@@ -366,13 +371,6 @@ export function SettingsModal({
                 )}
 
                 <SettingItem
-                  label={t('settings.editor.milkdownPreview')}
-                  description={t('settings.editor.milkdownPreviewDesc')}
-                >
-                  <ToggleSwitch checked={milkdownPreview} onChange={onMilkdownPreviewChange} />
-                </SettingItem>
-
-                <SettingItem
                   label={t('settings.editor.fileWatch')}
                   description={t('settings.editor.fileWatchDesc')}
                 >
@@ -429,6 +427,37 @@ export function SettingsModal({
                     </SettingItem>
                   </>
                 )}
+              </div>
+            )}
+
+            {activeTab === 'preview' && (
+              <div className="space-y-4">
+                <SettingItem
+                  label={t('settings.preview.milkdownPreview')}
+                  description={t('settings.preview.milkdownPreviewDesc')}
+                >
+                  <ToggleSwitch checked={milkdownPreview} onChange={onMilkdownPreviewChange} />
+                </SettingItem>
+                <SettingItem
+                  label={t('settings.preview.mermaidTheme')}
+                  description={t('settings.preview.mermaidThemeDesc')}
+                >
+                  <select
+                    value={mermaidTheme}
+                    onChange={(e) => onMermaidThemeChange(e.target.value)}
+                    className="text-xs px-2 py-1 rounded outline-none"
+                    style={{
+                      backgroundColor: 'var(--bg-secondary)',
+                      border: '1px solid var(--border-color)',
+                      color: 'var(--text-primary)',
+                    }}
+                  >
+                    <option value="default">{t('settings.preview.mermaidDefault')}</option>
+                    <option value="forest">{t('settings.preview.mermaidForest')}</option>
+                    <option value="dark">{t('settings.preview.mermaidDark')}</option>
+                    <option value="neutral">{t('settings.preview.mermaidNeutral')}</option>
+                  </select>
+                </SettingItem>
               </div>
             )}
 

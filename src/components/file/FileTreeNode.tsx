@@ -7,9 +7,38 @@ import {
   Folder,
   FolderOpen,
   FileText,
+  FileCode2,
+  File,
+  Braces,
+  Palette,
+  Image,
+  Archive,
   ChevronRight,
   Loader2,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+
+function getFileIcon(filename: string): { Icon: LucideIcon; color: string } {
+  const ext = filename.includes('.') ? `.${filename.split('.').pop()!.toLowerCase()}` : '';
+  switch (ext) {
+    case '.md': case '.markdown': case '.mdx':
+      return { Icon: FileText, color: '#3b82f6' };
+    case '.js': case '.jsx': case '.ts': case '.tsx':
+      return { Icon: FileCode2, color: '#eab308' };
+    case '.json': case '.yaml': case '.yml': case '.toml':
+      return { Icon: Braces, color: '#22c55e' };
+    case '.css': case '.scss': case '.less':
+      return { Icon: Palette, color: '#a855f7' };
+    case '.png': case '.jpg': case '.jpeg': case '.gif': case '.svg': case '.webp':
+      return { Icon: Image, color: '#ec4899' };
+    case '.pdf':
+      return { Icon: FileText, color: '#ef4444' };
+    case '.zip': case '.tar': case '.gz':
+      return { Icon: Archive, color: '#f97316' };
+    default:
+      return { Icon: File, color: '#6b7280' };
+  }
+}
 import type { TreeNode } from './FileTreeSidebar';
 
 interface TreeNodeViewProps {
@@ -93,8 +122,8 @@ export function TreeNodeView({
           }}
         >
           {node.is_dir
-            ? (node.expanded ? <FolderOpen size={14} style={{ flexShrink: 0 }} /> : <Folder size={14} style={{ flexShrink: 0 }} />)
-            : <FileText size={13} style={{ flexShrink: 0 }} />
+            ? (node.expanded ? <FolderOpen size={14} strokeWidth={1.8} style={{ flexShrink: 0 }} /> : <Folder size={14} strokeWidth={1.8} style={{ flexShrink: 0 }} />)
+            : (() => { const { Icon, color } = getFileIcon(node.name); return <Icon size={14} strokeWidth={1.8} style={{ flexShrink: 0, color }} />; })()
           }
         </span>
 

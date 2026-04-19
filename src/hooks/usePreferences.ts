@@ -18,12 +18,13 @@ export function usePreferences() {
     autoSaveDelay, setAutoSaveDelay,
     gitMdOnly, setGitMdOnly,
     milkdownPreview, setMilkdownPreview,
+    mermaidTheme, setMermaidTheme,
     fileWatch, setFileWatch,
     fileWatchBehavior, setFileWatchBehavior,
     autoUpdateCheck, setAutoUpdateCheck,
     updateCheckFrequency, setUpdateCheckFrequency,
     theme, setTheme,
-  } = usePreferencesStore();
+ } = usePreferencesStore();
 
   return {
     spellCheck, setSpellCheck,
@@ -34,6 +35,7 @@ export function usePreferences() {
     autoUpdateCheck, setAutoUpdateCheck,
     updateCheckFrequency, setUpdateCheckFrequency,
     milkdownPreview, setMilkdownPreview,
+    mermaidTheme, setMermaidTheme,
     fileWatch, setFileWatch,
     fileWatchBehavior, setFileWatchBehavior,
     theme, setTheme,

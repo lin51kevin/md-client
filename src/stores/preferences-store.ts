@@ -31,6 +31,9 @@ export interface PreferencesState {
   milkdownPreview: boolean;
   setMilkdownPreview: (v: boolean) => void;
 
+  mermaidTheme: string; // 'default' | 'forest' | 'dark' | 'neutral'
+  setMermaidTheme: (v: string) => void;
+
   fileWatch: boolean;
   setFileWatch: (v: boolean) => void;
 
@@ -67,6 +70,9 @@ export const usePreferencesStore = create<PreferencesState>()(
 
       milkdownPreview: true,
       setMilkdownPreview: (v) => set({ milkdownPreview: v }),
+
+      mermaidTheme: 'default',
+      setMermaidTheme: (v) => set({ mermaidTheme: v }),
 
       fileWatch: true,
       setFileWatch: (v) => set({ fileWatch: v }),

@@ -1,6 +1,6 @@
 
 import { useRef, useState } from 'react';
-import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, SpellCheck, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, HelpCircle, FilePlus, FileText, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight, Table2, FileCode2, Minus, ListChecks, Sigma, Presentation, Library, List, Brain, Undo2, Redo2, Bot } from 'lucide-react';
+import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, SpellCheck, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, HelpCircle, FilePlus, FileText, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight, Table2, FileCode2, Minus, ListChecks, Sigma, Presentation, Library, List, Brain, Undo2, Redo2, Bot, ArrowUpFromLine } from 'lucide-react';
 import { ViewMode, FocusMode } from '../../types';
 
 import { FileMenuDropdown } from '../editor/FileMenuDropdown';
@@ -91,6 +91,7 @@ export function Toolbar({
   const { t } = useI18n();
   const toolbarRef = useRef<HTMLDivElement>(null);
   const [showTablePicker, setShowTablePicker] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
@@ -407,6 +408,50 @@ export function Toolbar({
         >
           <Brain size={15} strokeWidth={1.8} />
         </ToolbarButton>
+
+        {/* 导出下拉按钮 — always visible */}
+        <div className="relative">
+          <ToolbarButton onClick={() => setShowExportMenu(v => !v)} title={t('toolbar.export') || 'Export'}>
+            <ArrowUpFromLine size={14} strokeWidth={1.8} />
+          </ToolbarButton>
+          {showExportMenu && (
+            <div
+              className="absolute right-0 top-full mt-1 z-50 py-1 rounded border shadow-lg min-w-[140px]"
+              style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-color)' }}
+              onMouseLeave={() => setShowExportMenu(false)}
+            >
+              <button
+                className="w-full text-left px-3 py-1.5 text-xs rounded hover:opacity-80"
+                style={{ color: 'var(--text-primary)' }}
+                onClick={() => { onExportDocx(); setShowExportMenu(false); }}
+              >Word (.docx)</button>
+              <button
+                className="w-full text-left px-3 py-1.5 text-xs rounded hover:opacity-80"
+                style={{ color: 'var(--text-primary)' }}
+                onClick={() => { onExportPdf(); setShowExportMenu(false); }}
+              >PDF (.pdf)</button>
+              <button
+                className="w-full text-left px-3 py-1.5 text-xs rounded hover:opacity-80"
+                style={{ color: 'var(--text-primary)' }}
+                onClick={() => { onExportHtml(); setShowExportMenu(false); }}
+              >HTML (.html)</button>
+              {onExportEpub && (
+                <button
+                  className="w-full text-left px-3 py-1.5 text-xs rounded hover:opacity-80"
+                  style={{ color: 'var(--text-primary)' }}
+                  onClick={() => { onExportEpub(); setShowExportMenu(false); }}
+                >EPUB (.epub)</button>
+              )}
+              {onExportPng && (
+                <button
+                  className="w-full text-left px-3 py-1.5 text-xs rounded hover:opacity-80"
+                  style={{ color: 'var(--text-primary)' }}
+                  onClick={() => { onExportPng(); setShowExportMenu(false); }}
+                >PNG (.png)</button>
+              )}
+            </div>
+          )}
+        </div>
 
         <div className="w-px h-5 mx-1 shrink-0" style={{ backgroundColor: 'var(--border-color)' }} />
 

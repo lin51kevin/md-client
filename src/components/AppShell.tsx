@@ -43,6 +43,7 @@ import { restoreSnapshot } from '../lib/storage/version-history';
 import { StorageKeys } from '../lib/storage';
 import { revealInExplorer } from '../lib/file/reveal-in-explorer';
 import { createCommandRegistry } from '../lib/editor/command-registry';
+import { milkdownBridge } from '../lib/milkdown/editor-bridge';
 
 import { Toolbar } from '../components/toolbar/Toolbar';
 import { TabBar } from '../components/toolbar/TabBar';
@@ -90,7 +91,7 @@ export function AppShell() {
 
   // ── Extracted state hooks ────────────────────────────────────────
   const { activePanel, setActivePanel, togglePanel, showFileTree, showToc, showSearchPanel, showGitPanel, showPluginsPanel } = useSidebarPanel();
-  const { spellCheck, setSpellCheck, vimMode, setVimMode, autoSave, setAutoSave, autoSaveDelay, setAutoSaveDelay, gitMdOnly, setGitMdOnly, milkdownPreview, setMilkdownPreview, theme, setTheme, fileWatch, setFileWatch, fileWatchBehavior, setFileWatchBehavior, autoUpdateCheck, setAutoUpdateCheck, updateCheckFrequency, setUpdateCheckFrequency } = usePreferences();
+  const { spellCheck, setSpellCheck, vimMode, setVimMode, autoSave, setAutoSave, autoSaveDelay, setAutoSaveDelay, gitMdOnly, setGitMdOnly, milkdownPreview, setMilkdownPreview, mermaidTheme, setMermaidTheme, theme, setTheme, fileWatch, setFileWatch, fileWatchBehavior, setFileWatchBehavior, autoUpdateCheck, setAutoUpdateCheck, updateCheckFrequency, setUpdateCheckFrequency } = usePreferences();
   const [typewriterOptions, setTypewriterOptions] = useTypewriterOptions();
 
   // ── Core hooks ───────────────────────────────────────────────────
@@ -178,7 +179,7 @@ export function AppShell() {
     handleEditorCtxAction,
     saveAndInsertImage,
   } = useEditorCore({
-    activeTabId, activeTab, viewMode, theme, vimMode,
+    activeTabId, activeTab, viewMode, milkdownPreview, theme, vimMode,
     spellCheck, autoSave, autoSaveDelay, isTauri,
     rawHandleSaveFile, updateActiveDoc, getActiveTab,
   });
@@ -334,6 +335,7 @@ export function AppShell() {
         cmViewRef={cmViewRef}
         handleEditorCtxAction={handleEditorCtxAction}
         previewRef={previewRef}
+        wysiwygMode={milkdownPreview}
       />
 
       {!effectiveChromeless && (
@@ -374,8 +376,14 @@ export function AppShell() {
             onToggleAIPanel={() => setShowAIPanel(!showAIPanel)}
             onInsertSnippet={openSnippetPicker}
             canUndo={canUndo} canRedo={canRedo}
-            onUndo={() => { const v = cmViewRef.current; if (v) undo(v); }}
-            onRedo={() => { const v = cmViewRef.current; if (v) redo(v); }}
+            onUndo={() => {
+              if (milkdownPreview) { milkdownBridge.undo?.(); return; }
+              const v = cmViewRef.current; if (v) undo(v);
+            }}
+            onRedo={() => {
+              if (milkdownPreview) { milkdownBridge.redo?.(); return; }
+              const v = cmViewRef.current; if (v) redo(v);
+            }}
             tabs={tabs} activeTabId={activeTabId} onActivateTab={setActiveTabId}
             wysiwygMode={milkdownPreview}
           />
@@ -389,6 +397,7 @@ export function AppShell() {
             autoSaveDelay={autoSaveDelay} onAutoSaveDelayChange={setAutoSaveDelay}
             gitMdOnly={gitMdOnly} onGitMdOnlyChange={setGitMdOnly}
             milkdownPreview={milkdownPreview} onMilkdownPreviewChange={setMilkdownPreview}
+            mermaidTheme={mermaidTheme} onMermaidThemeChange={setMermaidTheme}
             fileWatch={fileWatch} onFileWatchChange={setFileWatch}
             fileWatchBehavior={fileWatchBehavior} onFileWatchBehaviorChange={setFileWatchBehavior}
             autoUpdateCheck={autoUpdateCheck} onAutoUpdateCheckChange={setAutoUpdateCheck}
@@ -504,7 +513,7 @@ export function AppShell() {
           openFileInTab={openFileInTab} handleWikiLinkNavigate={handleWikiLinkNavigate}
           theme={theme} recentFiles={recentFiles}
           onNew={createNewTab} onOpenFile={handleOpenFile} onOpenFolder={handleOpenFolder}
-          onOpenRecent={handleOpenRecent} onOpenSample={handleOpenSample}
+          onOpenRecent={handleOpenRecent} onNewWithContent={(content) => openFileWithContent('', content)} onOpenSample={handleOpenSample}
           onDismiss={handleDismissWelcome} onShowWelcome={handleShowWelcome}
           pluginRenderers={pluginRenderers}
           useMilkdownPreview={milkdownPreview}
@@ -537,7 +546,7 @@ export function AppShell() {
           filePath={activeTab.filePath} isDirty={activeTab.isDirty}
           line={cursorPos.line} col={cursorPos.col}
           snapshots={snapshots} wordCount={wordCount} readingTime={readingTime} cursorCount={cursorCount}
-          vimMode={vimMode}
+          vimMode={vimMode} wysiwygMode={milkdownPreview}
           focusStartTime={typewriterOptions.showDuration && focusMode === 'typewriter' ? focusStartRef.current ?? undefined : undefined}
           updateAvailable={updateInfo}
           onUpdateClick={() => { const cur = useUIStore.getState().showUpdateNotification; useUIStore.getState().setShowUpdateNotification(!cur); }}

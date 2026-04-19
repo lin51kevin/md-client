@@ -6,4 +6,6 @@ export interface SearchResultItem {
   match_start: number;
   match_end: number;
   tab_id?: string;
+  context_before?: string;
+  context_after?: string;
 }

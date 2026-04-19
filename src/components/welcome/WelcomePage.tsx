@@ -35,6 +35,8 @@ interface WelcomePageProps {
   onOpenFile: () => void;
   onOpenFolder?: () => void;
   onOpenRecent: (filePath: string) => void;
+  /** Creates a new tab with pre-filled content */
+  onNewWithContent?: (content: string, displayName?: string) => void;
   /** Opens the sample document in an editable tab */
   onOpenSample?: () => void;
   /** When provided, renders a dismiss (×) button in the top-right corner */
@@ -149,7 +151,76 @@ export function EmptyEditorState({ onShowWelcome }: EmptyEditorStateProps) {
 // WelcomePage – VS Code-inspired three-column layout
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function WelcomePage({ recentFiles, onNew, onOpenFile, onOpenFolder, onOpenRecent, onOpenSample, onDismiss }: WelcomePageProps) {
+const MEETING_TEMPLATE = `# 会议纪要
+
+**日期：** ${new Date().toLocaleDateString('zh-CN')}
+**地点：** 
+**参会人员：** 
+**记录人：** 
+
+---
+
+## 议题
+
+### 1. 
+
+### 2. 
+
+## 决议
+
+- 
+
+## 待办事项
+
+| 事项 | 负责人 | 截止日期 |
+|------|--------|----------|
+|      |        |          |
+
+## 下次会议
+
+**时间：** 
+`;
+
+const WEEKLY_TEMPLATE = `# 周报
+
+**姓名：** 
+**日期：** ${new Date().toLocaleDateString('zh-CN')}
+**部门：** 
+
+---
+
+## 本周工作
+
+### 1. 
+- 进展：
+- 状态：进行中 / 已完成
+
+### 2. 
+- 进展：
+- 状态：进行中 / 已完成
+
+## 遇到的问题
+
+- 
+
+## 下周计划
+
+### 1. 
+
+### 2. 
+
+## 备注
+
+- 
+`;
+
+const QUICK_TEMPLATES = [
+  { label: '空白文档', icon: <FilePlus size={16} strokeWidth={1.8} />, action: 'blank' as const, desc: '从零开始' },
+  { label: '会议纪要', icon: <FileText size={16} strokeWidth={1.8} />, action: 'meeting' as const, desc: '预填充会议模板' },
+  { label: '周报', icon: <FileText size={16} strokeWidth={1.8} />, action: 'weekly' as const, desc: '预填充周报模板' },
+];
+
+export function WelcomePage({ recentFiles, onNew, onOpenFile, onOpenFolder, onOpenRecent, onNewWithContent, onOpenSample, onDismiss }: WelcomePageProps) {
   const { t } = useI18n();
   const [showAll, setShowAll] = useState(false);
   const [previews, setPreviews] = useState<Record<string, string>>({});
@@ -352,6 +423,53 @@ export function WelcomePage({ recentFiles, onNew, onOpenFile, onOpenFolder, onOp
             </section>
 
           </div>
+
+          {/* ── Quick Create ────────────────────────────────────── */}
+          <div className="mt-10">
+            <h2
+              className="text-xs font-semibold uppercase tracking-widest mb-4"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              {t('welcome.start')}
+            </h2>
+            <div className="grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', maxWidth: '32rem' }}>
+              {QUICK_TEMPLATES.map((tmpl) => (
+                <button
+                  key={tmpl.action}
+                  onClick={() => {
+                    if (tmpl.action === 'blank') {
+                      onNew();
+                    } else if (tmpl.action === 'meeting' && onNewWithContent) {
+                      onNewWithContent(MEETING_TEMPLATE, '会议纪要');
+                    } else if (tmpl.action === 'weekly' && onNewWithContent) {
+                      onNewWithContent(WEEKLY_TEMPLATE, '周报');
+                    }
+                  }}
+                  className="flex flex-col items-center gap-2 px-6 py-5 rounded-lg transition-colors"
+                  style={{
+                    backgroundColor: 'var(--bg-secondary)',
+                    border: '1px solid var(--border-color)',
+                    color: 'var(--text-secondary)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)';
+                    e.currentTarget.style.borderColor = 'var(--accent-color)';
+                    e.currentTarget.style.color = 'var(--accent-color)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
+                    e.currentTarget.style.borderColor = 'var(--border-color)';
+                    e.currentTarget.style.color = 'var(--text-secondary)';
+                  }}
+                >
+                  {tmpl.icon}
+                  <span className="text-sm font-medium">{tmpl.label}</span>
+                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{tmpl.desc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
         </div>
       </div>
     </div>

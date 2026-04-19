@@ -231,6 +231,20 @@ export function SearchPanel({
               }}>
                 {renderHighlight(r.line_content, r.match_start, r.match_end)}
               </div>
+              {(r.context_before || r.context_after) && (
+                <div style={{ paddingLeft: 16, fontFamily: 'monospace', fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.6, marginTop: 1 }}>
+                  {r.context_before && (
+                    <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', opacity: 0.7 }}>
+                      {r.context_before.length > 80 ? r.context_before.slice(0, 80) + '...' : r.context_before}
+                    </div>
+                  )}
+                  {r.context_after && (
+                    <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', opacity: 0.7 }}>
+                      {r.context_after.length > 80 ? r.context_after.slice(0, 80) + '...' : r.context_after}
+                    </div>
+                  )}
+                </div>
+              )}
             </button>
           );
         })}

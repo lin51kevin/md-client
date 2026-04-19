@@ -48,6 +48,7 @@ vi.mock('../../../i18n', () => ({
         'toolbar.math': '数学公式',
         'toolbar.label': '工具栏',
         'toolbar.insertSnippet': '插入片段',
+        'toolbar.export': '导出',
       };
       return map[key] ?? key;
     },
@@ -384,6 +385,73 @@ describe('Toolbar', () => {
     buttons[0].focus();
     fireEvent.keyDown(toolbar, { key: 'Enter' });
     expect(document.activeElement).toBe(buttons[0]);
+  });
+
+  describe('Export Dropdown Button', () => {
+    it('renders the export button', () => {
+      render(<Toolbar {...defaultProps} />);
+      expect(screen.getByTitle('导出')).toBeInTheDocument();
+    });
+
+    it('shows export dropdown when export button is clicked', () => {
+      render(<Toolbar {...defaultProps} />);
+      fireEvent.click(screen.getByTitle('导出'));
+      expect(screen.getByText('Word (.docx)')).toBeInTheDocument();
+      expect(screen.getByText('PDF (.pdf)')).toBeInTheDocument();
+      expect(screen.getByText('HTML (.html)')).toBeInTheDocument();
+    });
+
+    it('calls onExportDocx when Word option is clicked', () => {
+      render(<Toolbar {...defaultProps} />);
+      fireEvent.click(screen.getByTitle('导出'));
+      fireEvent.click(screen.getByText('Word (.docx)'));
+      expect(defaultProps.onExportDocx).toHaveBeenCalledTimes(1);
+    });
+
+    it('calls onExportPdf when PDF option is clicked', () => {
+      render(<Toolbar {...defaultProps} />);
+      fireEvent.click(screen.getByTitle('导出'));
+      fireEvent.click(screen.getByText('PDF (.pdf)'));
+      expect(defaultProps.onExportPdf).toHaveBeenCalledTimes(1);
+    });
+
+    it('calls onExportHtml when HTML option is clicked', () => {
+      render(<Toolbar {...defaultProps} />);
+      fireEvent.click(screen.getByTitle('导出'));
+      fireEvent.click(screen.getByText('HTML (.html)'));
+      expect(defaultProps.onExportHtml).toHaveBeenCalledTimes(1);
+    });
+
+    it('shows EPUB option when onExportEpub is provided', () => {
+      const onExportEpub = vi.fn();
+      render(<Toolbar {...defaultProps} onExportEpub={onExportEpub} />);
+      fireEvent.click(screen.getByTitle('导出'));
+      expect(screen.getByText('EPUB (.epub)')).toBeInTheDocument();
+    });
+
+    it('hides EPUB option when onExportEpub is not provided', () => {
+      render(<Toolbar {...defaultProps} />);
+      fireEvent.click(screen.getByTitle('导出'));
+      expect(screen.queryByText('EPUB (.epub)')).not.toBeInTheDocument();
+    });
+
+    it('shows PNG option when onExportPng is provided', () => {
+      const onExportPng = vi.fn();
+      render(<Toolbar {...defaultProps} onExportPng={onExportPng} />);
+      fireEvent.click(screen.getByTitle('导出'));
+      expect(screen.getByText('PNG (.png)')).toBeInTheDocument();
+    });
+
+    it('hides PNG option when onExportPng is not provided', () => {
+      render(<Toolbar {...defaultProps} />);
+      fireEvent.click(screen.getByTitle('导出'));
+      expect(screen.queryByText('PNG (.png)')).not.toBeInTheDocument();
+    });
+
+    it('export button is visible in WYSIWYG mode', () => {
+      render(<Toolbar {...defaultProps} wysiwygMode={true} />);
+      expect(screen.getByTitle('导出')).toBeInTheDocument();
+    });
   });
 
   describe('Insert Snippet Button', () => {

@@ -205,9 +205,13 @@ export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorde
                   <span
                     className="max-w-45 truncate"
                     title={tab.filePath ?? 'Untitled.md'}
+                    style={tab.isDirty ? { fontStyle: 'italic', fontWeight: 600 } : undefined}
                     onDoubleClick={() => !isPinned && onStartRename?.(tab.id)}
                   >
                     {getTabTitle(tab)}
+                    {tab.isDirty && (
+                      <span style={{ color: 'var(--warning-color)' }}> ●</span>
+                    )}
                   </span>
                   {/* 非固定标签显示关闭按钮 */}
                   {!isPinned && (

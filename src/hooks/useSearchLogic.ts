@@ -50,6 +50,8 @@ export function toSearchResultItems(
       line_content: lines[lo],
       match_start: r.from - lineStarts[lo],
       match_end: r.to - lineStarts[lo],
+      context_before: lo > 0 ? lines[lo - 1] : undefined,
+      context_after: lo < lines.length - 1 ? lines[lo + 1] : undefined,
     };
   });
   return { items, rawMatches: raw };

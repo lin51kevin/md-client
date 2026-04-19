@@ -26,9 +26,11 @@ interface StatusBarProps {
   onUpdateClick?: () => void;
   /** Focus start timestamp (ms). When set, StatusBar runs its own 1s timer. */
   focusStartTime?: number;
+  /** WYSIWYG mode — hide editor-specific info */
+  wysiwygMode?: boolean;
 }
 
-export function StatusBar({ filePath, isDirty, line, col, wordCount, readingTime, cursorCount, vimMode, saveStatus, snapshots, onSnapshotRestore, updateAvailable, onUpdateClick, focusStartTime }: StatusBarProps) {
+export function StatusBar({ filePath, isDirty, line, col, wordCount, readingTime, cursorCount, vimMode, saveStatus, snapshots, onSnapshotRestore, updateAvailable, onUpdateClick, focusStartTime, wysiwygMode }: StatusBarProps) {
   const { t } = useI18n();
   const [showSnapshots, setShowSnapshots] = useState(false);
 
@@ -73,7 +75,7 @@ export function StatusBar({ filePath, isDirty, line, col, wordCount, readingTime
               <span>{snapshots.length}</span>
             </button>
           )}
-          {cursorCount !== undefined && cursorCount > 1 && (
+          {!wysiwygMode && cursorCount !== undefined && cursorCount > 1 && (
             <span className="tabular-nums" style={{ color: 'var(--accent-color)' }}>{t('status.cursorCount', { count: cursorCount })}</span>
           )}
           {updateAvailable && (
@@ -88,10 +90,10 @@ export function StatusBar({ filePath, isDirty, line, col, wordCount, readingTime
               <span>v{updateAvailable.version}</span>
             </button>
           )}
-          {vimMode && <span className="font-mono font-bold" style={{ color: 'var(--accent-color)' }}>NORMAL</span>}
+          {!wysiwygMode && vimMode && <span className="font-mono font-bold" style={{ color: 'var(--accent-color)' }}>NORMAL</span>}
           {saveStatus === 'saving' && <span>💾</span>}
           {saveStatus === 'unsaved' && <span style={{ color: 'var(--warning-color)' }}>⚠️</span>}
-          <span className="tabular-nums">{t('status.lineCol', { line, col })}</span>
+          {!wysiwygMode && <span className="tabular-nums">{t('status.lineCol', { line, col })}</span>}
         </div>
       </div>
 

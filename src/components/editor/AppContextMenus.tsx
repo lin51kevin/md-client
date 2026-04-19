@@ -25,12 +25,14 @@ interface AppContextMenusProps {
   cmViewRef: RefObject<EditorView | null>;
   handleEditorCtxAction: (action: string) => void;
   previewRef: RefObject<HTMLDivElement | null>;
+  wysiwygMode?: boolean;
 }
 
 export function AppContextMenus({
   inputDialogState, setInputDialogState,
   editingTable, setEditingTable, handleTableConfirm,
   cmViewRef, handleEditorCtxAction, previewRef,
+  wysiwygMode = false,
 }: AppContextMenusProps) {
   const editorCtxMenu = useUIStore((s) => s.editorCtxMenu);
   const setEditorCtxMenu = useUIStore((s) => s.setEditorCtxMenu);
@@ -98,6 +100,7 @@ export function AppContextMenus({
           visible={!!previewCtxMenu}
           x={previewCtxMenu.x} y={previewCtxMenu.y}
           hasSelection={!!window.getSelection()?.toString()}
+          wysiwygMode={wysiwygMode}
           onClose={() => setPreviewCtxMenu(null)}
           onAction={handlePreviewAction}
         />

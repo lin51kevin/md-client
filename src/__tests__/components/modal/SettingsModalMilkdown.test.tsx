@@ -25,11 +25,13 @@ const baseProps = {
   onGitMdOnlyChange: vi.fn(),
   milkdownPreview: true,
   onMilkdownPreviewChange: vi.fn(),
+  mermaidTheme: 'default',
+  onMermaidThemeChange: vi.fn(),
 };
 
-/** Navigate to the Editor tab and return the milkdownPreview toggle button. */
+/** Navigate to the Preview tab and return the milkdownPreview toggle button. */
 function getMilkdownToggle(): HTMLButtonElement {
-  fireEvent.click(screen.getByText(/Editor|编辑器/));
+  fireEvent.click(screen.getByText(/Preview|预览|プレビュー/));
   const label = screen.getByText(/预览窗口可编辑|Editable Preview/);
   const item = label.closest('div.flex') as HTMLElement;
   return item.querySelector('button[role="switch"]') as HTMLButtonElement;
@@ -40,9 +42,9 @@ describe('SettingsModal — milkdownPreview toggle', () => {
     vi.clearAllMocks();
   });
 
-  it('renders the milkdownPreview label in the Editor tab', () => {
+  it('renders the milkdownPreview label in the Preview tab', () => {
     render(<SettingsModal {...baseProps} />);
-    fireEvent.click(screen.getByText(/Editor|编辑器/));
+    fireEvent.click(screen.getByText(/Preview|预览|プレビュー/));
     expect(screen.getByText(/预览窗口可编辑|Editable Preview/)).toBeInTheDocument();
   });
 
@@ -86,7 +88,7 @@ describe('SettingsModal — milkdownPreview toggle', () => {
 
   it('description text is shown alongside the toggle', () => {
     render(<SettingsModal {...baseProps} />);
-    fireEvent.click(screen.getByText(/Editor|编辑器/));
+    fireEvent.click(screen.getByText(/Preview|预览|プレビュー/));
     expect(
       screen.getByText(/Milkdown|milkdown|只读预览|read-only preview/i)
     ).toBeInTheDocument();

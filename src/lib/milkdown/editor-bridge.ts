@@ -27,6 +27,41 @@ class MilkdownEditorBridgeStore {
   /** True while the Milkdown container holds DOM focus. */
   hasFocus = false;
 
+  /** Undo/redo state for WYSIWYG mode — updated by MilkdownEditor on each transaction. */
+  private _canUndo = false;
+  private _canRedo = false;
+
+  get canUndo() { return this._canUndo; }
+  get canRedo() { return this._canRedo; }
+
+  /** Update both at once and notify subscribers. */
+  setUndoRedo(canUndo: boolean, canRedo: boolean): void {
+    if (this._canUndo === canUndo && this._canRedo === canRedo) return;
+    this._canUndo = canUndo;
+    this._canRedo = canRedo;
+    this._notifyUndoRedo();
+  }
+
+  /** Bridge undo/redo to Milkdown's ProseMirror commands. */
+  undo: (() => void) | null = null;
+  redo: (() => void) | null = null;
+
+  // Subscribers for undo/redo state changes
+  private _undoRedoListeners: Array<(canUndo: boolean, canRedo: boolean) => void> = [];
+
+  /** Subscribe to undo/redo state changes. Returns unsubscribe function. */
+  onUndoRedoChange(listener: (canUndo: boolean, canRedo: boolean) => void): () => void {
+    this._undoRedoListeners.push(listener);
+    return () => {
+      this._undoRedoListeners = this._undoRedoListeners.filter(l => l !== listener);
+    };
+  }
+
+  /** Notify listeners (called by MilkdownEditor after updating canUndo/canRedo). */
+  private _notifyUndoRedo(): void {
+    for (const l of this._undoRedoListeners) l(this.canUndo, this.canRedo);
+  }
+
   /**
    * Callback set by MilkdownEditor on mount.
    * Calling it triggers a full-document content update (→ updateActiveDoc →

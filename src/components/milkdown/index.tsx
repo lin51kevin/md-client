@@ -3,6 +3,8 @@ import YAML from 'js-yaml';
 import { Milkdown, MilkdownProvider, useEditor } from '@milkdown/react';
 import { Crepe, CrepeFeature } from '@milkdown/crepe';
 import { replaceAll } from '@milkdown/kit/utils';
+import { editorViewCtx } from '@milkdown/core';
+import { undoDepth, redoDepth, undo as pmUndo, redo as pmRedo } from 'prosemirror-history';
 import '@milkdown/crepe/theme/frame.css';
 import '@milkdown/crepe/theme/common/style.css';
 import 'katex/dist/katex.min.css';
@@ -228,6 +230,35 @@ function MilkdownEditor({
     // Register wiki-link plugins on the underlying editor before creation
     crepe.editor.use(remarkWikiLinkPlugin).use(wikiLinkSchema);
 
+    // Listen to ProseMirror transactions to sync undo/redo state to bridge
+    crepe.on((listener) => {
+      listener.updated((_ctx: any, _doc: any, _prevDoc: any) => {
+        try {
+          const view = crepe.editor.ctx.get(editorViewCtx);
+          milkdownBridge.setUndoRedo(
+            undoDepth(view.state) > 0,
+            redoDepth(view.state) > 0,
+          );
+        } catch {
+          // ctx not ready yet
+        }
+      });
+    });
+
+    // Bridge undo/redo commands
+    milkdownBridge.undo = () => {
+      try {
+        const view = crepe.editor.ctx.get(editorViewCtx);
+        pmUndo(view.state, view.dispatch);
+      } catch { /* ignore */ }
+    };
+    milkdownBridge.redo = () => {
+      try {
+        const view = crepe.editor.ctx.get(editorViewCtx);
+        pmRedo(view.state, view.dispatch);
+      } catch { /* ignore */ }
+    };
+
     if (!editable) {
       crepe.setReadonly(true);
     }
@@ -353,6 +384,8 @@ function MilkdownEditor({
       milkdownBridge.setContent = null;
       milkdownBridge.hasFocus = false;
       milkdownBridge.selection = null;
+      milkdownBridge.undo = null;
+      milkdownBridge.redo = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

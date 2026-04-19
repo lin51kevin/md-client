@@ -1,5 +1,6 @@
 import { useEffect, useRef, MutableRefObject } from 'react';
 import { ViewMode, FocusMode } from '../types';
+import { usePreferencesStore } from '../stores/preferences-store';
 import {
   getCustomShortcuts,
   parseShortcut,
@@ -106,12 +107,19 @@ export function useKeyboardShortcuts(params: ShortcutsParams) {
         e.preventDefault(); revealActiveFile?.(); return;
       }
 
+      // WYSIWYG 模式下跳过视图切换和格式化快捷键
+      const milkdownPreview = usePreferencesStore.getState().milkdownPreview;
+      const WYSIWYG_BLOCKED = new Set([
+        'editMode', 'splitMode', 'previewMode',
+      ]);
+
       // 遍历 DEFAULT_SHORTCUTS 检查匹配（用户自定义优先）
       for (const sc of DEFAULT_SHORTCUTS) {
         const currentKeys = getCurrentShortcut(sc.id);
         if (!currentKeys) continue;
         const parsed = parseShortcut(currentKeys);
         if (eventMatchesShortcut(e, parsed)) {
+          if (milkdownPreview && WYSIWYG_BLOCKED.has(sc.id)) return;
           e.preventDefault();
           switch (sc.id) {
             case 'newTab': createNewTab(); break;

@@ -366,6 +366,8 @@ struct SearchResult {
     line_content: String,
     match_start: usize,
     match_end: usize,
+    context_before: Option<String>,
+    context_after: Option<String>,
 }
 
 fn build_search_regex(
@@ -466,8 +468,10 @@ fn search_files(
                     .unwrap_or("?")
                     .to_string();
                 let fpath = filepath.to_string_lossy().to_string();
+                let all_lines: Vec<&str> = content.lines().collect();
 
-                for (line_idx, line) in content.lines().enumerate() {
+                for line_idx in 0..all_lines.len() {
+                    let line = all_lines[line_idx];
                     if results.len() >= MAX_RESULTS {
                         break 'outer;
                     }
@@ -481,7 +485,6 @@ fn search_files(
                     };
 
                     if found {
-                        // Compute match range in this line
                         let (ms, me) = if let Some(ref r) = regex {
                             if let Some(m) = r.find(line) {
                                 (m.start(), m.end())
@@ -502,6 +505,8 @@ fn search_files(
                             line_content: line.to_string(),
                             match_start: ms,
                             match_end: me,
+                            context_before: if line_idx > 0 { Some(all_lines[line_idx - 1].to_string()) } else { None },
+                            context_after: if line_idx + 1 < all_lines.len() { Some(all_lines[line_idx + 1].to_string()) } else { None },
                         });
                     }
                 }

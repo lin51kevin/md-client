@@ -8,7 +8,7 @@
  * format actions, table editor, snippet flow, editor instance, image paste,
  * and editor context actions.
  */
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useState, useEffect } from 'react';
 import { EditorView } from '@codemirror/view';
 import type { Tab } from '../types';
 import type { ViewMode } from '../types';
@@ -24,11 +24,13 @@ import { useSnippetFlow } from './useSnippetFlow';
 import { useEditorInstance } from './useEditorInstance';
 import { useImagePaste } from './useImagePaste';
 import { useEditorContextActions } from './useEditorContextActions';
+import { milkdownBridge } from '../lib/milkdown/editor-bridge';
 
 interface EditorCoreInput {
   activeTabId: string;
   activeTab: Tab;
   viewMode: ViewMode;
+  milkdownPreview: boolean;
   theme: ThemeName;
   vimMode: boolean;
   spellCheck: boolean;
@@ -44,6 +46,7 @@ export function useEditorCore({
   activeTabId,
   activeTab,
   viewMode,
+  milkdownPreview,
   theme,
   vimMode,
   spellCheck,
@@ -71,13 +74,27 @@ export function useEditorCore({
     handleSnippetInsert, openSnippetPicker,
   } = useSnippetFlow({ cmViewRef, updateActiveDoc, setEditorCtxMenu });
 
-  const { docRef: _docRef, editorExtensions, editorTheme, handleCreateEditor, handleEditorUpdate, cursorCount, canUndo, canRedo } = useEditorInstance({
+  const { docRef: _docRef, editorExtensions, editorTheme, handleCreateEditor, handleEditorUpdate, cursorCount, canUndo: cmCanUndo, canRedo: cmCanRedo } = useEditorInstance({
     cmViewRef, activeTabId, theme, vimMode, spellCheck, autoSave, autoSaveDelay,
     cursorExtension, searchHighlightExtension,
     activeDoc: activeTab.doc, getActiveTab, rawHandleSaveFile,
     setEditingTable, setEditorCtxMenu,
   });
   void _docRef;
+
+  // WYSIWYG mode: subscribe to milkdownBridge for undo/redo state
+  const [milkUndoRedo, setMilkUndoRedo] = useState<[boolean, boolean]>([false, false]);
+  useEffect(() => {
+    if (!milkdownPreview) {
+      return;
+    }
+    const unsub = milkdownBridge.onUndoRedoChange((canUndo, canRedo) => {
+      setMilkUndoRedo([canUndo, canRedo]);
+    });
+    // Init from current bridge state
+    setMilkUndoRedo([milkdownBridge.canUndo, milkdownBridge.canRedo]);
+    return unsub;
+  }, [milkdownPreview]);
 
   const insertImageMarkdown = useCallback((mdText: string) => {
     const view = cmViewRef.current;
@@ -117,7 +134,7 @@ export function useEditorCore({
     handleSnippetInsert, openSnippetPicker,
     editorExtensions, editorTheme,
     handleCreateEditor, handleEditorUpdate,
-    cursorCount, canUndo, canRedo,
+    cursorCount, canUndo: milkdownPreview ? milkUndoRedo[0] : cmCanUndo, canRedo: milkdownPreview ? milkUndoRedo[1] : cmCanRedo,
     handleEditorCtxAction,
     saveAndInsertImage,
   };

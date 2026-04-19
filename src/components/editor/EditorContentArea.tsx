@@ -50,6 +50,7 @@ interface EditorContentAreaProps {
   onOpenFolder?: () => void;
   onOpenRecent: (filePath: string) => Promise<void>;
   onOpenSample: () => void;
+  onNewWithContent?: (content: string, displayName?: string) => void;
   onDismiss: () => void;
   onShowWelcome: () => void;
   pluginRenderers?: Map<string, unknown>;
@@ -115,6 +116,7 @@ export function EditorContentArea({
   onOpenFile,
   onOpenFolder,
   onOpenRecent,
+  onNewWithContent,
   onOpenSample,
   onDismiss,
   onShowWelcome,
@@ -132,6 +134,7 @@ export function EditorContentArea({
         onOpenFile={onOpenFile}
         onOpenFolder={onOpenFolder}
         onOpenRecent={onOpenRecent}
+        onNewWithContent={onNewWithContent}
         onOpenSample={onOpenSample}
         onDismiss={onDismiss}
       />
