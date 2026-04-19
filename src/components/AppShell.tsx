@@ -335,7 +335,6 @@ export function AppShell() {
         cmViewRef={cmViewRef}
         handleEditorCtxAction={handleEditorCtxAction}
         previewRef={previewRef}
-        wysiwygMode={milkdownPreview}
       />
 
       {!effectiveChromeless && (
