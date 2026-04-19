@@ -24,6 +24,7 @@ import { validateActionAgainstCurrentContent } from './stale-guard';
 import { planEditActions, shouldBuildEditActions } from './edit-action-planner';
 import { parseEditInstructions } from './instruction-parser';
 import { executeInstructions } from './instruction-executor';
+import type { ReplaceInstruction } from './types/edit-instruction';
 import { choosePromptMode } from './prompt-strategy';
 import { ChatMessageView } from './ChatMessage';
 import { SlashCommandPopup, getFilteredCommandCount, getFilteredCommandAt, getSlashCommandToken } from './QuickCommands';
@@ -369,10 +370,23 @@ export class AICopilotPanelContent {
         );
         return result.actions;
       }
-      console.warn('[AI Copilot] All structured instructions failed, falling back to text replace');
+      // All structured instructions failed — try salvaging replacement content
+      // from the failed instructions when a selection is active. This covers the
+      // common case where `search` text differs slightly from the document (e.g.
+      // minor whitespace variations) but the AI's replacement content is correct.
+      const salvaged = this.salvageActionsFromInstructions(instructions, editorCtx);
+      if (salvaged.length > 0) {
+        console.warn('[AI Copilot] Structured instructions failed to locate text; using selection-based fallback');
+        return salvaged;
+      }
+      // When structured mode was used, do NOT fall through to planEditActions:
+      // the response is a JSON array, not the fulltext format planEditActions expects.
+      // Return [] here — the AI's raw response is still shown in the chat.
+      console.warn('[AI Copilot] All structured instructions failed; no applicable actions produced');
+      return [];
     }
 
-    // ── Traditional full-text replace path ──
+    // ── Traditional full-text replace path (non-structured responses only) ──
     return planEditActions({
       response,
       editorCtx,
@@ -380,6 +394,43 @@ export class AICopilotPanelContent {
       intentAction: intentAction as import('./intent-parser').ParsedIntent['action'] | undefined,
       idFactory: () => this.nextId(),
     });
+  }
+
+  /**
+   * When structured instructions fail to locate their search text in the
+   * document, fall back to replacing the active selection with the combined
+   * replacement content from those instructions.
+   */
+  private salvageActionsFromInstructions(
+    instructions: ReturnType<typeof parseEditInstructions>,
+    editorCtx: EditorContext,
+  ): EditAction[] {
+    if (!editorCtx.selection || !instructions || instructions.length === 0) return [];
+
+    // Collect replacement text from replace-type instructions only.
+    // delete/insert_before/insert_after/multi are too positional to salvage simply.
+    const parts: string[] = [];
+    for (const inst of instructions) {
+      if (inst.type === 'replace') {
+        parts.push((inst as ReplaceInstruction).replace);
+      }
+    }
+    if (parts.length === 0) return [];
+
+    return [
+      {
+        id: this.nextId(),
+        type: 'replace',
+        description: parts.length === 1
+          ? `替换为: "${parts[0].slice(0, 40)}${parts[0].length > 40 ? '…' : ''}"`
+          : `应用 ${parts.length} 处 AI 修改`,
+        from: editorCtx.selection.from,
+        to: editorCtx.selection.to,
+        originalText: editorCtx.selection.text,
+        newText: parts.join('\n'),
+        sourceFilePath: editorCtx.filePath,
+      },
+    ];
   }
 
   applyAction(action: EditAction, successMessage?: string) {
