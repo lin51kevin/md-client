@@ -3,6 +3,13 @@ import { renderHook } from '@testing-library/react';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import { ViewMode, FocusMode } from '../../types';
 
+// Ensure milkdownPreview is off so view-mode shortcuts (Ctrl+1/2/3) are not blocked.
+vi.mock('../../stores/preferences-store', () => ({
+  usePreferencesStore: {
+    getState: () => ({ milkdownPreview: false }),
+  },
+}));
+
 describe('useKeyboardShortcuts', () => {
   let createNewTab: ReturnType<typeof vi.fn>;
   let handleOpenFile: ReturnType<typeof vi.fn>;

@@ -15,6 +15,7 @@ const mockListenerManager = {
   markdownUpdated: vi.fn((callback: (_ctx: unknown, _newMd: string, _prevMd: string) => void) => {
     registeredMarkdownCallback = callback;
   }),
+  updated: vi.fn(),
 };
 
 vi.mock('@milkdown/crepe', () => ({

@@ -40,18 +40,15 @@ describe('useDocMetrics', () => {
     expect(result.current.debouncedDoc).toBe('# World');
   });
 
-  it('restarts debounce timer on tab switch', async () => {
+  it('switches debouncedDoc immediately on tab switch (no flash)', () => {
     const { result, rerender } = renderHook(
       ({ doc, tabId }: { doc: string; tabId: string }) => useDocMetrics(doc, tabId),
       { initialProps: { doc: '# Tab1', tabId: 'tab-1' } },
     );
 
-    // Switch to a new tab with different doc
+    // Tab switch: debouncedDoc must reflect the new tab's doc immediately
+    // to avoid rendering one frame of stale content (flash).
     rerender({ doc: '# Tab2', tabId: 'tab-2' });
-    act(() => { vi.advanceTimersByTime(50); });
-    expect(result.current.debouncedDoc).toBe('# Tab1'); // still old
-
-    await act(async () => { vi.advanceTimersByTime(300); });
     expect(result.current.debouncedDoc).toBe('# Tab2');
   });
 
