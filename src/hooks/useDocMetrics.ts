@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { extractToc, type TocEntry } from '../lib/markdown';
 import { countWords } from '../lib/utils';
 
@@ -6,11 +6,23 @@ export type { TocEntry };
 
 export function useDocMetrics(doc: string, activeTabId: string) {
   const [debouncedDoc, setDebouncedDoc] = useState(doc);
+  const [prevTabId, setPrevTabId] = useState(activeTabId);
+
+  // Keep a ref to the latest doc so we can sync immediately on tab switch
+  const docRef = useRef(doc);
+  docRef.current = doc;
+
+  // Synchronously update debouncedDoc when the active tab changes to avoid
+  // rendering one frame with the previous tab's content (flash).
+  if (prevTabId !== activeTabId) {
+    setPrevTabId(activeTabId);
+    setDebouncedDoc(doc);
+  }
 
   useEffect(() => {
-    const id = setTimeout(() => setDebouncedDoc(doc), 300);
+    // Debounce further edits within the same tab
+    const id = setTimeout(() => setDebouncedDoc(docRef.current), 300);
     return () => clearTimeout(id);
-  // activeTabId 切换时立即同步,避免旧标签页数据延迟显示
   }, [doc, activeTabId]);
 
   const tocEntries = useMemo(() => extractToc(debouncedDoc), [debouncedDoc]);

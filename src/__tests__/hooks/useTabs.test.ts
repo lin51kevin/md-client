@@ -79,7 +79,7 @@ describe('useTabs', () => {
       expect(title).toBe('sample.md');
     });
 
-    it('should show dirty indicator for modified tabs', () => {
+    it('should not include dirty indicator in title (indicator is rendered separately in TabBar)', () => {
       const { result } = renderHook(() => useTabs(mockT));
       
       act(() => {
@@ -87,7 +87,8 @@ describe('useTabs', () => {
       });
       
       const title = result.current.getTabTitle(result.current.tabs[0]);
-      expect(title).toContain('\u25cf'); // dirty indicator
+      expect(title).not.toContain('\u25cf'); // dirty dot is rendered by TabBar, not part of the title string
+      expect(result.current.tabs[0].isDirty).toBe(true); // isDirty flag still works
     });
 
     it('should use displayName if set after rename', async () => {

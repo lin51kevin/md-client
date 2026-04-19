@@ -277,7 +277,7 @@ export function WelcomePage({ recentFiles, onNew, onOpenFile, onOpenFolder, onOp
           </div>
 
           {/* Two-column layout */}
-          <div className="grid" style={{ gridTemplateColumns: '3fr 5fr', gap: '3rem' }}>
+          <div className="grid" style={{ gridTemplateColumns: '6fr 4fr', gap: '3rem' }}>
 
             {/* Left column */}
             <div style={{ minWidth: 0 }}>

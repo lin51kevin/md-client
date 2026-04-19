@@ -514,10 +514,7 @@ export function AppShell() {
           theme={theme} recentFiles={recentFiles}
           onNew={createNewTab} onOpenFile={handleOpenFile} onOpenFolder={handleOpenFolder}
           onOpenRecent={handleOpenRecent} onNewWithContent={(content, displayName) => {
-    const tabId = openFileWithContent('', content);
-    if (tabId && displayName) {
-      setTabDisplayName(tabId, displayName);
-    }
+    openFileWithContent('', content, displayName);
   }} onOpenSample={handleOpenSample}
           onDismiss={handleDismissWelcome} onShowWelcome={handleShowWelcome}
           pluginRenderers={pluginRenderers}

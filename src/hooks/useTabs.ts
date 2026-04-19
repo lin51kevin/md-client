@@ -56,11 +56,9 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
 
   const getTabTitle = (tab: Tab): string => {
     // F013: 自定义显示名优先
-    if (tab.displayName) return tab.isDirty ? tab.displayName + ' \u25cf' : tab.displayName;
-    const name = tab.filePath
-      ? (tab.filePath.split(/[\\/]/).pop() ?? tab.filePath)
-      : 'sample.md';
-    return tab.isDirty ? name + ' \u25cf' : name;
+    if (tab.displayName) return tab.displayName;
+    if (tab.filePath) return tab.filePath.split(/[\\/]/).pop() ?? tab.filePath;
+    return 'sample.md';
   };
 
   /** F013: 重命名 Tab — 有文件时重命名磁盘文件并更新 filePath，无文件时仅改显示名。返回 true 表示操作成功 */
@@ -293,7 +291,7 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
     });
   };
 
-  const openFileWithContent = useCallback((filePath: string, content: string): string | undefined => {
+  const openFileWithContent = useCallback((filePath: string, content: string, displayName?: string): string | undefined => {
     const normalized = normalizePath(filePath);
     const existing = tabsRef.current.find(t => t.filePath && normalizePath(t.filePath) === normalized);
     if (existing) {
@@ -311,18 +309,18 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
 
     // If the only tab is an untouched Untitled, replace it instead of adding alongside
     const current = tabsRef.current;
-    if (current.length === 1 && !current[0].filePath && !current[0].isDirty) {
-      setTabs([{ id: current[0].id, filePath, doc: content, isDirty: false }]);
-      setActiveTabId(current[0].id);
-      return current[0].id;
+    const isPristineReplace = current.length === 1 && !current[0].filePath && !current[0].isDirty;
+    const tabId = isPristineReplace ? genTabId() : genTabId();
+    const newTab: Tab = { id: tabId, filePath, doc: content, isDirty: false, displayName };
+    if (isPristineReplace) {
+      setTabs([newTab]);
     } else {
-      const newTab: Tab = { id: genTabId(), filePath, doc: content, isDirty: false };
       setTabs(prev => [...prev, newTab]);
-      setActiveTabId(newTab.id);
-      return newTab.id;
     }
-    addRecentFile(filePath);
+    setActiveTabId(tabId);
+    if (filePath) addRecentFile(filePath);
     notifyRecent();
+    return tabId;
   }, [notifyRecent]);
 
   const markSaved = (id: string) => {
