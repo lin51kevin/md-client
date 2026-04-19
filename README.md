@@ -22,7 +22,13 @@
 
 ## ✨ Features
 
-### 🖊️ WYSIWYG 预览编辑
+### �️ 界面布局
+- **ActivityBar** — VS Code 风格左侧活动栏，一键切换文件树、全局搜索、大纲、Git、插件等侧边栏面板；支持插件动态注册自定义面板
+- **FloatingPanel** — 可拖拽、可调整大小的浮动面板（插件 AI Copilot 等使用），位置自动记忆
+- **About Modal** — 应用关于页，展示版本号、MIT 许可证全文与快捷链接
+- **文件悬浮预览** — 鼠标悬停文件树中的文件时，弹出浮窗预览该文件前 10 行内容
+
+### �🖊️ WYSIWYG 预览编辑
 - **Milkdown WYSIWYG Preview** — 基于 `@milkdown/crepe` 的所见即所得预览区，可直接在预览侧编辑文本，自动双向同步到编辑器
 - **AST 精准编辑（Preview-Edit 插件）** — 通过 Markdown AST 解析器精确定位源码，支持段落、标题、引用块、列表项、代码块的原地编辑，含完整撤销/重做
 - **悬浮 InlineToolbar** — 预览区选中文本后弹出格式化工具栏（加粗、斜体、代码等）
@@ -117,15 +123,19 @@
 |--------|------|
 | `Ctrl+N` | 新建标签页 |
 | `Ctrl+O` | 打开文件 |
+| `Ctrl+P` | 快速打开文件（模糊搜索） |
 | `Ctrl+S` | 保存 |
 | `Ctrl+Shift+S` | 另存为 |
 | `Ctrl+W` | 关闭当前标签页 |
+| `Ctrl+Tab` | 切换到下一个标签页 |
+| `Ctrl+Shift+Tab` | 切换到上一个标签页 |
 | `Ctrl+F` / `Ctrl+H` | 打开查找替换 |
-| `Ctrl+1` | 切换到仅编辑视图 |
-| `Ctrl+2` | 切换到分栏视图 |
-| `Ctrl+3` | 切换到仅预览视图 |
-| `Ctrl+.` | 打字机模式开关 |
-| `Ctrl+,` | 专注模式开关 |
+| `Ctrl+Alt+1` | 切换到仅编辑视图 |
+| `Ctrl+Alt+2` | 切换到分栏视图 |
+| `Ctrl+Alt+3` | 切换到仅预览视图 |
+| `Ctrl+Shift+M` | 打字机模式开关 |
+| `Ctrl+Shift+F` | 专注模式开关 |
+| `F11` | 全屏模式 |
 | `Ctrl+Shift+P` | 命令面板（模糊搜索核心操作） |
 | `Alt+D` | 选中当前单词的所有出现（多光标） |
 | `Alt+Up` | 在上一行添加光标 |
@@ -141,6 +151,7 @@
 | Frontend | [React 19](https://react.dev/) + TypeScript ~5.8 |
 | Editor Engine | [CodeMirror 6](https://codemirror.net/) via [@uiw/react-codemirror](https://github.com/uiwjs/react-codemirror) |
 | Preview Renderer | [Milkdown Crepe](https://milkdown.dev/) (WYSIWYG) + [react-markdown](https://github.com/remarkjs/react-markdown) (fallback) |
+| State Management | [Zustand](https://zustand-demo.pmnd.rs/) (editor, preferences, UI stores) |
 | Styling | [Tailwind CSS 4](https://tailwindcss.com/) (CSS Variables 主题系统) |
 | Build Tool | [Vite 7](https://vite.dev/) |
 | Testing | [Vitest](https://vitest.dev/) + @testing-library/react |
@@ -150,6 +161,7 @@
 - **Editor:** `@codemirror/*` (autocomplete, commands, fold, lang-*, search, state, view, theme-one-dark)
 - **WYSIWYG Preview:** `@milkdown/crepe`, `@milkdown/react`, `@milkdown/kit`
 - **Markdown Preview (fallback):** `react-markdown`, `remark-gfm`, `remark-math`, `rehype-highlight`, `rehype-katex`
+- **State Management:** `zustand`
 - **Diagrams:** `mermaid` ^11
 - **Math:** `katex` ^0.16
 - **Icons:** `lucide-react`
@@ -184,85 +196,185 @@ yarn tauri build
 
 ```
 marklite/
-├── src/                        # React frontend
-│   ├── components/             # UI 组件
-│   │   ├── Toolbar.tsx         # 工具栏（文件菜单/格式化/切换/视图/标签导航）
-│   │   ├── ToolbarButton.tsx   # 工具栏通用按钮（action/toggle/view 变体）
-│   │   ├── TableSizePicker.tsx # 表格尺寸网格选择器
-│   │   ├── TabBar.tsx          # 标签栏（多标签/拖拽排序/右键菜单/滚动）
-│   │   ├── StatusBar.tsx       # 状态栏（路径/字数统计/行列号/版本历史入口）
-│   │   ├── FindReplaceBar.tsx  # 查找替换栏
-│   │   ├── MarkdownPreview.tsx # Markdown 渲染预览（含 Mermaid/KaTeX）
-│   │   ├── TocSidebar.tsx      # 大纲导航侧边栏（可折叠标题树）
-│   │   ├── FileTreeSidebar.tsx # 文件树侧边栏（CRUD/搜索过滤）
-│   │   ├── SearchPanel.tsx     # 跨文件搜索面板
-│   │   ├── EditorContextMenu.tsx # 编辑器右键上下文菜单
-│   │   ├── FileMenuDropdown.tsx # 文件菜单下拉
-│   │   ├── SettingsModal.tsx   # 设置面板（主题/语言/快捷键）
-│   │   ├── WelcomePage.tsx     # 空标签页欢迎页
-│   │   ├── TableEditor.tsx     # 表格可视化编辑器
-│   │   ├── InputDialog.tsx     # 通用输入对话框
-│   │   ├── DragOverlay.tsx     # 拖拽覆盖层提示
-│   │   ├── HelpModal.tsx       # 内置用户手册弹窗（带可折叠 TOC 侧边栏）
-│   │   ├── EditorContentArea.tsx # 主编辑区域布局（分栏/编辑/预览模式）
-│   │   └── TabContextMenu.tsx  # 标签右键菜单
-│   ├── hooks/                  # 自定义 React Hooks
-│   │   ├── useTabs.ts          # 标签页状态管理
-│   │   ├── useFileOps.ts       # 文件打开/保存/导出
-│   │   ├── useScrollSync.ts    # 编辑器-预览同步滚动
-│   │   ├── useDragDrop.ts      # 文件拖放处理
-│   │   ├── useKeyboardShortcuts.ts # 全局快捷键绑定
-│   │   ├── useCursorPosition.ts # 光标位置追踪
-│   │   ├── useFocusMode.ts     # 焦点模式（打字机/专注/全屏）
-│   │   ├── useSearchHighlight.ts # 搜索结果高亮
-│   │   ├── useFormatActions.ts # 格式化操作
-│   │   ├── useImagePaste.ts    # 图片粘贴处理
-│   │   ├── useWindowTitle.ts   # 窗口标题同步
-│   │   ├── useInputDialog.ts   # React 状态驱动的输入对话框
-│   │   ├── useDocMetrics.ts    # 防抖文档分析（TOC + 字数统计）
-│   │   ├── useVersionHistory.ts # 版本快照生命周期（保存时自动创建）
-│   │   ├── useTableEditor.ts   # 表格编辑器弹窗状态管理
-│   │   ├── useSnippetFlow.ts   # 片段选择/管理器状态与插入逻辑
-│   │   └── useEditorInstance.ts # CodeMirror 编辑器生命周期管理
-│   ├── i18n/                   # 国际化
-│   │   ├── en.ts               # 英文语言包
-│   │   └── zh-CN.ts            # 中文语言包
-│   ├── lib/                    # 工具库
-│   │   ├── auto-save.ts        # 防抖自动保存引擎
-│   │   ├── theme.ts            # 亮/暗主题定义与切换
-│   │   ├── theme-auto.ts       # 系统主题跟随
-│   │   ├── cm-themes.ts        # CodeMirror 额外主题（Sepia/High-Contrast）
-│   │   ├── version-history.ts  # 本地版本快照系统
-│   │   ├── toc.ts              # TOC 标题提取算法
-│   │   ├── word-count.ts       # 字数统计
-│   │   ├── writing-stats.ts    # 写作统计
-│   │   ├── search.ts           # 搜索/替换引擎
-│   │   ├── mermaid.ts          # Mermaid 图表渲染
-│   │   ├── html-export.ts      # HTML 导出生成
-│   │   ├── export-prerender.ts # 导出预渲染（Mermaid/Math）
-│   │   ├── latex.ts            # LaTeX 处理
-│   │   ├── image-paste.ts      # 图片粘贴工具
-│   │   ├── text-format.ts      # 文本格式化工具
-│   │   ├── table-parser.ts     # 表格解析器
-│   │   ├── context-menu.ts     # 右键菜单逻辑
-│   │   ├── shortcuts-config.ts # 快捷键配置
-│   │   ├── recent-files.ts     # 最近文件管理
-│   │   ├── split-preference.ts # 分栏比例记忆
-│   │   ├── cmAutocomplete.ts   # CodeMirror 自动补全括号
-│   │   └── cmVim.ts            # Vim 模式集成
-│   ├── __tests__/              # 单元测试
-│   ├── App.tsx                 # 主应用组件
-│   ├── types.ts                # TypeScript 类型定义
-│   ├── constants.ts            # 常量与默认值
-│   └── main.tsx                # 应用入口
-├── src-tauri/                  # Tauri (Rust) 后端
-│   ├── src/                    # Rust 源码
-│   ├── capabilities/           # 权限配置
-│   ├── icons/                  # 应用图标
-│   └── tauri.conf.json         # Tauri 配置
+├── src/                              # React 前端
+│   ├── components/                   # UI 组件（按功能子目录组织）
+│   │   ├── AppShell.tsx              # 主布局与核心逻辑编排
+│   │   ├── AppProviders.tsx          # Context / Store 初始化
+│   │   ├── AppGlobalOverlays.tsx     # 全局浮层（模态框、右键菜单、通知）
+│   │   ├── editor/                   # 编辑器区域组件
+│   │   │   ├── ActivityBar.tsx       # VS Code 风格活动栏（侧边栏切换）
+│   │   │   ├── EditorContentArea.tsx # 分栏/编辑/预览布局
+│   │   │   ├── EditorContextMenu.tsx # 编辑器右键菜单
+│   │   │   ├── DragOverlay.tsx       # 拖拽覆盖提示层
+│   │   │   ├── ExportPanel.tsx       # 导出格式选择面板
+│   │   │   ├── FileChangeToast.tsx   # 磁盘文件变更提示
+│   │   │   ├── FileMenuDropdown.tsx  # 文件菜单下拉
+│   │   │   ├── FileTreeContextMenu.tsx # 文件树右键菜单
+│   │   │   └── AppContextMenus.tsx   # 全局右键菜单注册
+│   │   ├── toolbar/                  # 工具栏组件
+│   │   │   ├── Toolbar.tsx           # 主工具栏（文件菜单/格式化/视图/标签导航）
+│   │   │   ├── ToolbarButton.tsx     # 工具栏按钮（action/toggle/view 变体）
+│   │   │   ├── TabBar.tsx            # 标签栏（多标签/拖拽排序/右键菜单）
+│   │   │   ├── TabContextMenu.tsx    # 标签右键菜单
+│   │   │   ├── StatusBar.tsx         # 状态栏（路径/字数/行列/版本历史）
+│   │   │   ├── CommandPalette.tsx    # 命令面板（Ctrl+Shift+P）
+│   │   │   ├── QuickOpen.tsx         # 快速打开文件（Ctrl+P）
+│   │   │   └── SearchPanel.tsx       # 跨文件搜索面板
+│   │   ├── sidebar/                  # 侧边栏组件
+│   │   │   ├── SidebarContainer.tsx  # 侧边栏容器与面板切换
+│   │   │   ├── TocSidebar.tsx        # 大纲导航（可折叠标题树）
+│   │   │   └── BreadcrumbNav.tsx     # 文件路径面包屑导航
+│   │   ├── modal/                    # 弹窗/模态框组件
+│   │   │   ├── SettingsModal.tsx     # 设置面板（主题/语言/快捷键）
+│   │   │   ├── HelpModal.tsx         # 内置用户手册弹窗
+│   │   │   ├── AboutModal.tsx        # 关于应用（版本/许可证）
+│   │   │   ├── TableEditor.tsx       # 表格可视化编辑器
+│   │   │   ├── TableSizePicker.tsx   # 表格尺寸网格选择器
+│   │   │   ├── InputDialog.tsx       # 通用输入对话框
+│   │   │   ├── DiffViewer.tsx        # AI 编辑差异对比视图
+│   │   │   ├── FloatingPanel.tsx     # 可拖拽浮动面板（插件用）
+│   │   │   ├── GitPanel.tsx          # Git 操作面板
+│   │   │   ├── SnippetManager.tsx    # 片段管理器
+│   │   │   ├── SnippetPicker.tsx     # 片段快速插入
+│   │   │   ├── PermissionApprovalModal.tsx # 插件权限审批
+│   │   │   └── UpdateNotification.tsx # 应用更新通知
+│   │   ├── preview/                  # 预览区组件
+│   │   │   ├── MarkdownPreview.tsx   # Markdown 渲染预览（Mermaid/KaTeX）
+│   │   │   ├── PreviewContextMenu.tsx # 预览区右键菜单
+│   │   │   ├── SlidePreview.tsx      # 幻灯片演示视图
+│   │   │   └── MindmapView.tsx       # 思维导图视图
+│   │   ├── file/                     # 文件树组件
+│   │   │   ├── FileTreeSidebar.tsx   # 文件树侧边栏（CRUD/搜索过滤）
+│   │   │   ├── FileTreeNode.tsx      # 文件树节点（展开/折叠/重命名）
+│   │   │   ├── FileHoverPreview.tsx  # 文件悬浮预览（前 10 行）
+│   │   │   └── CustomCssEditor.tsx   # 自定义 CSS 编辑器
+│   │   ├── plugin/                   # 插件系统 UI 组件
+│   │   │   ├── PluginPanel.tsx       # 插件管理面板
+│   │   │   ├── PluginList.tsx        # 插件列表
+│   │   │   ├── PluginCard.tsx        # 插件卡片
+│   │   │   ├── SidebarRenderer.tsx   # 插件侧边栏内容渲染
+│   │   │   └── ...                   # 其他插件 UI 组件
+│   │   ├── milkdown/                 # Milkdown WYSIWYG 组件
+│   │   │   ├── index.tsx             # Milkdown 编辑器入口
+│   │   │   ├── FrontmatterPanel.tsx  # YAML Frontmatter 面板
+│   │   │   ├── CodeBlockFoldOverlay.tsx # 代码块折叠覆盖
+│   │   │   └── nodeviews/            # 自定义节点渲染
+│   │   │       ├── MermaidBlockView.tsx  # Mermaid 图表节点
+│   │   │       ├── LocalImageView.tsx    # 本地图片节点
+│   │   │       ├── HtmlBlockView.ts      # HTML 块节点
+│   │   │       └── WikiLinkNode.ts       # Wiki 链接节点
+│   │   └── welcome/
+│   │       └── WelcomePage.tsx       # 空标签页欢迎页
+│   ├── stores/                       # Zustand 全局状态
+│   │   ├── editor-store.ts           # 视图模式、分栏比例、会话状态
+│   │   ├── preferences-store.ts      # 用户偏好（主题/Vim/自动保存等，持久化）
+│   │   └── ui-store.ts               # 瞬态 UI 状态（模态框/右键菜单/侧边栏）
+│   ├── hooks/                        # 自定义 React Hooks
+│   │   ├── useTabs.ts                # 标签页状态管理
+│   │   ├── useFileOps.ts             # 文件打开/保存/导出
+│   │   ├── useScrollSync.ts          # 编辑器-预览同步滚动
+│   │   ├── useDragDrop.ts            # 文件拖放处理
+│   │   ├── useKeyboardShortcuts.ts   # 全局快捷键绑定
+│   │   ├── useCursorPosition.ts      # 光标位置追踪
+│   │   ├── useFocusMode.ts           # 焦点模式（打字机/专注/全屏）
+│   │   ├── useSearchHighlight.ts     # 搜索结果高亮
+│   │   ├── useFormatActions.ts       # 格式化操作
+│   │   ├── useImagePaste.ts          # 图片粘贴处理
+│   │   ├── useWindowTitle.ts         # 窗口标题同步
+│   │   ├── useDocMetrics.ts          # 防抖文档分析（TOC + 字数统计）
+│   │   ├── useVersionHistory.ts      # 版本快照生命周期
+│   │   ├── useTableEditor.ts         # 表格编辑器状态
+│   │   ├── useSnippetFlow.ts         # 片段插入状态与逻辑
+│   │   ├── useEditorInstance.ts      # CodeMirror 编辑器生命周期
+│   │   ├── useGit.ts                 # Git 操作 Hook
+│   │   ├── useAutoUpgrade.ts         # 自动更新检测
+│   │   ├── useFileWatcher.ts         # 磁盘文件变更监听
+│   │   ├── usePlugins.ts             # 插件系统管理
+│   │   └── ...                       # 其他 Hooks
+│   ├── i18n/                         # 国际化
+│   │   ├── en.ts                     # 英文语言包
+│   │   └── zh-CN.ts                  # 中文语言包
+│   ├── lib/                          # 工具库（按领域子目录组织）
+│   │   ├── cm/                       # CodeMirror 扩展
+│   │   │   ├── cm-themes.ts          # Sepia/High-Contrast 主题
+│   │   │   ├── cmAutocomplete.ts     # 自动补全括号
+│   │   │   ├── cmVim.ts              # Vim 模式集成
+│   │   │   ├── multicursor-keymap.ts # 多光标键盘映射
+│   │   │   └── cm-languages.ts       # 多语言支持
+│   │   ├── editor/                   # 编辑器工具
+│   │   │   ├── auto-save.ts          # 防抖自动保存
+│   │   │   ├── text-format.ts        # 文本格式化
+│   │   │   ├── shortcuts-config.ts   # 快捷键配置
+│   │   │   ├── context-menu.ts       # 右键菜单逻辑
+│   │   │   ├── command-registry.ts   # 命令注册中心
+│   │   │   ├── split-preference.ts   # 分栏比例记忆
+│   │   │   └── vim-mode.ts           # Vim 模式状态
+│   │   ├── markdown/                 # Markdown 处理
+│   │   │   ├── pipeline.ts           # remark/rehype 插件管道
+│   │   │   ├── toc.ts                # TOC 标题提取
+│   │   │   ├── table-parser.ts       # 表格解析
+│   │   │   ├── mermaid.ts            # Mermaid 渲染
+│   │   │   ├── html-export.ts        # HTML 导出生成
+│   │   │   ├── export-prerender.ts   # 导出预渲染
+│   │   │   ├── latex.ts              # LaTeX 处理
+│   │   │   ├── slide-parser.ts       # 幻灯片解析
+│   │   │   └── mindmap-converter.ts  # 思维导图转换
+│   │   ├── file/                     # 文件操作工具
+│   │   │   ├── recent-files.ts       # 最近文件管理
+│   │   │   ├── git-commands.ts       # Git 命令封装
+│   │   │   ├── pending-images.ts     # 待迁移图片处理
+│   │   │   └── reveal-in-explorer.ts # 在资源管理器中显示
+│   │   ├── storage/                  # 本地存储
+│   │   │   ├── storage-keys.ts       # localStorage key 常量
+│   │   │   ├── version-history.ts    # 版本快照系统
+│   │   │   ├── snippets.ts           # 片段存储
+│   │   │   └── tab-session.ts        # 标签会话持久化
+│   │   ├── theme/                    # 主题系统
+│   │   │   ├── manager.ts            # 主题管理器
+│   │   │   ├── registry.ts           # 主题注册
+│   │   │   ├── auto.ts               # 系统主题跟随
+│   │   │   └── storage.ts            # 主题持久化
+│   │   ├── ui/                       # UI 工具
+│   │   │   ├── custom-css.ts         # 自定义 CSS 应用
+│   │   │   └── css-templates.ts      # CSS 模板管理
+│   │   ├── search/                   # 搜索引擎
+│   │   │   └── search.ts             # 跨文件搜索/替换
+│   │   ├── milkdown/                 # Milkdown 工具
+│   │   │   ├── editor-bridge.ts      # Milkdown ↔ CodeMirror 同步桥接
+│   │   │   └── sync.ts               # 双向同步逻辑
+│   │   └── utils/                    # 通用工具
+│   │       ├── word-count.ts         # 字数统计
+│   │       ├── writing-stats.ts      # 写作统计
+│   │       ├── image-paste.ts        # 图片粘贴工具
+│   │       ├── path.ts               # 路径处理
+│   │       ├── errors.ts             # 错误工具
+│   │       └── html-safety.ts        # HTML 安全处理
+│   ├── plugins/                      # 插件系统核心
+│   │   ├── plugin-registry.ts        # 插件注册中心
+│   │   ├── plugin-loader.ts          # 插件加载器
+│   │   ├── plugin-sandbox.ts         # 插件沙箱隔离
+│   │   ├── signature-verify.ts       # 插件签名验证
+│   │   ├── official/                 # 官方内置插件（AI Copilot 等）
+│   │   └── registry/                 # 插件注册表
+│   ├── __tests__/                    # 单元测试
+│   ├── App.tsx                       # 应用入口组件
+│   ├── types.ts                      # TypeScript 全局类型
+│   ├── constants.ts                  # 全局常量
+│   └── main.tsx                      # 应用启动入口
+├── src-tauri/                        # Tauri (Rust) 后端
+│   ├── src/                          # Rust 源码（文件操作/导出/工具调用等）
+│   ├── capabilities/                 # Tauri 权限配置
+│   ├── icons/                        # 应用图标
+│   └── tauri.conf.json               # Tauri 配置（版本/窗口/插件/权限）
+├── packages/                         # 内部 monorepo 包
+├── scripts/                          # 构建脚本
+├── docs/                             # 文档
+│   └── guides/
+│       └── USER_GUIDE.md             # 用户指南
 ├── package.json
-├── vitest.config.ts            # 测试配置
-└── CHANGELOG.md                # 变更日志
+├── vite.config.ts                    # Vite 构建配置
+├── vitest.config.ts                  # 单元测试配置
+└── CHANGELOG.md                      # 变更日志
 ```
 
 ## Changelog

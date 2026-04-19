@@ -6,6 +6,43 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [v0.9.5] - 2026-04-19
+
+### Added
+
+#### ActivityBar（VS Code 风格活动栏）
+- **ActivityBar** — 左侧活动栏统一管理侧边栏面板（文件树 / 全局搜索 / 大纲 / Git / 插件）
+- 支持插件动态注册自定义面板，可通过图标切换显示/隐藏
+- 浮动面板模式（FloatingPanel）：可拖拽、可调整大小、位置持久化
+
+#### About 弹窗（关于应用）
+- **About Modal** — 展示应用名称、版本号、MIT 许可证全文
+- 提供 GitHub 主页、Issues 反馈、用户指南的快速跳转链接
+
+#### 文件悬浮预览（File Hover Preview）
+- 鼠标悬停文件树中的文件时，弹出浮窗预览该文件前 10 行内容
+- 自动感知视口边缘，防止预览窗超出屏幕
+
+#### Milkdown 自定义 Node Views
+- **HtmlBlockView** — Milkdown 中 HTML 块节点自定义渲染
+- **LocalImageView** — Milkdown 中本地图片节点（通过 Tauri fs 读取，base64 展示）
+- **MermaidBlockView** — Milkdown 中 Mermaid 图表节点渲染为 SVG
+- **WikiLinkNode / wikiLinkPlugin** — Milkdown 中 `[[wiki-link]]` 节点渲染与导航
+
+### Refactor
+
+#### Zustand 全局状态管理（State Architecture）
+- **引入 Zustand** — 新增 `src/stores/` 目录，集中管理全局状态，替换原来分散在各 Hook 中的 `localStorage` 读写
+  - `editor-store.ts` — 视图模式（viewMode）、分栏比例（splitSizes）、会话恢复标志
+  - `preferences-store.ts` — 用户偏好（主题、Vim 模式、自动保存、拼写检查等），通过 Zustand `persist` 中间件自动持久化
+  - `ui-store.ts` — 瞬态 UI 状态（模态框显示、右键菜单、侧边栏活动面板、拖拽状态）
+
+#### 应用结构拆分（App Architecture）
+- `App.tsx` 拆分为 `AppShell.tsx`（布局与核心逻辑）、`AppProviders.tsx`（Context/Store 初始化）、`AppGlobalOverlays.tsx`（全局浮层：模态框、通知、右键菜单）
+- 导出面板独立为 `ExportPanel.tsx`（格式选择 UI），统一替代原来各处的直接导出调用
+
+---
+
 ## [v0.9.4] - 2026-04-18
 
 ### Added
