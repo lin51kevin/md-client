@@ -138,6 +138,9 @@ export function EditorContentArea({
     );
   }
 
+  // WYSIWYG mode: when Milkdown editable preview is on, force preview-only view
+  const effectiveViewMode = useMilkdownPreview ? 'preview' : viewMode;
+
   const previewClass = `markdown-preview max-w-full min-h-full ${THEMES[theme].previewClass}`;
   const PreviewComponent = useMilkdownPreview ? MilkdownPreview : MarkdownPreview;
 
@@ -169,7 +172,7 @@ export function EditorContentArea({
     </PreviewErrorBoundary>
   );
 
-  if (viewMode === 'split') {
+  if (effectiveViewMode === 'split') {
     return (
       <Split
         sizes={splitSizes}
@@ -224,7 +227,7 @@ export function EditorContentArea({
 
   return (
     <div className="flex h-full w-full min-w-0 overflow-hidden">
-      {viewMode === 'edit' ? (
+      {effectiveViewMode === 'edit' ? (
         <div className="w-full h-full overflow-auto min-w-0">
           <CodeMirror
             key={activeTabId}

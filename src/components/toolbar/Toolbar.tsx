@@ -66,6 +66,8 @@ interface ToolbarProps {
   canRedo?: boolean;
   onUndo?: () => void;
   onRedo?: () => void;
+  /** WYSIWYG mode: when true, hide source-editing UI (view switcher, formatting, undo/redo, vim, spellcheck, focus modes) */
+  wysiwygMode?: boolean;
 }
 
 const DIVIDER = (
@@ -84,6 +86,7 @@ export function Toolbar({
   aiCopilotEnabled, showAIPanel, onToggleAIPanel,
   tabs, activeTabId, onActivateTab, onCloseAll, onInsertSnippet,
   canUndo, canRedo, onUndo, onRedo,
+  wysiwygMode = false,
 }: ToolbarProps & { onImageLocal?: () => void }) {
   const { t } = useI18n();
   const toolbarRef = useRef<HTMLDivElement>(null);
@@ -159,86 +162,88 @@ export function Toolbar({
           <SaveAll size={14} strokeWidth={1.8} />
         </ToolbarButton>
 
-        <div className="w-px h-5 mx-1 shrink-0" style={{ backgroundColor: 'var(--border-color)' }} />
+        {!wysiwygMode && <div className="w-px h-5 mx-1 shrink-0" style={{ backgroundColor: 'var(--border-color)' }} />}
 
-        {/* Undo / Redo */}
-        <ToolbarButton disabled={!canUndo} onClick={onUndo} title={t('toolbar.undo')}>
-          <Undo2 size={14} strokeWidth={2} />
-        </ToolbarButton>
-        <ToolbarButton disabled={!canRedo} onClick={onRedo} title={t('toolbar.redo')}>
-          <Redo2 size={14} strokeWidth={2} />
-        </ToolbarButton>
-
-        {/* 格式化 */}
-        <ToolbarButton onClick={() => onFormatAction?.('bold')} title={t('toolbar.bold')}>
-          <Bold size={14} strokeWidth={2} />
-        </ToolbarButton>
-        <ToolbarButton onClick={() => onFormatAction?.('italic')} title={t('toolbar.italic')}>
-          <Italic size={14} strokeWidth={2} />
-        </ToolbarButton>
-        <ToolbarButton onClick={() => onFormatAction?.('strikethrough')} title={t('toolbar.strikethrough')}>
-          <Strikethrough size={14} strokeWidth={2} />
-        </ToolbarButton>
-        <ToolbarButton onClick={() => onFormatAction?.('code')} title={t('toolbar.code')}>
-          <Code size={14} strokeWidth={2} />
-        </ToolbarButton>
-
-        {DIVIDER}
-
-        <ToolbarButton onClick={() => onFormatAction?.('heading')} title={t('toolbar.heading')}>
-          <Heading size={14} strokeWidth={2} />
-        </ToolbarButton>
-        <ToolbarButton onClick={() => onFormatAction?.('blockquote')} title={t('toolbar.blockquote')}>
-          <Quote size={14} strokeWidth={2} />
-        </ToolbarButton>
-        <ToolbarButton onClick={() => onFormatAction?.('ul')} title={t('toolbar.ul')}>
-          <List size={14} strokeWidth={2} />
-        </ToolbarButton>
-        <ToolbarButton onClick={() => onFormatAction?.('ol')} title={t('toolbar.ol')}>
-          <ListOrdered size={14} strokeWidth={2} />
-        </ToolbarButton>
-
-        {DIVIDER}
-
-        <ToolbarButton onClick={() => onFormatAction?.('link')} title={t('toolbar.link')}>
-          <Link size={14} strokeWidth={2} />
-        </ToolbarButton>
-        <ToolbarButton onClick={() => onImageLocal?.()} title={t('toolbar.imageLocal')}>
-          <ImagePlus size={14} strokeWidth={2} />
-        </ToolbarButton>
-        <ToolbarButton onClick={() => onFormatAction?.('image-link')} title={t('toolbar.imageLink')}>
-          <Link2 size={14} strokeWidth={2} />
-        </ToolbarButton>
-
-        {DIVIDER}
-
-        {/* 插入表格 */}
-        <div className="relative">
-          <ToolbarButton onClick={() => setShowTablePicker(v => !v)} title={t('toolbar.table')}>
-            <Table2 size={14} strokeWidth={2} />
+        {!wysiwygMode && (<>
+          {/* Undo / Redo */}
+          <ToolbarButton disabled={!canUndo} onClick={onUndo} title={t('toolbar.undo')}>
+            <Undo2 size={14} strokeWidth={2} />
           </ToolbarButton>
-          {showTablePicker && (
-            <TableSizePicker
-              onSelect={(rows, cols) => onFormatAction?.(`table:${rows}x${cols}`)}
-              onClose={() => setShowTablePicker(false)}
-            />
-          )}
-        </div>
-        <ToolbarButton onClick={() => onFormatAction?.('codeblock')} title={t('toolbar.codeblock')}>
-          <FileCode2 size={14} strokeWidth={2} />
-        </ToolbarButton>
-        <ToolbarButton onClick={() => onFormatAction?.('hr')} title={t('toolbar.hr')}>
-          <Minus size={14} strokeWidth={2} />
-        </ToolbarButton>
-        <ToolbarButton onClick={() => onFormatAction?.('task')} title={t('toolbar.task')}>
-          <ListChecks size={14} strokeWidth={2} />
-        </ToolbarButton>
-        <ToolbarButton onClick={() => onFormatAction?.('math')} title={t('toolbar.math')}>
-          <Sigma size={14} strokeWidth={2} />
-        </ToolbarButton>
-        <ToolbarButton onClick={onInsertSnippet} title={t('toolbar.insertSnippet')}>
-          <Library size={14} strokeWidth={1.8} />
-        </ToolbarButton>
+          <ToolbarButton disabled={!canRedo} onClick={onRedo} title={t('toolbar.redo')}>
+            <Redo2 size={14} strokeWidth={2} />
+          </ToolbarButton>
+
+          {/* 格式化 */}
+          <ToolbarButton onClick={() => onFormatAction?.('bold')} title={t('toolbar.bold')}>
+            <Bold size={14} strokeWidth={2} />
+          </ToolbarButton>
+          <ToolbarButton onClick={() => onFormatAction?.('italic')} title={t('toolbar.italic')}>
+            <Italic size={14} strokeWidth={2} />
+          </ToolbarButton>
+          <ToolbarButton onClick={() => onFormatAction?.('strikethrough')} title={t('toolbar.strikethrough')}>
+            <Strikethrough size={14} strokeWidth={2} />
+          </ToolbarButton>
+          <ToolbarButton onClick={() => onFormatAction?.('code')} title={t('toolbar.code')}>
+            <Code size={14} strokeWidth={2} />
+          </ToolbarButton>
+
+          {DIVIDER}
+
+          <ToolbarButton onClick={() => onFormatAction?.('heading')} title={t('toolbar.heading')}>
+            <Heading size={14} strokeWidth={2} />
+          </ToolbarButton>
+          <ToolbarButton onClick={() => onFormatAction?.('blockquote')} title={t('toolbar.blockquote')}>
+            <Quote size={14} strokeWidth={2} />
+          </ToolbarButton>
+          <ToolbarButton onClick={() => onFormatAction?.('ul')} title={t('toolbar.ul')}>
+            <List size={14} strokeWidth={2} />
+          </ToolbarButton>
+          <ToolbarButton onClick={() => onFormatAction?.('ol')} title={t('toolbar.ol')}>
+            <ListOrdered size={14} strokeWidth={2} />
+          </ToolbarButton>
+
+          {DIVIDER}
+
+          <ToolbarButton onClick={() => onFormatAction?.('link')} title={t('toolbar.link')}>
+            <Link size={14} strokeWidth={2} />
+          </ToolbarButton>
+          <ToolbarButton onClick={() => onImageLocal?.()} title={t('toolbar.imageLocal')}>
+            <ImagePlus size={14} strokeWidth={2} />
+          </ToolbarButton>
+          <ToolbarButton onClick={() => onFormatAction?.('image-link')} title={t('toolbar.imageLink')}>
+            <Link2 size={14} strokeWidth={2} />
+          </ToolbarButton>
+
+          {DIVIDER}
+
+          {/* 插入表格 */}
+          <div className="relative">
+            <ToolbarButton onClick={() => setShowTablePicker(v => !v)} title={t('toolbar.table')}>
+              <Table2 size={14} strokeWidth={2} />
+            </ToolbarButton>
+            {showTablePicker && (
+              <TableSizePicker
+                onSelect={(rows, cols) => onFormatAction?.(`table:${rows}x${cols}`)}
+                onClose={() => setShowTablePicker(false)}
+              />
+            )}
+          </div>
+          <ToolbarButton onClick={() => onFormatAction?.('codeblock')} title={t('toolbar.codeblock')}>
+            <FileCode2 size={14} strokeWidth={2} />
+          </ToolbarButton>
+          <ToolbarButton onClick={() => onFormatAction?.('hr')} title={t('toolbar.hr')}>
+            <Minus size={14} strokeWidth={2} />
+          </ToolbarButton>
+          <ToolbarButton onClick={() => onFormatAction?.('task')} title={t('toolbar.task')}>
+            <ListChecks size={14} strokeWidth={2} />
+          </ToolbarButton>
+          <ToolbarButton onClick={() => onFormatAction?.('math')} title={t('toolbar.math')}>
+            <Sigma size={14} strokeWidth={2} />
+          </ToolbarButton>
+          <ToolbarButton onClick={onInsertSnippet} title={t('toolbar.insertSnippet')}>
+            <Library size={14} strokeWidth={1.8} />
+          </ToolbarButton>
+        </>)}
       </div>
 
       {/* ── Center: tab navigation (VS Code title-bar style) ── */}
@@ -299,105 +304,107 @@ export function Toolbar({
           </ToolbarButton>
         )}
 
-        {/* F013 — 拼写检查 */}
-        <ToolbarButton
-          variant="toggle"
-          active={!!spellCheck}
-          onClick={onToggleSpellCheck}
-          title={spellCheck ? t('toolbar.spellCheckOff') : t('toolbar.spellCheckOn')}
-        >
-          <SpellCheck size={14} strokeWidth={1.8} />
-        </ToolbarButton>
+        {!wysiwygMode && (<>
+          {/* F013 — 拼写检查 */}
+          <ToolbarButton
+            variant="toggle"
+            active={!!spellCheck}
+            onClick={onToggleSpellCheck}
+            title={spellCheck ? t('toolbar.spellCheckOff') : t('toolbar.spellCheckOn')}
+          >
+            <SpellCheck size={14} strokeWidth={1.8} />
+          </ToolbarButton>
 
-        {/* F014 — Vim 模式 */}
-        <ToolbarButton
-          variant="toggle"
-          active={!!vimMode}
-          onClick={onToggleVimMode}
-          title={vimMode ? t('toolbar.vimModeOff') : t('toolbar.vimModeOn')}
-        >
-          <Terminal size={14} strokeWidth={1.8} />
-        </ToolbarButton>
+          {/* F014 — Vim 模式 */}
+          <ToolbarButton
+            variant="toggle"
+            active={!!vimMode}
+            onClick={onToggleVimMode}
+            title={vimMode ? t('toolbar.vimModeOff') : t('toolbar.vimModeOn')}
+          >
+            <Terminal size={14} strokeWidth={1.8} />
+          </ToolbarButton>
 
-        {DIVIDER}
+          {DIVIDER}
 
-        {/* F009 — 打字机模式 */}
-        <ToolbarButton
-          variant="toggle"
-          active={focusMode === 'typewriter'}
-          onClick={() => onFocusModeChange?.('typewriter')}
-          title={t('toolbar.typewriter')}
-        >
-          <Type size={14} strokeWidth={1.8} />
-        </ToolbarButton>
+          {/* F009 — 打字机模式 */}
+          <ToolbarButton
+            variant="toggle"
+            active={focusMode === 'typewriter'}
+            onClick={() => onFocusModeChange?.('typewriter')}
+            title={t('toolbar.typewriter')}
+          >
+            <Type size={14} strokeWidth={1.8} />
+          </ToolbarButton>
 
-        {/* F009 — 焦点模式 */}
-        <ToolbarButton
-          variant="toggle"
-          active={focusMode === 'focus'}
-          onClick={() => onFocusModeChange?.('focus')}
-          title={t('toolbar.focus')}
-        >
-          <Monitor size={14} strokeWidth={1.8} />
-        </ToolbarButton>
+          {/* F009 — 焦点模式 */}
+          <ToolbarButton
+            variant="toggle"
+            active={focusMode === 'focus'}
+            onClick={() => onFocusModeChange?.('focus')}
+            title={t('toolbar.focus')}
+          >
+            <Monitor size={14} strokeWidth={1.8} />
+          </ToolbarButton>
 
-        {/* F009 — 全屏 */}
-        <ToolbarButton
-          variant="toggle"
-          active={focusMode === 'fullscreen'}
-          onClick={() => onFocusModeChange?.(focusMode === 'fullscreen' ? 'normal' : 'fullscreen')}
-          title={t('toolbar.fullscreen')}
-        >
-          {focusMode === 'fullscreen' ? (
-            <Minimize size={14} strokeWidth={1.8} />
-          ) : (
-            <Maximize size={14} strokeWidth={1.8} />
-          )}
-        </ToolbarButton>
+          {/* F009 — 全屏 */}
+          <ToolbarButton
+            variant="toggle"
+            active={focusMode === 'fullscreen'}
+            onClick={() => onFocusModeChange?.(focusMode === 'fullscreen' ? 'normal' : 'fullscreen')}
+            title={t('toolbar.fullscreen')}
+          >
+            {focusMode === 'fullscreen' ? (
+              <Minimize size={14} strokeWidth={1.8} />
+            ) : (
+              <Maximize size={14} strokeWidth={1.8} />
+            )}
+          </ToolbarButton>
 
-        <div className="w-px h-5 mx-1 shrink-0" style={{ backgroundColor: 'var(--border-color)' }} />
+          {DIVIDER}
 
-        {/* 视图模式 */}
-        <ToolbarButton
-          variant="view"
-          active={viewMode === 'edit'}
-          onClick={() => onSetViewMode('edit')}
-          title={t('toolbar.editOnly')}
-        >
-          <PanelRightClose size={15} strokeWidth={1.8} />
-        </ToolbarButton>
-        <ToolbarButton
-          variant="view"
-          active={viewMode === 'split'}
-          onClick={() => onSetViewMode('split')}
-          title={t('toolbar.split')}
-        >
-          <Columns2 size={15} strokeWidth={1.8} />
-        </ToolbarButton>
-        <ToolbarButton
-          variant="view"
-          active={viewMode === 'preview'}
-          onClick={() => onSetViewMode('preview')}
-          title={t('toolbar.previewOnly')}
-        >
-          <PanelLeftClose size={15} strokeWidth={1.8} />
-        </ToolbarButton>
-        <ToolbarButton
-          variant="view"
-          active={viewMode === 'slide'}
-          onClick={() => onSetViewMode('slide')}
-          title={t('toolbar.slideMode') || 'Slide Show (Ctrl+4)'}
-        >
-          <Presentation size={15} strokeWidth={1.8} />
-        </ToolbarButton>
-        <ToolbarButton
-          variant="view"
-          active={viewMode === 'mindmap'}
-          onClick={() => onSetViewMode('mindmap')}
-          title={t('toolbar.mindmapMode') || 'Mindmap (Ctrl+5)'}
-        >
-          <Brain size={15} strokeWidth={1.8} />
-        </ToolbarButton>
+          {/* 视图模式 */}
+          <ToolbarButton
+            variant="view"
+            active={viewMode === 'edit'}
+            onClick={() => onSetViewMode('edit')}
+            title={t('toolbar.editOnly')}
+          >
+            <PanelRightClose size={15} strokeWidth={1.8} />
+          </ToolbarButton>
+          <ToolbarButton
+            variant="view"
+            active={viewMode === 'split'}
+            onClick={() => onSetViewMode('split')}
+            title={t('toolbar.split')}
+          >
+            <Columns2 size={15} strokeWidth={1.8} />
+          </ToolbarButton>
+          <ToolbarButton
+            variant="view"
+            active={viewMode === 'preview'}
+            onClick={() => onSetViewMode('preview')}
+            title={t('toolbar.previewOnly')}
+          >
+            <PanelLeftClose size={15} strokeWidth={1.8} />
+          </ToolbarButton>
+          <ToolbarButton
+            variant="view"
+            active={viewMode === 'slide'}
+            onClick={() => onSetViewMode('slide')}
+            title={t('toolbar.slideMode') || 'Slide Show (Ctrl+4)'}
+          >
+            <Presentation size={15} strokeWidth={1.8} />
+          </ToolbarButton>
+          <ToolbarButton
+            variant="view"
+            active={viewMode === 'mindmap'}
+            onClick={() => onSetViewMode('mindmap')}
+            title={t('toolbar.mindmapMode') || 'Mindmap (Ctrl+5)'}
+          >
+            <Brain size={15} strokeWidth={1.8} />
+          </ToolbarButton>
+        </>)}
 
         <div className="w-px h-5 mx-1 shrink-0" style={{ backgroundColor: 'var(--border-color)' }} />
 

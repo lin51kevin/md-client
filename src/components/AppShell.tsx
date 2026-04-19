@@ -99,6 +99,13 @@ export function AppShell() {
   const effectiveChromeless = isChromeless || (focusMode === 'typewriter' && typewriterOptions.hideUI);
   const effectiveHideStatusBar = hideStatusBar || (focusMode === 'typewriter' && typewriterOptions.hideUI);
 
+  // WYSIWYG mode: auto-switch to preview view when milkdownPreview is enabled
+  useEffect(() => {
+    if (milkdownPreview && viewMode !== 'preview' && viewMode !== 'slide' && viewMode !== 'mindmap') {
+      setViewMode('preview');
+    }
+  }, [milkdownPreview]);
+
   const focusStartRef = useRef<number | null>(null);
   useEffect(() => {
     if (focusMode === 'typewriter') {
@@ -370,6 +377,7 @@ export function AppShell() {
             onUndo={() => { const v = cmViewRef.current; if (v) undo(v); }}
             onRedo={() => { const v = cmViewRef.current; if (v) redo(v); }}
             tabs={tabs} activeTabId={activeTabId} onActivateTab={setActiveTabId}
+            wysiwygMode={milkdownPreview}
           />
 
           <SettingsModal
