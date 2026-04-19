@@ -293,12 +293,12 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
     });
   };
 
-  const openFileWithContent = useCallback((filePath: string, content: string) => {
+  const openFileWithContent = useCallback((filePath: string, content: string): string | undefined => {
     const normalized = normalizePath(filePath);
     const existing = tabsRef.current.find(t => t.filePath && normalizePath(t.filePath) === normalized);
     if (existing) {
       setActiveTabId(existing.id);
-      return;
+      return existing.id;
     }
     // Guard against concurrent calls (e.g. open-file event fired twice, or
     // session restore + get_open_file race before tabsRef is updated)
@@ -314,10 +314,12 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
     if (current.length === 1 && !current[0].filePath && !current[0].isDirty) {
       setTabs([{ id: current[0].id, filePath, doc: content, isDirty: false }]);
       setActiveTabId(current[0].id);
+      return current[0].id;
     } else {
       const newTab: Tab = { id: genTabId(), filePath, doc: content, isDirty: false };
       setTabs(prev => [...prev, newTab]);
       setActiveTabId(newTab.id);
+      return newTab.id;
     }
     addRecentFile(filePath);
     notifyRecent();

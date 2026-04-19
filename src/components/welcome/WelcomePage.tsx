@@ -276,90 +276,142 @@ export function WelcomePage({ recentFiles, onNew, onOpenFile, onOpenFolder, onOp
             </p>
           </div>
 
-          {/* ── Three-column layout ──────────────────────────────────── */}
-          <div className="grid" style={{ gridTemplateColumns: '2fr 4fr 6fr', gap: '2rem' }}>
+          {/* Two-column layout */}
+          <div className="grid" style={{ gridTemplateColumns: '3fr 5fr', gap: '3rem' }}>
 
-            {/* Column 1 – Start ───────────────────────────────────── */}
-            <section style={{ minWidth: 0 }}>
-              <h2
-                className="text-xs font-semibold uppercase tracking-widest mb-3"
-                style={{ color: 'var(--text-tertiary)' }}
-              >
-                {t('welcome.start')}
-              </h2>
-              <div className="space-y-px">
-                <ActionLink
-                  icon={<FilePlus size={14} strokeWidth={1.8} />}
-                  label={t('welcome.newFile')}
-                  onClick={onNew}
-                />
-                <ActionLink
-                  icon={<FileText size={14} strokeWidth={1.8} />}
-                  label={t('welcome.openFile')}
-                  onClick={onOpenFile}
-                />
-                {onOpenFolder && (
-                  <ActionLink
-                    icon={<FolderOpen size={14} strokeWidth={1.8} />}
-                    label={t('welcome.openFolder')}
-                    onClick={onOpenFolder}
-                  />
-                )}
-                {onOpenSample && (
-                  <ActionLink
-                    icon={<Hash size={14} strokeWidth={1.8} />}
-                    label={t('welcome.sample')}
-                    onClick={onOpenSample}
-                  />
-                )}
+            {/* Left column */}
+            <div style={{ minWidth: 0 }}>
+              {/* Top row: Start + Shortcuts side by side */}
+              <div className="grid mb-8" style={{ gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                {/* Start */}
+                <section style={{ minWidth: 0 }}>
+                  <h2
+                    className="text-xs font-semibold uppercase tracking-widest mb-3"
+                    style={{ color: 'var(--text-tertiary)' }}
+                  >
+                    {t('welcome.start')}
+                  </h2>
+                  <div className="space-y-px">
+                    <ActionLink
+                      icon={<FilePlus size={14} strokeWidth={1.8} />}
+                      label={t('welcome.newFile')}
+                      onClick={onNew}
+                    />
+                    <ActionLink
+                      icon={<FileText size={14} strokeWidth={1.8} />}
+                      label={t('welcome.openFile')}
+                      onClick={onOpenFile}
+                    />
+                    {onOpenFolder && (
+                      <ActionLink
+                        icon={<FolderOpen size={14} strokeWidth={1.8} />}
+                        label={t('welcome.openFolder')}
+                        onClick={onOpenFolder}
+                      />
+                    )}
+                    {onOpenSample && (
+                      <ActionLink
+                        icon={<Hash size={14} strokeWidth={1.8} />}
+                        label={t('welcome.sample')}
+                        onClick={onOpenSample}
+                      />
+                    )}
+                  </div>
+                </section>
+
+                {/* Keyboard Shortcuts */}
+                <section style={{ minWidth: 0 }}>
+                  <div className="flex items-center gap-1.5 mb-3">
+                    <Keyboard size={11} strokeWidth={1.8} style={{ color: 'var(--text-tertiary)' }} />
+                    <h2
+                      className="text-xs font-semibold uppercase tracking-widest"
+                      style={{ color: 'var(--text-tertiary)' }}
+                    >
+                      {t('welcome.shortcuts')}
+                    </h2>
+                  </div>
+
+                  <div
+                    className="rounded-lg overflow-hidden"
+                    style={{ border: '1px solid var(--border-color)' }}
+                  >
+                    {SHORTCUTS.map((sc, idx) => (
+                      <div
+                        key={sc.key}
+                        className="flex items-center justify-between px-3 py-2"
+                        style={{
+                          borderTop: idx > 0 ? '1px solid var(--border-color)' : undefined,
+                          backgroundColor: idx % 2 === 0 ? 'var(--bg-primary)' : 'var(--bg-secondary)',
+                        }}
+                      >
+                        <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                          {t(sc.i18nKey)}
+                        </span>
+                        <kbd
+                          className="text-xs px-1.5 py-0.5 rounded font-mono"
+                          style={{
+                            backgroundColor: 'var(--bg-tertiary)',
+                            border: '1px solid var(--border-color)',
+                            color: 'var(--text-secondary)',
+                            letterSpacing: '0.02em',
+                          }}
+                        >
+                          {sc.key}
+                        </kbd>
+                      </div>
+                    ))}
+                  </div>
+                </section>
               </div>
-            </section>
 
-            {/* Column 2 – Keyboard Shortcuts ──────────────────────── */}
-            <section style={{ minWidth: 0 }}>
-              <div className="flex items-center gap-1.5 mb-3">
-                <Keyboard size={11} strokeWidth={1.8} style={{ color: 'var(--text-tertiary)' }} />
+              {/* Bottom row: Quick Templates */}
+              <section>
                 <h2
-                  className="text-xs font-semibold uppercase tracking-widest"
+                  className="text-xs font-semibold uppercase tracking-widest mb-3"
                   style={{ color: 'var(--text-tertiary)' }}
                 >
-                  {t('welcome.shortcuts')}
+                  {t('welcome.templates')}
                 </h2>
-              </div>
-
-              <div
-                className="rounded-lg overflow-hidden"
-                style={{ border: '1px solid var(--border-color)' }}
-              >
-                {SHORTCUTS.map((sc, idx) => (
-                  <div
-                    key={sc.key}
-                    className="flex items-center justify-between px-3 py-2"
-                    style={{
-                      borderTop: idx > 0 ? '1px solid var(--border-color)' : undefined,
-                      backgroundColor: idx % 2 === 0 ? 'var(--bg-primary)' : 'var(--bg-secondary)',
-                    }}
-                  >
-                    <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                      {t(sc.i18nKey)}
-                    </span>
-                    <kbd
-                      className="text-xs px-1.5 py-0.5 rounded font-mono"
+                <div className="grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
+                  {QUICK_TEMPLATES.map((tmpl) => (
+                    <button
+                      key={tmpl.action}
+                      onClick={() => {
+                        if (tmpl.action === 'blank') {
+                          onNew();
+                        } else if (tmpl.action === 'meeting' && onNewWithContent) {
+                          onNewWithContent(MEETING_TEMPLATE, '会议纪要');
+                        } else if (tmpl.action === 'weekly' && onNewWithContent) {
+                          onNewWithContent(WEEKLY_TEMPLATE, '周报');
+                        }
+                      }}
+                      className="flex flex-col items-center gap-2 px-4 py-4 rounded-lg transition-colors"
                       style={{
-                        backgroundColor: 'var(--bg-tertiary)',
+                        backgroundColor: 'var(--bg-secondary)',
                         border: '1px solid var(--border-color)',
                         color: 'var(--text-secondary)',
-                        letterSpacing: '0.02em',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)';
+                        e.currentTarget.style.borderColor = 'var(--accent-color)';
+                        e.currentTarget.style.color = 'var(--accent-color)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
+                        e.currentTarget.style.borderColor = 'var(--border-color)';
+                        e.currentTarget.style.color = 'var(--text-secondary)';
                       }}
                     >
-                      {sc.key}
-                    </kbd>
-                  </div>
-                ))}
-              </div>
-            </section>
+                      {tmpl.icon}
+                      <span className="text-sm font-medium">{tmpl.label}</span>
+                      <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{tmpl.desc}</span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            </div>
 
-            {/* Column 3 – Recent Files ────────────────────────────── */}
+            {/* Right column - Recent Files */}
             <section style={{ minWidth: 0 }}>
               <div className="flex items-center gap-1.5 mb-3">
                 <Clock size={11} strokeWidth={1.8} style={{ color: 'var(--text-tertiary)' }} />
@@ -422,52 +474,6 @@ export function WelcomePage({ recentFiles, onNew, onOpenFile, onOpenFolder, onOp
               )}
             </section>
 
-          </div>
-
-          {/* ── Quick Create ────────────────────────────────────── */}
-          <div className="mt-10">
-            <h2
-              className="text-xs font-semibold uppercase tracking-widest mb-4"
-              style={{ color: 'var(--text-tertiary)' }}
-            >
-              {t('welcome.start')}
-            </h2>
-            <div className="grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', maxWidth: '32rem' }}>
-              {QUICK_TEMPLATES.map((tmpl) => (
-                <button
-                  key={tmpl.action}
-                  onClick={() => {
-                    if (tmpl.action === 'blank') {
-                      onNew();
-                    } else if (tmpl.action === 'meeting' && onNewWithContent) {
-                      onNewWithContent(MEETING_TEMPLATE, '会议纪要');
-                    } else if (tmpl.action === 'weekly' && onNewWithContent) {
-                      onNewWithContent(WEEKLY_TEMPLATE, '周报');
-                    }
-                  }}
-                  className="flex flex-col items-center gap-2 px-6 py-5 rounded-lg transition-colors"
-                  style={{
-                    backgroundColor: 'var(--bg-secondary)',
-                    border: '1px solid var(--border-color)',
-                    color: 'var(--text-secondary)',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)';
-                    e.currentTarget.style.borderColor = 'var(--accent-color)';
-                    e.currentTarget.style.color = 'var(--accent-color)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
-                    e.currentTarget.style.borderColor = 'var(--border-color)';
-                    e.currentTarget.style.color = 'var(--text-secondary)';
-                  }}
-                >
-                  {tmpl.icon}
-                  <span className="text-sm font-medium">{tmpl.label}</span>
-                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{tmpl.desc}</span>
-                </button>
-              ))}
-            </div>
           </div>
 
         </div>

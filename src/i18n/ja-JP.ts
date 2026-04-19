@@ -361,6 +361,7 @@ export const jaJP: Record<TranslationKey, string> = {
   'welcome.newFile': '新規作成',
   'welcome.openFile': 'ファイルを開く',
   'welcome.openFolder': 'フォルダを開く',
+  'welcome.templates': 'クイック作成',
   'welcome.recentFiles': '最近使ったファイル',
   'welcome.noRecentFiles': '最近使ったファイルはありません',
   'welcome.shortcuts': 'ショートカットキー一覧',

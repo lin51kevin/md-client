@@ -361,6 +361,7 @@ export const en: Record<TranslationKey, string> = {
   'welcome.newFile': 'New',
   'welcome.openFile': 'Open File',
   'welcome.openFolder': 'Open Folder',
+  'welcome.templates': 'Quick Create',
   'welcome.recentFiles': 'Recent Files',
   'welcome.noRecentFiles': 'No recent files',
   'welcome.shortcuts': 'Keyboard Shortcuts',
