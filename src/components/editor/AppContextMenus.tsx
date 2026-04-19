@@ -15,6 +15,15 @@ import { EditorContextMenu } from './EditorContextMenu';
 import { PreviewContextMenu } from '../preview/PreviewContextMenu';
 import { TableEditor } from '../modal/TableEditor';
 import { InputDialog } from '../modal/InputDialog';
+import { milkdownBridge } from '../../lib/milkdown/editor-bridge';
+import { AI_TOOLBAR_EVENT } from '../milkdown/ai-toolbar-bridge';
+import type { AIToolbarEventDetail } from '../milkdown/ai-toolbar-bridge';
+import {
+  toggleStrongCommand,
+  toggleEmphasisCommand,
+  wrapInHeadingCommand,
+} from '@milkdown/kit/preset/commonmark';
+import { toggleLinkCommand } from '@milkdown/kit/component/link-tooltip';
 
 interface AppContextMenusProps {
   inputDialogState: InputDialogState | null;
@@ -39,6 +48,21 @@ export function AppContextMenus({
   const previewCtxMenu = useUIStore((s) => s.previewCtxMenu);
   const setPreviewCtxMenu = useUIStore((s) => s.setPreviewCtxMenu);
   const setViewMode = useEditorStore((s) => s.setViewMode);
+
+  // Map preview context menu action IDs to AI toolbar commands
+  const AI_ACTION_MAP: Record<string, AIToolbarEventDetail['command']> = {
+    aiPolish: '/polish',
+    aiRewrite: '/rewrite',
+    aiTranslate: '/translate',
+    aiSummarize: '/summarize',
+  };
+
+  // Map formatting action IDs to Milkdown command keys
+  const FORMATTING_COMMANDS: Record<string, unknown> = {
+    bold: toggleStrongCommand.key,
+    italic: toggleEmphasisCommand.key,
+    link: toggleLinkCommand.key,
+  };
 
   const handlePreviewAction = useCallback((action: string) => {
     setPreviewCtxMenu(null);
@@ -65,12 +89,40 @@ export function AppContextMenus({
       case 'viewSource':
         setViewMode('edit');
         break;
-      default:
-        // AI actions (aiPolish/aiRewrite/aiTranslate/aiSummarize) and formatting
-        // actions are dispatched via CustomEvent — handled by AI Copilot plugin
-        // and Milkdown respectively.
-        document.dispatchEvent(new CustomEvent('preview-action', { detail: { action } }));
+      case 'headingPromote':
+        // Promote = lower level number (h3 → h2). Use wrapInHeadingCommand with level 1
+        // as a simple approach — converts current block to h1.
+        milkdownBridge.runCommand?.(wrapInHeadingCommand.key, 1);
         break;
+      case 'headingDemote':
+        milkdownBridge.runCommand?.(wrapInHeadingCommand.key, 2);
+        break;
+      case 'headingRemove':
+        // Level 0 converts heading to paragraph
+        milkdownBridge.runCommand?.(wrapInHeadingCommand.key, 0);
+        break;
+      case 'image':
+        // Image insertion in WYSIWYG not yet supported via context menu
+        break;
+      default: {
+        // AI actions → dispatch ai-toolbar-action event (handled by AI Copilot plugin)
+        const aiCommand = AI_ACTION_MAP[action];
+        if (aiCommand) {
+          document.dispatchEvent(
+            new CustomEvent<AIToolbarEventDetail>(AI_TOOLBAR_EVENT, {
+              detail: { command: aiCommand },
+            }),
+          );
+          return;
+        }
+        // Formatting actions → execute Milkdown ProseMirror commands via bridge
+        const commandKey = FORMATTING_COMMANDS[action];
+        if (commandKey && milkdownBridge.runCommand) {
+          milkdownBridge.runCommand(commandKey);
+          return;
+        }
+        break;
+      }
     }
   }, [previewRef, setPreviewCtxMenu, setViewMode]);
 

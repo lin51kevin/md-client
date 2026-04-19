@@ -70,6 +70,14 @@ class MilkdownEditorBridgeStore {
   setContent: ((content: string) => void) | null = null;
 
   /**
+   * Run a named Milkdown command (e.g. toggleStrongCommand, toggleEmphasisCommand).
+   * Set by MilkdownEditor when the Crepe instance is created.
+   * @param commandKey - The command key (from @milkdown/kit/preset/commonmark etc.)
+   * @param payload - Optional argument passed to the command
+   */
+  runCommand: ((commandKey: unknown, payload?: unknown) => void) | null = null;
+
+  /**
    * Content from the most recent bridge write.
    * Supports batch action sequences where multiple replaceRange/insertText
    * calls are issued synchronously before React has re-rendered.

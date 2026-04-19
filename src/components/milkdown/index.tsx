@@ -3,7 +3,7 @@ import YAML from 'js-yaml';
 import { Milkdown, MilkdownProvider, useEditor } from '@milkdown/react';
 import { Crepe, CrepeFeature } from '@milkdown/crepe';
 import { replaceAll } from '@milkdown/kit/utils';
-import { editorViewCtx } from '@milkdown/core';
+import { editorViewCtx, commandsCtx } from '@milkdown/core';
 import { undoDepth, redoDepth, undo as pmUndo, redo as pmRedo } from 'prosemirror-history';
 import '@milkdown/crepe/theme/frame.css';
 import '@milkdown/crepe/theme/common/style.css';
@@ -14,7 +14,6 @@ import { FrontmatterPanel } from './FrontmatterPanel';
 import { useLocalImage, useHtmlBlocks, remarkWikiLinkPlugin, wikiLinkSchema } from './nodeviews';
 import { renderMermaidPreview } from './nodeviews/MermaidBlockView';
 import { CodeBlockFoldOverlay } from './CodeBlockFoldOverlay';
-import { buildAIToolbar } from './ai-toolbar-bridge';
 import { milkdownBridge } from '../../lib/milkdown/editor-bridge';
 
 // ── Selection helpers ─────────────────────────────────────────────────────────
@@ -180,9 +179,6 @@ function MilkdownEditor({
         [CrepeFeature.CodeMirror]: {
           renderPreview: renderMermaidPreview,
         },
-        [CrepeFeature.Toolbar]: {
-          buildToolbar: buildAIToolbar,
-        },
       },
       features: {
         [CrepeFeature.CodeMirror]: true,
@@ -256,6 +252,14 @@ function MilkdownEditor({
       try {
         const view = crepe.editor.ctx.get(editorViewCtx);
         pmRedo(view.state, view.dispatch);
+      } catch { /* ignore */ }
+    };
+
+    // Bridge command execution for context menu formatting actions
+    milkdownBridge.runCommand = (commandKey: unknown, payload?: unknown) => {
+      try {
+        const commands = crepe.editor.ctx.get(commandsCtx);
+        commands.call(commandKey as any, payload);
       } catch { /* ignore */ }
     };
 
