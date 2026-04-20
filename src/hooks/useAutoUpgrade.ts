@@ -87,10 +87,18 @@ export function useAutoUpgrade(options: UseAutoUpgradeOptions) {
     if (!updateRef.current || downloadingRef.current) return;
     downloadingRef.current = true;
     setDownloading(true);
+    let contentLength = 0;
+    let downloaded = 0;
     try {
       await updateRef.current.downloadAndInstall((event: any) => {
-        if (event.event === 'DownloadProgress' && event.progress) {
-          const percent = Math.round(event.progress.fraction * 100);
+        if (event.event === 'Started') {
+          contentLength = event.data?.contentLength ?? 0;
+          onDownloadProgress?.(0);
+        } else if (event.event === 'Progress') {
+          downloaded += event.data?.chunkLength ?? 0;
+          const percent = contentLength > 0
+            ? Math.min(99, Math.round((downloaded / contentLength) * 100))
+            : 0;
           onDownloadProgress?.(percent);
         }
       });

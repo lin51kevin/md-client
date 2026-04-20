@@ -106,12 +106,13 @@ describe('useAutoUpgrade', () => {
     const onDownloadProgress = vi.fn();
     const onUpdateReady = vi.fn();
 
-    // Simulate download with progress events
+    // Simulate download with progress events matching actual Tauri plugin-updater API
     mockUpdate.downloadAndInstall.mockImplementation(
-      (onEvent: (e: { event: string; progress?: { fraction: number } }) => void) => {
-        onEvent({ event: 'DownloadStarted', progress: { fraction: 0 } });
-        onEvent({ event: 'DownloadProgress', progress: { fraction: 0.5 } });
-        onEvent({ event: 'DownloadProgress', progress: { fraction: 1 } });
+      (onEvent: (e: { event: string; data?: Record<string, unknown> }) => void) => {
+        onEvent({ event: 'Started', data: { contentLength: 1000 } });
+        onEvent({ event: 'Progress', data: { chunkLength: 500 } });
+        onEvent({ event: 'Progress', data: { chunkLength: 500 } });
+        onEvent({ event: 'Finished' });
         return Promise.resolve();
       }
     );
@@ -131,9 +132,9 @@ describe('useAutoUpgrade', () => {
       await result.current.downloadAndInstall();
     });
 
-    expect(onDownloadProgress).toHaveBeenCalledWith(50);
-    expect(onDownloadProgress).toHaveBeenCalledWith(100);
-    expect(onDownloadProgress).toHaveBeenCalledTimes(2);
+    expect(onDownloadProgress).toHaveBeenCalledWith(0);   // Started
+    expect(onDownloadProgress).toHaveBeenCalledWith(50);  // 500/1000
+    expect(onDownloadProgress).toHaveBeenCalledWith(99);  // capped at 99 until Finished
     expect(onUpdateReady).toHaveBeenCalled();
   });
 
