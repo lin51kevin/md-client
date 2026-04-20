@@ -5,7 +5,7 @@
 import type { TranslationKey } from '../../i18n/zh-CN';
 import { StorageKeys } from '../storage';
 
-export type ShortcutCategory = 'file' | 'edit' | 'view' | 'ai';
+export type ShortcutCategory = 'file' | 'edit' | 'view' | 'format' | 'panel' | 'ai';
 
 export interface ShortcutAction {
   id: string;
@@ -16,6 +16,7 @@ export interface ShortcutAction {
 
 /** 所有可自定义的快捷键 */
 export const DEFAULT_SHORTCUTS: ShortcutAction[] = [
+  // ── 文件 ──
   { id: 'newTab', labelKey: 'settings.shortcuts.newTab', defaultKeys: 'Ctrl+N', category: 'file' },
   { id: 'openFile', labelKey: 'settings.shortcuts.openFile', defaultKeys: 'Ctrl+O', category: 'file' },
   { id: 'saveFile', labelKey: 'settings.shortcuts.saveFile', defaultKeys: 'Ctrl+S', category: 'file' },
@@ -23,21 +24,54 @@ export const DEFAULT_SHORTCUTS: ShortcutAction[] = [
   { id: 'closeTab', labelKey: 'settings.shortcuts.closeTab', defaultKeys: 'Ctrl+W', category: 'file' },
   { id: 'nextTab', labelKey: 'settings.shortcuts.nextTab', defaultKeys: 'Ctrl+Tab', category: 'file' },
   { id: 'previousTab', labelKey: 'settings.shortcuts.previousTab', defaultKeys: 'Ctrl+Shift+Tab', category: 'file' },
+  { id: 'closeAllTabs', labelKey: 'settings.shortcuts.closeAllTabs', defaultKeys: 'Ctrl+Shift+W', category: 'file' },
+
+  // ── 编辑 ──
   { id: 'findReplace', labelKey: 'settings.shortcuts.findReplace', defaultKeys: 'Ctrl+F', category: 'edit' },
-  { id: 'editMode', labelKey: 'settings.shortcuts.editMode', defaultKeys: 'Ctrl+1', category: 'view' },
-  { id: 'splitMode', labelKey: 'settings.shortcuts.splitMode', defaultKeys: 'Ctrl+2', category: 'view' },
-  { id: 'previewMode', labelKey: 'settings.shortcuts.previewMode', defaultKeys: 'Ctrl+3', category: 'view' },
-  { id: 'slideMode', labelKey: 'settings.shortcuts.slideMode', defaultKeys: 'Ctrl+4', category: 'view' },
-  { id: 'typewriterMode', labelKey: 'settings.shortcuts.typewriterMode', defaultKeys: 'Ctrl+.', category: 'view' },
-  { id: 'focusMode', labelKey: 'settings.shortcuts.focusMode', defaultKeys: 'Ctrl+,', category: 'view' },
+  { id: 'undo', labelKey: 'settings.shortcuts.undo', defaultKeys: 'Ctrl+Z', category: 'edit' },
+  { id: 'redo', labelKey: 'settings.shortcuts.redo', defaultKeys: 'Ctrl+Y', category: 'edit' },
   { id: 'multicursor.selectAllOccurrences', labelKey: 'settings.shortcuts.selectAllOccurrences', defaultKeys: 'Alt+D', category: 'edit' },
   { id: 'multicursor.addCursorAbove', labelKey: 'settings.shortcuts.addCursorAbove', defaultKeys: 'Alt+Up', category: 'edit' },
   { id: 'multicursor.addCursorBelow', labelKey: 'settings.shortcuts.addCursorBelow', defaultKeys: 'Alt+Down', category: 'edit' },
   { id: 'insertSnippet', labelKey: 'settings.shortcuts.insertSnippet', defaultKeys: 'Ctrl+Shift+J', category: 'edit' },
-  { id: 'toggleFileTree', labelKey: 'settings.shortcuts.toggleFileTree', defaultKeys: 'Alt+1', category: 'view' },
-  { id: 'toggleToc', labelKey: 'settings.shortcuts.toggleToc', defaultKeys: 'Alt+2', category: 'view' },
-  { id: 'toggleAIPanel', labelKey: 'settings.shortcuts.toggleAIPanel', defaultKeys: 'Ctrl+Alt+I', category: 'ai' },
   { id: 'foldCodeBlock', labelKey: 'settings.shortcuts.foldCodeBlock', defaultKeys: 'Ctrl+Shift+.', category: 'edit' },
+
+  // ── 格式 ──
+  { id: 'format.bold', labelKey: 'settings.shortcuts.formatBold', defaultKeys: 'Ctrl+B', category: 'format' },
+  { id: 'format.italic', labelKey: 'settings.shortcuts.formatItalic', defaultKeys: 'Ctrl+I', category: 'format' },
+  { id: 'format.strikethrough', labelKey: 'settings.shortcuts.formatStrikethrough', defaultKeys: 'Ctrl+Shift+X', category: 'format' },
+  { id: 'format.code', labelKey: 'settings.shortcuts.formatCode', defaultKeys: 'Ctrl+`', category: 'format' },
+  { id: 'format.link', labelKey: 'settings.shortcuts.formatLink', defaultKeys: 'Ctrl+K', category: 'format' },
+  { id: 'format.image', labelKey: 'settings.shortcuts.formatImage', defaultKeys: 'Ctrl+Shift+I', category: 'format' },
+  { id: 'format.heading', labelKey: 'settings.shortcuts.formatHeading', defaultKeys: 'Ctrl+H', category: 'format' },
+  { id: 'format.orderedList', labelKey: 'settings.shortcuts.formatOrderedList', defaultKeys: 'Ctrl+Shift+O', category: 'format' },
+  { id: 'format.unorderedList', labelKey: 'settings.shortcuts.formatUnorderedList', defaultKeys: 'Ctrl+Shift+U', category: 'format' },
+  { id: 'format.blockquote', labelKey: 'settings.shortcuts.formatBlockquote', defaultKeys: 'Ctrl+Shift+Q', category: 'format' },
+  { id: 'format.table', labelKey: 'settings.shortcuts.formatTable', defaultKeys: 'Ctrl+Shift+T', category: 'format' },
+  { id: 'format.horizontalRule', labelKey: 'settings.shortcuts.formatHorizontalRule', defaultKeys: 'Ctrl+Shift+-', category: 'format' },
+
+  // ── 视图 ──
+  { id: 'editMode', labelKey: 'settings.shortcuts.editMode', defaultKeys: 'Ctrl+1', category: 'view' },
+  { id: 'splitMode', labelKey: 'settings.shortcuts.splitMode', defaultKeys: 'Ctrl+2', category: 'view' },
+  { id: 'previewMode', labelKey: 'settings.shortcuts.previewMode', defaultKeys: 'Ctrl+3', category: 'view' },
+  { id: 'slideMode', labelKey: 'settings.shortcuts.slideMode', defaultKeys: 'Ctrl+4', category: 'view' },
+  { id: 'mindmapMode', labelKey: 'settings.shortcuts.mindmapMode', defaultKeys: 'Ctrl+5', category: 'view' },
+  { id: 'typewriterMode', labelKey: 'settings.shortcuts.typewriterMode', defaultKeys: 'Ctrl+.', category: 'view' },
+  { id: 'focusMode', labelKey: 'settings.shortcuts.focusMode', defaultKeys: 'Ctrl+,', category: 'view' },
+  { id: 'fullscreen', labelKey: 'settings.shortcuts.fullscreen', defaultKeys: 'F11', category: 'view' },
+
+  // ── 面板 ──
+  { id: 'toggleFileTree', labelKey: 'settings.shortcuts.toggleFileTree', defaultKeys: 'Alt+1', category: 'panel' },
+  { id: 'toggleToc', labelKey: 'settings.shortcuts.toggleToc', defaultKeys: 'Alt+2', category: 'panel' },
+  { id: 'toggleSearchPanel', labelKey: 'settings.shortcuts.toggleSearchPanel', defaultKeys: 'Alt+3', category: 'panel' },
+  { id: 'toggleGitPanel', labelKey: 'settings.shortcuts.toggleGitPanel', defaultKeys: 'Alt+4', category: 'panel' },
+  { id: 'togglePluginsPanel', labelKey: 'settings.shortcuts.togglePluginsPanel', defaultKeys: 'Alt+5', category: 'panel' },
+
+  // ── AI ──
+  { id: 'toggleAIPanel', labelKey: 'settings.shortcuts.toggleAIPanel', defaultKeys: 'Ctrl+Alt+I', category: 'ai' },
+  { id: 'toggleCommandPalette', labelKey: 'settings.shortcuts.toggleCommandPalette', defaultKeys: 'Ctrl+Shift+P', category: 'ai' },
+  { id: 'toggleQuickOpen', labelKey: 'settings.shortcuts.toggleQuickOpen', defaultKeys: 'Ctrl+P', category: 'ai' },
+  { id: 'revealActiveFile', labelKey: 'settings.shortcuts.revealActiveFile', defaultKeys: 'Ctrl+Shift+E', category: 'ai' },
 ];
 
 const STORAGE_KEY = StorageKeys.CUSTOM_SHORTCUTS;
@@ -124,6 +158,7 @@ export function formatKeyEvent(e: KeyboardEvent): string {
       'ArrowRight': '→',
       'Enter': 'Return',
       ' ': 'Space',
+      '\\': '\\',
     };
     parts.push(keyMap[e.key] || (e.key.length === 1 ? e.key.toUpperCase() : e.key));
   }
