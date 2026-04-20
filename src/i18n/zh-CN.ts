@@ -375,6 +375,12 @@ export const zhCN = {
   'welcome.showWelcome': '重新显示欢迎页',
   'welcome.tab': 'Welcome',
   'welcome.sample': '示例 · Sample',
+  'welcome.template.blank': '空白文档',
+  'welcome.template.blankDesc': '从零开始',
+  'welcome.template.meeting': '会议纪要',
+  'welcome.template.meetingDesc': '预填充会议模板',
+  'welcome.template.weekly': '周报',
+  'welcome.template.weeklyDesc': '预填充周报模板',
 
   // ── File Tree Sidebar ─────────────────────────────────────────────────────
   'fileTree.files': '文件',

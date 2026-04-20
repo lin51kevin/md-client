@@ -23,8 +23,8 @@ export function detectResponseStrategy(raw: string): ResponseStrategy {
 
     const parsed = JSON.parse(jsonStr);
 
-    // Valid: non-empty array with at least one object that has a `type` field
-    if (Array.isArray(parsed) && parsed.length >= 0 && isInstructionArray(parsed)) {
+    // Valid: an array (including empty, meaning "no edits needed") with valid instruction types
+    if (Array.isArray(parsed) && isInstructionArray(parsed)) {
       return 'structured';
     }
   } catch {

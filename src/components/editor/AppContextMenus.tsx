@@ -15,15 +15,8 @@ import { EditorContextMenu } from './EditorContextMenu';
 import { PreviewContextMenu } from '../preview/PreviewContextMenu';
 import { TableEditor } from '../modal/TableEditor';
 import { InputDialog } from '../modal/InputDialog';
-import { milkdownBridge } from '../../lib/milkdown/editor-bridge';
 import { AI_TOOLBAR_EVENT } from '../milkdown/ai-toolbar-bridge';
 import type { AIToolbarEventDetail } from '../milkdown/ai-toolbar-bridge';
-import {
-  toggleStrongCommand,
-  toggleEmphasisCommand,
-  wrapInHeadingCommand,
-} from '@milkdown/kit/preset/commonmark';
-import { toggleLinkCommand } from '@milkdown/kit/component/link-tooltip';
 
 interface AppContextMenusProps {
   inputDialogState: InputDialogState | null;
@@ -55,13 +48,6 @@ export function AppContextMenus({
     aiSummarize: '/summarize',
   };
 
-  // Map formatting action IDs to Milkdown command keys
-  const FORMATTING_COMMANDS: Record<string, unknown> = {
-    bold: toggleStrongCommand.key,
-    italic: toggleEmphasisCommand.key,
-    link: toggleLinkCommand.key,
-  };
-
   const handlePreviewAction = useCallback((action: string) => {
     // Execute formatting/AI commands BEFORE closing the menu so that
     // ProseMirror's internal selection state is still valid.
@@ -88,15 +74,6 @@ export function AppContextMenus({
       case 'viewSource':
         setViewMode('edit');
         break;
-      case 'headingPromote':
-        milkdownBridge.runCommand?.(wrapInHeadingCommand.key, 1);
-        break;
-      case 'headingDemote':
-        milkdownBridge.runCommand?.(wrapInHeadingCommand.key, 2);
-        break;
-      case 'headingRemove':
-        milkdownBridge.runCommand?.(wrapInHeadingCommand.key, 0);
-        break;
       case 'image':
         break;
       default: {
@@ -107,11 +84,6 @@ export function AppContextMenus({
               detail: { command: aiCommand },
             }),
           );
-          break;
-        }
-        const commandKey = FORMATTING_COMMANDS[action];
-        if (commandKey) {
-          milkdownBridge.runCommand?.(commandKey);
         }
         break;
       }

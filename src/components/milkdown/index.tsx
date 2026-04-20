@@ -401,6 +401,7 @@ function MilkdownEditor({
       milkdownBridge.selection = null;
       milkdownBridge.undo = null;
       milkdownBridge.redo = null;
+      milkdownBridge.runCommand = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

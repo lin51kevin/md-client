@@ -378,6 +378,12 @@ export const en: Record<TranslationKey, string> = {
   'welcome.showWelcome': 'Show Welcome',
   'welcome.tab': 'Welcome',
   'welcome.sample': '示例 · Sample',
+  'welcome.template.blank': 'Blank Document',
+  'welcome.template.blankDesc': 'Start from scratch',
+  'welcome.template.meeting': 'Meeting Notes',
+  'welcome.template.meetingDesc': 'Pre-filled meeting template',
+  'welcome.template.weekly': 'Weekly Report',
+  'welcome.template.weeklyDesc': 'Pre-filled weekly template',
 
   // ── File Tree Sidebar ─────────────────────────────────────────────────────
   'fileTree.files': 'Files',

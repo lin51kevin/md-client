@@ -378,6 +378,12 @@ export const jaJP: Record<TranslationKey, string> = {
   'welcome.showWelcome': 'ウェルカムを再表示',
   'welcome.tab': 'Welcome',
   'welcome.sample': '示例 · Sample',
+  'welcome.template.blank': '空のドキュメント',
+  'welcome.template.blankDesc': 'ゼロから始める',
+  'welcome.template.meeting': '議事録',
+  'welcome.template.meetingDesc': '会議テンプレートを使用',
+  'welcome.template.weekly': '週報',
+  'welcome.template.weeklyDesc': '週報テンプレートを使用',
 
   // ── File Tree Sidebar ─────────────────────────────────────────────────────
   'fileTree.files': 'ファイル',

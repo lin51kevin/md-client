@@ -105,7 +105,7 @@ export function AppShell() {
     if (milkdownPreview && viewMode !== 'preview' && viewMode !== 'slide' && viewMode !== 'mindmap') {
       setViewMode('preview');
     }
-  }, [milkdownPreview]);
+  }, [milkdownPreview, viewMode, setViewMode]);
 
   const focusStartRef = useRef<number | null>(null);
   useEffect(() => {

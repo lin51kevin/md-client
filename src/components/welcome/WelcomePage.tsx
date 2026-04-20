@@ -7,7 +7,7 @@ import logoUrl from '../../../src-tauri/icons/128x128.png';
 
 const MAX_VISIBLE_RECENT = 5;
 
-/** Full shortcut list shown on the welcome page right column */
+/** Shortcut list shown on the welcome page and empty editor overlay */
 const SHORTCUTS = [
   { key: 'Ctrl+N', i18nKey: 'welcome.shortcut.new' as const },
   { key: 'Ctrl+O', i18nKey: 'welcome.shortcut.open' as const },
@@ -18,16 +18,7 @@ const SHORTCUTS = [
   { key: 'Ctrl+3', i18nKey: 'welcome.shortcut.preview' as const },
 ] as const;
 
-/** Condensed shortcuts shown in the empty editor overlay */
-const EMPTY_SHORTCUTS = [
-  { key: 'Ctrl+N', i18nKey: 'welcome.shortcut.new' as const },
-  { key: 'Ctrl+O', i18nKey: 'welcome.shortcut.open' as const },
-  { key: 'Ctrl+S', i18nKey: 'welcome.shortcut.save' as const },
-  { key: 'Ctrl+F', i18nKey: 'welcome.shortcut.find' as const },
-  { key: 'Ctrl+1', i18nKey: 'welcome.shortcut.edit' as const },
-  { key: 'Ctrl+2', i18nKey: 'welcome.shortcut.split' as const },
-  { key: 'Ctrl+3', i18nKey: 'welcome.shortcut.preview' as const },
-] as const;
+const EMPTY_SHORTCUTS = SHORTCUTS;
 
 interface WelcomePageProps {
   recentFiles: RecentFile[];
@@ -151,9 +142,10 @@ export function EmptyEditorState({ onShowWelcome }: EmptyEditorStateProps) {
 // WelcomePage – VS Code-inspired three-column layout
 // ─────────────────────────────────────────────────────────────────────────────
 
-const MEETING_TEMPLATE = `# 会议纪要
+function getMeetingTemplate(locale: string) {
+  return `# 会议纪要
 
-**日期：** ${new Date().toLocaleDateString('zh-CN')}
+**日期：** ${new Date().toLocaleDateString(locale)}
 **地点：** 
 **参会人员：** 
 **记录人：** 
@@ -180,11 +172,13 @@ const MEETING_TEMPLATE = `# 会议纪要
 
 **时间：** 
 `;
+}
 
-const WEEKLY_TEMPLATE = `# 周报
+function getWeeklyTemplate(locale: string) {
+  return `# 周报
 
 **姓名：** 
-**日期：** ${new Date().toLocaleDateString('zh-CN')}
+**日期：** ${new Date().toLocaleDateString(locale)}
 **部门：** 
 
 ---
@@ -213,15 +207,10 @@ const WEEKLY_TEMPLATE = `# 周报
 
 - 
 `;
-
-const QUICK_TEMPLATES = [
-  { label: '空白文档', icon: <FilePlus size={16} strokeWidth={1.8} />, action: 'blank' as const, desc: '从零开始' },
-  { label: '会议纪要', icon: <FileText size={16} strokeWidth={1.8} />, action: 'meeting' as const, desc: '预填充会议模板' },
-  { label: '周报', icon: <FileText size={16} strokeWidth={1.8} />, action: 'weekly' as const, desc: '预填充周报模板' },
-];
+}
 
 export function WelcomePage({ recentFiles, onNew, onOpenFile, onOpenFolder, onOpenRecent, onNewWithContent, onOpenSample, onDismiss }: WelcomePageProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [showAll, setShowAll] = useState(false);
   const [previews, setPreviews] = useState<Record<string, string>>({});
 
@@ -229,12 +218,22 @@ export function WelcomePage({ recentFiles, onNew, onOpenFile, onOpenFolder, onOp
 
   useEffect(() => {
     if (!isTauri) return;
+    let cancelled = false;
     recentFiles.forEach(file => {
       invoke<string>('read_file_text', { path: file.path })
-        .then(text => setPreviews(prev => ({ ...prev, [file.path]: text.split('\n').slice(0, 3).join(' ').slice(0, 100) })))
+        .then(text => {
+          if (!cancelled) setPreviews(prev => ({ ...prev, [file.path]: text.split('\n').slice(0, 3).join(' ').slice(0, 100) }));
+        })
         .catch(() => {});
     });
-  }, [recentFiles]);
+    return () => { cancelled = true; };
+  }, [recentFiles, isTauri]);
+
+  const QUICK_TEMPLATES = [
+    { label: t('welcome.template.blank'), icon: <FilePlus size={16} strokeWidth={1.8} />, action: 'blank' as const, desc: t('welcome.template.blankDesc') },
+    { label: t('welcome.template.meeting'), icon: <FileText size={16} strokeWidth={1.8} />, action: 'meeting' as const, desc: t('welcome.template.meetingDesc') },
+    { label: t('welcome.template.weekly'), icon: <FileText size={16} strokeWidth={1.8} />, action: 'weekly' as const, desc: t('welcome.template.weeklyDesc') },
+  ];
   const visibleRecent = showAll ? recentFiles : recentFiles.slice(0, MAX_VISIBLE_RECENT);
   const hasMore = !showAll && recentFiles.length > MAX_VISIBLE_RECENT;
 
@@ -380,9 +379,9 @@ export function WelcomePage({ recentFiles, onNew, onOpenFile, onOpenFolder, onOp
                         if (tmpl.action === 'blank') {
                           onNew();
                         } else if (tmpl.action === 'meeting' && onNewWithContent) {
-                          onNewWithContent(MEETING_TEMPLATE, '会议纪要');
+                          onNewWithContent(getMeetingTemplate(locale), t('welcome.template.meeting'));
                         } else if (tmpl.action === 'weekly' && onNewWithContent) {
-                          onNewWithContent(WEEKLY_TEMPLATE, '周报');
+                          onNewWithContent(getWeeklyTemplate(locale), t('welcome.template.weekly'));
                         }
                       }}
                       className="flex flex-col items-center gap-2 px-4 py-4 rounded-lg transition-colors"
