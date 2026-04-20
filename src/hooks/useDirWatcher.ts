@@ -138,13 +138,15 @@ export function useDirWatcher({
     for (const dirPath of added) {
       startWatcher(dirPath);
     }
+  }, [expandedDirs, enabled, stopWatcher, startWatcher]);
 
-    // Cleanup on unmount
+  // Cleanup on unmount only — separate effect so it does not run on re-render
+  useEffect(() => {
     return () => {
       for (const path of watchersRef.current.keys()) {
         stopWatcher(path);
       }
       prevDirsRef.current = new Set();
     };
-  }, [expandedDirs, enabled, stopWatcher, startWatcher]);
+  }, [stopWatcher]);
 }
