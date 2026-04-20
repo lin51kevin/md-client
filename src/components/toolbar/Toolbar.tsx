@@ -1,6 +1,6 @@
 
 import { useRef, useState, useEffect } from 'react';
-import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, SpellCheck, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, HelpCircle, FilePlus, FileText, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight, Table2, FileCode2, Minus, ListChecks, Sigma, Presentation, Library, List, Brain, Undo2, Redo2, Bot, ArrowUpFromLine } from 'lucide-react';
+import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, SpellCheck, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, HelpCircle, FilePlus, FileText, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight, Table2, FileCode2, Minus, ListChecks, Sigma, Presentation, Library, List, Brain, Undo2, Redo2, Bot, ArrowUpFromLine, PenLine } from 'lucide-react';
 import { ViewMode, FocusMode } from '../../types';
 
 import { FileMenuDropdown } from '../editor/FileMenuDropdown';
@@ -68,6 +68,8 @@ interface ToolbarProps {
   onRedo?: () => void;
   /** WYSIWYG mode: when true, hide source-editing UI (view switcher, formatting, undo/redo, vim, spellcheck, focus modes) */
   wysiwygMode?: boolean;
+  /** Toggle WYSIWYG / read-only preview mode */
+  onToggleWysiwygMode?: () => void;
 }
 
 const DIVIDER = (
@@ -87,6 +89,7 @@ export function Toolbar({
   tabs, activeTabId, onActivateTab, onCloseAll, onInsertSnippet,
   canUndo, canRedo, onUndo, onRedo,
   wysiwygMode = false,
+  onToggleWysiwygMode,
 }: ToolbarProps & { onImageLocal?: () => void }) {
   const { t } = useI18n();
   const toolbarRef = useRef<HTMLDivElement>(null);
@@ -420,6 +423,17 @@ export function Toolbar({
           title={t('toolbar.mindmapMode') || 'Mindmap (Ctrl+5)'}
         >
           <Brain size={15} strokeWidth={1.8} />
+        </ToolbarButton>
+
+        {/* 预览可编辑切换 — always visible */}
+        {DIVIDER}
+        <ToolbarButton
+          variant="toggle"
+          active={wysiwygMode}
+          onClick={onToggleWysiwygMode}
+          title={t('toolbar.editablePreview')}
+        >
+          <PenLine size={14} strokeWidth={1.8} />
         </ToolbarButton>
 
         {/* 导出下拉按钮 — always visible */}

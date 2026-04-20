@@ -279,13 +279,21 @@ export function AppShell() {
     openSnippetPicker,
     toggleFileTree: () => togglePanel('filetree'),
     toggleToc: () => togglePanel('toc'),
+    toggleSearchPanel: () => togglePanel('search'),
+    toggleGitPanel: () => togglePanel('git'),
+    togglePluginsPanel: () => togglePanel('plugins'),
     toggleAIPanel: () => setShowAIPanel(!showAIPanel),
-    nextTab, previousTab,
+    nextTab, previousTab, closeAllTabs: handleCloseAllTabs,
     toggleCommandPalette: () => { const cur = useUIStore.getState().showCommandPalette; useUIStore.getState().setShowCommandPalette(!cur); },
     toggleQuickOpen: () => { const cur = useUIStore.getState().showQuickOpen; useUIStore.getState().setShowQuickOpen(!cur); },
     revealActiveFile: () => {
       const tab = tabs.find(t => t.id === activeTabId);
       if (tab?.filePath) revealInExplorer(tab.filePath).catch(console.error);
+    },
+    handleFormatAction,
+    toggleFullscreen: async () => {
+      if (!isTauri) return;
+      try { const { getCurrentWindow: gcw } = await import('@tauri-apps/api/window'); const w = gcw(); w.isFullscreen().then(fs => w.setFullscreen(!fs)); } catch {}
     },
   });
 
@@ -385,6 +393,7 @@ export function AppShell() {
             }}
             tabs={tabs} activeTabId={activeTabId} onActivateTab={setActiveTabId}
             wysiwygMode={milkdownPreview}
+            onToggleWysiwygMode={() => setMilkdownPreview(!milkdownPreview)}
           />
 
           <SettingsModal
