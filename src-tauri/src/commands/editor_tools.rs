@@ -115,16 +115,15 @@ pub fn tool_replace(
         let mut count = 0;
         let mut found = false;
 
-        for (idx, _) in content.match_indices(search).enumerate() {
+        for (byte_offset, _) in content.match_indices(search) {
             count += 1;
             if count == n {
-                let adjusted_idx = (idx as isize + offset) as usize;
                 edits.push(ToolEdit {
-                    from: adjusted_idx,
-                    to: adjusted_idx + search.len(),
+                    from: byte_offset,
+                    to: byte_offset + search.len(),
                     insert: replace.to_string(),
                 });
-                result.replace_range(adjusted_idx..adjusted_idx + search.len(), replace);
+                result.replace_range(byte_offset..byte_offset + search.len(), replace);
                 found = true;
                 break;
             }
@@ -276,12 +275,11 @@ pub fn tool_insert(
     };
 
     let mut result = content.to_string();
-    let insert_str = if position == "after" && !insert_content.ends_with('\n') {
+    let insert_str = if position == "after" {
         format!("{}\n", insert_content)
-    } else if position == "before" && line_idx > 0 && !insert_content.starts_with('\n') {
-        format!("\n{}", insert_content)
     } else {
-        insert_content.to_string()
+        // "before": insert the content followed by a newline at the start of the target line
+        format!("{}\n", insert_content)
     };
 
     result.insert_str(insert_pos.min(result.len()), &insert_str);
@@ -318,26 +316,16 @@ pub fn tool_delete_lines(
     let start_idx = start - 1;
     let end_idx = end_line.min(lines.len());
 
-    // Calculate byte positions
-    let mut char_pos = 0;
+    // Rebuild without the deleted lines
+    let mut kept: Vec<&str> = Vec::new();
     for (idx, line) in lines.iter().enumerate() {
-        if idx == start_idx {
-            break;
+        if idx < start_idx || idx >= end_idx {
+            kept.push(line);
         }
-        char_pos += line.len() + 1;
     }
-
-    let from = char_pos;
-    let mut to = from;
-    for line in &lines[start_idx..end_idx] {
-        to += line.len() + 1;
-    }
-    to = to.saturating_sub(1); // Remove trailing newline
-
-    let mut result = content.to_string();
-    if to <= result.len() {
-        result.replace_range(from..to, "");
-    }
+    let result = kept.join("\n");
+    let from = 0;
+    let to = content.len();
 
     Ok(ToolEditResult {
         success: true,
