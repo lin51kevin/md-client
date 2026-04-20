@@ -14,12 +14,27 @@
     "opener:default",
     "dialog:default",
     "fs:default",
-    "fs:allow-read-text-file",
+    {
+      "identifier": "fs:allow-read-text-file",
+      "allow": [{ "path": "**" }]
+    },
     "fs:allow-resource-read-recursive",
-    "fs:allow-write-file",
-    "fs:allow-write-text-file",
-    "fs:allow-watch",
-    "fs:allow-unwatch",
+    {
+      "identifier": "fs:allow-write-file",
+      "allow": [{ "path": "**" }]
+    },
+    {
+      "identifier": "fs:allow-write-text-file",
+      "allow": [{ "path": "**" }]
+    },
+    {
+      "identifier": "fs:allow-watch",
+      "allow": [{ "path": "**" }]
+    },
+    {
+      "identifier": "fs:allow-unwatch",
+      "allow": [{ "path": "**" }]
+    },
     "updater:default"
   ]
 }
