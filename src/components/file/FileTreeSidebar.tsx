@@ -4,7 +4,7 @@
  * 树形展示目录结构，支持懒加载子目录、点击文件打开、切换根目录。
  * 使用 Tauri invoke 调用 Rust 后端 list_directory 命令。
  */
-import { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, forwardRef, useImperativeHandle } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { message, open as openDialog } from '@tauri-apps/plugin-dialog';
 import {
@@ -23,6 +23,7 @@ import { revealInExplorer } from '../../lib/file';
 
 
 /** Rust 后端返回的目录条目结构 */
+import { useDirWatcher } from '../../hooks/useDirWatcher';
 import { StorageKeys } from '../../lib/storage';
 export interface DirEntry {
   name: string;
@@ -130,21 +131,54 @@ export const FileTreeSidebar = forwardRef<FileTreeSidebarHandle, FileTreeSidebar
     return parts[parts.length - 1] || p;
   };
 
-  /** 加载指定目录的内容（用于懒加载） */
-  const loadChildren = useCallback(async (dirPath: string) => {
+  /** Collect all currently-expanded directory paths from the tree state. */
+  const expandedDirs = useMemo((): Set<string> => {
+    const dirs = new Set<string>();
+    function walk(nodes: TreeNode[]) {
+      for (const n of nodes) {
+        if (n.is_dir && n.expanded) {
+          dirs.add(n.path);
+          if (n.children) walk(n.children as TreeNode[]);
+        }
+      }
+    }
+    walk(rootEntries);
+    return dirs;
+  }, [rootEntries]);
+
+  /** Reload a single directory's children (preserving expanded state). */
+  const refreshDir = useCallback(async (dirPath: string) => {
     try {
       const entries: DirEntry[] = await invoke('list_directory', { path: dirPath });
       const nodes: TreeNode[] = entries.map(e => buildTreeNode(e, expandedDirsRef.current));
-
-      // 更新 rootEntries 中对应目录的 children
-      setRootEntries(prev =>
-        prev.map(node => updateNodeChildren(node, dirPath, nodes))
-      );
-      expandedDirsRef.current.add(dirPath);
+      setRootEntries(prev => {
+        // If the changed dir is the workspace root, replace root entries directly
+        if (dirPath === rootPath) return nodes;
+        return prev.map(node => updateNodeChildren(node, dirPath, nodes));
+      });
     } catch (e) {
-      console.warn(`[FileTreeSidebar] loadChildren failed: ${e}`);
+      console.warn(`[FileTreeSidebar] refreshDir failed for ${dirPath}: ${e}`);
     }
-  }, []);
+  }, [rootPath]);
+
+  /** Watch expanded directories for external changes (includes root). */
+  const watchedDirs = useMemo(() => {
+    const dirs = new Set(expandedDirs);
+    if (rootPath) dirs.add(rootPath);
+    return dirs;
+  }, [expandedDirs, rootPath]);
+
+  useDirWatcher({
+    expandedDirs: watchedDirs,
+    enabled: visible,
+    onDirChanged: refreshDir,
+  });
+
+  /** Load children for lazy-loading (first expand). */
+  const loadChildren = useCallback(async (dirPath: string) => {
+    await refreshDir(dirPath);
+    expandedDirsRef.current.add(dirPath);
+  }, [refreshDir]);
 
   /** 递归更新树节点的 children */
   function updateNodeChildren(node: TreeNode, targetPath: string, newChildren: TreeNode[]): TreeNode {
