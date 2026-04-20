@@ -46,6 +46,9 @@ export interface PreferencesState {
   updateCheckFrequency: 'startup' | '24h';
   setUpdateCheckFrequency: (v: 'startup' | '24h') => void;
 
+  contextMenuIntegration: boolean;
+  setContextMenuIntegration: (v: boolean) => void;
+
   theme: ThemeName;
   setTheme: (v: ThemeName) => void;
 }
@@ -85,6 +88,9 @@ export const usePreferencesStore = create<PreferencesState>()(
 
       updateCheckFrequency: '24h' as const,
       setUpdateCheckFrequency: (v) => set({ updateCheckFrequency: v }),
+
+      contextMenuIntegration: false,
+      setContextMenuIntegration: (v) => set({ contextMenuIntegration: v }),
 
       theme: 'light' as ThemeName,
       setTheme: (v) => {

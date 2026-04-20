@@ -8,20 +8,28 @@ interface UseAppLifecycleOptions {
   isTauri: boolean;
   isRestoringSession: boolean;
   openFileWithContent: (filePath: string, content: string) => void;
+  openFolderAsRoot?: (folderPath: string) => void;
   tabsRef: MutableRefObject<Tab[]>;
   t: (key: TranslationKey, params?: Record<string, string | number>) => string;
 }
 
-export function useAppLifecycle({ isTauri, isRestoringSession, openFileWithContent, tabsRef, t }: UseAppLifecycleOptions) {
-  // CLI file open (double-click from file explorer).
+export function useAppLifecycle({ isTauri, isRestoringSession, openFileWithContent, openFolderAsRoot, tabsRef, t }: UseAppLifecycleOptions) {
+  // CLI file open (double-click from file explorer) or folder open (right-click context menu).
   // Deferred until session restore completes to avoid a race where both
   // restoreSession and get_open_file create a tab for the same file.
   useEffect(() => {
     if (!isTauri || isRestoringSession) return;
-    invoke<{ path: string; content: string } | null>('get_open_file')
-      .then((result) => { if (result) openFileWithContent(result.path, result.content); })
+    invoke<{ path: string; content: string; is_dir: boolean } | null>('get_open_file')
+      .then((result) => {
+        if (!result) return;
+        if (result.is_dir) {
+          openFolderAsRoot?.(result.path);
+        } else {
+          openFileWithContent(result.path, result.content);
+        }
+      })
       .catch(() => {});
-  // openFileWithContent is stable; run exactly once after session restore finishes
+  // openFileWithContent / openFolderAsRoot are stable; run exactly once after session restore finishes
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isTauri, isRestoringSession]);
 
@@ -34,13 +42,18 @@ export function useAppLifecycle({ isTauri, isRestoringSession, openFileWithConte
         listen('open-file', async (event: { payload: string }) => {
           const filePath = event.payload;
           try {
-            const content = await invoke<string>('read_file_text', { path: filePath });
-            openFileWithContent(filePath, content);
+            const isDir = await invoke<boolean>('is_directory', { path: filePath });
+            if (isDir) {
+              openFolderAsRoot?.(filePath);
+            } else {
+              const content = await invoke<string>('read_file_text', { path: filePath });
+              openFileWithContent(filePath, content);
+            }
             const window = getCurrentWindow();
             await window.unminimize();
             await window.setFocus();
           } catch (err) {
-            console.error('Failed to open file from second instance:', err);
+            console.error('Failed to open path from second instance:', err);
           }
         });
       });

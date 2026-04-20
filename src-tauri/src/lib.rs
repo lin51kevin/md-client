@@ -5,6 +5,7 @@ mod export_pdf;
 mod export_docx;
 mod git;
 mod commands;
+mod context_menu;
 pub use commands::editor_tools;
 
 use export_pdf::export_pdf;
@@ -129,6 +130,7 @@ fn greet(name: &str) -> String {
 struct OpenFileResult {
     path: String,
     content: String,
+    is_dir: bool,
 }
 
 #[tauri::command]
@@ -142,8 +144,12 @@ fn get_open_file() -> Option<OpenFileResult> {
         if validate_user_path(path).is_err() {
             return None;
         }
+        let p = std::path::Path::new(path);
+        if p.is_dir() {
+            return Some(OpenFileResult { path: path.clone(), content: String::new(), is_dir: true });
+        }
         match read_text_auto_encoding(path) {
-            Ok(content) => Some(OpenFileResult { path: path.clone(), content }),
+            Ok(content) => Some(OpenFileResult { path: path.clone(), content, is_dir: false }),
             Err(_) => None,
         }
     } else {
@@ -856,7 +862,7 @@ pub fn run() {
                 }
             }
         }))
-        .invoke_handler(tauri::generate_handler![greet, get_open_file, export_document, restore_session_files, read_file_text, read_file_bytes, write_file_text, write_image_bytes, create_file, delete_file, rename_file, list_directory, read_dir_recursive, search_files, replace_in_files, reveal_in_explorer, is_directory, restart_app, show_unsaved_dialog, git::git_get_repo, git::git_get_status, git::git_diff, git::git_commit, git::git_pull, git::git_push, git::git_stage, git::git_unstage, git::git_restore, editor_tools::tool_search, editor_tools::tool_replace, editor_tools::tool_get_lines, editor_tools::tool_replace_lines, editor_tools::tool_insert, editor_tools::tool_delete_lines, editor_tools::tool_get_outline, editor_tools::tool_regex_replace])
+        .invoke_handler(tauri::generate_handler![greet, get_open_file, export_document, restore_session_files, read_file_text, read_file_bytes, write_file_text, write_image_bytes, create_file, delete_file, rename_file, list_directory, read_dir_recursive, search_files, replace_in_files, reveal_in_explorer, is_directory, restart_app, show_unsaved_dialog, context_menu::register_context_menu, context_menu::unregister_context_menu, git::git_get_repo, git::git_get_status, git::git_diff, git::git_commit, git::git_pull, git::git_push, git::git_stage, git::git_unstage, git::git_restore, editor_tools::tool_search, editor_tools::tool_replace, editor_tools::tool_get_lines, editor_tools::tool_replace_lines, editor_tools::tool_insert, editor_tools::tool_delete_lines, editor_tools::tool_get_outline, editor_tools::tool_regex_replace])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

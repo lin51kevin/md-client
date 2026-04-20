@@ -10,6 +10,8 @@ export const zhCN = {
   'settings.tabs.shortcuts': '快捷键',
   'settings.general.language': '语言',
   'settings.general.languageDesc': '选择界面显示语言',
+  'settings.general.contextMenu': '右键菜单集成',
+  'settings.general.contextMenuDesc': '在文件和文件夹的右键菜单中添加"用 MarkLite 打开"选项',
   'settings.editor.spellCheck': '拼写检查',
   'settings.editor.spellCheckDesc': '启用浏览器内置拼写检查（英文支持较好）',
   'settings.editor.vimMode': 'Vim 模式',

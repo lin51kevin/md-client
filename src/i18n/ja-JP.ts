@@ -12,6 +12,8 @@ export const jaJP: Record<TranslationKey, string> = {
   'settings.tabs.shortcuts': 'ショートカット',
   'settings.general.language': '言語',
   'settings.general.languageDesc': '表示言語を選択してください',
+  'settings.general.contextMenu': 'コンテキストメニュー統合',
+  'settings.general.contextMenuDesc': 'ファイルとフォルダの右クリックメニューに「MarkLiteで開く」オプションを追加',
   'settings.editor.spellCheck': 'スペルチェック',
   'settings.editor.spellCheckDesc': 'ブラウザ内蔵のスペルチェックを有効にする（英語向け）',
   'settings.editor.vimMode': 'Vim モード',

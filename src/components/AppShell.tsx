@@ -91,7 +91,7 @@ export function AppShell() {
 
   // ── Extracted state hooks ────────────────────────────────────────
   const { activePanel, setActivePanel, togglePanel, showFileTree, showToc, showSearchPanel, showGitPanel, showPluginsPanel } = useSidebarPanel();
-  const { spellCheck, setSpellCheck, vimMode, setVimMode, autoSave, setAutoSave, autoSaveDelay, setAutoSaveDelay, gitMdOnly, setGitMdOnly, milkdownPreview, setMilkdownPreview, mermaidTheme, setMermaidTheme, theme, setTheme, fileWatch, setFileWatch, fileWatchBehavior, setFileWatchBehavior, autoUpdateCheck, setAutoUpdateCheck, updateCheckFrequency, setUpdateCheckFrequency } = usePreferences();
+  const { spellCheck, setSpellCheck, vimMode, setVimMode, autoSave, setAutoSave, autoSaveDelay, setAutoSaveDelay, gitMdOnly, setGitMdOnly, milkdownPreview, setMilkdownPreview, mermaidTheme, setMermaidTheme, theme, setTheme, fileWatch, setFileWatch, fileWatchBehavior, setFileWatchBehavior, autoUpdateCheck, setAutoUpdateCheck, updateCheckFrequency, setUpdateCheckFrequency, contextMenuIntegration, setContextMenuIntegration } = usePreferences();
   const [typewriterOptions, setTypewriterOptions] = useTypewriterOptions();
 
   // ── Core hooks ───────────────────────────────────────────────────
@@ -260,7 +260,18 @@ export function AppShell() {
   }, [pluginPanels, activePanel, setActivePanel]);
 
   // ── App lifecycle effects ────────────────────────────────────────
-  useAppLifecycle({ isTauri, isRestoringSession, openFileWithContent, tabsRef, t });
+  useAppLifecycle({
+    isTauri,
+    isRestoringSession,
+    openFileWithContent,
+    openFolderAsRoot: (folderPath: string) => {
+      setFileTreeRoot(folderPath);
+      setActivePanel('filetree');
+      fileTreeSidebarRef.current?.loadRoot(folderPath);
+    },
+    tabsRef,
+    t,
+  });
 
   // ── Navigation ───────────────────────────────────────────────────
   const { debouncedDoc, tocEntries, wordCount } = useDocMetrics(activeTab.doc, activeTabId);
@@ -409,6 +420,7 @@ export function AppShell() {
             fileWatch={fileWatch} onFileWatchChange={setFileWatch}
             fileWatchBehavior={fileWatchBehavior} onFileWatchBehaviorChange={setFileWatchBehavior}
             autoUpdateCheck={autoUpdateCheck} onAutoUpdateCheckChange={setAutoUpdateCheck}
+            contextMenuIntegration={contextMenuIntegration} onContextMenuIntegrationChange={setContextMenuIntegration}
             updateCheckFrequency={updateCheckFrequency} onUpdateCheckFrequencyChange={setUpdateCheckFrequency}
             typewriterOptions={typewriterOptions} onTypewriterOptionsChange={setTypewriterOptions}
           />

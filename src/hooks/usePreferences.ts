@@ -23,6 +23,7 @@ export function usePreferences() {
     fileWatchBehavior, setFileWatchBehavior,
     autoUpdateCheck, setAutoUpdateCheck,
     updateCheckFrequency, setUpdateCheckFrequency,
+    contextMenuIntegration, setContextMenuIntegration,
     theme, setTheme,
  } = usePreferencesStore();
 
@@ -34,6 +35,7 @@ export function usePreferences() {
     gitMdOnly, setGitMdOnly,
     autoUpdateCheck, setAutoUpdateCheck,
     updateCheckFrequency, setUpdateCheckFrequency,
+    contextMenuIntegration, setContextMenuIntegration,
     milkdownPreview, setMilkdownPreview,
     mermaidTheme, setMermaidTheme,
     fileWatch, setFileWatch,

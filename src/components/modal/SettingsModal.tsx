@@ -46,6 +46,8 @@ interface SettingsModalProps {
   onAutoUpdateCheckChange?: (enabled: boolean) => void;
   updateCheckFrequency?: 'startup' | '24h';
   onUpdateCheckFrequencyChange?: (freq: 'startup' | '24h') => void;
+  contextMenuIntegration?: boolean;
+  onContextMenuIntegrationChange?: (enabled: boolean) => void;
   typewriterOptions?: import('../../hooks/useTypewriterOptions').TypewriterOptions;
   onTypewriterOptionsChange?: (update: Partial<import('../../hooks/useTypewriterOptions').TypewriterOptions>) => void;
 }
@@ -89,10 +91,13 @@ export function SettingsModal({
   onAutoUpdateCheckChange,
   updateCheckFrequency = '24h',
   onUpdateCheckFrequencyChange,
+  contextMenuIntegration = false,
+  onContextMenuIntegrationChange,
   typewriterOptions,
   onTypewriterOptionsChange,
 }: SettingsModalProps) {
   const { t, locale, setLocale } = useI18n();
+  const isWindows = navigator.platform?.toLowerCase().includes('win') || navigator.userAgent.includes('Windows');
   const [activeTab, setActiveTab] = useState<TabId>('general');
   const [imageDir, setImageDir] = useState(getImageSaveDir);
   const [installedThemes, setInstalledThemes] = useState(() => getInstalledThemes());
@@ -256,6 +261,26 @@ export function SettingsModal({
             {activeTab === 'general' && (
               <div className="space-y-4">
                 <SettingItem
+                  label={t('settings.general.language')}
+                  description={t('settings.general.languageDesc')}
+                >
+                  <select
+                    value={locale}
+                    onChange={(e) => setLocale(e.target.value as Locale)}
+                    className="text-xs px-2 py-1 rounded outline-none"
+                    style={{
+                      backgroundColor: 'var(--bg-secondary)',
+                      border: '1px solid var(--border-color)',
+                      color: 'var(--text-primary)',
+                    }}
+                  >
+                    <option value="zh-CN">简体中文</option>
+                    <option value="en">English</option>
+                    <option value="ja-JP">日本語</option>
+                  </select>
+                </SettingItem>
+
+                <SettingItem
                   label={t('update.autoCheck')}
                   description={t('update.autoCheckDesc')}
                 >
@@ -283,25 +308,25 @@ export function SettingsModal({
                   </SettingItem>
                 )}
 
-                <SettingItem
-                  label={t('settings.general.language')}
-                  description={t('settings.general.languageDesc')}
-                >
-                  <select
-                    value={locale}
-                    onChange={(e) => setLocale(e.target.value as Locale)}
-                    className="text-xs px-2 py-1 rounded outline-none"
-                    style={{
-                      backgroundColor: 'var(--bg-secondary)',
-                      border: '1px solid var(--border-color)',
-                      color: 'var(--text-primary)',
-                    }}
+                {isWindows && (
+                  <SettingItem
+                    label={t('settings.general.contextMenu')}
+                    description={t('settings.general.contextMenuDesc')}
                   >
-                    <option value="zh-CN">简体中文</option>
-                    <option value="en">English</option>
-                    <option value="ja-JP">日本語</option>
-                  </select>
-                </SettingItem>
+                    <ToggleSwitch
+                      checked={contextMenuIntegration}
+                      onChange={async (checked) => {
+                        onContextMenuIntegrationChange?.(checked);
+                        try {
+                          const { invoke } = await import('@tauri-apps/api/core');
+                          await invoke(checked ? 'register_context_menu' : 'unregister_context_menu');
+                        } catch (e) {
+                          console.error('[Settings] context menu toggle failed:', e);
+                        }
+                      }}
+                    />
+                  </SettingItem>
+                )}
               </div>
             )}
 

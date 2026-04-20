@@ -12,6 +12,8 @@ export const en: Record<TranslationKey, string> = {
   'settings.tabs.shortcuts': 'Shortcuts',
   'settings.general.language': 'Language',
   'settings.general.languageDesc': 'Select the interface display language',
+  'settings.general.contextMenu': 'Context Menu Integration',
+  'settings.general.contextMenuDesc': 'Add "Open with MarkLite" option to file and folder context menus',
   'settings.editor.spellCheck': 'Spell Check',
   'settings.editor.spellCheckDesc': 'Enable browser built-in spell check (better for English)',
   'settings.editor.vimMode': 'Vim Mode',
