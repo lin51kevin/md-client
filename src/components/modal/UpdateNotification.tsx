@@ -12,6 +12,44 @@ interface UpdateNotificationProps {
   onRestart?: () => void;
 }
 
+function openUrl(url: string) {
+  import('@tauri-apps/plugin-opener')
+    .then(m => m.openUrl(url))
+    .catch(() => window.open(url, '_blank', 'noopener,noreferrer'));
+}
+
+/** Render text with [label](url) markdown links as clickable spans */
+function ReleaseNotes({ text }: { text: string }) {
+  const mdLink = /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g;
+  const parts: React.ReactNode[] = [];
+  let last = 0;
+  let match: RegExpExecArray | null;
+  let key = 0;
+
+  while ((match = mdLink.exec(text)) !== null) {
+    if (match.index > last) {
+      parts.push(text.slice(last, match.index));
+    }
+    const [, label, url] = match;
+    parts.push(
+      <button
+        key={key++}
+        onClick={() => openUrl(url)}
+        style={{ color: 'var(--accent-color)', textDecoration: 'underline', background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit' }}
+      >
+        {label}
+      </button>
+    );
+    last = match.index + match[0].length;
+  }
+
+  if (last < text.length) {
+    parts.push(text.slice(last));
+  }
+
+  return <>{parts}</>;
+}
+
 export function UpdateNotification({
   version,
   releaseNotes,
@@ -46,7 +84,7 @@ export function UpdateNotification({
 
       {releaseNotes && (
         <div className="text-xs leading-relaxed max-h-20 overflow-y-auto" style={{ color: 'var(--text-secondary)' }}>
-          {releaseNotes}
+          <ReleaseNotes text={releaseNotes} />
         </div>
       )}
 
