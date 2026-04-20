@@ -404,7 +404,7 @@ export function AppShell() {
             typewriterOptions={typewriterOptions} onTypewriterOptionsChange={setTypewriterOptions}
           />
 
-          <AboutModal visible={showAbout} onClose={() => setShowAbout(false)} version="0.9.5" />
+          <AboutModal visible={showAbout} onClose={() => setShowAbout(false)} />
 
           <TabBar
             tabs={isPristine ? [] : tabs} activeTabId={activeTabId}

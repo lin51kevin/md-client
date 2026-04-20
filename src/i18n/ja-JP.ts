@@ -456,6 +456,7 @@ export const jaJP: Record<TranslationKey, string> = {
   'about.reportIssue': '問題を報告',
   'about.builtWith': '技術スタック',
   'about.license': 'ライセンス',
+  'about.desc': 'Tauri、React、CodeMirror で構築された軽量 Markdown エディタ',
   'about.ok': 'OK',
 
   // ── Mindmap ──────────────────────────────────────────────────────────────────────────

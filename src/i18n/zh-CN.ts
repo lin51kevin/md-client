@@ -453,6 +453,7 @@ export const zhCN = {
   'about.reportIssue': '反馈问题',
   'about.builtWith': '技术栈',
   'about.license': '许可证',
+  'about.desc': '一款轻量、快速的桌面 Markdown 编辑器',
   'about.ok': '确定',
 
   // ── Mindmap ──────────────────────────────────────────────────────────────────────────

@@ -1,15 +1,14 @@
 import { X, Github, Globe, Bug } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { getVersion } from '@tauri-apps/api/app';
 import { useI18n } from '../../i18n';
 
 interface AboutModalProps {
   visible: boolean;
   onClose: () => void;
-  version: string;
 }
 
 const APP_NAME = 'MarkLite';
-const APP_DESC_ZH = '一款轻量、快速的桌面 Markdown 编辑器';
-const APP_DESC_EN = 'A lightweight Markdown editor built with Tauri, React, and CodeMirror';
 const HOMEPAGE_URL = 'https://github.com/lin51kevin/md-client';
 const ISSUES_URL = 'https://github.com/lin51kevin/md-client/issues';
 const USER_GUIDE_URL = 'https://github.com/lin51kevin/md-client/blob/main/docs/guides/USER_GUIDE.md';
@@ -42,12 +41,17 @@ function openUrl(url: string) {
     .catch(() => window.open(url, '_blank', 'noopener,noreferrer'));
 }
 
-export function AboutModal({ visible, onClose, version }: AboutModalProps) {
-  const { t, locale } = useI18n();
+export function AboutModal({ visible, onClose }: AboutModalProps) {
+  const { t } = useI18n();
+  const [version, setVersion] = useState('');
+
+  useEffect(() => {
+    getVersion().then(setVersion).catch(() => setVersion(''));
+  }, []);
 
   if (!visible) return null;
 
-  const appDesc = locale === 'zh-CN' ? APP_DESC_ZH : APP_DESC_EN;
+  const appDesc = t('about.desc');
 
   return (
     <div
