@@ -54,10 +54,14 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "md-client ${{ github.ref_name }}"
           releaseBody: "See [CHANGELOG.md](https://github.com/lin51kevin/md-client/blob/main/CHANGELOG.md) for details."
           releaseDraft: true
           prerelease: false
+          includeUpdaterJson: true
+          updaterJsonPreferNsis: true
           args: --target ${{ matrix.target }}
