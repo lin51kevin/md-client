@@ -6,6 +6,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [v0.9.7] - 2026-04-20
+
+### Fixed
+
+#### 文件监听与文件树（File Watcher & File Tree）
+- **useDirWatcher** — 修复监听器清理逻辑，修正测试正确性（cleanup and test correctness）
+- **文件树刷新** — 修复在根目录及子目录中新建/删除文件后文件树未自动刷新的问题
+
+#### 关于弹窗（About Modal）
+- **版本自动获取** — 改用 Tauri `getVersion()` API 动态读取应用版本，替代硬编码字符串
+- **i18n 描述** — 应用描述文本现已支持国际化（中/英切换）
+
+---
+
+## [v0.9.6] - 2026-04-19
+
+### Added
+
+#### 自动更新（Auto-Updater）
+- **签名密钥配置** — 配置 Tauri 更新器签名密钥（公钥/私钥对）
+- **构建产物集成** — 在 GitHub Actions 工作流中集成签名与发布流程，支持 `.msi`、`.exe`（NSIS）等平台产物
+- **updater 权限** — 在 `capabilities` 中注册 `updater:default` 权限，启用应用内更新检查
+
+### Fixed
+
+- **i18n 模板标签** — 修复部分 i18n 键名拼写，对齐翻译模板
+- **Hooks 清理** — 移除无用 hooks 引用，减少不必要的副作用
+- **废弃命令移除** — 删除后端已废弃的 Tauri 命令，精简 IPC 接口
+
+---
+
 ## [v0.9.5] - 2026-04-19
 
 ### Added
