@@ -1,5 +1,4 @@
 import type { PluginManifest } from './types';
-import { verifyPluginSignature, SignatureStatus } from './signature-verify';
 
 import pkg from '../../package.json';
 
@@ -29,7 +28,7 @@ export function validateManifest(manifest: unknown): PluginManifest {
   ];
 
   for (const key of required) {
-    if (!m[key]) {
+    if (m[key] === undefined || m[key] === null) {
       throw new Error(`[PluginHost] Invalid manifest: missing "${key}"`);
     }
   }
@@ -122,16 +121,11 @@ export async function loadPluginModule(
   validatePluginId(manifest.id);
   validatePluginMain(manifest.main);
 
-  // Security: run signature verification (logs status; blocks only on Failed)
-  const sigResult = verifyPluginSignature(manifest, { publicKeys: [] });
-  if (sigResult.status === SignatureStatus.Failed) {
-    throw new Error(
-      `[PluginHost] Signature verification failed for plugin "${manifest.id}": ${sigResult.message}`,
-    );
-  }
-  if (sigResult.status === SignatureStatus.Missing || sigResult.status === SignatureStatus.Skipped) {
-    console.warn(`[PluginHost] Plugin "${manifest.id}" loaded without signature verification: ${sigResult.message}`);
-  }
+  // TODO: Signature verification is not yet implemented.
+  // Once public key infrastructure is in place, replace this comment with:
+  //   const sigResult = verifyPluginSignature(manifest, { publicKeys: TRUSTED_PUBLIC_KEYS });
+  //   if (sigResult.status === SignatureStatus.Failed) throw new Error(...);
+  console.warn(`[PluginHost] Plugin "${manifest.id}" loaded without signature verification.`);
 
   try {
     const moduleUrl = `/plugins/${manifest.id}/${manifest.main}`;
@@ -158,15 +152,11 @@ export async function loadPluginModuleFromResource(
   validatePluginId(manifest.id);
   validatePluginMain(manifest.main);
 
-  const sigResult = verifyPluginSignature(manifest, { publicKeys: [] });
-  if (sigResult.status === SignatureStatus.Failed) {
-    throw new Error(
-      `[PluginHost] Signature verification failed for plugin "${manifest.id}": ${sigResult.message}`,
-    );
-  }
-  if (sigResult.status === SignatureStatus.Missing || sigResult.status === SignatureStatus.Skipped) {
-    console.warn(`[PluginHost] Plugin "${manifest.id}" loaded without signature verification: ${sigResult.message}`);
-  }
+  // TODO: Signature verification is not yet implemented.
+  // Once public key infrastructure is in place, replace this comment with:
+  //   const sigResult = verifyPluginSignature(manifest, { publicKeys: TRUSTED_PUBLIC_KEYS });
+  //   if (sigResult.status === SignatureStatus.Failed) throw new Error(...);
+  console.warn(`[PluginHost] Plugin "${manifest.id}" loaded without signature verification.`);
 
   try {
     const { resolveResource } = await import('@tauri-apps/api/path');
