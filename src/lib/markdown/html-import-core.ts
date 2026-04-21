@@ -112,9 +112,9 @@ export function createTurndownService(): TurndownService {
 
   // Fallback fenced code block for <pre> that lacks a language-class <code> child.
   // Handles bare <pre>text</pre> and <pre><code>text</code></pre> (no language).
-  // Must be registered after fencedCodeBlockWithLang so priority ordering is correct
-  // (Turndown checks last-added rules first; this rule explicitly excludes the
-  // language-coded case, letting fencedCodeBlockWithLang handle it).
+  // fencedCodeBlockWithLang was added first, so Turndown gives it higher priority
+  // (addRule uses unshift internally). The exclusion condition here is a safety
+  // guard in case rule ordering changes in future.
   td.addRule('plainPreBlock', {
     filter: (node) => {
       const el = node as unknown as Element;
