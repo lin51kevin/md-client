@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { countWords, getReadingTime } from '../../lib/utils/word-count';
+import { countWords, getReadingTime } from '../../lib/utils/text-stats';
 
 describe('useWordCount / word-count', () => {
   it('counts CJK characters as words', () => {

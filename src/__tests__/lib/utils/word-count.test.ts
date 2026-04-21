@@ -38,11 +38,11 @@ describe('F006 — 实时字数统计', () => {
       expect(result.characters.noWhitespaceChars).toBeLessThanOrEqual(md.length);
     });
 
-    it('代码块内的内容也应被统计', () => {
+    it('代码块内的内容被剥离不计入字数', () => {
       const md = '```\nconsole.log("hello");\n```';
       const result = countWords(md);
-      // 代码块中的英文单词 hello 和 console log 应被统计
-      expect(result.words).toBeGreaterThan(0);
+      // 代码块内容在统计时被剥离
+      expect(result.words).toBe(0);
     });
   });
 

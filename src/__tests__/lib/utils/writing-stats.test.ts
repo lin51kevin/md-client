@@ -7,49 +7,49 @@ import {
   getReadingTimeLabel,
   buildStatsSummary,
   type WritingStats,
-} from '../../../lib/utils/writing-stats';
+} from '../../../lib/utils/text-stats';
 
 describe('writing-stats: countWords', () => {
   it('counts Chinese characters correctly', () => {
-    expect(countWords('你好世界')).toBe(4);
+    expect(countWords('你好世界').words).toBe(4);
   });
 
   it('counts English words correctly', () => {
-    expect(countWords('Hello world')).toBe(2);
+    expect(countWords('Hello world').words).toBe(2);
   });
 
   it('counts mixed Chinese and English', () => {
-    expect(countWords('你好Hello世界world')).toBe(6); // 4 Chinese + 2 English words
+    expect(countWords('你好Hello世界world').words).toBe(6); // 4 Chinese + 2 English words
   });
 
   it('ignores excessive whitespace', () => {
-    expect(countWords('hello    world')).toBe(2);
+    expect(countWords('hello    world').words).toBe(2);
   });
 
   it('strips YAML frontmatter before counting words', () => {
     const doc = '---\ntitle: My Document\nauthor: Alice\n---\n# Heading\nHello world';
     // Only 'Heading', 'Hello', 'world' should be counted (3 words)
     // Without the fix, 'title', 'My', 'Document', 'author', 'Alice' would also be counted
-    expect(countWords(doc)).toBe(3);
+    expect(countWords(doc).words).toBe(3);
   });
 
   it('counts correctly when document has no frontmatter', () => {
     const doc = '# Heading\nHello world';
-    expect(countWords(doc)).toBe(3);
+    expect(countWords(doc).words).toBe(3);
   });
 
   it('returns 0 for empty string', () => {
-    expect(countWords('')).toBe(0);
+    expect(countWords('').words).toBe(0);
   });
 });
 
 describe('writing-stats: countCharacters', () => {
   it('counts all characters including spaces', () => {
-    expect(countCharacters('hello world')).toBe(11);
+    expect(countCharacters('hello world').totalChars).toBe(11);
   });
 
   it('counts Chinese characters', () => {
-    expect(countCharacters('你好')).toBe(2);
+    expect(countCharacters('你好').totalChars).toBe(2);
   });
 });
 

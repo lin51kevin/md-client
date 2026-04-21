@@ -38,7 +38,7 @@ import { usePreferences } from '../hooks/usePreferences';
 import { useSidebarPanel } from '../hooks/useSidebarPanel';
 import { useEditorCore } from '../hooks/useEditorCore';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
-import { getReadingTime } from '../lib/utils/word-count';
+import { getReadingTime } from '../lib/utils/text-stats';
 import { restoreSnapshot } from '../lib/storage/version-history';
 import { StorageKeys } from '../lib/storage';
 import { revealInExplorer } from '../lib/file/reveal-in-explorer';
