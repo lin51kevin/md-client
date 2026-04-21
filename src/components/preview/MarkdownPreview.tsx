@@ -482,31 +482,11 @@ export const MarkdownPreview = memo(function MarkdownPreview({
     <div className={className}>
       {/* Large document manual refresh banner */}
       {isHuge && (
-        <div style={{
-          padding: '0.5rem 1rem',
-          marginBottom: '0.75rem',
-          borderRadius: '0.375rem',
-          backgroundColor: 'var(--bg-secondary, #f9fafb)',
-          border: '1px solid var(--border-color, #e5e7eb)',
-          fontSize: '0.8125rem',
-          color: 'var(--text-secondary, #6b7280)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          flexWrap: 'wrap',
-        }}>
+        <div className="preview-large-doc-banner">
           <span>⚡ {t('preview.manualRefresh')}</span>
           <button
             onClick={handleManualRefresh}
-            style={{
-              padding: '0.25rem 0.75rem',
-              borderRadius: '0.25rem',
-              border: '1px solid var(--accent-color, #4a90d9)',
-              backgroundColor: 'var(--accent-color, #4a90d9)',
-              color: '#fff',
-              cursor: 'pointer',
-              fontSize: '0.75rem',
-            }}
+            className="preview-large-doc-banner__btn"
           >
             {t('preview.refreshNow')}
           </button>
@@ -525,30 +505,13 @@ export const MarkdownPreview = memo(function MarkdownPreview({
       </ReactMarkdown>
       {/* Truncation expand button */}
       {shouldTruncate && (
-        <div style={{
-          padding: '0.75rem 1rem',
-          marginTop: '0.75rem',
-          borderRadius: '0.375rem',
-          backgroundColor: 'var(--bg-secondary, #f9fafb)',
-          border: '1px dashed var(--border-color, #e5e7eb)',
-          textAlign: 'center',
-          fontSize: '0.8125rem',
-          color: 'var(--text-secondary, #6b7280)',
-        }}>
-          <p style={{ margin: '0 0 0.5rem 0' }}>
+        <div className="preview-truncation-expand">
+          <p>
             {t('preview.truncated', { size: Math.round(PREVIEW_TRUNCATE_AT / 1024) })}
           </p>
           <button
             onClick={handleExpandFull}
-            style={{
-              padding: '0.375rem 1rem',
-              borderRadius: '0.25rem',
-              border: '1px solid var(--accent-color, #4a90d9)',
-              backgroundColor: 'transparent',
-              color: 'var(--accent-color, #4a90d9)',
-              cursor: 'pointer',
-              fontSize: '0.8125rem',
-            }}
+            className="preview-truncation-expand__btn"
           >
             {t('preview.expandFull')}
           </button>
