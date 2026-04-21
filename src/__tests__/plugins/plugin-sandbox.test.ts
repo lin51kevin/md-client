@@ -76,9 +76,9 @@ describe('plugin-sandbox', () => {
     expect((sandbox as any).nonexistent).toBeUndefined();
   });
 
-  it('returns non-function properties as-is', () => {
+  it('returns undefined for non-function properties (sandboxed for security)', () => {
     const ctx = { ...createMockContext(), editor: { ...createMockContext().editor, prop: 42 } } as PluginContext;
     const sandbox = createSandbox(ctx, () => true);
-    expect((sandbox.editor as any).prop).toBe(42);
+    expect((sandbox.editor as any).prop).toBeUndefined();
   });
 });

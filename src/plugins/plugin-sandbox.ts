@@ -139,7 +139,10 @@ export function createSandbox(
       return new Proxy(api as Record<string, (...args: unknown[]) => unknown>, {
         get(_apiTarget, method: string) {
           const fn = (api as Record<string, unknown>)[method];
-          if (typeof fn !== 'function') return fn;
+          // Non-function properties are not exposed through the sandbox.
+          // All plugin API surface is function-based; returning undefined prevents
+          // unintended access to internal state without a permission check.
+          if (typeof fn !== 'function') return undefined;
 
           const permission = resolvePermission(namespace, method);
 
