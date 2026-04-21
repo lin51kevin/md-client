@@ -101,7 +101,7 @@ function resolvePath(docFilePath: string, rel: string): string {
  * Reads a local image via Tauri fs.readFile and renders it as a base64 data URL.
  * Works cross-platform in both dev and release without any asset protocol.
  */
-function LocalImage({
+const LocalImage = memo(function LocalImage({
   docFilePath,
   src,
   alt,
@@ -145,7 +145,7 @@ function LocalImage({
   }, [docFilePath, src]);
 
   return <img src={dataSrc} alt={alt} {...props} />;
-}
+});
 
 /**
  * Renders a mermaid code block directly to SVG via mermaid.render().

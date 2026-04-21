@@ -1,4 +1,4 @@
-import { lazy, Suspense, Component } from 'react';
+import React, { lazy, Suspense, Component } from 'react';
 import type { RefObject, ReactNode, ErrorInfo } from 'react';
 import type { Extension } from '@codemirror/state';
 import type { ViewUpdate } from '@uiw/react-codemirror';
@@ -93,7 +93,7 @@ class PreviewErrorBoundary extends Component<
   }
 }
 
-export function EditorContentArea({
+export const EditorContentArea = React.memo(function EditorContentArea({
   isPristine,
   welcomeDismissed,
   viewMode,
@@ -264,4 +264,4 @@ export function EditorContentArea({
       )}
     </div>
   );
-}
+});

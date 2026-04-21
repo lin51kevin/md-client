@@ -336,6 +336,38 @@ export function AppShell() {
 
   const AI_PANEL_ID = 'ai-copilot-official';
 
+  // ── Stable callbacks for child components (useCallback) ────────
+  const stableOnSaveFile = useCallback(() => handleSaveWithWatchMark(), [handleSaveWithWatchMark]);
+  const stableOnSaveAsFile = useCallback(() => handleSaveAsFile(), [handleSaveAsFile]);
+  const stableOnExportPng = useCallback(() => handleExportPng(previewRef.current), [handleExportPng, previewRef]);
+  const stableOnToggleSpellCheck = useCallback(() => setSpellCheck(!spellCheck), [setSpellCheck, spellCheck]);
+  const stableOnToggleVimMode = useCallback(() => setVimMode(!vimMode), [setVimMode, vimMode]);
+  const stableOnToggleAIPanel = useCallback(() => setShowAIPanel(!showAIPanel), [setShowAIPanel, showAIPanel]);
+  const stableOnUndo = useCallback(() => {
+    if (milkdownPreview) { milkdownBridge.undo?.(); return; }
+    const v = cmViewRef.current; if (v) undo(v);
+  }, [milkdownPreview, cmViewRef]);
+  const stableOnRedo = useCallback(() => {
+    if (milkdownPreview) { milkdownBridge.redo?.(); return; }
+    const v = cmViewRef.current; if (v) redo(v);
+  }, [milkdownPreview, cmViewRef]);
+  const stableOnConfirmRename = useCallback(async (id: string, name: string) => {
+    const ok = await renameTab(id, name);
+    if (ok) setRenamingTabId(null);
+  }, [renameTab, setRenamingTabId]);
+  const stableOnCancelRename = useCallback(() => setRenamingTabId(null), [setRenamingTabId]);
+  const stableOnPin = useCallback((id: string) => { pinTab(id); setCtxMenu(null); }, [pinTab, setCtxMenu]);
+  const stableOnUnpin = useCallback((id: string) => { unpinTab(id); setCtxMenu(null); }, [unpinTab, setCtxMenu]);
+  const stableOnUpdateClick = useCallback(() => {
+    const cur = useUIStore.getState().showUpdateNotification;
+    useUIStore.getState().setShowUpdateNotification(!cur);
+  }, []);
+  const stableOnSnapshotRestore = useCallback((id: string) => {
+    if (!activeTab.filePath) return;
+    const content = restoreSnapshot(activeTab.filePath, id);
+    if (content !== null) updateActiveDoc(content);
+  }, [activeTab.filePath, updateActiveDoc]);
+
   // ── Render ───────────────────────────────────────────────────────
   return (
     <div
@@ -394,14 +426,14 @@ export function AppShell() {
           <Toolbar
             viewMode={viewMode} focusMode={focusMode}
             onNewTab={createNewTab} onOpenFile={handleOpenFile} onOpenFolder={handleOpenFolder}
-            onSaveFile={() => handleSaveWithWatchMark()} onSaveAsFile={() => handleSaveAsFile()}
+            onSaveFile={stableOnSaveFile} onSaveAsFile={stableOnSaveAsFile}
             onExportDocx={handleExportDocx} onExportPdf={handleExportPdf}
             onExportHtml={handleExportHtml} onExportEpub={handleExportEpub}
-            onExportPng={() => handleExportPng(previewRef.current)}
+            onExportPng={stableOnExportPng}
             onImportHtml={handleImportHtml}
             onSetViewMode={setViewMode} onFocusModeChange={setFocusMode}
-            spellCheck={spellCheck} onToggleSpellCheck={() => setSpellCheck(!spellCheck)}
-            vimMode={vimMode} onToggleVimMode={() => setVimMode(!vimMode)}
+            spellCheck={spellCheck} onToggleSpellCheck={stableOnToggleSpellCheck}
+            vimMode={vimMode} onToggleVimMode={stableOnToggleVimMode}
             recentFiles={recentFiles} onOpenRecent={handleOpenRecent} onClearRecent={handleClearRecent} onRemoveRecent={handleRemoveRecent}
             onCloseAll={handleCloseAllTabs}
             onFormatAction={handleFormatAction} onImageLocal={() => handleFormatAction('image-local')}
@@ -409,17 +441,11 @@ export function AppShell() {
             onOpenAbout={() => setShowAbout(true)}
             aiCopilotEnabled={pluginPanels.some(pp => pp.id === AI_PANEL_ID)}
             showAIPanel={showAIPanel}
-            onToggleAIPanel={() => setShowAIPanel(!showAIPanel)}
+            onToggleAIPanel={stableOnToggleAIPanel}
             onInsertSnippet={openSnippetPicker}
             canUndo={canUndo} canRedo={canRedo}
-            onUndo={() => {
-              if (milkdownPreview) { milkdownBridge.undo?.(); return; }
-              const v = cmViewRef.current; if (v) undo(v);
-            }}
-            onRedo={() => {
-              if (milkdownPreview) { milkdownBridge.redo?.(); return; }
-              const v = cmViewRef.current; if (v) redo(v);
-            }}
+            onUndo={stableOnUndo}
+            onRedo={stableOnRedo}
             tabs={tabs} activeTabId={activeTabId} onActivateTab={setActiveTabId}
             wysiwygMode={milkdownPreview}
             onToggleWysiwygMode={() => setMilkdownPreview(!milkdownPreview)}
@@ -454,9 +480,9 @@ export function AppShell() {
             onContextMenu={(x, y, tabId) => setCtxMenu({ x, y, tabId })}
             getTabTitle={getTabTitle} renamingTabId={renamingTabId}
             onStartRename={setRenamingTabId}
-            onConfirmRename={async (id, name) => { const ok = await renameTab(id, name); if (ok) setRenamingTabId(null); }}
-            onCancelRename={() => setRenamingTabId(null)}
-            onPin={pinTab} onUnpin={unpinTab}
+            onConfirmRename={stableOnConfirmRename}
+            onCancelRename={stableOnCancelRename}
+            onPin={stableOnPin} onUnpin={stableOnUnpin}
             showWelcomeTab={isPristine && !welcomeDismissed}
             onCloseWelcomeTab={handleDismissWelcome} onCloseAll={handleCloseAllTabs}
           />
@@ -569,12 +595,8 @@ export function AppShell() {
           vimMode={vimMode} wysiwygMode={milkdownPreview}
           focusStartTime={typewriterOptions.showDuration && focusMode === 'typewriter' ? focusStartRef.current ?? undefined : undefined}
           updateAvailable={updateInfo}
-          onUpdateClick={() => { const cur = useUIStore.getState().showUpdateNotification; useUIStore.getState().setShowUpdateNotification(!cur); }}
-          onSnapshotRestore={(id) => {
-            if (!activeTab.filePath) return;
-            const content = restoreSnapshot(activeTab.filePath, id);
-            if (content !== null) updateActiveDoc(content);
-          }}
+          onUpdateClick={stableOnUpdateClick}
+          onSnapshotRestore={stableOnSnapshotRestore}
         />
       )}
 
