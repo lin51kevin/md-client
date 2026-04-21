@@ -71,7 +71,7 @@ export const usePreferencesStore = create<PreferencesState>()(
       gitMdOnly: false,
       setGitMdOnly: (v) => set({ gitMdOnly: v }),
 
-      milkdownPreview: true,
+      milkdownPreview: false,
       setMilkdownPreview: (v) => set({ milkdownPreview: v }),
 
       mermaidTheme: 'default',

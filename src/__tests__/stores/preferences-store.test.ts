@@ -11,7 +11,7 @@ beforeEach(() => {
     autoSave: false,
     autoSaveDelay: 1000,
     gitMdOnly: false,
-    milkdownPreview: true,
+    milkdownPreview: false,
     fileWatch: true,
     fileWatchBehavior: false,
     autoUpdateCheck: true,
