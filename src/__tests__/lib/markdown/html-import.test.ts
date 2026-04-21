@@ -159,6 +159,139 @@ describe('HTML Import — htmlToMarkdown', () => {
       expect(result).toContain('Click');
     });
   });
+
+  describe('扩展标签转换', () => {
+    it('应将 <pre><code class="language-js"> 转换为带语言的代码块', () => {
+      const result = htmlToMarkdown('<pre><code class="language-javascript">const x = 1;</code></pre>');
+      expect(result).toContain('```javascript');
+      expect(result).toContain('const x = 1;');
+    });
+
+    it('应将无 class 的 <pre> 块转换为无语言标记的代码块', () => {
+      const result = htmlToMarkdown('<pre>literal text\nno code child</pre>');
+      expect(result).toContain('```');
+      expect(result).toContain('literal text');
+    });
+
+    it('应将 <pre><code>（无语言 class）转换为无语言标记的代码块', () => {
+      const result = htmlToMarkdown('<pre><code>plain code</code></pre>');
+      expect(result).toContain('```');
+      expect(result).toContain('plain code');
+      expect(result).not.toContain('```javascript');
+    });
+
+    it('应将 AsciiDoc admonitionblock note 转换为 blockquote', () => {
+      const html = `
+        <div class="admonitionblock note">
+          <table><tr>
+            <td class="icon">NOTE</td>
+            <td class="content"><p>This is a note.</p></td>
+          </tr></table>
+        </div>`;
+      const result = htmlToMarkdown(html);
+      expect(result).toContain('> **NOTE:**');
+      expect(result).toContain('This is a note.');
+    });
+
+    it('应将 admonitionblock warning 转换为对应类型的 blockquote', () => {
+      const html = `
+        <div class="admonitionblock warning">
+          <table><tr>
+            <td class="icon">WARNING</td>
+            <td class="content"><p>Be careful!</p></td>
+          </tr></table>
+        </div>`;
+      const result = htmlToMarkdown(html);
+      expect(result).toContain('> **WARNING:**');
+      expect(result).toContain('Be careful!');
+    });
+
+    it('应将 admonitionblock important 转换为对应类型的 blockquote', () => {
+      const html = `
+        <div class="admonitionblock important">
+          <table><tr>
+            <td class="icon">IMPORTANT</td>
+            <td class="content"><p>Must read.</p></td>
+          </tr></table>
+        </div>`;
+      const result = htmlToMarkdown(html);
+      expect(result).toContain('> **IMPORTANT:**');
+    });
+
+    it('应将 id="toc" 的 div 完全剔除（不保留 TOC 内容）', () => {
+      const html = `
+        <div id="toc">
+          <ul><li><a href="#s1">Section 1</a></li></ul>
+        </div>
+        <h1>Hello</h1>`;
+      const result = htmlToMarkdown(html);
+      expect(result).toContain('# Hello');
+      expect(result).not.toContain('Section 1');
+      expect(result).not.toContain('toc');
+    });
+
+    it('应将 <mark> 转换为高亮', () => {
+      expect(htmlToMarkdown('<p><mark>highlighted</mark></p>')).toContain('==highlighted==');
+    });
+
+    it('应将 <sub> 转换为下标', () => {
+      expect(htmlToMarkdown('<p>H<sub>2</sub>O</p>')).toContain('~2~');
+    });
+
+    it('应将 <sup> 转换为上标', () => {
+      expect(htmlToMarkdown('<p>x<sup>2</sup></p>')).toContain('^2^');
+    });
+
+    it('应将 <kbd> 转换为行内代码', () => {
+      expect(htmlToMarkdown('<p>Press <kbd>Ctrl+C</kbd></p>')).toContain('`Ctrl+C`');
+    });
+
+    it('应保留 <u> 标签', () => {
+      const result = htmlToMarkdown('<p><u>underlined</u></p>');
+      expect(result).toContain('<u>underlined</u>');
+    });
+
+    it('应将 <dl>/<dt>/<dd> 转换为定义列表', () => {
+      const result = htmlToMarkdown('<dl><dt>Term</dt><dd>Definition</dd></dl>');
+      expect(result).toContain('**Term**');
+      expect(result).toContain(': Definition');
+    });
+
+    it('应将 <figure>/<figcaption> 转换', () => {
+      const result = htmlToMarkdown('<figure><img src="photo.png" alt="Photo"><figcaption>A photo</figcaption></figure>');
+      expect(result).toContain('![Photo](photo.png)');
+      expect(result).toContain('*A photo*');
+    });
+
+    it('应将 <details>/<summary> 保留为 HTML', () => {
+      const result = htmlToMarkdown('<details><summary>Click me</summary><p>Hidden content</p></details>');
+      expect(result).toContain('<details>');
+      expect(result).toContain('<summary>Click me</summary>');
+      expect(result).toContain('Hidden content');
+    });
+
+    it('应将 <video> 转换为链接', () => {
+      const result = htmlToMarkdown('<video src="movie.mp4"></video>');
+      expect(result).toContain('[Video](movie.mp4)');
+    });
+
+    it('应将 <audio> 转换为链接', () => {
+      const result = htmlToMarkdown('<audio src="song.mp3"></audio>');
+      expect(result).toContain('[Audio](song.mp3)');
+    });
+
+    it('应将 task list checkbox 转换', () => {
+      const result = htmlToMarkdown('<ul><li><input type="checkbox" checked> Done</li><li><input type="checkbox"> Todo</li></ul>');
+      expect(result).toContain('[x]');
+      expect(result).toContain('[ ]');
+    });
+
+    it('应保留 <abbr> 标签及 title', () => {
+      const result = htmlToMarkdown('<p><abbr title="HyperText Markup Language">HTML</abbr></p>');
+      expect(result).toContain('abbr');
+      expect(result).toContain('HTML');
+    });
+  });
 });
 
 describe('HTML Import — extractHtmlTitle', () => {

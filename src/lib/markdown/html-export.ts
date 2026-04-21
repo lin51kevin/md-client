@@ -12,7 +12,10 @@ import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
 import rehypeStringify from 'rehype-stringify';
 import rehypeKatex from 'rehype-katex';
+import rehypeSlug from 'rehype-slug';
+import rehypeHighlight from 'rehype-highlight';
 import { CORE_REMARK_PLUGINS } from './pipeline';
+import { extractToc } from './toc';
 import katexCss from 'katex/dist/katex.min.css?raw';
 import highlightCss from 'highlight.js/styles/github.css?raw';
 
@@ -35,7 +38,7 @@ const DOMPURIFY_CONFIG = {
     'display', 'position', 'overflow', 'color',
   ],
   ALLOW_DATA_ATTR: false,
-  ALLOWED_URI_REGEXP: /^(?:(?:https?|ftp|mailto|tel|file):|[^a-z]|[a-z+.-]+(?:\/|$))/i,
+  ALLOWED_URI_REGEXP: /^(?:(?:https?|ftp|mailto|tel|file|data):|[^a-z]|[a-z+.-]+(?:\/|$))/i,
 };
 
 /** Run DOMPurify with the shared KaTeX-safe configuration */
@@ -117,6 +120,29 @@ hr { border: none; border-top: 1px solid #e1e4e8; margin: 2em 0; }
 ul, ol { padding-left: 2em; margin-bottom: 1em; }
 li { margin-bottom: 0.25em; }
 input[type="checkbox"] { margin-right: 0.4em; }
+/* TOC styles */
+nav.toc {
+  background: #f8f9fa;
+  border: 1px solid #e1e4e8;
+  border-radius: 6px;
+  padding: 1em 1.5em;
+  margin-bottom: 2em;
+}
+nav.toc summary {
+  font-weight: 600;
+  font-size: 1.1em;
+  cursor: pointer;
+  margin-bottom: 0.5em;
+}
+nav.toc ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+nav.toc ul ul { padding-left: 1.2em; }
+nav.toc li { margin-bottom: 0.2em; }
+nav.toc a { color: #0366d6; text-decoration: none; }
+nav.toc a:hover { text-decoration: underline; }
 `;
 
 // ── Core conversion ────────────────────────────────────────────────────────
@@ -131,6 +157,8 @@ export async function markdownToHtml(markdown: string): Promise<string> {
     .use(remarkParse)
     .use([...CORE_REMARK_PLUGINS])
     .use(remarkRehype)
+    .use(rehypeSlug)
+    .use(rehypeHighlight, { detect: true })
     .use(rehypeKatex)
     .use(rehypeStringify)
     .process(markdown);
@@ -145,8 +173,65 @@ function extractTitle(html: string): string {
 }
 
 /**
+ * Build an HTML TOC (table of contents) navigation block from Markdown.
+ * Returns empty string if fewer than 2 headings are found.
+ */
+function buildTocHtml(markdown: string): string {
+  const entries = extractToc(markdown);
+  if (entries.length < 2) return '';
+
+  const minLevel = Math.min(...entries.map(e => e.level));
+
+  const buildList = (items: typeof entries, startIdx: number, parentLevel: number): { html: string; endIdx: number } => {
+    let html = '<ul>';
+    let i = startIdx;
+    while (i < items.length) {
+      const entry = items[i];
+      if (entry.level <= parentLevel && i > startIdx) break;
+      if (entry.level > parentLevel + 1 && i > startIdx) {
+        // Nested sub-level
+        const sub = buildList(items, i, entry.level - 1);
+        // Append sub-list to the last <li>
+        html = html.replace(/<\/li>$/, '') + sub.html + '</li>';
+        i = sub.endIdx;
+        continue;
+      }
+      html += `<li><a href="#${escapeHtml(entry.id)}">${escapeHtml(entry.text)}</a></li>`;
+      i++;
+    }
+    html += '</ul>';
+    return { html, endIdx: i };
+  };
+
+  // Simple flat approach: nest by level
+  let tocItems = '<ul>';
+  let prevLevel = minLevel;
+  let openLists = 0;
+
+  for (const entry of entries) {
+    const depth = entry.level - minLevel;
+    while (openLists < depth) {
+      tocItems += '<ul>';
+      openLists++;
+    }
+    while (openLists > depth) {
+      tocItems += '</ul>';
+      openLists--;
+    }
+    tocItems += `<li><a href="#${escapeHtml(entry.id)}">${escapeHtml(entry.text)}</a></li>`;
+  }
+  while (openLists > 0) {
+    tocItems += '</ul>';
+    openLists--;
+  }
+  tocItems += '</ul>';
+
+  return `<nav class="toc"><details open><summary>Table of Contents</summary>${tocItems}</details></nav>\n`;
+}
+
+/**
  * Generate a complete, self-contained HTML document from Markdown.
- * Includes CSP meta tag and inline styles for offline viewing.
+ * Includes CSP meta tag, inline styles, and TOC for offline viewing.
  */
 export async function generateHtmlDocument(
   markdown: string,
@@ -155,6 +240,7 @@ export async function generateHtmlDocument(
   const bodyHtml = await markdownToHtml(markdown);
   const title = options.title ?? extractTitle(bodyHtml);
   const customCss = options.css ? `\n${options.css.replace(/<\/style\s*>/gi, '/* </style> removed */')}` : '';
+  const tocHtml = buildTocHtml(markdown);
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -168,7 +254,7 @@ export async function generateHtmlDocument(
 <style>${highlightCss}</style>
 </head>
 <body>
-${bodyHtml}
+${tocHtml}${bodyHtml}
 </body>
 </html>`;
 }
