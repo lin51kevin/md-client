@@ -1,4 +1,4 @@
-import { open, save, message } from '@tauri-apps/plugin-dialog';
+import { open, save, message, ask } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
 import { Tab } from '../types';
 import type { TranslationKey } from '../i18n/zh-CN';
@@ -33,7 +33,19 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
         filters: [{ name: 'Markdown', extensions: ['md', 'markdown', 'txt'] }],
       });
       const paths = Array.isArray(selected) ? selected : selected ? [selected] : [];
+      const LARGE_FILE_WARN = 5 * 1024 * 1024; // 5 MB
       for (const p of paths) {
+        try {
+          const fileSize = await invoke<number>('get_file_size', { path: p });
+          if (fileSize > LARGE_FILE_WARN) {
+            const sizeMB = Math.round(fileSize / 1024 / 1024);
+            const proceed = await ask(
+              tr('fileOps.largeFileWarning', { size: sizeMB }),
+              { title: tr('fileOps.hint'), kind: 'warning' }
+            );
+            if (!proceed) return;
+          }
+        } catch { /* get_file_size not available, proceed */ }
         await openFileInTab(p);
       }
     } catch (err) {
