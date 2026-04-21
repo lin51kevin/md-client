@@ -9,6 +9,7 @@
  * directly from Zustand stores to avoid prop drilling for visibility flags.
  */
 import { lazy, Suspense } from 'react';
+import { LoadingSpinner } from './LoadingSpinner';
 import { invoke } from '@tauri-apps/api/core';
 import type { Command } from '../lib/editor';
 import type { RecentFile } from '../lib/file';
@@ -139,13 +140,13 @@ export function AppGlobalOverlays({
       )}
 
       {viewMode === 'slide' && (
-        <Suspense fallback={null}>
+        <Suspense fallback={<LoadingSpinner />}>
           <SlidePreview markdown={activeTabDoc} onClose={() => setViewMode('split')} />
         </Suspense>
       )}
 
       {viewMode === 'mindmap' && (
-        <Suspense fallback={null}>
+        <Suspense fallback={<LoadingSpinner />}>
           <MindmapView markdown={activeTabDoc} onClose={() => setViewMode('split')} onNavigate={onTocNavigate} />
         </Suspense>
       )}
