@@ -28,6 +28,15 @@
       "version": "1.0.0",
       "tags": ["ai", "copilot", "editing", "translation"],
       "manifestUrl": "official/ai-copilot/manifest.json"
+    },
+    {
+      "id": "marklite-git",
+      "name": "Git Integration",
+      "description": "Git 版本控制集成 — 查看状态、暂存、提交、拉取、推送、差异对比",
+      "author": "MarkLite Team",
+      "version": "1.0.0",
+      "tags": ["git", "version-control", "scm"],
+      "manifestUrl": "official/git/manifest.json"
     }
   ]
 }
