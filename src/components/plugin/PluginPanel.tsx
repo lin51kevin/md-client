@@ -1,6 +1,8 @@
 import { useState, useRef, useMemo } from 'react';
 import { usePlugins } from '../../hooks/usePlugins';
 import { getOfficialPlugins } from '../../plugins/registry/registry-client';
+import type { RegistryPluginEntry } from '../../plugins/registry/registry-client';
+import { readRegistryManifest } from '../../plugins/registry/quick-install';
 import { PanelHeader } from './PanelHeader';
 import { SearchBar } from './SearchBar';
 import { TabSwitcher } from './TabSwitcher';
@@ -51,17 +53,20 @@ export function PluginPanel({ visible, onClose, onActivate, onDeactivate }: Plug
     }
   };
 
-  const handleRegistryInstall = async (plugin: { id: string; name: string; version: string; author: string; description: string }) => {
+  const handleRegistryInstall = async (plugin: RegistryPluginEntry) => {
     if (installingId === plugin.id) return;
     setInstallingId(plugin.id);
     try {
-      // Install directly from registry entry data — no manifest fetch needed for official plugins
+      // Fetch the full manifest to get declared permissions so the approval
+      // dialog is shown when the plugin requests sensitive capabilities.
+      const fullManifest = await readRegistryManifest(plugin);
       addPluginFromManifest({
         id: plugin.id,
         name: plugin.name,
         version: plugin.version,
         author: plugin.author,
         description: plugin.description,
+        permissions: fullManifest?.permissions ?? [],
       });
     } finally {
       setInstallingId(null);
