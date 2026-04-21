@@ -17,6 +17,20 @@ export default defineConfig({
     globals: true,
     include: ['src/__tests__/**/*.test.{ts,tsx,js}'],
     setupFiles: ['./src/test-setup.ts'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html', 'lcov'],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/__tests__/**',
+        'src/__mocks__/**',
+        'src/test-setup.ts',
+        'src/vite-env.d.ts',
+      ],
+      thresholds: {
+        lines: 60,
+      },
+    },
     server: {
       deps: {
         inline: [/plugins\/official/],
