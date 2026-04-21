@@ -671,4 +671,7 @@ export const jaJP: Record<TranslationKey, string> = {
   'settings.editor.fileWatchBehaviorDesc': 'ファイル変更を検知した時のデフォルト動作',
   'settings.editor.fileWatchAlwaysAsk': '毎回確認',
   'settings.editor.fileWatchAutoReload': '自動再読込',
-};
+  // ── Error Boundary ──────────────────────────────────────────────────────────
+  'errorBoundary.title': 'アプリケーションで問題が発生しました',
+  'errorBoundary.message': '予期しないエラーが発生しました。アプリを再読み込みしてください。問題が続く場合は開発者にお問い合わせください。',
+  'errorBoundary.reload': '再読み込み',};

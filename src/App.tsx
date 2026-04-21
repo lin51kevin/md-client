@@ -7,12 +7,15 @@
 
 import { AppProviders } from './components/AppProviders';
 import { AppShell } from './components/AppShell';
+import { GlobalErrorBoundary } from './components/GlobalErrorBoundary';
 import './App.css';
 
 export default function App() {
   return (
-    <AppProviders>
-      <AppShell />
-    </AppProviders>
+    <GlobalErrorBoundary>
+      <AppProviders>
+        <AppShell />
+      </AppProviders>
+    </GlobalErrorBoundary>
   );
 }

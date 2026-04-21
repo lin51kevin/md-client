@@ -671,4 +671,9 @@ export const en: Record<TranslationKey, string> = {
   'settings.editor.fileWatchBehaviorDesc': 'Default behavior when a file change is detected',
   'settings.editor.fileWatchAlwaysAsk': 'Always ask',
   'settings.editor.fileWatchAutoReload': 'Auto reload',
+
+  // ── Error Boundary ──────────────────────────────────────────────────────────
+  'errorBoundary.title': 'Something went wrong',
+  'errorBoundary.message': 'An unexpected error occurred. Please try reloading the app. If the problem persists, contact the developer.',
+  'errorBoundary.reload': 'Reload',
 };

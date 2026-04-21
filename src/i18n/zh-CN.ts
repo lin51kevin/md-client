@@ -668,6 +668,11 @@ export const zhCN = {
   'settings.editor.fileWatchBehaviorDesc': '检测到文件变更时的默认行为',
   'settings.editor.fileWatchAlwaysAsk': '始终询问',
   'settings.editor.fileWatchAutoReload': '自动重载',
+
+  // ── Error Boundary ──────────────────────────────────────────────────────────
+  'errorBoundary.title': '应用遇到了问题',
+  'errorBoundary.message': '发生了意外错误，请尝试重新加载应用。如果问题持续存在，请联系开发者。',
+  'errorBoundary.reload': '重新加载',
 };
 
 export type TranslationKey = keyof typeof zhCN;
