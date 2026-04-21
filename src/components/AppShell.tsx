@@ -407,25 +407,27 @@ export function AppShell() {
             onToggleWysiwygMode={() => setMilkdownPreview(!milkdownPreview)}
           />
 
-          <SettingsModal
-            visible={showSettings} onClose={() => setShowSettings(false)}
-            currentTheme={theme} onThemeChange={setTheme}
-            spellCheck={spellCheck} onSpellCheckChange={setSpellCheck}
-            vimMode={vimMode} onVimModeChange={setVimMode}
-            autoSave={autoSave} onAutoSaveChange={setAutoSave}
-            autoSaveDelay={autoSaveDelay} onAutoSaveDelayChange={setAutoSaveDelay}
-            gitMdOnly={gitMdOnly} onGitMdOnlyChange={setGitMdOnly}
-            milkdownPreview={milkdownPreview} onMilkdownPreviewChange={setMilkdownPreview}
-            mermaidTheme={mermaidTheme} onMermaidThemeChange={setMermaidTheme}
-            fileWatch={fileWatch} onFileWatchChange={setFileWatch}
-            fileWatchBehavior={fileWatchBehavior} onFileWatchBehaviorChange={setFileWatchBehavior}
-            autoUpdateCheck={autoUpdateCheck} onAutoUpdateCheckChange={setAutoUpdateCheck}
-            contextMenuIntegration={contextMenuIntegration} onContextMenuIntegrationChange={setContextMenuIntegration}
-            updateCheckFrequency={updateCheckFrequency} onUpdateCheckFrequencyChange={setUpdateCheckFrequency}
-            typewriterOptions={typewriterOptions} onTypewriterOptionsChange={setTypewriterOptions}
-          />
+          {showSettings && (
+            <SettingsModal
+              visible={showSettings} onClose={() => setShowSettings(false)}
+              currentTheme={theme} onThemeChange={setTheme}
+              spellCheck={spellCheck} onSpellCheckChange={setSpellCheck}
+              vimMode={vimMode} onVimModeChange={setVimMode}
+              autoSave={autoSave} onAutoSaveChange={setAutoSave}
+              autoSaveDelay={autoSaveDelay} onAutoSaveDelayChange={setAutoSaveDelay}
+              gitMdOnly={gitMdOnly} onGitMdOnlyChange={setGitMdOnly}
+              milkdownPreview={milkdownPreview} onMilkdownPreviewChange={setMilkdownPreview}
+              mermaidTheme={mermaidTheme} onMermaidThemeChange={setMermaidTheme}
+              fileWatch={fileWatch} onFileWatchChange={setFileWatch}
+              fileWatchBehavior={fileWatchBehavior} onFileWatchBehaviorChange={setFileWatchBehavior}
+              autoUpdateCheck={autoUpdateCheck} onAutoUpdateCheckChange={setAutoUpdateCheck}
+              contextMenuIntegration={contextMenuIntegration} onContextMenuIntegrationChange={setContextMenuIntegration}
+              updateCheckFrequency={updateCheckFrequency} onUpdateCheckFrequencyChange={setUpdateCheckFrequency}
+              typewriterOptions={typewriterOptions} onTypewriterOptionsChange={setTypewriterOptions}
+            />
+          )}
 
-          <AboutModal visible={showAbout} onClose={() => setShowAbout(false)} />
+          {showAbout && <AboutModal visible={showAbout} onClose={() => setShowAbout(false)} />}
 
           <TabBar
             tabs={isPristine ? [] : tabs} activeTabId={activeTabId}
