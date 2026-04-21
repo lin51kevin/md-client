@@ -189,13 +189,13 @@ describe('useImportOps', () => {
       expect(mockCreateNewTab).toHaveBeenCalled();
     });
 
-    it('大文件（≥2MB）应使用 Worker 路径并显示进度', async () => {
+    it('大文件（≥256KB）应使用 Worker 路径并显示进度', async () => {
       const { invoke } = await import('@tauri-apps/api/core');
       const { convertHtmlInWorker } = await import('../../lib/workers/html-import-bridge');
 
-      const bigContent = 'x'.repeat(3 * 1024 * 1024); // 3 MB
+      const bigContent = 'x'.repeat(512 * 1024); // 512 KB (>= 256KB threshold)
       (invoke as any).mockImplementation((cmd: string) => {
-        if (cmd === 'get_file_size') return Promise.resolve(3 * 1024 * 1024);
+        if (cmd === 'get_file_size') return Promise.resolve(512 * 1024);
         if (cmd === 'read_file_text') return Promise.resolve(bigContent);
         return Promise.resolve();
       });
@@ -210,6 +210,62 @@ describe('useImportOps', () => {
       expect(mockToast.showProgress).toHaveBeenCalled();
       expect(mockToast.dismiss).toHaveBeenCalled();
       expect(mockCreateNewTab).toHaveBeenCalled();
+    });
+
+    it('小文件（<256KB）应使用主线程同步路径，不走 Worker', async () => {
+      const { invoke } = await import('@tauri-apps/api/core');
+      const { convertHtmlInWorker } = await import('../../lib/workers/html-import-bridge');
+
+      const smallContent = '<h1>Small</h1>';
+      (invoke as any).mockImplementation((cmd: string) => {
+        if (cmd === 'get_file_size') return Promise.resolve(1024);
+        if (cmd === 'read_file_text') return Promise.resolve(smallContent);
+        return Promise.resolve();
+      });
+
+      const { result } = renderImportOps();
+
+      await act(async () => {
+        await result.current.handleImportHtmlFromPath('D:\\small.html');
+      });
+
+      expect(convertHtmlInWorker).not.toHaveBeenCalled();
+      expect(mockToast.showProgress).not.toHaveBeenCalled();
+      expect(mockCreateNewTab).toHaveBeenCalled();
+    });
+  });
+
+  describe('组件卸载时清理', () => {
+    it('导入进行中组件卸载时应取消 Worker 操作', async () => {
+      const { invoke } = await import('@tauri-apps/api/core');
+      const { convertHtmlInWorker } = await import('../../lib/workers/html-import-bridge');
+
+      const mockCancel = vi.fn();
+      let resolvePromise: ((v: any) => void) | null = null;
+      (convertHtmlInWorker as any).mockReturnValue({
+        promise: new Promise(r => { resolvePromise = r; }),
+        cancel: mockCancel,
+      });
+      (invoke as any).mockImplementation((cmd: string) => {
+        if (cmd === 'get_file_size') return Promise.resolve(512 * 1024);
+        if (cmd === 'read_file_text') return Promise.resolve('x'.repeat(512 * 1024));
+        return Promise.resolve();
+      });
+
+      const { result, unmount } = renderImportOps();
+
+      // Start import (will hang on Worker promise)
+      await act(async () => {
+        result.current.handleImportHtmlFromPath('D:\\big.html');
+        // Wait for the import to start the Worker
+        await new Promise(r => setTimeout(r, 0));
+      });
+
+      // Unmount while Worker is still running
+      unmount();
+
+      // cancel should have been called
+      expect(mockCancel).toHaveBeenCalled();
     });
   });
 });

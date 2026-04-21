@@ -8,7 +8,7 @@
  * UI responsive. Smaller files use the synchronous main-thread path.
  * Progress is reported via the Toast system.
  */
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { open, message, ask } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
 import type { TranslationKey } from '../i18n/zh-CN';
@@ -160,6 +160,13 @@ export function useImportOps({ createNewTab, openFileWithContent, t }: ImportOps
   const handleImportHtmlFromPath = useCallback(async (path: string) => {
     await importFromPath(path);
   }, [importFromPath]);
+
+  // Cleanup: cancel any in-progress Worker import when component unmounts
+  useEffect(() => {
+    return () => {
+      cancelRef.current?.();
+    };
+  }, []);
 
   return {
     importing,
