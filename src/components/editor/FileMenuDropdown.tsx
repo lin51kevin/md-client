@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { FilePlus, Clock, Save, SaveAll, FileText, FolderOpen, FileCode, Trash2, ChevronRight, ArrowUpFromLine, BookMarked, ScrollText, Image, X, Menu } from 'lucide-react';
+import { FilePlus, Clock, Save, SaveAll, FileText, FolderOpen, FileCode, Trash2, ChevronRight, ArrowUpFromLine, ArrowDownToLine, BookMarked, ScrollText, Image, X, Menu } from 'lucide-react';
 import type { RecentFile } from '../../lib/file';
 import { useI18n } from '../../i18n';
 
@@ -14,6 +14,7 @@ export interface FileMenuDropdownProps {
   onExportHtml: () => void;
   onExportEpub?: () => void;
   onExportPng?: () => void;
+  onImportHtml?: () => void;
   recentFiles?: RecentFile[];
   onOpenRecent?: (path: string) => void;
   onClearRecent?: () => void;
@@ -43,6 +44,7 @@ export function FileMenuDropdown({
   onExportHtml,
   onExportEpub,
   onExportPng,
+  onImportHtml,
   recentFiles,
   onOpenRecent,
   onClearRecent,
@@ -294,6 +296,15 @@ export function FileMenuDropdown({
     }] : []),
   ];
 
+  const importItems: MenuItem[] = [
+    ...(onImportHtml ? [{
+      id: 'import-html',
+      icon: <FileCode size={13} strokeWidth={1.8} />,
+      label: t('file.importHtml'),
+      action: onImportHtml,
+    }] : []),
+  ];
+
   const menuItems: MenuItem[] = [
     {
       id: 'new',
@@ -343,6 +354,12 @@ export function FileMenuDropdown({
       label: t('file.export'),
       submenu: exportItems,
     },
+    ...(importItems.length > 0 ? [{
+      id: 'import',
+      icon: <ArrowDownToLine size={13} strokeWidth={1.8} />,
+      label: t('file.import'),
+      submenu: importItems,
+    } as MenuItem] : []),
     { id: 'sep3', icon: null, label: '' } as unknown as MenuItem,
     {
       id: 'close-all',

@@ -5,6 +5,9 @@ import { getCurrentWebview } from '@tauri-apps/api/webview';
 /** 支持的图片扩展名 */
 const IMAGE_EXT_RE = /\.(png|jpe?g|gif|webp|bmp)$/i;
 
+/** 支持导入的 HTML 扩展名 */
+const HTML_EXT_RE = /\.html?$/i;
+
 export type DragKind = 'file' | 'folder';
 
 interface DragDropParams {
@@ -18,14 +21,18 @@ interface DragDropParams {
   onImageDrop?: (ext: string, data: Uint8Array) => Promise<void>;
   /** 当拖入文件夹时，设置文件树根目录 */
   onFolderDrop?: (path: string) => void;
+  /** 处理拖入的 HTML 文件（转换为 Markdown 后打开） */
+  onHtmlImport?: (path: string) => Promise<void>;
 }
 
-export function useDragDrop({ isTauri, setIsDragOver, setDragKind, openFileInTab, onImageDrop, onFolderDrop }: DragDropParams) {
-  // Ref 让 Tauri 事件回调始终读到最新的 onImageDrop / onFolderDrop，无需重新订阅
+export function useDragDrop({ isTauri, setIsDragOver, setDragKind, openFileInTab, onImageDrop, onFolderDrop, onHtmlImport }: DragDropParams) {
+  // Ref 让 Tauri 事件回调始终读到最新的 onImageDrop / onFolderDrop / onHtmlImport，无需重新订阅
   const onImageDropRef = useRef(onImageDrop);
   const onFolderDropRef = useRef(onFolderDrop);
+  const onHtmlImportRef = useRef(onHtmlImport);
   useEffect(() => { onImageDropRef.current = onImageDrop; });
   useEffect(() => { onFolderDropRef.current = onFolderDrop; });
+  useEffect(() => { onHtmlImportRef.current = onHtmlImport; });
 
   useEffect(() => {
     if (!isTauri) return;
@@ -63,6 +70,23 @@ export function useDragDrop({ isTauri, setIsDragOver, setDragKind, openFileInTab
           paths
             .filter(p => /\.(md|markdown|txt)$/i.test(p))
             .forEach(p => openFileInTab(p));
+
+          // 处理 HTML 文件：转换为 Markdown 后打开
+          const htmlHandler = onHtmlImportRef.current;
+          if (htmlHandler) {
+            const htmlPaths = paths.filter(p => HTML_EXT_RE.test(p));
+            if (htmlPaths.length > 0) {
+              (async () => {
+                for (const htmlPath of htmlPaths) {
+                  try {
+                    await htmlHandler(htmlPath);
+                  } catch (err) {
+                    console.warn(`[useDragDrop] Failed to import HTML: ${htmlPath}`, err);
+                  }
+                }
+              })();
+            }
+          }
 
           // 检测并处理文件夹拖入
           const folderHandler = onFolderDropRef.current;
