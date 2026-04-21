@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { History, X, Download } from 'lucide-react';
 import { useI18n } from '../../i18n';
 import { formatDuration } from '../../lib/utils';
@@ -30,7 +30,7 @@ interface StatusBarProps {
   wysiwygMode?: boolean;
 }
 
-export function StatusBar({ filePath, isDirty, line, col, wordCount, readingTime, cursorCount, vimMode, saveStatus, snapshots, onSnapshotRestore, updateAvailable, onUpdateClick, focusStartTime, wysiwygMode }: StatusBarProps) {
+export const StatusBar = memo(function StatusBar({ filePath, isDirty, line, col, wordCount, readingTime, cursorCount, vimMode, saveStatus, snapshots, onSnapshotRestore, updateAvailable, onUpdateClick, focusStartTime, wysiwygMode }: StatusBarProps) {
   const { t } = useI18n();
   const [showSnapshots, setShowSnapshots] = useState(false);
 
@@ -133,7 +133,7 @@ export function StatusBar({ filePath, isDirty, line, col, wordCount, readingTime
       )}
     </div>
   );
-}
+});
 
 function formatTime(isoString: string): string {
   const date = new Date(isoString);

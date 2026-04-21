@@ -1,5 +1,5 @@
 
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, memo } from 'react';
 import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, SpellCheck, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, HelpCircle, FilePlus, FileText, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight, Table2, FileCode2, Minus, ListChecks, Sigma, Presentation, Library, List, Brain, Undo2, Redo2, Bot, ArrowUpFromLine, PenLine } from 'lucide-react';
 import { ViewMode, FocusMode } from '../../types';
 
@@ -76,7 +76,7 @@ const DIVIDER = (
   <div className="w-px h-5 mx-0.5 shrink-0" style={{ backgroundColor: 'var(--border-color)' }} />
 );
 
-export function Toolbar({
+export const Toolbar = memo(function Toolbar({
   viewMode, focusMode,
   onNewTab, onOpenFile, onOpenFolder, onSaveFile, onSaveAsFile,
   onExportDocx, onExportPdf, onExportHtml, onExportEpub, onExportPng,
@@ -489,6 +489,6 @@ export function Toolbar({
       </div>
     </div>
   );
-}
+});
 
 

@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, memo } from 'react';
 import { X, Plus, Pin } from 'lucide-react';
 import { Tab } from '../../types';
 import { useI18n } from '../../i18n';
@@ -32,7 +32,7 @@ interface TabBarProps {
   onCloseAll?: () => void;
 }
 
-export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorder, onContextMenu, getTabTitle, renamingTabId, onStartRename, onConfirmRename, onCancelRename, onPin, onUnpin, showWelcomeTab, onCloseWelcomeTab }: TabBarProps) {
+export const TabBar = memo(function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorder, onContextMenu, getTabTitle, renamingTabId, onStartRename, onConfirmRename, onCancelRename, onPin, onUnpin, showWelcomeTab, onCloseWelcomeTab }: TabBarProps) {
   const { t } = useI18n();
   const [dragOverTabId, setDragOverTabId] = useState<string | null>(null);
   const tabDragRef = useRef<{ fromId: string; startX: number; overId: string | null } | null>(null);
@@ -258,4 +258,4 @@ export function TabBar({ tabs, activeTabId, onActivate, onClose, onNew, onReorde
       </div>
     </div>
   );
-}
+});

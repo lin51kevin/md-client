@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, memo } from 'react';
 import { FolderTree, Search, List, GitBranch, Settings, Package, Link, Share2, Braces, Sparkles, Bot, MessageSquare, type LucideIcon } from 'lucide-react';
 
 /** Map of icon name strings to Lucide icon components for plugin panels */
@@ -71,7 +71,7 @@ interface TooltipState {
   y: number; // viewport Y center of the hovered button
 }
 
-export function ActivityBar({ activePanel, onPanelChange, onOpenSettings, pluginPanels = [], floatingPanelId }: ActivityBarProps) {
+export const ActivityBar = memo(function ActivityBar({ activePanel, onPanelChange, onOpenSettings, pluginPanels = [], floatingPanelId }: ActivityBarProps) {
   const { t } = useI18n();
   const [orderRaw, setOrderRaw] = useLocalStorageString(StorageKeys.PANEL_ORDER, DEFAULT_ORDER);
   const [orderedIds, setOrderedIds] = useState<PanelId[]>(() => parseOrder(orderRaw));
@@ -317,4 +317,4 @@ export function ActivityBar({ activePanel, onPanelChange, onOpenSettings, plugin
       )}
     </div>
   );
-}
+});
