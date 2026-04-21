@@ -8,6 +8,7 @@ import { SearchBar } from './SearchBar';
 import { TabSwitcher } from './TabSwitcher';
 import { PluginList } from './PluginList';
 import { PanelFooter } from './PanelFooter';
+import { PermissionApprovalModal } from '../modal/PermissionApprovalModal';
 
 interface PluginPanelProps {
   visible: boolean;
@@ -17,7 +18,7 @@ interface PluginPanelProps {
 }
 
 export function PluginPanel({ visible, onClose, onActivate, onDeactivate }: PluginPanelProps) {
-  const { plugins, enablePlugin, disablePlugin, removePlugin, togglePlugin, installFromFile, addPluginFromManifest } = usePlugins({
+  const { plugins, enablePlugin, disablePlugin, removePlugin, togglePlugin, installFromFile, addPluginFromManifest, pendingPermission, onApprovePermissions, onCancelPermission } = usePlugins({
     onActivate,
     onDeactivate,
   });
@@ -106,6 +107,13 @@ export function PluginPanel({ visible, onClose, onActivate, onDeactivate }: Plug
         />
       </div>
       <PanelFooter onInstallFromFile={installFromFile} />
+      <PermissionApprovalModal
+        visible={!!pendingPermission}
+        pluginName={pendingPermission?.plugin.name ?? ''}
+        permissions={pendingPermission?.permissions ?? []}
+        onApprove={onApprovePermissions}
+        onCancel={onCancelPermission}
+      />
     </div>
   );
 }
