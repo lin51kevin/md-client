@@ -71,6 +71,28 @@ function buildPathCandidates(manifestUrl: string): string[] {
  * Read the manifest file for a registry entry
  * Returns parsed manifest data that can be passed to addPluginFromManifest
  */
+/**
+ * Apply field-level trimming and length caps to a raw parsed manifest object.
+ * Prevents oversized or malformed fields from affecting the UI or store.
+ */
+function sanitizeManifest(raw: Record<string, unknown>): PartialManifest {
+  const str = (v: unknown, max: number): string | undefined =>
+    typeof v === 'string' ? v.trim().slice(0, max) : undefined;
+
+  const permissions = Array.isArray(raw.permissions)
+    ? (raw.permissions as unknown[]).slice(0, 50).filter((p) => typeof p === 'string') as string[]
+    : undefined;
+
+  return {
+    id: str(raw.id, 64),
+    name: str(raw.name, 128),
+    version: str(raw.version, 32),
+    author: str(raw.author, 128),
+    description: str(raw.description, 512),
+    permissions,
+  };
+}
+
 export async function readRegistryManifest(entry: RegistryPluginEntry): Promise<PartialManifest | null> {
   const possiblePaths = buildPathCandidates(entry.manifestUrl);
 
@@ -82,7 +104,7 @@ export async function readRegistryManifest(entry: RegistryPluginEntry): Promise<
       for (const manifestPath of possiblePaths) {
         try {
           const content = await readTextFile(manifestPath);
-          return JSON.parse(content) as PartialManifest;
+          return sanitizeManifest(JSON.parse(content) as Record<string, unknown>);
         } catch {
           // Path not found, try next
           continue;
@@ -102,7 +124,7 @@ export async function readRegistryManifest(entry: RegistryPluginEntry): Promise<
       const resp = await fetch(manifestPath, { signal: AbortSignal.timeout(10_000) });
       if (resp.ok) {
         const content = await resp.text();
-        return JSON.parse(content) as PartialManifest;
+        return sanitizeManifest(JSON.parse(content) as Record<string, unknown>);
       }
     } catch (err) {
       if (err instanceof DOMException && err.name === 'TimeoutError') {
