@@ -57,6 +57,7 @@ export class ProviderRouter {
         this.activeProvider = provider;
         return await provider.chat(messages, onChunk);
       } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') throw error;
         errors.push({ provider: config.provider, error });
         console.warn(`[AI Router] Provider "${config.provider}" failed:`, error);
       } finally {
