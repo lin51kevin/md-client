@@ -702,4 +702,11 @@ export const jaJP: Record<TranslationKey, string> = {
   'slidePreview.exit': '終了 (ESC)',
   'slidePreview.fullscreen': 'フルスクリーン (F11)',
   'slidePreview.exitFullscreen': 'フルスクリーン終了 (ESC)',
+  // ── Command Palette ───────────────────────────────────────────────────────
+  'commandPalette.title': 'コマンドパレット',
+  'commandPalette.placeholder': 'コマンドを入力...',
+  'commandPalette.empty': '一致するコマンドがありません',
+  'commandPalette.footer.nav': '移動',
+  'commandPalette.footer.execute': '実行',
+  'commandPalette.footer.close': '閉じる',
 };

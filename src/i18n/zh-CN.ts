@@ -700,6 +700,13 @@ export const zhCN = {
   'slidePreview.exit': '退出 (ESC)',
   'slidePreview.fullscreen': '全屏 (F11)',
   'slidePreview.exitFullscreen': '退出全屏 (ESC)',
+  // ── Command Palette ───────────────────────────────────────────────────────
+  'commandPalette.title': '命令面板',
+  'commandPalette.placeholder': '输入命令搜索...',
+  'commandPalette.empty': '无匹配命令',
+  'commandPalette.footer.nav': '导航',
+  'commandPalette.footer.execute': '执行',
+  'commandPalette.footer.close': '关闭',
 };
 
 export type TranslationKey = keyof typeof zhCN;

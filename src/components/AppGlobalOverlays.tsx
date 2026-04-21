@@ -105,6 +105,7 @@ export function AppGlobalOverlays({
         commands={commandRegistry}
         onClose={() => setShowCommandPalette(false)}
         locale={locale}
+        t={t}
       />
 
       <QuickOpen

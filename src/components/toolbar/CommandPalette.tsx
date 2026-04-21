@@ -6,10 +6,12 @@ interface CommandPaletteProps {
   visible: boolean;
   commands: Command[];
   onClose: () => void;
-  locale: string; // 'zh-CN' | 'en'
+  locale: string; // 'zh-CN' | 'en' | 'ja-JP'
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  t: (key: any) => string;
 }
 
-export function CommandPalette({ visible, commands, onClose, locale }: CommandPaletteProps) {
+export function CommandPalette({ visible, commands, onClose, locale, t }: CommandPaletteProps) {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -100,7 +102,7 @@ export function CommandPalette({ visible, commands, onClose, locale }: CommandPa
     <div className="command-palette-overlay" onMouseDown={(e) => {
       if (e.target === e.currentTarget) onClose();
     }}>
-      <div className="command-palette" role="dialog" aria-modal="true" aria-label={isZh ? '命令面板' : 'Command Palette'}>
+      <div className="command-palette" role="dialog" aria-modal="true" aria-label={t('commandPalette.title')}>
         <div className="command-palette-search">
           <span className="command-palette-search-icon">⌘</span>
           <input
@@ -110,14 +112,14 @@ export function CommandPalette({ visible, commands, onClose, locale }: CommandPa
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={isZh ? '输入命令搜索...' : 'Type a command...'}
+            placeholder={t('commandPalette.placeholder')}
           />
         </div>
 
         <div className="command-palette-list" ref={listRef}>
           {filteredCommands.length === 0 ? (
             <div className="command-palette-empty">
-              {isZh ? '无匹配命令' : 'No matching commands'}
+              {t('commandPalette.empty')}
             </div>
           ) : (
             grouped.map(group => (
@@ -151,9 +153,9 @@ export function CommandPalette({ visible, commands, onClose, locale }: CommandPa
 
         {/* Footer hint */}
         <div className="command-palette-footer">
-          <span>↑↓ {isZh ? '导航' : 'navigate'}</span>
-          <span>↵ {isZh ? '执行' : 'execute'}</span>
-          <span>Esc {isZh ? '关闭' : 'close'}</span>
+          <span>↑↓ {t('commandPalette.footer.nav')}</span>
+          <span>↵ {t('commandPalette.footer.execute')}</span>
+          <span>Esc {t('commandPalette.footer.close')}</span>
         </div>
       </div>
     </div>

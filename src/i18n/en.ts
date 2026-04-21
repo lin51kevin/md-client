@@ -703,4 +703,11 @@ export const en: Record<TranslationKey, string> = {
   'slidePreview.exit': 'Exit (ESC)',
   'slidePreview.fullscreen': 'Fullscreen (F11)',
   'slidePreview.exitFullscreen': 'Exit Fullscreen (ESC)',
+  // ── Command Palette ───────────────────────────────────────────────────────
+  'commandPalette.title': 'Command Palette',
+  'commandPalette.placeholder': 'Type a command...',
+  'commandPalette.empty': 'No matching commands',
+  'commandPalette.footer.nav': 'navigate',
+  'commandPalette.footer.execute': 'execute',
+  'commandPalette.footer.close': 'close',
 };
