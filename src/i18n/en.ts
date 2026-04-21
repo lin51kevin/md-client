@@ -676,4 +676,7 @@ export const en: Record<TranslationKey, string> = {
   'errorBoundary.title': 'Something went wrong',
   'errorBoundary.message': 'An unexpected error occurred. Please try reloading the app. If the problem persists, contact the developer.',
   'errorBoundary.reload': 'Reload',
+
+  // ── Toast ──────────────────────────────────────────────────────────────
+  'toast.close': 'Close',
 };

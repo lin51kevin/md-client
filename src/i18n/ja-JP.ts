@@ -674,4 +674,8 @@ export const jaJP: Record<TranslationKey, string> = {
   // ── Error Boundary ──────────────────────────────────────────────────────────
   'errorBoundary.title': 'アプリケーションで問題が発生しました',
   'errorBoundary.message': '予期しないエラーが発生しました。アプリを再読み込みしてください。問題が続く場合は開発者にお問い合わせください。',
-  'errorBoundary.reload': '再読み込み',};
+  'errorBoundary.reload': '再読み込み',
+
+  // ── Toast ──────────────────────────────────────────────────────────────────
+  'toast.close': '閉じる',
+};
