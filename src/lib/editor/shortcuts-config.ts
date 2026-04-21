@@ -24,7 +24,7 @@ export const DEFAULT_SHORTCUTS: ShortcutAction[] = [
   { id: 'closeTab', labelKey: 'settings.shortcuts.closeTab', defaultKeys: 'Ctrl+W', category: 'file' },
   { id: 'nextTab', labelKey: 'settings.shortcuts.nextTab', defaultKeys: 'Ctrl+Tab', category: 'file' },
   { id: 'previousTab', labelKey: 'settings.shortcuts.previousTab', defaultKeys: 'Ctrl+Shift+Tab', category: 'file' },
-  { id: 'closeAllTabs', labelKey: 'settings.shortcuts.closeAllTabs', defaultKeys: 'Ctrl+Shift+W', category: 'file' },
+  { id: 'closeAllTabs', labelKey: 'settings.shortcuts.closeAllTabs', defaultKeys: 'Ctrl+Alt+W', category: 'file' },
 
   // ── 编辑 ──
   { id: 'findReplace', labelKey: 'settings.shortcuts.findReplace', defaultKeys: 'Ctrl+F', category: 'edit' },
@@ -43,11 +43,11 @@ export const DEFAULT_SHORTCUTS: ShortcutAction[] = [
   { id: 'format.code', labelKey: 'settings.shortcuts.formatCode', defaultKeys: 'Ctrl+`', category: 'format' },
   { id: 'format.link', labelKey: 'settings.shortcuts.formatLink', defaultKeys: 'Ctrl+K', category: 'format' },
   { id: 'format.image', labelKey: 'settings.shortcuts.formatImage', defaultKeys: 'Ctrl+Shift+I', category: 'format' },
-  { id: 'format.heading', labelKey: 'settings.shortcuts.formatHeading', defaultKeys: 'Ctrl+H', category: 'format' },
+  { id: 'format.heading', labelKey: 'settings.shortcuts.formatHeading', defaultKeys: '', category: 'format' },
   { id: 'format.orderedList', labelKey: 'settings.shortcuts.formatOrderedList', defaultKeys: 'Ctrl+Shift+O', category: 'format' },
   { id: 'format.unorderedList', labelKey: 'settings.shortcuts.formatUnorderedList', defaultKeys: 'Ctrl+Shift+U', category: 'format' },
   { id: 'format.blockquote', labelKey: 'settings.shortcuts.formatBlockquote', defaultKeys: 'Ctrl+Shift+Q', category: 'format' },
-  { id: 'format.table', labelKey: 'settings.shortcuts.formatTable', defaultKeys: 'Ctrl+Shift+T', category: 'format' },
+  { id: 'format.table', labelKey: 'settings.shortcuts.formatTable', defaultKeys: '', category: 'format' },
   { id: 'format.horizontalRule', labelKey: 'settings.shortcuts.formatHorizontalRule', defaultKeys: 'Ctrl+Shift+-', category: 'format' },
 
   // ── 视图 ──
@@ -137,6 +137,11 @@ export function detectConflict(key: string, excludeId: string): string | null {
     if (sc.id === excludeId) continue;
     const current = custom[sc.id] || sc.defaultKeys;
     if (current.toLowerCase() === key.toLowerCase()) return sc.id;
+  }
+  // 浏览器内置快捷键冲突检测
+  const browserKeys = ['Ctrl+H', 'Ctrl+Shift+T', 'Ctrl+Shift+W', 'Ctrl+Shift+N', 'Ctrl+N', 'Ctrl+Shift+I', 'Ctrl+J', 'Ctrl+Shift+J', 'Ctrl+L', 'Ctrl+Shift+Delete'];
+  if (browserKeys.includes(key.toLowerCase()) || browserKeys.includes(key)) {
+    return '__browser__';
   }
   return null;
 }

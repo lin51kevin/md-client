@@ -67,11 +67,11 @@ export function createCommandRegistry(deps: CommandRegistryDeps): Command[] {
     { id: 'format.code', label: '行内代码', labelEn: 'Inline Code', shortcut: 'Ctrl+`', category: 'format', action: () => handleFormatAction('code') },
     { id: 'format.link', label: '插入链接', labelEn: 'Insert Link', shortcut: 'Ctrl+K', category: 'format', action: () => handleFormatAction('link') },
     { id: 'format.image', label: '插入图片', labelEn: 'Insert Image', shortcut: 'Ctrl+Shift+I', category: 'format', action: () => handleFormatAction('image-local') },
-    { id: 'format.heading', label: '标题', labelEn: 'Heading', shortcut: 'Ctrl+H', category: 'format', action: () => handleFormatAction('heading') },
+    { id: 'format.heading', label: '标题', labelEn: 'Heading', shortcut: '', category: 'format', action: () => handleFormatAction('heading') },
     { id: 'format.orderedList', label: '有序列表', labelEn: 'Ordered List', shortcut: 'Ctrl+Shift+O', category: 'format', action: () => handleFormatAction('ol') },
     { id: 'format.unorderedList', label: '无序列表', labelEn: 'Unordered List', shortcut: 'Ctrl+Shift+U', category: 'format', action: () => handleFormatAction('ul') },
     { id: 'format.blockquote', label: '引用', labelEn: 'Blockquote', shortcut: 'Ctrl+Shift+Q', category: 'format', action: () => handleFormatAction('blockquote') },
-    { id: 'format.table', label: '插入表格', labelEn: 'Insert Table', shortcut: 'Ctrl+Shift+T', category: 'format', action: () => handleFormatAction('table') },
+    { id: 'format.table', label: '插入表格', labelEn: 'Insert Table', shortcut: '', category: 'format', action: () => handleFormatAction('table') },
     { id: 'format.horizontalRule', label: '分割线', labelEn: 'Horizontal Rule', shortcut: 'Ctrl+Shift+-', category: 'format', action: () => handleFormatAction('hr') },
 
     // ── 视图 ──
@@ -88,10 +88,10 @@ export function createCommandRegistry(deps: CommandRegistryDeps): Command[] {
     }},
 
     // ── 导出 ──
-    { id: 'export.docx', label: '导出 Word', labelEn: 'Export Word', shortcut: 'Ctrl+Shift+W', category: 'export', action: () => handleExportDocx() },
-    { id: 'export.pdf', label: '导出 PDF', labelEn: 'Export PDF', shortcut: 'Ctrl+Shift+P', category: 'export', action: () => handleExportPdf() },
+    { id: 'export.docx', label: '导出 Word', labelEn: 'Export Word', shortcut: '', category: 'export', action: () => handleExportDocx() },
+    { id: 'export.pdf', label: '导出 PDF', labelEn: 'Export PDF', shortcut: '', category: 'export', action: () => handleExportPdf() },
     { id: 'export.html', label: '导出 HTML', labelEn: 'Export HTML', shortcut: '', category: 'export', action: () => handleExportHtml() },
-    { id: 'export.png', label: '导出 PNG', labelEn: 'Export PNG', shortcut: 'Ctrl+Shift+N', category: 'export', action: () => handleExportPng(previewRef.current) },
+    { id: 'export.png', label: '导出 PNG', labelEn: 'Export PNG', shortcut: '', category: 'export', action: () => handleExportPng(previewRef.current) },
 
     // ── 自定义 ──
     { id: 'snippet.insert', label: '插入片段', labelEn: 'Insert Snippet', shortcut: 'Ctrl+Shift+J', category: 'custom', action: () => setShowSnippetPicker(true) },
