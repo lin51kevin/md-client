@@ -6,6 +6,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [v0.9.8] - 2026-04-21
+
+### Added
+
+- **GlobalErrorBoundary** — 全局错误边界组件，捕获渲染异常并显示恢复 UI，替代白屏崩溃
+- **Toast 通知系统** — 轻量级上下文 Toast（`useToast()`），支持 info / success / error 类型，自动消失（4s/6s）
+
+### Fixed
+
+- **i18n 硬编码字符串** — FileTreeSidebar、QuickOpen、SlidePreview、EditorContentArea 中的硬编码中文迁移至 `t()` 调用，新增三语言翻译键约 25 条
+- **重复 i18n 键名** — 移除 en / zh-CN / ja-JP 三个语言包中因 i18n 迁移引入的重复 `fileTree.*` 键，修复 TypeScript 构建失败（`TS1117`）
+- **QuickOpen locale prop** — 移除已废弃的 `locale: string` prop（`TS6133`），改由组件内部 `useI18n()` 处理
+
+### Performance
+
+- **React.memo** — 为 Toolbar、TabBar、StatusBar、ActivityBar 添加 `memo` 包裹，减少父组件无关重渲染
+- **模态框按需渲染** — AppShell 中 SettingsModal / AboutModal 改为条件渲染（`showSettings && <SettingsModal>`），减少隐藏时的 DOM 开销
+
+### Refactor
+
+- **text-stats 模块合并** — 将 `word-count.ts` 与 `writing-stats.ts` 合并为统一的 `text-stats.ts`，统一字数 / 字符 / 段落 / 句子 / 阅读时间 API，删除原两个文件
+
+### Chore
+
+- **Vitest 覆盖率配置** — 添加 `@vitest/coverage-v8`，新增 `test:coverage` 脚本，配置 html / lcov 报告及 60% 行覆盖率阈值
+- **Suspense fallback 改善** — SlidePreview / MindmapView 的 `Suspense fallback` 由 `null` 改为 `<LoadingSpinner />`，避免懒加载期间页面空白
+
+---
+
 ## [v0.9.7] - 2026-04-20
 
 ### Fixed
