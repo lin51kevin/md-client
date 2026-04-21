@@ -7,6 +7,7 @@
 import { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { File, Clock, Search } from 'lucide-react';
+import { useI18n } from '../../i18n';
 import type { DirEntry } from '../file/FileTreeSidebar';
 import type { RecentFile } from '../../lib/file';
 
@@ -69,14 +70,13 @@ function scoreItem(query: string, item: FileItem, recentPaths: Set<string>): num
 }
 
 export function QuickOpen({ visible, onClose, onFileOpen, fileTreeRoot, recentFiles, locale }: QuickOpenProps) {
+  const { t } = useI18n();
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [allFiles, setAllFiles] = useState<FileItem[]>([]);
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
-
-  const isZh = locale === 'zh-CN';
 
   const recentPaths = useMemo(() => new Set(recentFiles.map(f => f.path)), [recentFiles]);
 
@@ -201,7 +201,7 @@ export function QuickOpen({ visible, onClose, onFileOpen, fileTreeRoot, recentFi
     <div className="command-palette-overlay" onMouseDown={e => {
       if (e.target === e.currentTarget) onClose();
     }}>
-      <div className="command-palette" role="dialog" aria-modal="true" aria-label={isZh ? '快速打开' : 'Quick Open'}>
+      <div className="command-palette" role="dialog" aria-modal="true" aria-label={t('quickOpen.title')}>
         <div className="command-palette-search">
           <Search size={16} style={{ padding: '14px 10px 14px 16px', color: 'var(--text-secondary)', flexShrink: 0 }} />
           <input
@@ -211,22 +211,22 @@ export function QuickOpen({ visible, onClose, onFileOpen, fileTreeRoot, recentFi
             value={query}
             onChange={e => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={isZh ? '输入文件名搜索...' : 'Search files by name...'}
+            placeholder={t('quickOpen.searchPlaceholder')}
           />
         </div>
 
         <div className="command-palette-list" ref={listRef}>
           {loading ? (
             <div className="command-palette-empty">
-              {isZh ? '加载文件列表...' : 'Loading files...'}
+              {t('quickOpen.loading')}
             </div>
           ) : !fileTreeRoot ? (
             <div className="command-palette-empty">
-              {isZh ? '请先打开一个文件夹' : 'Open a folder first'}
+              {t('quickOpen.noFolder')}
             </div>
           ) : displayFiles.length === 0 ? (
             <div className="command-palette-empty">
-              {isZh ? '未找到匹配文件' : 'No matching files'}
+              {t('quickOpen.noMatch')}
             </div>
           ) : (
             <>
@@ -234,7 +234,7 @@ export function QuickOpen({ visible, onClose, onFileOpen, fileTreeRoot, recentFi
                 <div>
                   <div className="command-group-header">
                     <Clock size={11} style={{ marginRight: 4, verticalAlign: -1 }} />
-                    {isZh ? '最近打开' : 'Recently Opened'}
+                    {t('quickOpen.recent')}
                   </div>
                   {recentSection.map(renderItem)}
                 </div>
@@ -243,7 +243,7 @@ export function QuickOpen({ visible, onClose, onFileOpen, fileTreeRoot, recentFi
                 <div>
                   {recentSection.length > 0 && (
                     <div className="command-group-header">
-                      {isZh ? '所有文件' : 'All Files'}
+                      {t('quickOpen.allFiles')}
                     </div>
                   )}
                   {filesSection.map(renderItem)}
@@ -254,9 +254,9 @@ export function QuickOpen({ visible, onClose, onFileOpen, fileTreeRoot, recentFi
         </div>
 
         <div className="command-palette-footer">
-          <span>↑↓ {isZh ? '导航' : 'navigate'}</span>
-          <span>↵ {isZh ? '打开' : 'open'}</span>
-          <span>Esc {isZh ? '关闭' : 'close'}</span>
+          <span>↑↓ {t('quickOpen.navigate')}</span>
+          <span>↵ {t('quickOpen.open')}</span>
+          <span>Esc {t('quickOpen.close')}</span>
         </div>
       </div>
     </div>

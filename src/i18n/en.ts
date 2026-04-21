@@ -679,4 +679,33 @@ export const en: Record<TranslationKey, string> = {
 
   // ── Toast ──────────────────────────────────────────────────────────────
   'toast.close': 'Close',
+
+  // ── Loading ────────────────────────────────────────────────────────────
+  'loading.previewEngine': 'Loading preview engine...',
+  'loading.generic': 'Loading...',
+
+  // ── File Tree ──────────────────────────────────────────────────────────
+  'fileTree.newFile': 'New File',
+  'fileTree.parentDir': 'Parent Directory',
+  'fileTree.selectFolder': 'Select Folder',
+  'fileTree.refresh': 'Refresh',
+  'fileTree.close': 'Close',
+  'fileTree.searchPlaceholder': 'Search files...',
+
+  // ── Quick Open ─────────────────────────────────────────────────────────
+  'quickOpen.title': 'Quick Open',
+  'quickOpen.searchPlaceholder': 'Search files by name...',
+  'quickOpen.loading': 'Loading file list...',
+  'quickOpen.noFolder': 'Open a folder first',
+  'quickOpen.noMatch': 'No matching files',
+  'quickOpen.recent': 'Recently Opened',
+  'quickOpen.allFiles': 'All Files',
+  'quickOpen.navigate': 'navigate',
+  'quickOpen.open': 'open',
+  'quickOpen.close': 'close',
+
+  // ── Slide Preview ──────────────────────────────────────────────────────
+  'slidePreview.exit': 'Exit (ESC)',
+  'slidePreview.fullscreen': 'Fullscreen (F11)',
+  'slidePreview.exitFullscreen': 'Exit Fullscreen (ESC)',
 };

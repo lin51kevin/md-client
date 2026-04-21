@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeKatex from 'rehype-katex';
 import remarkMath from 'remark-math';
+import { useI18n } from '../../i18n';
 import { parseSlides } from '../../lib/markdown';
 
 interface SlidePreviewProps {
@@ -12,6 +13,7 @@ interface SlidePreviewProps {
 }
 
 export function SlidePreview({ markdown, onClose }: SlidePreviewProps) {
+  const { t } = useI18n();
   const slides = useMemo(() => parseSlides(markdown), [markdown]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -139,10 +141,10 @@ export function SlidePreview({ markdown, onClose }: SlidePreviewProps) {
 
       {/* Toolbar overlay */}
       <div className="slide-toolbar-overlay">
-        <button className="slide-btn" onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }} title={isFullscreen ? 'Exit Fullscreen (ESC)' : 'Fullscreen (F11)'}>
+        <button className="slide-btn" onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }} title={isFullscreen ? t('slidePreview.exitFullscreen') : t('slidePreview.fullscreen')}>
           {isFullscreen ? <Minimize size={14} /> : <Maximize size={14} />}
         </button>
-        <button className="slide-btn" onClick={(e) => { e.stopPropagation(); onClose(); }} title="Exit (ESC)">
+        <button className="slide-btn" onClick={(e) => { e.stopPropagation(); onClose(); }} title={t('slidePreview.exit')}>
           ✕
         </button>
       </div>

@@ -676,6 +676,35 @@ export const zhCN = {
 
   // ── Toast ──────────────────────────────────────────────────────────────
   'toast.close': '关闭',
+
+  // ── Loading ────────────────────────────────────────────────────────────
+  'loading.previewEngine': '正在加载预览引擎...',
+  'loading.generic': '加载中...',
+
+  // ── File Tree ──────────────────────────────────────────────────────────
+  'fileTree.newFile': '新建文件',
+  'fileTree.parentDir': '上级目录',
+  'fileTree.selectFolder': '选择文件夹',
+  'fileTree.refresh': '刷新',
+  'fileTree.close': '关闭',
+  'fileTree.searchPlaceholder': '搜索文件...',
+
+  // ── Quick Open ─────────────────────────────────────────────────────────
+  'quickOpen.title': '快速打开',
+  'quickOpen.searchPlaceholder': '输入文件名搜索...',
+  'quickOpen.loading': '加载文件列表...',
+  'quickOpen.noFolder': '请先打开一个文件夹',
+  'quickOpen.noMatch': '未找到匹配文件',
+  'quickOpen.recent': '最近打开',
+  'quickOpen.allFiles': '所有文件',
+  'quickOpen.navigate': '导航',
+  'quickOpen.open': '打开',
+  'quickOpen.close': '关闭',
+
+  // ── Slide Preview ──────────────────────────────────────────────────────
+  'slidePreview.exit': '退出 (ESC)',
+  'slidePreview.fullscreen': '全屏 (F11)',
+  'slidePreview.exitFullscreen': '退出全屏 (ESC)',
 };
 
 export type TranslationKey = keyof typeof zhCN;

@@ -6,6 +6,28 @@ vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
 }));
 
+vi.mock('../../../i18n', () => ({
+  useI18n: () => ({
+    t: (key: string) => {
+      const map: Record<string, string> = {
+        'quickOpen.title': '快速打开',
+        'quickOpen.searchPlaceholder': '输入文件名搜索...',
+        'quickOpen.loading': '加载文件列表...',
+        'quickOpen.noFolder': '请先打开一个文件夹',
+        'quickOpen.noMatch': '未找到匹配文件',
+        'quickOpen.recent': '最近打开',
+        'quickOpen.allFiles': '所有文件',
+        'quickOpen.navigate': '导航',
+        'quickOpen.open': '打开',
+        'quickOpen.close': '关闭',
+      };
+      return map[key] ?? key;
+    },
+    locale: 'zh-CN',
+    setLocale: vi.fn(),
+  }),
+}));
+
 import { QuickOpen } from '../../../components/toolbar/QuickOpen';
 import type { DirEntry } from '../../../components/file/FileTreeSidebar';
 const { invoke } = await import('@tauri-apps/api/core');
@@ -188,9 +210,9 @@ describe('QuickOpen', () => {
     expect(screen.getByText('最近打开')).toBeInTheDocument();
   });
 
-  it('英文 locale 显示英文占位符', () => {
+  it('使用 i18n 显示占位符', () => {
     render(<QuickOpen {...defaultProps} locale="en" />);
-    expect(screen.getByPlaceholderText('Search files by name...')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('输入文件名搜索...')).toBeInTheDocument();
   });
 
   it('invoke 失败时显示空列表', async () => {

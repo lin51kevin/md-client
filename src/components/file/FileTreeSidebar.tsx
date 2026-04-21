@@ -7,6 +7,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo, forwardRef, useImperativeHandle } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { message, open as openDialog } from '@tauri-apps/plugin-dialog';
+import { useI18n } from '../../i18n';
 import {
   FolderOpen,
   FolderTree,
@@ -105,6 +106,7 @@ export const FileTreeSidebar = forwardRef<FileTreeSidebarHandle, FileTreeSidebar
   onClose,
   onRootChange,
 }, ref) {
+  const { t } = useI18n();
   const [rootPath, setRootPath] = useState<string>(() => {
     try { return localStorage.getItem(StorageKeys.FILETREE_ROOT) || ''; }
     catch { return ''; }
@@ -435,7 +437,7 @@ export const FileTreeSidebar = forwardRef<FileTreeSidebarHandle, FileTreeSidebar
         <span className="ml-auto flex items-center gap-0.5">
           <button
             onClick={handleNewFile}
-            title="新建文件"
+            title={t('fileTree.newFile')}
             className="file-tree-tool-btn"
             style={{ color: 'var(--text-secondary)' }}
           >
@@ -443,7 +445,7 @@ export const FileTreeSidebar = forwardRef<FileTreeSidebarHandle, FileTreeSidebar
           </button>
           <button
             onClick={goParent}
-            title="上级目录"
+            title={t('fileTree.parentDir')}
             className="file-tree-tool-btn"
             style={{ color: 'var(--text-secondary)' }}
           >
@@ -451,7 +453,7 @@ export const FileTreeSidebar = forwardRef<FileTreeSidebarHandle, FileTreeSidebar
           </button>
           <button
             onClick={pickFolder}
-            title="选择文件夹"
+            title={t('fileTree.selectFolder')}
             className="file-tree-tool-btn"
             style={{ color: 'var(--text-secondary)' }}
           >
@@ -459,7 +461,7 @@ export const FileTreeSidebar = forwardRef<FileTreeSidebarHandle, FileTreeSidebar
           </button>
           <button
             onClick={() => loadRoot()}
-            title="刷新"
+            title={t('fileTree.refresh')}
             className="file-tree-tool-btn"
             style={{ color: 'var(--text-secondary)' }}
           >
@@ -468,7 +470,7 @@ export const FileTreeSidebar = forwardRef<FileTreeSidebarHandle, FileTreeSidebar
           {onClose && (
             <button
               onClick={onClose}
-              title="关闭"
+              title={t('fileTree.close')}
               className="file-tree-tool-btn"
               style={{ color: 'var(--text-secondary)' }}
             >
@@ -488,7 +490,7 @@ export const FileTreeSidebar = forwardRef<FileTreeSidebarHandle, FileTreeSidebar
         <Search size={12} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />
         <input
           type="text"
-          placeholder="搜索文件..."
+          placeholder={t('fileTree.searchPlaceholder')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="flex-1 text-xs bg-transparent outline-none"

@@ -678,4 +678,33 @@ export const jaJP: Record<TranslationKey, string> = {
 
   // ── Toast ──────────────────────────────────────────────────────────────────
   'toast.close': '閉じる',
+
+  // ── Loading ────────────────────────────────────────────────────────────
+  'loading.previewEngine': 'プレビューエンジンを読み込み中...',
+  'loading.generic': '読み込み中...',
+
+  // ── File Tree ──────────────────────────────────────────────────────────
+  'fileTree.newFile': '新規ファイル',
+  'fileTree.parentDir': '親ディレクトリ',
+  'fileTree.selectFolder': 'フォルダーを選択',
+  'fileTree.refresh': '更新',
+  'fileTree.close': '閉じる',
+  'fileTree.searchPlaceholder': 'ファイルを検索...',
+
+  // ── Quick Open ─────────────────────────────────────────────────────────
+  'quickOpen.title': 'クイックオープン',
+  'quickOpen.searchPlaceholder': 'ファイル名で検索...',
+  'quickOpen.loading': 'ファイルリストを読み込み中...',
+  'quickOpen.noFolder': '最初にフォルダーを開いてください',
+  'quickOpen.noMatch': '一致するファイルが見つかりません',
+  'quickOpen.recent': '最近開いたファイル',
+  'quickOpen.allFiles': 'すべてのファイル',
+  'quickOpen.navigate': 'ナビゲート',
+  'quickOpen.open': '開く',
+  'quickOpen.close': '閉じる',
+
+  // ── Slide Preview ──────────────────────────────────────────────────────
+  'slidePreview.exit': '終了 (ESC)',
+  'slidePreview.fullscreen': 'フルスクリーン (F11)',
+  'slidePreview.exitFullscreen': 'フルスクリーン終了 (ESC)',
 };

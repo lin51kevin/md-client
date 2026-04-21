@@ -8,6 +8,7 @@ import Split from 'react-split';
 import { saveSplitSizes } from '../../lib/editor';
 import { THEMES, type ThemeName } from '../../lib/theme';
 import { WelcomePage, EmptyEditorState } from '../welcome/WelcomePage';
+import { useI18n } from '../../i18n';
 import type { Tab } from '../../types';
 import type { ViewMode } from '../../types';
 import type { RecentFile } from '../../lib/file';
@@ -60,11 +61,14 @@ interface EditorContentAreaProps {
   onPreviewContextMenu?: (x: number, y: number) => void;
 }
 
-const PreviewFallback = (
-  <div className="p-4 text-sm animate-pulse" style={{ color: 'var(--text-secondary)' }}>
-    正在加载预览引擎...
-  </div>
-);
+function PreviewFallback() {
+  const { t } = useI18n();
+  return (
+    <div className="p-4 text-sm animate-pulse" style={{ color: 'var(--text-secondary)' }}>
+      {t('loading.previewEngine')}
+    </div>
+  );
+}
 
 /** Catches Milkdown init errors and falls back to MarkdownPreview */
 class PreviewErrorBoundary extends Component<
@@ -148,7 +152,7 @@ export function EditorContentArea({
   const PreviewComponent = useMilkdownPreview ? MilkdownPreview : MarkdownPreview;
 
   const previewFallbackEl = (
-    <Suspense fallback={PreviewFallback}>
+    <Suspense fallback={<PreviewFallback />}>
       <MarkdownPreview
         content={debouncedDoc}
         filePath={activeTab.filePath ?? undefined}
@@ -161,7 +165,7 @@ export function EditorContentArea({
 
   const renderPreview = () => (
     <PreviewErrorBoundary fallback={previewFallbackEl}>
-      <Suspense fallback={PreviewFallback}>
+      <Suspense fallback={<PreviewFallback />}>
         <PreviewComponent
           content={debouncedDoc}
           filePath={activeTab.filePath ?? undefined}
