@@ -65,7 +65,11 @@ function resolvePermission(namespace: string, method: string): PluginPermission 
 // ── Typed API interfaces ───────────────────────────────────────────────────
 
 export interface CommandsAPI {
-  register(id: string, handler: (...args: unknown[]) => void): Disposable;
+  register(
+    id: string,
+    handler: (...args: unknown[]) => void,
+    options?: { label?: string; labelEn?: string; when?: () => boolean; category?: string }
+  ): Disposable;
 }
 
 export interface SidebarAPI {

@@ -137,7 +137,7 @@ export function CommandPalette({ visible, commands, onClose, locale }: CommandPa
                       role="option"
                       aria-selected={isSelected}
                     >
-                      <span className="command-item-label">{cmd.label}</span>
+                      <span className="command-item-label">{isZh ? cmd.label : (cmd.labelEn ?? cmd.label)}</span>
                       {cmd.shortcut && (
                         <span className="command-item-shortcut">{cmd.shortcut}</span>
                       )}

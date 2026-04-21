@@ -5,8 +5,10 @@ export interface Command {
   label: string;
   labelEn?: string;
   shortcut?: string;
-  category: 'file' | 'edit' | 'view' | 'format' | 'export' | 'custom';
+  category: 'file' | 'edit' | 'view' | 'format' | 'export' | 'custom' | 'ai';
   action: () => void | Promise<void>;
+  /** If provided, the command is only shown in the palette when this returns true */
+  when?: () => boolean;
 }
 
 /** Category display labels */
@@ -17,6 +19,7 @@ export const CATEGORY_LABELS: Record<string, { zh: string; en: string }> = {
   format: { zh: '格式', en: 'Format' },
   export: { zh: '导出', en: 'Export' },
   custom: { zh: '自定义', en: 'Custom' },
+  ai:     { zh: 'AI 助手', en: 'AI Assistant' },
 };
 
 /**
@@ -91,6 +94,9 @@ export function recordCommandExecution(commandId: string): void {
 /** Search commands by fuzzy matching query, sorted by relevance + recency */
 export function searchCommands(query: string, allCommands: Command[]): Command[] {
   const recentSet = new Set(getRecentCommandIds());
-  const filtered = allCommands.filter(cmd => fuzzyMatch(query, cmd.label, cmd.labelEn));
+  const filtered = allCommands.filter(cmd => {
+    if (cmd.when && !cmd.when()) return false;
+    return fuzzyMatch(query, cmd.label, cmd.labelEn);
+  });
   return filtered.sort((a, b) => scoreMatch(query, b, recentSet) - scoreMatch(query, a, recentSet));
 }

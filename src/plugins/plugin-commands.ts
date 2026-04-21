@@ -7,21 +7,16 @@ import type { Command } from '../lib/editor';
  *
  * @returns Object with a `register` method.
  */
-export function createCommandsAPI(): { register(id: string, handler: (...args: unknown[]) => void): { dispose(): void } } {
+export function createCommandsAPI(): { register(id: string, handler: (...args: unknown[]) => void, options?: { label?: string; labelEn?: string; when?: () => boolean; category?: string }): { dispose(): void } } {
   return {
-    /**
-     * Register a custom command.
-     * @param id - Unique command identifier (e.g. 'myPlugin.doSomething').
-     * @param handler - Function to execute when the command is invoked.
-     * @returns A disposable that unregisters the command on dispose.
-     */
-    register(id: string, handler: (...args: unknown[]) => void) {
+    register(id: string, handler: (...args: unknown[]) => void, options?: { label?: string; labelEn?: string; when?: () => boolean; category?: string }) {
       const cmd: Command = {
         id,
-        label: id,
-        labelEn: id,
+        label: options?.label ?? id,
+        labelEn: options?.labelEn ?? id,
         shortcut: '',
-        category: 'custom',
+        category: (options?.category as Command['category']) ?? 'custom',
+        when: options?.when,
         action: handler as () => void,
       };
       registerCustomCommand(cmd);

@@ -32,6 +32,10 @@ export interface CommandRegistryDeps {
   toggleSearchPanel: () => void;
   cmViewRef: React.RefObject<import('@codemirror/view').EditorView | null>;
   isTauri: boolean;
+  /** AI 助手面板切换 */
+  toggleAIPanel: () => void;
+  /** 在资源管理器中显示当前文件 */
+  revealActiveFile: () => void;
 }
 
 export function createCommandRegistry(deps: CommandRegistryDeps): Command[] {
@@ -41,6 +45,7 @@ export function createCommandRegistry(deps: CommandRegistryDeps): Command[] {
     handleFormatAction, handleExportDocx, handleExportPdf, handleExportHtml,
     handleExportPng, previewRef, setShowSnippetPicker, setShowSnippetManager,
     toggleSearchPanel, cmViewRef, isTauri,
+    toggleAIPanel, revealActiveFile,
   } = deps;
 
   const builtInCommands: Command[] = [
@@ -91,6 +96,10 @@ export function createCommandRegistry(deps: CommandRegistryDeps): Command[] {
     // ── 自定义 ──
     { id: 'snippet.insert', label: '插入片段', labelEn: 'Insert Snippet', shortcut: 'Ctrl+Shift+J', category: 'custom', action: () => setShowSnippetPicker(true) },
     { id: 'snippet.manager', label: '片段管理', labelEn: 'Snippet Manager', shortcut: '', category: 'custom', action: () => setShowSnippetManager(true) },
+
+    // ── AI 助手 ──
+    { id: 'ai.togglePanel', label: '切换 AI 面板', labelEn: 'Toggle AI Panel', shortcut: 'Ctrl+Alt+I', category: 'ai', action: () => toggleAIPanel() },
+    { id: 'ai.revealFile', label: '在资源管理器中显示', labelEn: 'Reveal in Explorer', shortcut: 'Ctrl+Shift+E', category: 'ai', action: () => revealActiveFile() },
   ];
 
   return [...builtInCommands, ...customCommands];

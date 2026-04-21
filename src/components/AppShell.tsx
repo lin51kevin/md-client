@@ -295,7 +295,12 @@ export function AppShell() {
     togglePluginsPanel: () => togglePanel('plugins'),
     toggleAIPanel: () => setShowAIPanel(!showAIPanel),
     nextTab, previousTab, closeAllTabs: handleCloseAllTabs,
-    toggleCommandPalette: () => { const cur = useUIStore.getState().showCommandPalette; useUIStore.getState().setShowCommandPalette(!cur); },
+    toggleCommandPalette: () => {
+      // Only open when the editor is visible (edit or split mode)
+      if (viewMode !== 'edit' && viewMode !== 'split') return;
+      const cur = useUIStore.getState().showCommandPalette;
+      useUIStore.getState().setShowCommandPalette(!cur);
+    },
     toggleQuickOpen: () => { const cur = useUIStore.getState().showQuickOpen; useUIStore.getState().setShowQuickOpen(!cur); },
     revealActiveFile: () => {
       const tab = tabs.find(t => t.id === activeTabId);
@@ -315,7 +320,15 @@ export function AppShell() {
     handleExportPng, previewRef, setShowSnippetPicker, setShowSnippetManager,
     toggleSearchPanel: () => togglePanel('search'),
     cmViewRef, isTauri,
-  }), [createNewTab, handleOpenFile, handleSaveWithWatchMark, handleSaveAsFile, setViewMode, focusMode, setFocusMode, handleFormatAction, handleExportDocx, handleExportPdf, handleExportHtml, handleExportPng, previewRef, setShowSnippetPicker, setShowSnippetManager, activePanel, setActivePanel, cmViewRef, isTauri]);
+    toggleAIPanel: () => {
+      const s = useUIStore.getState();
+      s.setShowAIPanel(!s.showAIPanel);
+    },
+    revealActiveFile: () => {
+      const tab = tabsRef.current.find(t => t.id === activeTabIdRef.current);
+      if (tab?.filePath) revealInExplorer(tab.filePath).catch(() => {});
+    },
+  }), [createNewTab, handleOpenFile, handleSaveWithWatchMark, handleSaveAsFile, setViewMode, focusMode, setFocusMode, handleFormatAction, handleExportDocx, handleExportPdf, handleExportHtml, handleExportPng, previewRef, setShowSnippetPicker, setShowSnippetManager, activePanel, setActivePanel, cmViewRef, isTauri, tabsRef, activeTabIdRef]);
 
   const AI_PANEL_ID = 'ai-copilot-official';
 
