@@ -182,30 +182,7 @@ function buildTocHtml(markdown: string): string {
 
   const minLevel = Math.min(...entries.map(e => e.level));
 
-  const buildList = (items: typeof entries, startIdx: number, parentLevel: number): { html: string; endIdx: number } => {
-    let html = '<ul>';
-    let i = startIdx;
-    while (i < items.length) {
-      const entry = items[i];
-      if (entry.level <= parentLevel && i > startIdx) break;
-      if (entry.level > parentLevel + 1 && i > startIdx) {
-        // Nested sub-level
-        const sub = buildList(items, i, entry.level - 1);
-        // Append sub-list to the last <li>
-        html = html.replace(/<\/li>$/, '') + sub.html + '</li>';
-        i = sub.endIdx;
-        continue;
-      }
-      html += `<li><a href="#${escapeHtml(entry.id)}">${escapeHtml(entry.text)}</a></li>`;
-      i++;
-    }
-    html += '</ul>';
-    return { html, endIdx: i };
-  };
-
-  // Simple flat approach: nest by level
   let tocItems = '<ul>';
-  let prevLevel = minLevel;
   let openLists = 0;
 
   for (const entry of entries) {
@@ -343,7 +320,5 @@ function extractEpubMetadata(
 /** Convert markdown to HTML body for EPUB content */
 async function markdownToHtmlForEpub(markdown: string): Promise<string> {
   const stripped = markdown.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '');
-  const html = await generateHtmlDocument(stripped);
-  const bodyMatch = html.match(/<body>([\s\S]*?)<\/body>/);
-  return bodyMatch ? bodyMatch[1] : html;
+  return markdownToHtml(stripped);
 }
