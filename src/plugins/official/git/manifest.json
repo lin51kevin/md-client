@@ -1,0 +1,18 @@
+{
+  "id": "marklite-git",
+  "name": "Git Integration",
+  "version": "1.0.0",
+  "description": "内置 Git 面板 — 分支信息、变更列表、Diff 查看、提交/推送/拉取",
+  "author": "MarkLite Team",
+  "main": "dist/index.js",
+  "activationEvents": ["onWorkspaceReady"],
+  "permissions": [
+    "sidebar.panel",
+    "workspace",
+    "storage",
+    "commands",
+    "ui.message",
+    "tauri.raw"
+  ],
+  "engines": { "marklite": ">=0.8.0" }
+}
