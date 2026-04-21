@@ -10,8 +10,8 @@ describe('F005 — 导出 HTML', () => {
 
   describe('markdownToHtml — Markdown → HTML 片段转换', () => {
     it('应将标题转换为对应标签', async () => {
-      expect(await markdownToHtml('# Hello')).toContain('<h1>Hello</h1>');
-      expect(await markdownToHtml('## World')).toContain('<h2>World</h2>');
+      expect(await markdownToHtml('# Hello')).toContain('<h1 id="hello">Hello</h1>');
+      expect(await markdownToHtml('## World')).toContain('<h2 id="world">World</h2>');
     });
 
     it('应将粗体和斜体文本正确转换', async () => {
@@ -74,7 +74,7 @@ describe('F005 — 导出 HTML', () => {
 
     it('body 中应包含渲染后的内容', async () => {
       const html = await generateHtmlDocument('# Hello World');
-      expect(html).toContain('<h1>Hello World</h1>');
+      expect(html).toContain('<h1 id="hello-world">Hello World</h1>');
     });
 
     it('应包含 viewport meta 标签', async () => {
@@ -110,6 +110,30 @@ describe('F005 — 导出 HTML', () => {
 
       const htmlNoH1 = await generateHtmlDocument('just text');
       expect(htmlNoH1).toContain('<title>Untitled</title>');
+    });
+
+    it('标题应包含 id 属性（rehype-slug）', async () => {
+      const html = await generateHtmlDocument('# Hello World\n## Section Two');
+      expect(html).toMatch(/<h1 id="hello-world">/);
+      expect(html).toMatch(/<h2 id="section-two">/);
+    });
+
+    it('代码块应有语法高亮类名', async () => {
+      const html = await generateHtmlDocument('```javascript\nconst x = 1;\n```');
+      expect(html).toContain('hljs');
+    });
+
+    it('多标题文档应生成 TOC 导航', async () => {
+      const html = await generateHtmlDocument('# Title\n## Section A\n## Section B');
+      expect(html).toContain('<nav class="toc">');
+      expect(html).toContain('Table of Contents');
+      expect(html).toContain('href="#section-a"');
+      expect(html).toContain('href="#section-b"');
+    });
+
+    it('单标题文档不应生成 TOC', async () => {
+      const html = await generateHtmlDocument('# Only One Heading');
+      expect(html).not.toContain('<nav class="toc">');
     });
 
     it('应支持自定义 CSS 注入', async () => {
