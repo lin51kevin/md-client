@@ -17,7 +17,6 @@ interface QuickOpenProps {
   onFileOpen: (filePath: string) => void;
   fileTreeRoot: string;
   recentFiles: RecentFile[];
-  locale: string;
 }
 
 interface FileItem {
@@ -69,7 +68,7 @@ function scoreItem(query: string, item: FileItem, recentPaths: Set<string>): num
   return score;
 }
 
-export function QuickOpen({ visible, onClose, onFileOpen, fileTreeRoot, recentFiles, locale }: QuickOpenProps) {
+export function QuickOpen({ visible, onClose, onFileOpen, fileTreeRoot, recentFiles }: QuickOpenProps) {
   const { t } = useI18n();
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);

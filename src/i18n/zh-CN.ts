@@ -681,13 +681,9 @@ export const zhCN = {
   'loading.previewEngine': '正在加载预览引擎...',
   'loading.generic': '加载中...',
 
-  // ── File Tree ──────────────────────────────────────────────────────────
-  'fileTree.newFile': '新建文件',
-  'fileTree.parentDir': '上级目录',
+  // ── File Tree (extra) ─────────────────────────────────────────────────
   'fileTree.selectFolder': '选择文件夹',
-  'fileTree.refresh': '刷新',
   'fileTree.close': '关闭',
-  'fileTree.searchPlaceholder': '搜索文件...',
 
   // ── Quick Open ─────────────────────────────────────────────────────────
   'quickOpen.title': '快速打开',

@@ -683,13 +683,9 @@ export const jaJP: Record<TranslationKey, string> = {
   'loading.previewEngine': 'プレビューエンジンを読み込み中...',
   'loading.generic': '読み込み中...',
 
-  // ── File Tree ──────────────────────────────────────────────────────────
-  'fileTree.newFile': '新規ファイル',
-  'fileTree.parentDir': '親ディレクトリ',
+  // ── File Tree (extra) ─────────────────────────────────────────────────
   'fileTree.selectFolder': 'フォルダーを選択',
-  'fileTree.refresh': '更新',
   'fileTree.close': '閉じる',
-  'fileTree.searchPlaceholder': 'ファイルを検索...',
 
   // ── Quick Open ─────────────────────────────────────────────────────────
   'quickOpen.title': 'クイックオープン',

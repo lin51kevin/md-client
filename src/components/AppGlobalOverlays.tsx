@@ -113,7 +113,6 @@ export function AppGlobalOverlays({
         onFileOpen={(path) => openFileInTab(path)}
         fileTreeRoot={fileTreeRoot}
         recentFiles={recentFiles}
-        locale={locale}
       />
 
       <SnippetPicker

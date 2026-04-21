@@ -211,7 +211,7 @@ describe('QuickOpen', () => {
   });
 
   it('使用 i18n 显示占位符', () => {
-    render(<QuickOpen {...defaultProps} locale="en" />);
+    render(<QuickOpen {...defaultProps} />);
     expect(screen.getByPlaceholderText('输入文件名搜索...')).toBeInTheDocument();
   });
 

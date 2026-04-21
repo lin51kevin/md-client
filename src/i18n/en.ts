@@ -684,13 +684,9 @@ export const en: Record<TranslationKey, string> = {
   'loading.previewEngine': 'Loading preview engine...',
   'loading.generic': 'Loading...',
 
-  // ── File Tree ──────────────────────────────────────────────────────────
-  'fileTree.newFile': 'New File',
-  'fileTree.parentDir': 'Parent Directory',
+  // ── File Tree (extra) ─────────────────────────────────────────────────
   'fileTree.selectFolder': 'Select Folder',
-  'fileTree.refresh': 'Refresh',
   'fileTree.close': 'Close',
-  'fileTree.searchPlaceholder': 'Search files...',
 
   // ── Quick Open ─────────────────────────────────────────────────────────
   'quickOpen.title': 'Quick Open',
