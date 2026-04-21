@@ -41,6 +41,16 @@ const defaultProps = {
   ],
   onClose: vi.fn(),
   locale: 'zh-CN',
+  t: (key: string) => {
+    const map: Record<string, string> = {
+      'commandPalette.title': '命令面板',
+      'commandPalette.placeholder': '输入命令搜索...',
+      'commandPalette.empty': '无匹配命令',
+      'commandPalette.footer.nav': '导航',
+      'commandPalette.footer.execute': '执行',
+    };
+    return map[key] ?? key;
+  },
 };
 
 describe('CommandPalette', () => {
@@ -162,9 +172,19 @@ describe('CommandPalette', () => {
   });
 
   it('shows English placeholder when locale is en', () => {
-    render(<CommandPalette {...defaultProps} locale="en" />);
+    const tEn = (key: string) => {
+      const map: Record<string, string> = {
+        'commandPalette.title': 'Command Palette',
+        'commandPalette.placeholder': 'Type a command...',
+        'commandPalette.empty': 'No matching commands',
+        'commandPalette.footer.nav': 'navigate',
+        'commandPalette.footer.execute': 'execute',
+      };
+      return map[key] ?? key;
+    };
+    render(<CommandPalette {...defaultProps} locale="en" t={tEn} />);
     expect(screen.getByPlaceholderText('Type a command...')).toBeInTheDocument();
-    expect(screen.getByText(/close/)).toBeInTheDocument();
+    expect(screen.getByText(/navigate/)).toBeInTheDocument();
   });
 
   it('resets selection when filtered results change', () => {

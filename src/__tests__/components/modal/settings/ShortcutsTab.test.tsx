@@ -36,8 +36,9 @@ describe('ShortcutsTab', () => {
 
   it('renders category filter buttons', () => {
     render(<ShortcutsTab />);
-    // "全部" category button should always exist
-    expect(screen.getByText(/全部|All/)).toBeInTheDocument();
+    // "全部" category button should always exist (may have multiple matches due to resetAll button)
+    const matches = screen.getAllByText(/全部|All/);
+    expect(matches.length).toBeGreaterThan(0);
   });
 
   it('clicking a shortcut kbd puts it in editing state', () => {

@@ -171,12 +171,15 @@ describe('DEFAULT_SHORTCUTS', () => {
     for (const s of DEFAULT_SHORTCUTS) {
       expect(s.id).toBeTruthy();
       expect(s.labelKey).toBeTruthy();
-      expect(s.defaultKeys).toBeTruthy();
+      // defaultKeys may be empty string for intentionally unassigned shortcuts
+      expect(typeof s.defaultKeys).toBe('string');
     }
   });
 
   it('all defaultKeys are parseable', () => {
     for (const s of DEFAULT_SHORTCUTS) {
+      // Skip shortcuts that intentionally have no default key assigned
+      if (!s.defaultKeys) continue;
       const parsed = parseShortcut(s.defaultKeys);
       // Every shortcut must have at least a modifier or a key
       expect(parsed.ctrl || parsed.shift || parsed.alt || parsed.key).toBeTruthy();
