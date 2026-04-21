@@ -130,6 +130,7 @@ export const en: Record<TranslationKey, string> = {
   'settings.shortcuts.conflictWarning': 'Shortcut conflict: already used by "{label}"',
   'settings.shortcuts.pressNewKey': 'Press new shortcut, or ESC to cancel',
   'settings.shortcuts.resetToDefault': 'Reset to default',
+  'settings.shortcuts.resetAll': 'Reset All',
   'settings.shortcuts.searchPlaceholder': 'Search shortcuts…',
   'settings.shortcuts.allCategories': 'All',
   'settings.shortcuts.noResults': 'No matching results',

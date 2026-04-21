@@ -86,6 +86,20 @@ function EditableShortcuts() {
             color: 'var(--text-primary)',
           }}
         />
+        <button
+          onClick={() => { setCustom({}); setCustomShortcuts({}); }}
+          className="px-2 py-0.5 rounded text-[10px] transition-colors hover:opacity-80"
+          style={{
+            backgroundColor: 'transparent',
+            color: 'var(--text-tertiary)',
+            border: '1px solid var(--border-color)',
+          }}
+        >
+          <span className="inline-flex items-center gap-1">
+            <RotateCcw size={10} />
+            {t('settings.shortcuts.resetAll')}
+          </span>
+        </button>
         <div className="flex items-center gap-1 flex-wrap">
           {CATEGORIES.map((cat) => (
             <button

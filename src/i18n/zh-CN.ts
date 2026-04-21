@@ -128,6 +128,7 @@ export const zhCN = {
   'settings.shortcuts.conflictWarning': '快捷键冲突：已被「{label}」使用',
   'settings.shortcuts.pressNewKey': '按下新的快捷键，或 ESC 取消',
   'settings.shortcuts.resetToDefault': '恢复默认',
+  'settings.shortcuts.resetAll': '全部重置',
   'settings.shortcuts.searchPlaceholder': '搜索快捷键…',
   'settings.shortcuts.allCategories': '全部',
   'settings.shortcuts.noResults': '无匹配结果',

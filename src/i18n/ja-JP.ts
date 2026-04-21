@@ -130,6 +130,7 @@ export const jaJP: Record<TranslationKey, string> = {
   'settings.shortcuts.conflictWarning': 'ショートカットが競合：「{label}」で既に使用されています',
   'settings.shortcuts.pressNewKey': '新しいショートカットキーを押してください、ESC でキャンセル',
   'settings.shortcuts.resetToDefault': 'デフォルトに戻す',
+  'settings.shortcuts.resetAll': 'すべてリセット',
   'settings.shortcuts.searchPlaceholder': 'ショートカットを検索…',
   'settings.shortcuts.allCategories': 'すべて',
   'settings.shortcuts.noResults': '一致する結果がありません',
