@@ -180,6 +180,12 @@ export default defineConfig(async () => ({
     },
   },
 
+  worker: {
+    // HTML import Worker uses a deferred module load so DOM globals can be
+    // installed before turndown evaluates. That requires ES-module workers.
+    format: 'es',
+  },
+
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
   // 1. prevent Vite from obscuring rust errors
