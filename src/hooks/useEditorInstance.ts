@@ -4,6 +4,9 @@ import type { Extension } from '@codemirror/state';
 import type { EditorState, ViewUpdate } from '@uiw/react-codemirror';
 import { EditorView } from '@codemirror/view';
 import { undoDepth, redoDepth } from '@codemirror/commands';
+/** Maximum number of tab editor states to keep in memory (LRU eviction) */
+const MAX_SAVED_STATES = 20;
+
 import { createAutoSave } from '../lib/editor';
 import { detectContext } from '../lib/editor';
 import { parseTable } from '../lib/markdown';
@@ -71,7 +74,12 @@ export function useEditorInstance({
   const handleCreateEditor = useCallback((view: EditorView) => {
     cmViewRef.current = view;
     setActiveEditorView(view); // triggers contextmenu/dblclick re-bind
-    const saved = savedStatesRef.current.get(activeTabId);
+    let saved = savedStatesRef.current.get(activeTabId);
+    // LRU: mark as recently accessed
+    if (saved) {
+      savedStatesRef.current.delete(activeTabId);
+      savedStatesRef.current.set(activeTabId, saved);
+    }
     if (saved) {
       if (saved.themeKey === theme) {
         // Same theme: restore full state (cursor, undo history, config)
@@ -93,6 +101,12 @@ export function useEditorInstance({
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
   const handleEditorUpdate = useCallback((viewUpdate: ViewUpdate) => {
+    // LRU: evict oldest if at capacity
+    if (savedStatesRef.current.size >= MAX_SAVED_STATES && !savedStatesRef.current.has(activeTabId)) {
+      const oldestKey = savedStatesRef.current.keys().next().value;
+      if (oldestKey !== undefined) savedStatesRef.current.delete(oldestKey);
+    }
+    savedStatesRef.current.delete(activeTabId);
     savedStatesRef.current.set(activeTabId, { state: viewUpdate.state, themeKey: theme });
     const rangeCount = viewUpdate.state.selection.ranges.length;
     setCursorCount(rangeCount);
