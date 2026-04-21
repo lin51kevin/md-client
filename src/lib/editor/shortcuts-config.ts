@@ -64,7 +64,6 @@ export const DEFAULT_SHORTCUTS: ShortcutAction[] = [
   { id: 'toggleFileTree', labelKey: 'settings.shortcuts.toggleFileTree', defaultKeys: 'Alt+1', category: 'panel' },
   { id: 'toggleToc', labelKey: 'settings.shortcuts.toggleToc', defaultKeys: 'Alt+2', category: 'panel' },
   { id: 'toggleSearchPanel', labelKey: 'settings.shortcuts.toggleSearchPanel', defaultKeys: 'Alt+3', category: 'panel' },
-  { id: 'toggleGitPanel', labelKey: 'settings.shortcuts.toggleGitPanel', defaultKeys: 'Alt+4', category: 'panel' },
   { id: 'togglePluginsPanel', labelKey: 'settings.shortcuts.togglePluginsPanel', defaultKeys: 'Alt+5', category: 'panel' },
 
   // ── AI ──

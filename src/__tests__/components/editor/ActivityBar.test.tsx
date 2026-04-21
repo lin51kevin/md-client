@@ -9,7 +9,7 @@ vi.mock('../../i18n', () => ({
         'toolbar.fileTree': '文件树',
         'toolbar.search': '搜索与替换',
         'toolbar.toc': '大纲导航',
-        'git.panel': 'Source Control',
+        'plugins.panel': '扩展',
         'settings.title': '设置',
       };
       return map[key] ?? key;
@@ -35,17 +35,16 @@ describe('ActivityBar', () => {
 
   it('应渲染 4 个面板图标按钮 + 1 个底部设置按钮', () => {
     render(<ActivityBar {...defaultProps} />);
-    // 5 panel buttons + 1 settings button = 6 total
+    // 4 panel buttons + 1 settings button = 5 total
     const buttons = screen.getAllByRole('button');
-    expect(buttons.length).toBe(6);
+    expect(buttons.length).toBe(5);
   });
 
-  it('应渲染文件树、搜索、大纲、Git 图标', () => {
+  it('应渲染文件树、搜索、大纲图标', () => {
     render(<ActivityBar {...defaultProps} />);
     expect(screen.getByTitle('文件树')).toBeInTheDocument();
     expect(screen.getByTitle('搜索与替换')).toBeInTheDocument();
     expect(screen.getByTitle('大纲导航')).toBeInTheDocument();
-    expect(screen.getByTitle('Source Control')).toBeInTheDocument();
   });
 
   it('应渲染底部设置按钮', () => {
@@ -69,12 +68,6 @@ describe('ActivityBar', () => {
     render(<ActivityBar {...defaultProps} />);
     fireEvent.click(screen.getByTitle('大纲导航'));
     expect(defaultProps.onPanelChange).toHaveBeenCalledWith('toc');
-  });
-
-  it('点击 Git 图标应调用 onPanelChange("git")', () => {
-    render(<ActivityBar {...defaultProps} />);
-    fireEvent.click(screen.getByTitle('Source Control'));
-    expect(defaultProps.onPanelChange).toHaveBeenCalledWith('git');
   });
 
   it('再次点击已激活面板图标应调用 onPanelChange(null)（关闭）', () => {
@@ -127,7 +120,7 @@ describe('ActivityBar', () => {
       fireEvent.mouseUp(window, { clientY: 50 });
 
       const updated = screen.getAllByRole('button').slice(0, 4);
-      // reorder([filetree,toc,search,git], 0→1) = [toc, filetree, search, git]
+      // reorder([filetree,toc,search,plugins], 0→1) = [toc, filetree, search, plugins]
       expect(updated[0]).toHaveAttribute('title', '大纲导航');
       expect(updated[1]).toHaveAttribute('title', '文件树');
     });
@@ -159,28 +152,27 @@ describe('ActivityBar', () => {
 
       const saved = localStorage.getItem('marklite-panel-order');
       expect(saved).not.toBeNull();
-      expect(saved).not.toBe('filetree,toc,search,git');
+      expect(saved).not.toBe('filetree,toc,search,plugins');
       expect(saved).toContain('filetree');
     });
 
     it('已保存的顺序重启后应恢复', () => {
-      localStorage.setItem('marklite-panel-order', 'git,toc,search,filetree');
+      localStorage.setItem('marklite-panel-order', 'plugins,toc,search,filetree');
       render(<ActivityBar {...defaultProps} />);
 
       const buttons = screen.getAllByRole('button').slice(0, 4);
-      expect(buttons[0]).toHaveAttribute('title', 'Source Control');
+      expect(buttons[0]).toHaveAttribute('title', '扩展');
       expect(buttons[1]).toHaveAttribute('title', '大纲导航');
       expect(buttons[2]).toHaveAttribute('title', '搜索与替换');
       expect(buttons[3]).toHaveAttribute('title', '文件树');
     });
 
     it('PANEL_ITEMS 导出应包含 4 个面板', () => {
-      expect(PANEL_ITEMS).toHaveLength(5);
+      expect(PANEL_ITEMS).toHaveLength(4);
       const ids = PANEL_ITEMS.map(p => p.id);
       expect(ids).toContain('filetree');
       expect(ids).toContain('search');
       expect(ids).toContain('toc');
-      expect(ids).toContain('git');
       expect(ids).toContain('plugins');
     });
   });

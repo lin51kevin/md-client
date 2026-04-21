@@ -29,8 +29,6 @@ interface ShortcutsParams {
   toggleToc?: () => void;
   /** 切换搜索面板 */
   toggleSearchPanel?: () => void;
-  /** 切换 Git 面板 */
-  toggleGitPanel?: () => void;
   /** 切换插件面板 */
   togglePluginsPanel?: () => void;
   /** 切换AI面板浮窗 */
@@ -72,7 +70,7 @@ export function useKeyboardShortcuts(params: ShortcutsParams) {
         createNewTab, handleOpenFile, handleSaveFile, handleSaveAsFile,
         closeTab, setViewMode, activeTabIdRef, toggleFindReplace,
         setFocusMode, focusMode, openSnippetPicker,
-        toggleFileTree, toggleToc, toggleSearchPanel, toggleGitPanel, togglePluginsPanel,
+        toggleFileTree, toggleToc, toggleSearchPanel, togglePluginsPanel,
         toggleAIPanel, toggleCodeBlockFold,
         nextTab, previousTab, closeAllTabs,
         toggleCommandPalette, toggleQuickOpen, revealActiveFile,
@@ -167,7 +165,6 @@ export function useKeyboardShortcuts(params: ShortcutsParams) {
           case 'toggleFileTree': toggleFileTree?.(); break;
           case 'toggleToc': toggleToc?.(); break;
           case 'toggleSearchPanel': toggleSearchPanel?.(); break;
-          case 'toggleGitPanel': toggleGitPanel?.(); break;
           case 'togglePluginsPanel': togglePluginsPanel?.(); break;
 
           // ── AI / 工具 ──

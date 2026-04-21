@@ -16,11 +16,10 @@ export function useSidebarPanel() {
   const showFileTree = activePanel === 'filetree';
   const showToc = activePanel === 'toc';
   const showSearchPanel = activePanel === 'search';
-  const showGitPanel = activePanel === 'git';
   const showPluginsPanel = activePanel === 'plugins';
 
   return {
     activePanel, setActivePanel, togglePanel,
-    showFileTree, showToc, showSearchPanel, showGitPanel, showPluginsPanel,
+    showFileTree, showToc, showSearchPanel, showPluginsPanel,
   };
 }

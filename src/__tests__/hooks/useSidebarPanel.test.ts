@@ -9,7 +9,6 @@ vi.mock('../../components/ActivityBar', () => ({
     { id: 'toc' },
     { id: 'search' },
     { id: 'plugins' },
-    { id: 'git' },
   ],
 }));
 
@@ -32,7 +31,6 @@ describe('useSidebarPanel', () => {
     expect(result.current.showFileTree).toBe(false);
     expect(result.current.showToc).toBe(false);
     expect(result.current.showSearchPanel).toBe(false);
-    expect(result.current.showGitPanel).toBe(false);
     expect(result.current.showPluginsPanel).toBe(false);
   });
 
@@ -55,12 +53,6 @@ describe('useSidebarPanel', () => {
     const { result } = renderHook(() => useSidebarPanel());
     act(() => { result.current.setActivePanel('search'); });
     expect(result.current.showSearchPanel).toBe(true);
-  });
-
-  it('setActivePanel to "git" sets showGitPanel=true', () => {
-    const { result } = renderHook(() => useSidebarPanel());
-    act(() => { result.current.setActivePanel('git'); });
-    expect(result.current.showGitPanel).toBe(true);
   });
 
   it('setActivePanel to "plugins" sets showPluginsPanel=true', () => {

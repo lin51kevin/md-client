@@ -20,7 +20,7 @@ import { useI18n, type TranslationKey } from '../../i18n';
 import { useLocalStorageString } from '../../hooks/useLocalStorage';
 import { StorageKeys } from '../../lib/storage';
 
-export type BuiltinPanelId = 'filetree' | 'search' | 'toc' | 'plugins' | 'git';
+export type BuiltinPanelId = 'filetree' | 'search' | 'toc' | 'plugins';
 export type PanelId = BuiltinPanelId | (string & {});
 
 export interface DynamicPanelItem {
@@ -45,7 +45,6 @@ export const PANEL_ITEMS: PanelItem[] = [
   { id: 'toc',      icon: List,       titleKey: 'toolbar.toc' },
   { id: 'search',   icon: Search,     titleKey: 'toolbar.search' },
   { id: 'plugins', icon: Package,    titleKey: 'plugins.panel' },
-  { id: 'git',      icon: GitBranch,  titleKey: 'git.panel' },
 ];
 
 const PANEL_MAP = new Map<PanelId, PanelItem>(PANEL_ITEMS.map(p => [p.id, p]));

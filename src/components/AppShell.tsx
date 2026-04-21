@@ -34,7 +34,6 @@ import { useTypewriterOptions } from '../hooks/useTypewriterOptions';
 import { usePreviewRenderers } from '../hooks/usePreviewRenderers';
 import { usePluginRuntime } from '../hooks/usePluginRuntime';
 import { usePluginPanels } from '../hooks/usePluginPanels';
-import { useGit } from '../hooks/useGit';
 import { usePreferences } from '../hooks/usePreferences';
 import { useSidebarPanel } from '../hooks/useSidebarPanel';
 import { useEditorCore } from '../hooks/useEditorCore';
@@ -57,7 +56,6 @@ import { TocSidebar } from '../components/sidebar/TocSidebar';
 import { FileTreeSidebar, type FileTreeSidebarHandle } from '../components/file/FileTreeSidebar';
 import { ActivityBar } from '../components/editor/ActivityBar';
 import { SidebarContainer } from '../components/sidebar/SidebarContainer';
-import { GitPanel } from '../components/modal/GitPanel';
 import { PluginPanel } from '../components/plugin';
 import { AboutModal } from '../components/modal/AboutModal';
 import { EditorContentArea } from '../components/editor/EditorContentArea';
@@ -77,6 +75,7 @@ export function AppShell() {
 
   const showSettings = useUIStore((s) => s.showSettings);
   const setShowSettings = useUIStore((s) => s.setShowSettings);
+  const openSettings = useCallback(() => setShowSettings(true), [setShowSettings]);
   const showAbout = useUIStore((s) => s.showAbout);
   const setShowAbout = useUIStore((s) => s.setShowAbout);
   const showAIPanel = useUIStore((s) => s.showAIPanel);
@@ -91,7 +90,7 @@ export function AppShell() {
   const setPreviewCtxMenu = useUIStore((s) => s.setPreviewCtxMenu);
 
   // ── Extracted state hooks ────────────────────────────────────────
-  const { activePanel, setActivePanel, togglePanel, showFileTree, showToc, showSearchPanel, showGitPanel, showPluginsPanel } = useSidebarPanel();
+  const { activePanel, setActivePanel, togglePanel, showFileTree, showToc, showSearchPanel, showPluginsPanel } = useSidebarPanel();
   const { spellCheck, setSpellCheck, vimMode, setVimMode, autoSave, setAutoSave, autoSaveDelay, setAutoSaveDelay, gitMdOnly, setGitMdOnly, milkdownPreview, setMilkdownPreview, mermaidTheme, setMermaidTheme, theme, setTheme, fileWatch, setFileWatch, fileWatchBehavior, setFileWatchBehavior, autoUpdateCheck, setAutoUpdateCheck, updateCheckFrequency, setUpdateCheckFrequency, contextMenuIntegration, setContextMenuIntegration } = usePreferences();
   const [typewriterOptions, setTypewriterOptions] = useTypewriterOptions();
 
@@ -139,12 +138,9 @@ export function AppShell() {
 
   const { handleFirstSave } = usePendingImageMigration({ tabs, updateTabDoc, markSaved });
 
-  // ── Git state (based on opened folder) ──
   const [fileTreeRoot, setFileTreeRoot] = useState<string>(() => {
     try { return localStorage.getItem(StorageKeys.FILETREE_ROOT) || ''; } catch { return ''; }
   });
-  const gitRepoPath = fileTreeRoot || null;
-  const git = useGit(showGitPanel ? gitRepoPath : null);
 
   // ── File operations ──────────────────────────────────────────────
   const { handleOpenFile, handleSaveFile: rawHandleSaveFile, handleSaveAsFile, handleExportDocx, handleExportPdf, handleExportHtml, handleExportEpub, handleExportPng, exporting } = useFileOps({
@@ -259,7 +255,7 @@ export function AppShell() {
   // ── Reset active panel if removed plugin panel was selected ──────
   useEffect(() => {
     if (!activePanel) return;
-    const isBuiltin = ['filetree', 'search', 'toc', 'plugins', 'git'].includes(activePanel);
+    const isBuiltin = ['filetree', 'search', 'toc', 'plugins'].includes(activePanel);
     if (isBuiltin) return;
     const stillExists = pluginPanels.some((pp) => pp.id === activePanel);
     if (!stillExists) setActivePanel(null);
@@ -297,7 +293,6 @@ export function AppShell() {
     toggleFileTree: () => togglePanel('filetree'),
     toggleToc: () => togglePanel('toc'),
     toggleSearchPanel: () => togglePanel('search'),
-    toggleGitPanel: () => togglePanel('git'),
     togglePluginsPanel: () => togglePanel('plugins'),
     toggleAIPanel: () => {
       const s = useUIStore.getState();
@@ -474,7 +469,7 @@ export function AppShell() {
           <ActivityBar
             activePanel={activePanel}
             onPanelChange={setActivePanel}
-            onOpenSettings={() => setShowSettings(true)}
+            onOpenSettings={openSettings}
             pluginPanels={pluginPanels}
             floatingPanelId={AI_PANEL_ID}
           />
@@ -505,28 +500,6 @@ export function AppShell() {
               onClose={() => setActivePanel(null)}
               onActivate={activatePlugin}
               onDeactivate={deactivatePlugin}
-            />
-          )}
-
-          {showGitPanel && (
-            <GitPanel
-              isRepo={git.isRepo}
-              branch={git.branch}
-              ahead={git.ahead}
-              behind={git.behind}
-              files={gitMdOnly ? git.files.filter(f => /\.(md|mdx|markdown|mdown|mkd|mkdn|txt|rst|adoc|org)$/i.test(f.path)) : git.files}
-              isLoading={git.isLoading}
-              error={git.error}
-              onCommit={git.commit}
-              onPull={git.pull}
-              onPush={git.push}
-              onRefresh={git.refresh}
-              onClose={() => setActivePanel(null)}
-              onDiff={git.getDiff}
-              onStage={git.stage}
-              onUnstage={git.unstage}
-              onRestore={git.restore}
-              onFileOpen={(path) => openFileInTab(gitRepoPath ? `${gitRepoPath}/${path}` : path)}
             />
           )}
 
