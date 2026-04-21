@@ -25,7 +25,7 @@ const SIZE_WARN = 10 * 1024 * 1024;       // 10 MB
 const SIZE_DANGER = 50 * 1024 * 1024;      // 50 MB
 const SIZE_LIMIT = 200 * 1024 * 1024;      // 200 MB
 /** Files above this size are converted in a Web Worker */
-const WORKER_THRESHOLD = 2 * 1024 * 1024;  // 2 MB
+const WORKER_THRESHOLD = 256 * 1024;       // 256 KB
 
 interface ImportOpsParams {
   createNewTab: (initialContent?: string) => void;
