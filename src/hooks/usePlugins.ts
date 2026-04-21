@@ -89,7 +89,8 @@ function migratePluginIds(plugins: PluginUIItem[]): PluginUIItem[] {
   }
 
   if (changed) {
-    savePlugins(migrated);
+    // Note: persistence is handled by the useEffect in usePlugins; do not call
+    // savePlugins here to avoid double-writes during React initialisation.
   }
   return migrated;
 }
@@ -108,7 +109,8 @@ function loadPlugins(): PluginUIItem[] {
       try {
         const oldData = JSON.parse(oldRaw) as PluginUIItem[];
         const migrated = migratePluginIds(oldData);
-        savePlugins(migrated);
+        // Remove old key; the useEffect in usePlugins will persist to the new key
+        localStorage.removeItem(OLD_STORAGE_KEY);
         return migrated;
       } catch { /* ignore */ }
     }
