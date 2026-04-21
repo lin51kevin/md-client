@@ -447,7 +447,7 @@ export class AICopilotPanelContent {
     this.setState({ messages: msgs });
   }
 
-  private tryApplyAction(action: EditAction): boolean {
+  private tryApplyAction(action: EditAction, prevalidatedContent?: string): boolean {
     const t = getT();
     const currentPath = this.context.editor.getActiveFilePath();
     if (action.sourceFilePath && currentPath !== action.sourceFilePath) {
@@ -456,7 +456,8 @@ export class AICopilotPanelContent {
       return false;
     }
 
-    const validation = validateActionAgainstCurrentContent(action, this.context.editor.getContent());
+    const contentToCheck = prevalidatedContent ?? this.context.editor.getContent();
+    const validation = validateActionAgainstCurrentContent(action, contentToCheck);
     if (!validation.valid) {
       this.context.ui.showMessage(t('aiCopilot.panel.staleAction'), 'warning');
       return false;
@@ -495,7 +496,7 @@ export class AICopilotPanelContent {
     // All validated — apply in reverse order so offsets stay valid
     let appliedCount = 0;
     for (const action of ordered) {
-      if (this.tryApplyAction(action)) {
+      if (this.tryApplyAction(action, currentContent)) {
         appliedCount += 1;
       }
     }
@@ -548,8 +549,6 @@ export class AICopilotPanelContent {
   }
 
   async testConnection(providerConfig: ProviderConfig): Promise<{ success: boolean; error?: string }> {
-
-    
     // 验证配置
     if (providerConfig.type === 'cloud' && !providerConfig.apiKey) {
       return { 
@@ -574,7 +573,6 @@ export class AICopilotPanelContent {
     try {
       const result = await provider.healthCheck();
 
-      
       if (result) {
         return { success: true };
       } else {
@@ -583,10 +581,7 @@ export class AICopilotPanelContent {
           error: 'Health check returned false (provider may be down)' 
         };
       }
-      
     } catch (err) {
-
-      
       // 提供详细的错误信息
       let errorMessage = 'Unknown error';
       
