@@ -98,6 +98,8 @@ export function SettingsModal({
   const [installedThemes, setInstalledThemes] = useState(() => getInstalledThemes());
   const [themeImportError, setThemeImportError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   const refreshThemes = useCallback(() => {
     setInstalledThemes(getInstalledThemes());
@@ -142,14 +144,24 @@ export function SettingsModal({
     }
   }, [currentTheme, installedThemes]);
 
-  // Close on Escape
+  // Focus management + Close on Escape
   useEffect(() => {
     if (!visible) return;
+    previousFocusRef.current = document.activeElement as HTMLElement;
+    requestAnimationFrame(() => {
+      const focusable = modalRef.current?.querySelector<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      focusable?.focus();
+    });
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    return () => {
+      window.removeEventListener('keydown', handler);
+      previousFocusRef.current?.focus();
+    };
   }, [visible, onClose]);
 
   if (!visible) return null;
@@ -161,12 +173,16 @@ export function SettingsModal({
       onClick={onClose}
     >
       <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('settings.title')}
         className="rounded-lg shadow-xl flex overflow-hidden"
         style={{
           backgroundColor: 'var(--bg-primary)',
           border: '1px solid var(--border-color)',
-          width: 600,
-          height: 400,
+          width: 720,
+          height: 520,
         }}
         onClick={(e) => e.stopPropagation()}
       >
