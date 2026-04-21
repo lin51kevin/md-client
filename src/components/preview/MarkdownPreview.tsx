@@ -7,8 +7,7 @@ import { openPath, openUrl } from "@tauri-apps/plugin-opener";
 import { PREVIEW_REMARK_PLUGINS, PREVIEW_REHYPE_PLUGINS } from "../../lib/markdown/pipeline";
 import { MAX_IMAGE_CACHE } from "../../constants";
 import { toErrorMessage } from "../../lib/utils/errors";
-import { initMermaid } from "../../lib/markdown";
-import { parseTable, type TableData } from "../../lib/markdown";
+import { initMermaid, type TableData } from "../../lib/markdown";
 import { extractFrontmatter, type Frontmatter } from "../../lib/markdown/extensions";
 import { TableEditor } from "../modal/TableEditor";
 import { useI18n } from "../../i18n";
@@ -112,7 +111,11 @@ function LocalImage({
   src: string;
   alt?: string;
 } & Omit<React.ComponentPropsWithoutRef<"img">, "src">) {
-  const [dataSrc, setDataSrc] = useState<string | undefined>(undefined);
+  // Initialize synchronously from cache to avoid a blank-image flash on remount
+  const [dataSrc, setDataSrc] = useState<string | undefined>(() => {
+    const absPath = resolvePath(docFilePath, src);
+    return imageCache.get(absPath);
+  });
 
   useEffect(() => {
     const absPath = resolvePath(docFilePath, src);
@@ -343,24 +346,6 @@ export const MarkdownPreview = memo(function MarkdownPreview({
     ? effectiveContent.slice(0, PREVIEW_TRUNCATE_AT)
     : effectiveContent;
 
-  // 预解析文档中所有表格，按序号索引 — use renderContent for performance
-  const allTables = useMemo<TableData[]>(() => {
-    const tables: TableData[] = [];
-    let searchFrom = 0;
-    while (true) {
-      const idx = renderContent.indexOf('|', searchFrom);
-      if (idx < 0) break;
-      const parsed = parseTable(renderContent, idx);
-      if (parsed) {
-        tables.push(parsed);
-        searchFrom = parsed.rawEnd;
-      } else {
-        searchFrom = idx + 1;
-      }
-    }
-    return tables;
-  }, [renderContent]);
-
   // Frontmatter 元数据面板（仅在检测到 frontmatter 时显示）
   const frontmatter = useMemo(() => extractFrontmatter(renderContent), [renderContent]);
 
@@ -466,7 +451,7 @@ export const MarkdownPreview = memo(function MarkdownPreview({
     }
 
     return components;
-  }, [filePath, onOpenFile, onContentChange, onWikiLinkNavigate, allTables, pluginRenderers]);
+  }, [filePath, onOpenFile, onWikiLinkNavigate, pluginRenderers]);
 
   const handleTableConfirm = useCallback((newTableMd: string) => {
     if (!editingTable || !onContentChange) return;
