@@ -59,11 +59,13 @@ export function useEditorInstance({
   useEffect(() => { docRef.current = activeDoc; }, [activeDoc]);
 
   // ── Editor extensions and theme (configuration concern) ──────────
+  const largeFile = activeDoc.length > 500 * 1024; // 500 KB threshold
   const { editorExtensions, editorTheme } = useEditorConfig({
     theme,
     vimMode,
     cursorExtension,
     searchHighlightExtension,
+    largeFile,
   });
 
   const handleCreateEditor = useCallback((view: EditorView) => {

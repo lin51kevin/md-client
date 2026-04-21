@@ -21,24 +21,36 @@ interface EditorConfigOptions {
   vimMode: boolean;
   cursorExtension: Extension;
   searchHighlightExtension: Extension;
+  /** When true, disables heavy extensions (folding, autocomplete) for performance */
+  largeFile?: boolean;
 }
 
-export function useEditorConfig({ theme, vimMode, cursorExtension, searchHighlightExtension }: EditorConfigOptions) {
+export function useEditorConfig({ theme, vimMode, cursorExtension, searchHighlightExtension, largeFile = false }: EditorConfigOptions) {
   // Vim extension is loaded asynchronously
   const [vimExtension, setVimExtension] = useState<Extension | null>(null);
   useEffect(() => {
     vimKeymap().then(setVimExtension).catch(console.error);
   }, []);
 
-  const editorExtensions = useMemo(() => [
-    markdown({ base: markdownLanguage, codeLanguages: commonLanguages }),
-    foldGutter(),
-    cursorExtension,
-    autoCloseBrackets(),
-    searchHighlightExtension,
-    multicursorKeymap(),
-    ...(vimMode && vimExtension ? [vimExtension] : []),
-  ], [cursorExtension, vimExtension, vimMode, searchHighlightExtension]);
+  const editorExtensions = useMemo(() => {
+    const exts: Extension[] = [
+      markdown({ base: markdownLanguage, codeLanguages: largeFile ? [] : commonLanguages }),
+      cursorExtension,
+      searchHighlightExtension,
+      multicursorKeymap(),
+    ];
+
+    if (!largeFile) {
+      exts.push(foldGutter());
+      exts.push(autoCloseBrackets());
+    }
+
+    if (vimMode && vimExtension) {
+      exts.push(vimExtension);
+    }
+
+    return exts;
+  }, [cursorExtension, vimExtension, vimMode, searchHighlightExtension, largeFile]);
 
   const editorTheme = useMemo((): 'light' | 'dark' | Extension => {
     const cm = THEMES[theme].cmTheme;

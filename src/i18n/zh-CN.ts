@@ -235,6 +235,8 @@ export const zhCN = {
   'file.exportPng': 'PNG 图片 (.png)',
   'file.noRecent': '暂无最近文件',
   'file.clearRecent': '清空记录',
+  'file.import': '导入',
+  'file.importHtml': 'HTML 网页 (.html)',
   'file.closeAll': '关闭所有标签页',
   'file.openFileFailed': '打开文件失败',
   'file.cannotRead': '无法读取文件: {error}',
@@ -449,6 +451,23 @@ export const zhCN = {
   'fileOps.exporting': '正在导出 {format}...',
   'fileOps.exportFailed': '导出 {format} 失败',
   'fileOps.exportPngFailed': '导出 PNG 失败',
+  'fileOps.importFailed': '导入 HTML 失败',
+  'fileOps.importHtmlSuccess': '已将 HTML 转换为 Markdown',
+  'fileOps.fileTooLarge': '文件大小超出限制（最大 200MB），无法导入。',
+  'fileOps.largeFileWarning': '文件较大（{size}MB），转换可能需要较长时间，是否继续？',
+  'fileOps.veryLargeFileWarning': '文件非常大（{size}MB），可能导致性能问题或内存不足，是否继续？',
+  'fileOps.importProgress.stripping': '正在清理 HTML…',
+  'fileOps.importProgress.converting': '正在转换为 Markdown…',
+  'fileOps.importProgress.done': '转换完成',
+  'fileOps.importing': '正在导入 {name}…',
+  'fileOps.importCancelled': '导入已取消',
+
+  // ── Preview (large doc) ───────────────────────────────────────────────
+  'preview.largeDocMode': '大文档模式',
+  'preview.truncated': '内容已截断（仅显示前 {size}KB），点击展开完整预览',
+  'preview.manualRefresh': '文档较大，已禁用自动预览。',
+  'preview.refreshNow': '刷新预览',
+  'preview.expandFull': '展开完整预览',
 
   // ── Wiki Links ────────────────────────────────────────────────────────
   'wiki.notFound': '未找到文档 "{name}"，是否创建？',

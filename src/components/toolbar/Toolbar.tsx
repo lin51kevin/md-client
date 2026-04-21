@@ -21,6 +21,7 @@ interface ToolbarProps {
   onExportHtml: () => void;
   onExportEpub?: () => void;
   onExportPng?: () => void;
+  onImportHtml?: () => void;
   onSetViewMode: (mode: ViewMode) => void;
   onFocusModeChange?: (mode: FocusMode) => void;
   /** F013: 拼写检查状态 */
@@ -80,6 +81,7 @@ export const Toolbar = memo(function Toolbar({
   viewMode, focusMode,
   onNewTab, onOpenFile, onOpenFolder, onSaveFile, onSaveAsFile,
   onExportDocx, onExportPdf, onExportHtml, onExportEpub, onExportPng,
+  onImportHtml,
   onSetViewMode, onFocusModeChange,
   spellCheck, onToggleSpellCheck,
   onFormatAction,
@@ -155,6 +157,7 @@ export const Toolbar = memo(function Toolbar({
           onExportHtml={onExportHtml}
           onExportEpub={onExportEpub}
           onExportPng={onExportPng}
+          onImportHtml={onImportHtml}
           recentFiles={recentFiles}
           onOpenRecent={onOpenRecent}
           onClearRecent={onClearRecent}

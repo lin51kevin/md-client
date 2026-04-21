@@ -237,6 +237,8 @@ export const en: Record<TranslationKey, string> = {
   'file.exportPng': 'PNG Image (.png)',
   'file.noRecent': 'No recent files',
   'file.clearRecent': 'Clear History',
+  'file.import': 'Import',
+  'file.importHtml': 'HTML File (.html)',
   'file.closeAll': 'Close All Tabs',
   'file.openFileFailed': 'Failed to open file',
   'file.cannotRead': 'Cannot read file: {error}',
@@ -452,6 +454,23 @@ export const en: Record<TranslationKey, string> = {
   'fileOps.exporting': 'Exporting {format}...',
   'fileOps.exportFailed': 'Export {format} Failed',
   'fileOps.exportPngFailed': 'Export PNG Failed',
+  'fileOps.importFailed': 'Import HTML Failed',
+  'fileOps.importHtmlSuccess': 'HTML converted to Markdown',
+  'fileOps.fileTooLarge': 'File size exceeds limit (max 200MB) and cannot be imported.',
+  'fileOps.largeFileWarning': 'File is large ({size}MB). Conversion may take a while. Continue?',
+  'fileOps.veryLargeFileWarning': 'File is very large ({size}MB). This may cause performance issues or run out of memory. Continue?',
+  'fileOps.importProgress.stripping': 'Cleaning HTML…',
+  'fileOps.importProgress.converting': 'Converting to Markdown…',
+  'fileOps.importProgress.done': 'Conversion complete',
+  'fileOps.importing': 'Importing {name}…',
+  'fileOps.importCancelled': 'Import cancelled',
+
+  // ── Preview (large doc) ───────────────────────────────────────────────
+  'preview.largeDocMode': 'Large document mode',
+  'preview.truncated': 'Content truncated (showing first {size}KB). Click to expand full preview.',
+  'preview.manualRefresh': 'Document is large. Auto-preview disabled.',
+  'preview.refreshNow': 'Refresh Preview',
+  'preview.expandFull': 'Expand Full Preview',
 
   // ── Wiki Links ────────────────────────────────────────────────────────
   'wiki.notFound': 'Document "{name}" not found. Create it?',

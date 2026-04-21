@@ -11,6 +11,7 @@ import { initMermaid } from "../../lib/markdown";
 import { parseTable, type TableData } from "../../lib/markdown";
 import { extractFrontmatter, type Frontmatter } from "../../lib/markdown/extensions";
 import { TableEditor } from "../modal/TableEditor";
+import { useI18n } from "../../i18n";
 
 // Stable plugin arrays — imported from markdown-pipeline to ensure single source of truth
 // and prevent ReactMarkdown from re-initializing the pipeline on each render.
@@ -28,6 +29,16 @@ const MIME_MAP: Record<string, string> = {
 };
 
 const MD_EXTENSIONS = new Set(["md", "markdown", "txt"]);
+
+// ── Large document thresholds ───────────────────────────────────────────────
+/** Below this size, preview behaves normally */
+const PREVIEW_NORMAL_LIMIT = 50 * 1024;   // 50 KB
+/** Above NORMAL, below HEAVY → longer debounce */
+const PREVIEW_HEAVY_LIMIT = 200 * 1024;   // 200 KB
+/** Above HEAVY → much longer debounce + warning */
+const PREVIEW_HUGE_LIMIT = 500 * 1024;    // 500 KB
+/** Truncation point for huge documents */
+const PREVIEW_TRUNCATE_AT = 100 * 1024;   // 100 KB
 
 /** Module-level LRU cache for loaded images. Evicts oldest entries beyond MAX_IMAGE_CACHE. */
 const imageCache = new Map<string, string>();
@@ -258,18 +269,85 @@ export const MarkdownPreview = memo(function MarkdownPreview({
   onWikiLinkNavigate,
   pluginRenderers,
 }: MarkdownPreviewProps) {
+  const { t } = useI18n();
   const [editingTable, setEditingTable] = useState<TableData | null>(null);
   /** Resets to 0 before each ReactMarkdown render pass to keep table indices aligned */
   const tableCounterRef = useRef(0);
 
-  // 预解析文档中所有表格，按序号索引
+  // ── Large-document handling ─────────────────────────────────────────────
+  const contentSize = content.length;
+  const isHuge = contentSize > PREVIEW_HUGE_LIMIT;
+
+  // For huge documents: manual refresh mode
+  const [manualContent, setManualContent] = useState<string | null>(null);
+  const [showFull, setShowFull] = useState(false);
+
+  // For heavy/huge documents: extra debounce on top of the 300ms from useDocMetrics
+  const [debouncedContent, setDebouncedContent] = useState(content);
+  const prevContentRef = useRef(content);
+
+  useEffect(() => {
+    // If document is huge and we're in manual mode, skip auto-update
+    if (isHuge && manualContent !== null) return;
+
+    if (contentSize <= PREVIEW_NORMAL_LIMIT) {
+      // Small doc: update immediately (already debounced 300ms upstream)
+      setDebouncedContent(content);
+    } else if (contentSize <= PREVIEW_HEAVY_LIMIT) {
+      // Medium doc: add 700ms extra debounce (total ~1s)
+      const id = setTimeout(() => setDebouncedContent(content), 700);
+      return () => clearTimeout(id);
+    } else if (contentSize <= PREVIEW_HUGE_LIMIT) {
+      // Heavy doc: add 1700ms extra debounce (total ~2s)
+      const id = setTimeout(() => setDebouncedContent(content), 1700);
+      return () => clearTimeout(id);
+    }
+    // Huge: handled by manual refresh below
+  }, [content, contentSize, isHuge, manualContent]);
+
+  // When switching from huge to non-huge or vice versa, reset manual state
+  useEffect(() => {
+    if (!isHuge) {
+      setManualContent(null);
+      setShowFull(false);
+    }
+  }, [isHuge]);
+
+  // Sync when tab changes (content ref jumps to a completely different string)
+  if (prevContentRef.current !== content && Math.abs(prevContentRef.current.length - content.length) > content.length * 0.5) {
+    setDebouncedContent(content);
+    setManualContent(null);
+    setShowFull(false);
+  }
+  prevContentRef.current = content;
+
+  const handleManualRefresh = useCallback(() => {
+    setManualContent(content);
+    setDebouncedContent(content);
+  }, [content]);
+
+  const handleExpandFull = useCallback(() => {
+    setShowFull(true);
+  }, []);
+
+  // Determine what to render
+  const effectiveContent = isHuge
+    ? (manualContent ?? debouncedContent)
+    : debouncedContent;
+
+  const shouldTruncate = isHuge && !showFull && effectiveContent.length > PREVIEW_TRUNCATE_AT;
+  const renderContent = shouldTruncate
+    ? effectiveContent.slice(0, PREVIEW_TRUNCATE_AT)
+    : effectiveContent;
+
+  // 预解析文档中所有表格，按序号索引 — use renderContent for performance
   const allTables = useMemo<TableData[]>(() => {
     const tables: TableData[] = [];
     let searchFrom = 0;
     while (true) {
-      const idx = content.indexOf('|', searchFrom);
+      const idx = renderContent.indexOf('|', searchFrom);
       if (idx < 0) break;
-      const parsed = parseTable(content, idx);
+      const parsed = parseTable(renderContent, idx);
       if (parsed) {
         tables.push(parsed);
         searchFrom = parsed.rawEnd;
@@ -278,10 +356,10 @@ export const MarkdownPreview = memo(function MarkdownPreview({
       }
     }
     return tables;
-  }, [content]);
+  }, [renderContent]);
 
   // Frontmatter 元数据面板（仅在检测到 frontmatter 时显示）
-  const frontmatter = useMemo(() => extractFrontmatter(content), [content]);
+  const frontmatter = useMemo(() => extractFrontmatter(renderContent), [renderContent]);
 
   const customComponents = useMemo(() => {
     const components: Record<string, unknown> = {};
@@ -399,6 +477,38 @@ export const MarkdownPreview = memo(function MarkdownPreview({
 
   return (
     <div className={className}>
+      {/* Large document manual refresh banner */}
+      {isHuge && (
+        <div style={{
+          padding: '0.5rem 1rem',
+          marginBottom: '0.75rem',
+          borderRadius: '0.375rem',
+          backgroundColor: 'var(--bg-secondary, #f9fafb)',
+          border: '1px solid var(--border-color, #e5e7eb)',
+          fontSize: '0.8125rem',
+          color: 'var(--text-secondary, #6b7280)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          flexWrap: 'wrap',
+        }}>
+          <span>⚡ {t('preview.manualRefresh')}</span>
+          <button
+            onClick={handleManualRefresh}
+            style={{
+              padding: '0.25rem 0.75rem',
+              borderRadius: '0.25rem',
+              border: '1px solid var(--accent-color, #4a90d9)',
+              backgroundColor: 'var(--accent-color, #4a90d9)',
+              color: '#fff',
+              cursor: 'pointer',
+              fontSize: '0.75rem',
+            }}
+          >
+            {t('preview.refreshNow')}
+          </button>
+        </div>
+      )}
       {/* Reset table index counter before each ReactMarkdown render pass */}
       {(tableCounterRef.current = 0) === 0 && null}
       {Object.keys(frontmatter).length > 0 && <FrontmatterPanel fm={frontmatter} />}
@@ -408,8 +518,39 @@ export const MarkdownPreview = memo(function MarkdownPreview({
         urlTransform={safeUrlTransform}
         components={customComponents}
       >
-        {content}
+        {renderContent}
       </ReactMarkdown>
+      {/* Truncation expand button */}
+      {shouldTruncate && (
+        <div style={{
+          padding: '0.75rem 1rem',
+          marginTop: '0.75rem',
+          borderRadius: '0.375rem',
+          backgroundColor: 'var(--bg-secondary, #f9fafb)',
+          border: '1px dashed var(--border-color, #e5e7eb)',
+          textAlign: 'center',
+          fontSize: '0.8125rem',
+          color: 'var(--text-secondary, #6b7280)',
+        }}>
+          <p style={{ margin: '0 0 0.5rem 0' }}>
+            {t('preview.truncated', { size: Math.round(PREVIEW_TRUNCATE_AT / 1024) })}
+          </p>
+          <button
+            onClick={handleExpandFull}
+            style={{
+              padding: '0.375rem 1rem',
+              borderRadius: '0.25rem',
+              border: '1px solid var(--accent-color, #4a90d9)',
+              backgroundColor: 'transparent',
+              color: 'var(--accent-color, #4a90d9)',
+              cursor: 'pointer',
+              fontSize: '0.8125rem',
+            }}
+          >
+            {t('preview.expandFull')}
+          </button>
+        </div>
+      )}
       {editingTable && (
         <TableEditor
           table={editingTable}

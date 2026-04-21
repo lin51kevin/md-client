@@ -28,6 +28,7 @@ import { useAppLifecycle } from '../hooks/useAppLifecycle';
 import { usePendingImageMigration } from '../hooks/usePendingImageMigration';
 import { useFileWatchState } from '../hooks/useFileWatchState';
 import { useRecentFiles } from '../hooks/useRecentFiles';
+import { useImportOps } from '../hooks/useImportOps';
 import { useTabActions } from '../hooks/useTabActions';
 import { useTypewriterOptions } from '../hooks/useTypewriterOptions';
 import { usePreviewRenderers } from '../hooks/usePreviewRenderers';
@@ -150,6 +151,11 @@ export function AppShell() {
     getActiveTab, tabs, openFileInTab, markSaved, markSavedAs, t, onFirstSave: handleFirstSave,
   });
 
+  // ── Import operations ──────────────────────────────────────────
+  const { handleImportHtml, handleImportHtmlFromPath } = useImportOps({
+    createNewTab, setTabDisplayName, t,
+  });
+
   const { snapshots, handleSaveFile } = useVersionHistory({
     rawHandleSaveFile, getActiveTab, tabs, activeFilePath: activeTab.filePath,
   });
@@ -216,7 +222,7 @@ export function AppShell() {
     }
   }, [setFileTreeRoot, setActivePanel]);
 
-  useDragDrop({ isTauri, setIsDragOver, setDragKind, openFileInTab, onImageDrop: saveAndInsertImage, onFolderDrop: (path) => {
+  useDragDrop({ isTauri, setIsDragOver, setDragKind, openFileInTab, onImageDrop: saveAndInsertImage, onHtmlImport: handleImportHtmlFromPath, onFolderDrop: (path) => {
     setFileTreeRoot(path);
     setActivePanel('filetree');
     fileTreeSidebarRef.current?.loadRoot(path);
@@ -394,6 +400,7 @@ export function AppShell() {
             onExportDocx={handleExportDocx} onExportPdf={handleExportPdf}
             onExportHtml={handleExportHtml} onExportEpub={handleExportEpub}
             onExportPng={() => handleExportPng(previewRef.current)}
+            onImportHtml={handleImportHtml}
             onSetViewMode={setViewMode} onFocusModeChange={setFocusMode}
             spellCheck={spellCheck} onToggleSpellCheck={() => setSpellCheck(!spellCheck)}
             vimMode={vimMode} onToggleVimMode={() => setVimMode(!vimMode)}

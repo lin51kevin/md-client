@@ -237,6 +237,8 @@ export const jaJP: Record<TranslationKey, string> = {
   'file.exportPng': 'PNG 画像 (.png)',
   'file.noRecent': '最近使ったファイルはありません',
   'file.clearRecent': '履歴をクリア',
+  'file.import': 'インポート',
+  'file.importHtml': 'HTML ファイル (.html)',
   'file.closeAll': 'すべてのタブを閉じる',
   'file.openFileFailed': 'ファイルを開けませんでした',
   'file.cannotRead': 'ファイルを読み込めません: {error}',
@@ -452,6 +454,23 @@ export const jaJP: Record<TranslationKey, string> = {
   'fileOps.exporting': '{format} をエクスポート中...',
   'fileOps.exportFailed': '{format} のエクスポートに失敗しました',
   'fileOps.exportPngFailed': 'PNG のエクスポートに失敗しました',
+  'fileOps.importFailed': 'HTML のインポートに失敗しました',
+  'fileOps.importHtmlSuccess': 'HTML を Markdown に変換しました',
+  'fileOps.fileTooLarge': 'ファイルサイズが制限を超えています（最大 200MB）。インポートできません。',
+  'fileOps.largeFileWarning': 'ファイルが大きいです（{size}MB）。変換に時間がかかる場合があります。続行しますか？',
+  'fileOps.veryLargeFileWarning': 'ファイルが非常に大きいです（{size}MB）。パフォーマンスの問題やメモリ不足が発生する可能性があります。続行しますか？',
+  'fileOps.importProgress.stripping': 'HTML をクリーニング中…',
+  'fileOps.importProgress.converting': 'Markdown に変換中…',
+  'fileOps.importProgress.done': '変換完了',
+  'fileOps.importing': '{name} をインポート中…',
+  'fileOps.importCancelled': 'インポートがキャンセルされました',
+
+  // ── Preview (large doc) ───────────────────────────────────────────────
+  'preview.largeDocMode': '大きなドキュメントモード',
+  'preview.truncated': 'コンテンツが切り詰められています（最初の {size}KB のみ表示）。クリックして全体を表示。',
+  'preview.manualRefresh': 'ドキュメントが大きいため、自動プレビューが無効です。',
+  'preview.refreshNow': 'プレビューを更新',
+  'preview.expandFull': '完全なプレビューを表示',
 
   // ── Wiki Links ────────────────────────────────────────────────────────
   'wiki.notFound': 'ドキュメント「{name}」が見つかりません。作成しますか？',
