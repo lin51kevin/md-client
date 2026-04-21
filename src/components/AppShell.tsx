@@ -240,7 +240,7 @@ export function AppShell() {
     },
     openFileInTab: (path: string) => void openFileInTab(path),
     openNewUntitled: (content: string) => createNewTab(content),
-    getOpenFilePaths: () => tabs.filter(t => t.filePath).map(t => t.filePath!),
+    getOpenFilePaths: () => tabsRef.current.filter(t => t.filePath).map(t => t.filePath!),
     cmViewRef,
     registerSidebarPanel: registerPluginPanel,
     unregisterSidebarPanel: unregisterPluginPanel,
@@ -248,7 +248,7 @@ export function AppShell() {
     removeStatusBarItem: () => {},
     registerPreviewRenderer,
     unregisterPreviewRenderer,
-  }), [getActiveTab, openFileInTab, createNewTab, tabs, cmViewRef, registerPluginPanel, unregisterPluginPanel, registerPreviewRenderer, unregisterPreviewRenderer]);
+  }), [getActiveTab, openFileInTab, createNewTab, cmViewRef, registerPluginPanel, unregisterPluginPanel, registerPreviewRenderer, unregisterPreviewRenderer]);
 
   const { activatePlugin, deactivatePlugin } = usePluginRuntime(pluginRuntimeDeps);
 
