@@ -53,24 +53,28 @@ export class OllamaProvider implements AIProvider {
       const decoder = new TextDecoder();
       let fullContent = '';
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
 
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n').filter(Boolean);
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n').filter(Boolean);
 
-        for (const line of lines) {
-          try {
-            const data = JSON.parse(line);
-            if (data.message?.content) {
-              fullContent += data.message.content;
-              onChunk?.(data.message.content);
+          for (const line of lines) {
+            try {
+              const data = JSON.parse(line);
+              if (data.message?.content) {
+                fullContent += data.message.content;
+                onChunk?.(data.message.content);
+              }
+            } catch {
+              // skip malformed JSON lines
             }
-          } catch {
-            // skip malformed JSON lines
           }
         }
+      } finally {
+        try { await reader.cancel(); } catch { /* ignore */ }
       }
 
       return fullContent;
