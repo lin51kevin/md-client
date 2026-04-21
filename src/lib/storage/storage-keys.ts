@@ -37,7 +37,9 @@ export const StorageKeys = {
   FILE_WATCH_BEHAVIOR: 'marklite-file-watch-behavior',
 
   // ── Theme ─────────────────────────────────────────────────────────────────
-  THEME: 'marklite-theme',  THEME_PREFERENCE: 'md-client-theme-preference',  PREVIEW_THEME: 'marklite-preview-theme',
+  THEME: 'marklite-theme',
+  THEME_PREFERENCE: 'marklite-theme-preference',
+  PREVIEW_THEME: 'marklite-preview-theme',
   CUSTOM_THEMES: 'marklite-themes',
   CUSTOM_CSS: 'marklite-custom-css',
   CSS_TEMPLATES: 'marklite-css-templates',

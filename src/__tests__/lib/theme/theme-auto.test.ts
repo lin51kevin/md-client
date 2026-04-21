@@ -8,10 +8,12 @@ import {
 
 describe('theme-auto: getThemePreference / setThemePreference', () => {
   beforeEach(() => {
+    localStorage.removeItem('marklite-theme-preference');
     localStorage.removeItem('md-client-theme-preference');
   });
 
   afterEach(() => {
+    localStorage.removeItem('marklite-theme-preference');
     localStorage.removeItem('md-client-theme-preference');
   });
 

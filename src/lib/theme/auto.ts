@@ -26,6 +26,14 @@ export function getThemePreference(): ThemePreference {
     if (saved === 'light' || saved === 'dark' || saved === 'system') {
       return saved;
     }
+    // Migration: read from the old key used before the prefix was standardised
+    const OLD_KEY = 'md-client-theme-preference';
+    const oldSaved = localStorage.getItem(OLD_KEY);
+    if (oldSaved === 'light' || oldSaved === 'dark' || oldSaved === 'system') {
+      localStorage.setItem(STORAGE_KEY, oldSaved);
+      localStorage.removeItem(OLD_KEY);
+      return oldSaved;
+    }
   } catch { /* ignore */ }
   return 'system';
 }
