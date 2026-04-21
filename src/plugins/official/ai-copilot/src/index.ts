@@ -35,7 +35,8 @@ function isAIEnabled(): boolean {
     // Cloud providers need a key
     const key = cfg.providerConfigs?.[provider]?.apiKey;
     return typeof key === 'string' && key.trim().length > 0;
-  } catch {
+  } catch (e) {
+    console.warn('[ai-copilot] Failed to read AI config:', e);
     return false;
   }
 }

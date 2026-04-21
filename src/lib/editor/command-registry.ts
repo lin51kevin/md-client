@@ -99,7 +99,9 @@ export function createCommandRegistry(deps: CommandRegistryDeps): Command[] {
 
     // ── AI 助手 ──
     { id: 'ai.togglePanel', label: '切换 AI 面板', labelEn: 'Toggle AI Panel', shortcut: 'Ctrl+Alt+I', category: 'ai', action: () => toggleAIPanel() },
-    { id: 'ai.revealFile', label: '在资源管理器中显示', labelEn: 'Reveal in Explorer', shortcut: 'Ctrl+Shift+E', category: 'ai', action: () => revealActiveFile() },
+
+    // ── 文件操作 ──
+    { id: 'file.revealInExplorer', label: '在资源管理器中显示', labelEn: 'Reveal in Explorer', shortcut: 'Ctrl+Shift+E', category: 'file', action: () => revealActiveFile() },
   ];
 
   return [...builtInCommands, ...customCommands];

@@ -153,7 +153,7 @@ export function AppShell() {
 
   // ── Import operations ──────────────────────────────────────────
   const { handleImportHtml, handleImportHtmlFromPath } = useImportOps({
-    createNewTab, setTabDisplayName, t,
+    createNewTab, openFileWithContent, t,
   });
 
   const { snapshots, handleSaveFile } = useVersionHistory({
@@ -299,7 +299,14 @@ export function AppShell() {
     toggleSearchPanel: () => togglePanel('search'),
     toggleGitPanel: () => togglePanel('git'),
     togglePluginsPanel: () => togglePanel('plugins'),
-    toggleAIPanel: () => setShowAIPanel(!showAIPanel),
+    toggleAIPanel: () => {
+      const s = useUIStore.getState();
+      s.setShowAIPanel(!s.showAIPanel);
+    },
+    revealActiveFile: () => {
+      const tab = tabsRef.current.find(t => t.id === activeTabIdRef.current);
+      if (tab?.filePath) revealInExplorer(tab.filePath).catch(() => {});
+    },
     nextTab, previousTab, closeAllTabs: handleCloseAllTabs,
     toggleCommandPalette: () => {
       // Only open when the editor is visible (edit or split mode)
@@ -308,10 +315,6 @@ export function AppShell() {
       useUIStore.getState().setShowCommandPalette(!cur);
     },
     toggleQuickOpen: () => { const cur = useUIStore.getState().showQuickOpen; useUIStore.getState().setShowQuickOpen(!cur); },
-    revealActiveFile: () => {
-      const tab = tabs.find(t => t.id === activeTabId);
-      if (tab?.filePath) revealInExplorer(tab.filePath).catch(console.error);
-    },
     handleFormatAction,
     toggleFullscreen: async () => {
       if (!isTauri) return;
@@ -334,7 +337,7 @@ export function AppShell() {
       const tab = tabsRef.current.find(t => t.id === activeTabIdRef.current);
       if (tab?.filePath) revealInExplorer(tab.filePath).catch(() => {});
     },
-  }), [createNewTab, handleOpenFile, handleSaveWithWatchMark, handleSaveAsFile, setViewMode, focusMode, setFocusMode, handleFormatAction, handleExportDocx, handleExportPdf, handleExportHtml, handleExportPng, previewRef, setShowSnippetPicker, setShowSnippetManager, activePanel, setActivePanel, cmViewRef, isTauri, tabsRef, activeTabIdRef]);
+  }), [createNewTab, handleOpenFile, handleSaveWithWatchMark, handleSaveAsFile, setViewMode, focusMode, setFocusMode, handleFormatAction, handleExportDocx, handleExportPdf, handleExportHtml, handleExportPng, previewRef, setShowSnippetPicker, setShowSnippetManager, activePanel, setActivePanel, cmViewRef, isTauri]);
 
   const AI_PANEL_ID = 'ai-copilot-official';
 

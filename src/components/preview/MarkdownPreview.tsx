@@ -314,12 +314,15 @@ export const MarkdownPreview = memo(function MarkdownPreview({
   }, [isHuge]);
 
   // Sync when tab changes (content ref jumps to a completely different string)
-  if (prevContentRef.current !== content && Math.abs(prevContentRef.current.length - content.length) > content.length * 0.5) {
-    setDebouncedContent(content);
-    setManualContent(null);
-    setShowFull(false);
-  }
-  prevContentRef.current = content;
+  // Moved from render body to useEffect to avoid setState during render (React concurrent mode safety)
+  useEffect(() => {
+    if (prevContentRef.current !== content && Math.abs(prevContentRef.current.length - content.length) > content.length * 0.5) {
+      setDebouncedContent(content);
+      setManualContent(null);
+      setShowFull(false);
+    }
+    prevContentRef.current = content;
+  }, [content]);
 
   const handleManualRefresh = useCallback(() => {
     setManualContent(content);

@@ -2,14 +2,24 @@
  * Web Worker for HTML → Markdown conversion.
  *
  * Runs turndown off the main thread so the UI stays responsive during
- * conversion of large HTML files.  Uses linkedom to provide the minimal
+ * conversion of large HTML files. Uses linkedom to provide the minimal
  * DOM API that turndown requires.
+ *
+ * Shared conversion logic lives in html-import-core.ts (Vite bundles it in).
  */
 
 import { parseHTML } from 'linkedom';
-import TurndownService from 'turndown';
+import {
+  createTurndownService,
+  extractBody,
+  stripEventHandlers,
+  stripDangerousTags,
+  extractHtmlTitle,
+} from '../lib/markdown/html-import-core';
 
 // ── Bootstrap DOM for turndown ──────────────────────────────────────────────
+// linkedom provides a minimal JSDOM implementation so turndown can parse HTML
+// without needing a real browser document.
 const { document: linkedDocument } = parseHTML('<!doctype html><html><body></body></html>');
 (globalThis as unknown as Record<string, unknown>).document = linkedDocument;
 
@@ -38,78 +48,6 @@ export interface WorkerErrorMsg {
 }
 
 export type WorkerOutMsg = WorkerProgressMsg | WorkerResultMsg | WorkerErrorMsg;
-
-// ── Turndown setup (mirrors html-import.ts) ─────────────────────────────────
-
-function createTurndownService(): TurndownService {
-  const td = new TurndownService({
-    headingStyle: 'atx',
-    hr: '---',
-    bulletListMarker: '-',
-    codeBlockStyle: 'fenced',
-    fence: '```',
-    emDelimiter: '*',
-    strongDelimiter: '**',
-    linkStyle: 'inlined',
-  });
-
-  td.addRule('strikethrough', {
-    filter: ['del', 's'],
-    replacement: (content) => `~~${content}~~`,
-  });
-
-  td.addRule('table', {
-    filter: 'table',
-    replacement: (_content, node) => {
-      const el = node as unknown as HTMLTableElement;
-      const rows = Array.from(el.rows);
-      if (rows.length === 0) return '';
-      const cellText = (cell: HTMLTableCellElement) =>
-        cell.textContent?.trim().replace(/\|/g, '\\|') ?? '';
-      const headerRow = rows[0];
-      const headers = Array.from(headerRow.cells).map(cellText);
-      const separator = headers.map(() => '---');
-      const bodyRows = rows.slice(1).map(row => Array.from(row.cells).map(cellText));
-      const lines = [
-        `| ${headers.join(' | ')} |`,
-        `| ${separator.join(' | ')} |`,
-        ...bodyRows.map(row => `| ${row.join(' | ')} |`),
-      ];
-      return `\n\n${lines.join('\n')}\n\n`;
-    },
-  });
-
-  td.remove(['script', 'style', 'noscript', 'iframe', 'object', 'embed']);
-  return td;
-}
-
-// ── Helpers (same as html-import.ts) ────────────────────────────────────────
-
-function extractBody(html: string): string {
-  const m = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-  return m ? m[1] : html;
-}
-
-function stripDangerousTags(html: string): string {
-  return html
-    .replace(/<script[\s>][\s\S]*?<\/script>/gi, '')
-    .replace(/<style[\s>][\s\S]*?<\/style>/gi, '')
-    .replace(/<noscript[\s>][\s\S]*?<\/noscript>/gi, '')
-    .replace(/<iframe[\s>][\s\S]*?<\/iframe>/gi, '')
-    .replace(/<object[\s>][\s\S]*?<\/object>/gi, '')
-    .replace(/<embed[^>]*\/?>/gi, '');
-}
-
-function stripEventHandlers(html: string): string {
-  return html.replace(/\s+on\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]*)/gi, '');
-}
-
-function extractHtmlTitle(html: string): string | undefined {
-  const m = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-  if (!m) return undefined;
-  const title = m[1].trim();
-  return title || undefined;
-}
 
 // ── Worker entry point ──────────────────────────────────────────────────────
 

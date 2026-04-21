@@ -12,7 +12,7 @@ import { useState, useCallback, useRef } from 'react';
 import { open, message, ask } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
 import type { TranslationKey } from '../i18n/zh-CN';
-import { htmlToMarkdown } from '../lib/markdown/html-import';
+import { htmlToMarkdown, extractHtmlTitle } from '../lib/markdown/html-import';
 import { convertHtmlInWorker } from '../lib/workers/html-import-bridge';
 import type { ConvertProgress } from '../lib/workers/html-import-bridge';
 import { toErrorMessage } from '../lib/utils/errors';
@@ -29,11 +29,12 @@ const WORKER_THRESHOLD = 2 * 1024 * 1024;  // 2 MB
 
 interface ImportOpsParams {
   createNewTab: (initialContent?: string) => void;
+  openFileWithContent?: (filePath: string, content: string, displayName?: string) => void;
   setTabDisplayName?: (id: string, name: string) => void;
   t?: TFn;
 }
 
-export function useImportOps({ createNewTab, t }: ImportOpsParams) {
+export function useImportOps({ createNewTab, openFileWithContent, t }: ImportOpsParams) {
   const tr = t ?? ((k: string) => k);
   const [importing, setImporting] = useState(false);
   const toast = useToast();
@@ -120,8 +121,14 @@ export function useImportOps({ createNewTab, t }: ImportOpsParams) {
         markdown = htmlToMarkdown(htmlContent);
       }
 
-      // Open in new tab
-      createNewTab(markdown);
+      // Open in new tab with display name from HTML title
+      const title = extractHtmlTitle(htmlContent);
+      const displayName = title ? `${title}.md` : undefined;
+      if (openFileWithContent && displayName) {
+        openFileWithContent('', markdown, displayName);
+      } else {
+        createNewTab(markdown);
+      }
     } catch (err) {
       const errMsg = toErrorMessage(err);
       await message(errMsg, { title: tr('fileOps.importFailed'), kind: 'error' });
