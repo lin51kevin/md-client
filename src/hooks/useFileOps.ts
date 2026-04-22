@@ -11,6 +11,7 @@ type TFn = (key: TranslationKey, params?: Record<string, string | number>) => st
 interface FileOpsParams {
   getActiveTab: () => Tab;
   tabs: Tab[];
+  resolveTabDoc: (tabId: string) => string;
   openFileInTab: (path: string) => Promise<void>;
   markSaved: (id: string) => void;
   markSavedAs: (id: string, filePath: string) => void;
@@ -19,7 +20,7 @@ interface FileOpsParams {
   onFirstSave?: (tabId: string, savedPath: string) => Promise<void>;
 }
 
-export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markSavedAs, t, onFirstSave }: FileOpsParams) {
+export function useFileOps({ getActiveTab, tabs, resolveTabDoc, openFileInTab, markSaved, markSavedAs, t, onFirstSave }: FileOpsParams) {
   const tr = t ?? ((k: string) => k);
 
   // ── Export operations (separate concern) ──────────────────────────
@@ -65,7 +66,8 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
         filters: [{ name: 'Markdown', extensions: ['md'] }],
       });
       if (savePath) {
-        await invoke('write_file_text', { path: savePath, content: tab.doc });
+        const doc = tabId ? resolveTabDoc(tab.id) : tab.doc;
+        await invoke('write_file_text', { path: savePath, content: doc });
         const wasUnsaved = !tab.filePath;
         markSavedAs(tab.id, savePath);
         markSelfSave(savePath);
@@ -85,7 +87,8 @@ export function useFileOps({ getActiveTab, tabs, openFileInTab, markSaved, markS
     if (!tab) return;
     try {
       if (tab.filePath) {
-        await invoke('write_file_text', { path: tab.filePath, content: tab.doc });
+        const doc = tabId ? resolveTabDoc(tab.id) : tab.doc;
+        await invoke('write_file_text', { path: tab.filePath, content: doc });
         markSaved(tab.id);
         markSelfSave(tab.filePath);
       } else {
