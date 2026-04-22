@@ -2,6 +2,7 @@
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import { visualizer } from "rollup-plugin-visualizer";
 import { execSync } from "node:child_process";
 import path from "node:path";
 
@@ -112,6 +113,10 @@ export default defineConfig(async () => ({
     katexFontFilterPlugin(),
     react(),
     tailwindcss(),
+    // @ts-expect-error process is a nodejs global
+    ...(process.env.ANALYZE === 'true'
+      ? [visualizer({ open: true, filename: 'stats.html', gzipSize: true, brotliSize: true })]
+      : []),
     // Build official plugins as external bundles after main build
     {
       name: 'build-plugins',
@@ -156,6 +161,12 @@ export default defineConfig(async () => ({
     __VUE_OPTIONS_API__: JSON.stringify(true),
     __VUE_PROD_DEVTOOLS__: JSON.stringify(false),
     __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: JSON.stringify(false),
+    __BUILD_TIME__: JSON.stringify((() => {
+      const d = new Date();
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const pad = (n: number) => String(n).padStart(2, '0');
+      return `${months[d.getMonth()]} ${pad(d.getDate())} ${d.getFullYear()} - ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    })()),
   },
 
   build: {
