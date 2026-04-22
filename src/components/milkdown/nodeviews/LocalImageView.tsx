@@ -10,6 +10,7 @@
 
 import { useEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { isAbsolutePath } from '../../../lib/utils/path';
 
 const MIME_MAP: Record<string, string> = {
   png: 'image/png',
@@ -31,12 +32,6 @@ function cacheSet(key: string, value: string): void {
     const oldest = imageCache.keys().next().value;
     if (oldest !== undefined) imageCache.delete(oldest);
   }
-}
-
-function isAbsolutePath(p: string): boolean {
-  if (p.startsWith('/')) return true;
-  if (/^[a-zA-Z]:[/\\]/.test(p)) return true;
-  return false;
 }
 
 function resolvePath(docFilePath: string, rel: string): string {

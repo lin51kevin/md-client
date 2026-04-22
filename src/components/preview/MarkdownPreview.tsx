@@ -7,6 +7,7 @@ import { openPath, openUrl } from "@tauri-apps/plugin-opener";
 import { PREVIEW_REMARK_PLUGINS, PREVIEW_REHYPE_PLUGINS } from "../../lib/markdown/pipeline";
 import { MAX_IMAGE_CACHE } from "../../constants";
 import { toErrorMessage } from "../../lib/utils/errors";
+import { isAbsolutePath } from "../../lib/utils/path";
 import { initMermaid, type TableData } from "../../lib/markdown";
 import { extractFrontmatter, type Frontmatter } from "../../lib/markdown/extensions";
 import { TableEditor } from "../modal/TableEditor";
@@ -72,16 +73,6 @@ interface MarkdownPreviewProps {
  * Resolve a relative path against the directory of the open document.
  * Works for both forward and back slashes on Windows.
  */
-/**
- * Check if a path is absolute (Unix /home/user or Windows C:\)
- */
-function isAbsolutePath(p: string): boolean {
-  // Unix absolute path
-  if (p.startsWith('/')) return true;
-  // Windows absolute path (C:\, D:\, C:/, etc.)
-  if (/^[a-zA-Z]:[/\\]/.test(p)) return true;
-  return false;
-}
 
 function resolvePath(docFilePath: string, rel: string): string {
   // If src is already absolute, return as-is
