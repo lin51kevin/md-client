@@ -486,6 +486,7 @@ export const jaJP: Record<TranslationKey, string> = {
   'about.license': 'ライセンス',
   'about.desc': 'Tauri、React、CodeMirror で構築された軽量 Markdown エディタ',
   'about.ok': 'OK',
+  'about.buildTime': 'ビルド時刻',
 
   // ── Mindmap ──────────────────────────────────────────────────────────────────────────
   'mindmap.title': 'マインドマップ',

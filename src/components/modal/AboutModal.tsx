@@ -91,15 +91,20 @@ export function AboutModal({ visible, onClose }: AboutModalProps) {
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="rounded p-1 transition-colors"
-            style={{ color: 'var(--text-secondary)' }}
-            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--hover-bg)')}
-            onMouseLeave={e => (e.currentTarget.style.backgroundColor = '')}
-          >
-            <X size={16} strokeWidth={2} />
-          </button>
+          <div className="flex flex-col items-end gap-1">
+            <span className="text-xs font-mono select-none" style={{ color: 'var(--text-secondary)' }}>
+              {t('about.buildTime')}: {__BUILD_TIME__}
+            </span>
+            <button
+              onClick={onClose}
+              className="rounded p-1 transition-colors"
+              style={{ color: 'var(--text-secondary)' }}
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--hover-bg)')}
+              onMouseLeave={e => (e.currentTarget.style.backgroundColor = '')}
+            >
+              <X size={16} strokeWidth={2} />
+            </button>
+          </div>
         </div>
 
         {/* ── Body ── */}

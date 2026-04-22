@@ -486,6 +486,7 @@ export const en: Record<TranslationKey, string> = {
   'about.license': 'License',
   'about.desc': 'A lightweight Markdown editor built with Tauri, React, and CodeMirror',
   'about.ok': 'OK',
+  'about.buildTime': 'Build time',
 
   // ── Mindmap ──────────────────────────────────────────────────────────────────────────
   'mindmap.title': 'Mindmap',
