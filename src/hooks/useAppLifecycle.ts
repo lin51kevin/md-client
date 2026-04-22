@@ -37,27 +37,37 @@ export function useAppLifecycle({ isTauri, isRestoringSession, openFileWithConte
   useEffect(() => {
     if (!isTauri) return;
 
-    import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
-      import('@tauri-apps/api/event').then(({ listen }) => {
-        listen('open-file', async (event: { payload: string }) => {
-          const filePath = event.payload;
-          try {
-            const isDir = await invoke<boolean>('is_directory', { path: filePath });
-            if (isDir) {
-              openFolderAsRoot?.(filePath);
-            } else {
-              const content = await invoke<string>('read_file_text', { path: filePath });
-              openFileWithContent(filePath, content);
-            }
-            const window = getCurrentWindow();
-            await window.unminimize();
-            await window.setFocus();
+    let cancelled = false;
+    let unlisten: (() => void) | null = null;
+
+    (async () => {
+      const { getCurrentWindow } = await import('@tauri-apps/api/window');
+      const { listen } = await import('@tauri-apps/api/event');
+      if (cancelled) return;
+      const fn = await listen('open-file', async (event: { payload: string }) => {
+        const filePath = event.payload;
+        try {
+          const isDir = await invoke<boolean>('is_directory', { path: filePath });
+          if (isDir) {
+            openFolderAsRoot?.(filePath);
+          } else {
+            const content = await invoke<string>('read_file_text', { path: filePath });
+            openFileWithContent(filePath, content);
+          }
+          const window = getCurrentWindow();
+          await window.unminimize();
+          await window.setFocus();
           } catch (err) {
             console.error('Failed to open path from second instance:', err);
           }
-        });
       });
-    });
+      if (cancelled) fn(); else unlisten = fn;
+    })();
+
+    return () => {
+      cancelled = true;
+      unlisten?.();
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
