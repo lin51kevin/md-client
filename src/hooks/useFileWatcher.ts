@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useMemo } from 'react';
 import { watch, type UnwatchFn, type WatchEvent } from '@tauri-apps/plugin-fs';
 import { Tab } from '../types';
 
@@ -33,6 +33,8 @@ function isRemoveEvent(event: WatchEvent): boolean {
 export function useFileWatcher({ tabs, enabled = true, onFileChanged, onFileDeleted }: FileWatcherOptions): void {
   const watchersRef = useRef<Map<string, () => void>>(new Map());
   const debouncedRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const tabsRef = useRef(tabs);
+  tabsRef.current = tabs;
   const callbacksRef = useRef({ onFileChanged, onFileDeleted });
 
   // Keep callbacks fresh
@@ -51,6 +53,18 @@ export function useFileWatcher({ tabs, enabled = true, onFileChanged, onFileDele
     }
   }, []);
 
+  // Stable string of file paths that need watching — only changes when
+  // the actual set of watched files changes, not on every tabs reference update.
+  const watchedPathsStr = useMemo(
+    () =>
+      tabs
+        .filter((t) => t.filePath)
+        .map((t) => t.filePath!)
+        .sort()
+        .join('\0'),
+    [tabs],
+  );
+
   useEffect(() => {
     if (!enabled) {
       // Stop all watchers when disabled
@@ -60,8 +74,9 @@ export function useFileWatcher({ tabs, enabled = true, onFileChanged, onFileDele
       return;
     }
 
+    const currentTabs = tabsRef.current;
     const currentPaths = new Set(
-      tabs.filter((tab) => tab.filePath).map((tab) => tab.filePath!)
+      currentTabs.filter((tab) => tab.filePath).map((tab) => tab.filePath!)
     );
     const watchedPaths = new Set(watchersRef.current.keys());
 
@@ -69,7 +84,7 @@ export function useFileWatcher({ tabs, enabled = true, onFileChanged, onFileDele
     for (const filePath of currentPaths) {
       if (watchedPaths.has(filePath)) continue;
 
-      const tabId = tabs.find((t) => t.filePath === filePath)?.id;
+      const tabId = currentTabs.find((t) => t.filePath === filePath)?.id;
       if (!tabId) continue;
 
       // Add sentinel so the .then() guard can detect early cancellation
@@ -126,5 +141,5 @@ export function useFileWatcher({ tabs, enabled = true, onFileChanged, onFileDele
         stopWatcher(path);
       }
     };
-  }, [tabs, enabled, stopWatcher]);
+  }, [enabled, stopWatcher, watchedPathsStr]);
 }
