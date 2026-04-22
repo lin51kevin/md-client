@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback, useMemo } from 'react';
-import { watch, type UnwatchFn, type WatchEvent } from '@tauri-apps/plugin-fs';
+import { watchImmediate, type UnwatchFn, type WatchEvent } from '@tauri-apps/plugin-fs';
 import { Tab } from '../types';
 
 export interface FileWatcherOptions {
@@ -91,10 +91,11 @@ export function useFileWatcher({ tabs, enabled = true, onFileChanged, onFileDele
       watchersRef.current.set(filePath, () => { watchersRef.current.delete(filePath); });
 
       let unwatch: UnwatchFn | undefined;
-      watch(filePath, (event: WatchEvent) => {
-        // Ignore self-triggered saves
-        const saveTs = recentSaves.get(filePath);
-        if (saveTs && Date.now() - saveTs < SELF_SAVE_IGNORE_MS) return;
+      watchImmediate(filePath, (event: WatchEvent) => {
+        // Early check: skip scheduling when we already know this is a self-save
+        // (event fires after markSelfSave was called)
+        const saveTsEarly = recentSaves.get(filePath);
+        if (saveTsEarly && Date.now() - saveTsEarly < SELF_SAVE_IGNORE_MS) return;
 
         // Debounce
         const existing = debouncedRef.current.get(filePath);
@@ -104,6 +105,11 @@ export function useFileWatcher({ tabs, enabled = true, onFileChanged, onFileDele
           filePath,
           setTimeout(() => {
             debouncedRef.current.delete(filePath);
+            // Late check: handles the race where the OS fires the watch event
+            // before JS resumes after the write (i.e. before markSelfSave is
+            // called), but markSelfSave is called before this 300ms timer expires.
+            const saveTsLate = recentSaves.get(filePath);
+            if (saveTsLate && Date.now() - saveTsLate < SELF_SAVE_IGNORE_MS) return;
             if (isRemoveEvent(event)) {
               callbacksRef.current.onFileDeleted(tabId, filePath);
             } else {

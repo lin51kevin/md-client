@@ -8,7 +8,7 @@ const mockUnwatch = vi.fn();
 const mockWatch = vi.fn().mockResolvedValue(mockUnwatch);
 
 vi.mock('@tauri-apps/plugin-fs', () => ({
-  watch: (...args: unknown[]) => mockWatch(...args),
+  watchImmediate: (...args: unknown[]) => mockWatch(...args),
 }));
 
 describe('useFileWatcher', () => {
