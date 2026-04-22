@@ -1,19 +1,32 @@
 import { useState, useCallback, createContext, useContext } from 'react';
 import { zhCN, type TranslationKey } from './zh-CN';
-import { en } from './en';
-import { jaJP } from './ja-JP';
 import { StorageKeys } from '../lib/storage';
 
 export type { TranslationKey };
 
 export type Locale = 'zh-CN' | 'en' | 'ja-JP';
 
+type LocaleDict = Record<TranslationKey, string>;
+
 const STORAGE_KEY = StorageKeys.LOCALE;
-const LOCALES: Record<Locale, Record<TranslationKey, string>> = {
+
+// Only zh-CN is imported synchronously. Other locales are loaded lazily on
+// first use to reduce initial JS parse time (~2 × 700-line files deferred).
+const loadedLocales: Partial<Record<Locale, LocaleDict>> = {
   'zh-CN': zhCN,
-  'en': en,
-  'ja-JP': jaJP,
 };
+
+async function fetchLocale(locale: Locale): Promise<LocaleDict> {
+  if (loadedLocales[locale]) return loadedLocales[locale]!;
+  let dict: LocaleDict;
+  if (locale === 'en') {
+    dict = (await import('./en')).en as LocaleDict;
+  } else {
+    dict = (await import('./ja-JP')).jaJP as LocaleDict;
+  }
+  loadedLocales[locale] = dict;
+  return dict;
+}
 
 function getSavedLocale(): Locale {
   try {
@@ -35,7 +48,8 @@ function translate(
   key: TranslationKey,
   params?: Record<string, string | number>,
 ): string {
-  const dict = LOCALES[locale];
+  // Fall back to zh-CN if the locale dict isn’t loaded yet
+  const dict = loadedLocales[locale] ?? loadedLocales['zh-CN']!;
   let str: string = dict[key] ?? key;
   if (params) {
     for (const [k, v] of Object.entries(params)) {
@@ -43,6 +57,13 @@ function translate(
     }
   }
   return str;
+}
+
+// Pre-load the user’s detected locale in the background so it’s ready
+// before the first setLocale call or t() invocation.
+const _detectedLocale = getSavedLocale();
+if (_detectedLocale !== 'zh-CN') {
+  fetchLocale(_detectedLocale).catch(() => {});
 }
 
 // ── Standalone translator (for non-React code) ──────────────────────────────
@@ -76,8 +97,17 @@ export function useI18nProvider(): I18nContext {
   const [locale, setLocaleState] = useState<Locale>(getSavedLocale);
 
   const setLocale = useCallback((next: Locale) => {
-    setLocaleState(next);
-    saveLocale(next);
+    // Ensure the locale dict is loaded before switching UI
+    fetchLocale(next)
+      .then(() => {
+        setLocaleState(next);
+        saveLocale(next);
+      })
+      .catch(() => {
+        // On load failure, still switch (translate() falls back to zh-CN)
+        setLocaleState(next);
+        saveLocale(next);
+      });
   }, []);
 
   const t = useCallback(
