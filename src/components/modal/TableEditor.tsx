@@ -19,8 +19,6 @@ export function TableEditor({ table, onConfirm, onCancel }: TableEditorProps) {
   const modalRef = useRef<HTMLDivElement>(null);
 
   const colCount = Math.max(headers[0]?.length ?? 0, ...rows.map((r) => r.length), alignment.length);
-
-  // Ensure consistent column count
   const ensureCols = useCallback((arr: string[][], cols: number) => {
     return arr.map((row) => {
       const r = [...row];
@@ -118,8 +116,6 @@ export function TableEditor({ table, onConfirm, onCancel }: TableEditorProps) {
     onConfirm(serializeTable(data));
   }, [headers, rows, alignment, table.rawStart, table.rawEnd, onConfirm, ensureCols]);
 
-  const currentColCount = Math.max(headers[0]?.length ?? 0, ...rows.map((r) => r.length), alignment.length);
-
   // Render alignment icon
   const AlignIcon = ({ align }: { align: Alignment }) => {
     switch (align) {
@@ -153,7 +149,7 @@ export function TableEditor({ table, onConfirm, onCancel }: TableEditorProps) {
             <button className="toolbar-btn" onClick={addCol} title={t('table.addCol')}>
               <Plus size={14} /> {t('table.addCol')}
             </button>
-            <button className="toolbar-btn" onClick={() => currentColCount > 0 && removeCol(currentColCount - 1)} disabled={currentColCount === 0} title={t('table.deleteCol')}>
+            <button className="toolbar-btn" onClick={() => colCount > 0 && removeCol(colCount - 1)} disabled={colCount === 0} title={t('table.deleteCol')}>
               <Trash2 size={14} /> {t('table.deleteCol')}
             </button>
           </div>
@@ -165,7 +161,7 @@ export function TableEditor({ table, onConfirm, onCancel }: TableEditorProps) {
             <thead>
               <tr>
                 <th className="col-actions-header"></th>
-                {Array.from({ length: currentColCount }).map((_, ci) => (
+                {Array.from({ length: colCount }).map((_, ci) => (
                   <th key={`h-${ci}`} className="editor-th">
                     <input
                       className="editor-cell-input"
@@ -196,7 +192,7 @@ export function TableEditor({ table, onConfirm, onCancel }: TableEditorProps) {
                       <Trash2 size={12} />
                     </button>
                   </td>
-                  {Array.from({ length: currentColCount }).map((_, ci) => (
+                  {Array.from({ length: colCount }).map((_, ci) => (
                     <td key={`c-${ri}-${ci}`}>
                       <textarea
                         className="editor-cell-input editor-textarea"
@@ -211,7 +207,7 @@ export function TableEditor({ table, onConfirm, onCancel }: TableEditorProps) {
               ))}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={currentColCount + 1} className="empty-table-hint">
+                  <td colSpan={colCount + 1} className="empty-table-hint">
                     {t('table.empty')}
                   </td>
                 </tr>

@@ -137,6 +137,53 @@ describe('useFileOps', () => {
       // Should not throw
       expect(mockOpenFileInTab).not.toHaveBeenCalled();
     });
+
+    it('应跳过文件大小检查当命令不存在（get_file_size unavailable）', async () => {
+      const { open } = await import('@tauri-apps/plugin-dialog');
+      const { invoke } = await import('@tauri-apps/api/core');
+
+      vi.mocked(open).mockResolvedValue('/path/file.md');
+      // Tauri 命令不存在时抛出包含 "not found" 的错误
+      vi.mocked(invoke).mockImplementation((cmd: string) => {
+        if (cmd === 'get_file_size') throw new Error('command not found: get_file_size');
+        return Promise.resolve(undefined);
+      });
+
+      const { result } = renderFileOps();
+
+      await act(async () => {
+        await result.current.handleOpenFile();
+      });
+
+      // 命令不存在时应继续打开文件，不因此中断
+      expect(mockOpenFileInTab).toHaveBeenCalledWith('/path/file.md');
+    });
+
+    it('get_file_size 返回 IO 错误时应打印警告并继续', async () => {
+      const { open } = await import('@tauri-apps/plugin-dialog');
+      const { invoke } = await import('@tauri-apps/api/core');
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      vi.mocked(open).mockResolvedValue('/path/file.md');
+      vi.mocked(invoke).mockImplementation((cmd: string) => {
+        if (cmd === 'get_file_size') throw new Error('Permission denied');
+        return Promise.resolve(undefined);
+      });
+
+      const { result } = renderFileOps();
+
+      await act(async () => {
+        await result.current.handleOpenFile();
+      });
+
+      // 非命令缺失的错误应打 warn，并仍继续打开文件
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('[useFileOps]'),
+        expect.stringContaining('Permission denied'),
+      );
+      expect(mockOpenFileInTab).toHaveBeenCalledWith('/path/file.md');
+      warnSpy.mockRestore();
+    });
   });
 
   describe('handleSaveFile', () => {

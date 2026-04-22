@@ -47,7 +47,14 @@ export function useFileOps({ getActiveTab, tabs, resolveTabDoc, openFileInTab, m
             );
             if (!proceed) return;
           }
-        } catch { /* get_file_size not available, proceed */ }
+        } catch (err) {
+          const sizeErrMsg = toErrorMessage(err);
+          // Silently skip only when the command doesn't exist (feature not yet compiled in).
+          // All other errors (IO, permission) are unexpected — log them for diagnostics.
+          if (!sizeErrMsg.toLowerCase().includes('not found') && !sizeErrMsg.toLowerCase().includes('command')) {
+            console.warn('[useFileOps] get_file_size failed:', sizeErrMsg);
+          }
+        }
         await openFileInTab(p);
       }
     } catch (err) {

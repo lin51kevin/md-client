@@ -6,6 +6,7 @@ mod export_docx;
 mod git;
 mod commands;
 mod context_menu;
+mod search;
 pub use commands::editor_tools;
 
 use export_pdf::export_pdf;
@@ -49,7 +50,7 @@ fn reveal_in_explorer(path: String) -> Result<(), String> {
 /// Read a file as text, automatically detecting encoding.
 /// Tries UTF-8 first; on failure uses chardetng to detect encoding
 /// (handles GBK, GB18030, Shift-JIS, etc.) and converts to UTF-8.
-fn read_text_auto_encoding(path: &str) -> Result<String, String> {
+pub(crate) fn read_text_auto_encoding(path: &str) -> Result<String, String> {
     let bytes = std::fs::read(path).map_err(|e| e.to_string())?;
 
     // Fast path: valid UTF-8
@@ -78,7 +79,7 @@ fn read_text_auto_encoding(path: &str) -> Result<String, String> {
 ///   - Paths containing `..` segments (directory traversal)
 ///   - Known OS system directories (Windows: System32, etc.; Unix: /etc, /usr, etc.)
 ///   - Empty paths
-fn validate_user_path(path: &str) -> Result<(), String> {
+pub(crate) fn validate_user_path(path: &str) -> Result<(), String> {
     if path.is_empty() {
         return Err("路径不能为空".to_string());
     }
@@ -260,6 +261,49 @@ struct WriteCheckError {
     expected_hash: String,
 }
 
+/// Inner implementation for write_file_text_with_check (testable without Tauri runtime).
+fn write_file_text_with_check_impl(
+    path: &str,
+    content: &str,
+    expected_hash: &str,
+) -> Result<String, WriteCheckError> {
+    use md5::{Digest, Md5};
+
+    validate_user_path(path).map_err(|_e| WriteCheckError {
+        kind: "PathError".to_string(),
+        disk_hash: String::new(),
+        expected_hash: String::new(),
+    })?;
+
+    if let Ok(disk_bytes) = std::fs::read(path) {
+        let mut hasher = Md5::new();
+        hasher.update(&disk_bytes);
+        let disk_hash = format!("{:x}", hasher.finalize());
+        if disk_hash != expected_hash {
+            return Err(WriteCheckError {
+                kind: "ExternalModified".to_string(),
+                disk_hash,
+                expected_hash: expected_hash.to_string(),
+            });
+        }
+    }
+    // Hash matches or file doesn't exist — proceed with write.
+    // Create parent directories if they don't exist.
+    if let Some(parent) = std::path::Path::new(path).parent() {
+        std::fs::create_dir_all(parent).map_err(|_| WriteCheckError {
+            kind: "IoError".to_string(),
+            disk_hash: String::new(),
+            expected_hash: String::new(),
+        })?;
+    }
+    std::fs::write(path, content.as_bytes()).map_err(|_| WriteCheckError {
+        kind: "IoError".to_string(),
+        disk_hash: String::new(),
+        expected_hash: String::new(),
+    })?;
+    Ok(compute_content_hash(content))
+}
+
 /// Write text content to a file, but first verify the on-disk content hash matches
 /// `expected_hash`.  If the file doesn't exist (new file) the write proceeds normally.
 /// Returns an error with kind "ExternalModified" when hashes differ.
@@ -269,36 +313,7 @@ fn write_file_text_with_check(
     content: String,
     expected_hash: String,
 ) -> Result<String, WriteCheckError> {
-    use md5::{Digest, Md5};
-
-    if let Ok(disk_bytes) = std::fs::read(&path) {
-        let mut hasher = Md5::new();
-        hasher.update(&disk_bytes);
-        let disk_hash = format!("{:x}", hasher.finalize());
-        if disk_hash != expected_hash {
-            return Err(WriteCheckError {
-                kind: "ExternalModified".to_string(),
-                disk_hash,
-                expected_hash,
-            });
-        }
-    }
-    // Hash matches or file doesn't exist — proceed with write.
-    // Create parent directories if they don't exist.
-    if let Some(parent) = std::path::Path::new(&path).parent() {
-        std::fs::create_dir_all(parent).map_err(|e| WriteCheckError {
-            kind: "IoError".to_string(),
-            disk_hash: String::new(),
-            expected_hash: String::new(),
-        })?;
-    }
-    std::fs::write(&path, content.as_bytes()).map_err(|e| WriteCheckError {
-        kind: "IoError".to_string(),
-        disk_hash: String::new(),
-        expected_hash: String::new(),
-    })?;
-    // Return the new hash of written content.
-    Ok(compute_content_hash(&content))
+    write_file_text_with_check_impl(&path, &content, &expected_hash)
 }
 
 /// Write text content to a file path.
@@ -451,321 +466,6 @@ async fn read_dir_recursive(path: String, depth: Option<u32>) -> Result<DirEntry
     let path = path.clone();
     tauri::async_runtime::spawn_blocking(move || {
         read_dir_recursive_impl(&path, depth)
-    })
-    .await
-    .map_err(|e| e.to_string())?
-}
-
-/// Cross-file search result.
-#[derive(serde::Serialize, Clone)]
-struct SearchResult {
-    file_path: String,
-    file_name: String,
-    line_number: u32,
-    line_content: String,
-    match_start: usize,
-    match_end: usize,
-    context_before: Option<String>,
-    context_after: Option<String>,
-}
-
-fn build_search_regex(
-    query: &str,
-    case_sensitive: bool,
-    use_regex: bool,
-    whole_word: bool,
-) -> Result<Option<regex::Regex>, String> {
-    if !use_regex && !whole_word {
-        return Ok(None);
-    }
-
-    let source = if use_regex {
-        query.to_string()
-    } else {
-        regex::escape(query)
-    };
-
-    let pattern = if whole_word {
-        format!(r"\b(?:{})\b", source)
-    } else {
-        source
-    };
-
-    regex::RegexBuilder::new(&pattern)
-        .case_insensitive(!case_sensitive)
-        .build()
-        .map(Some)
-        .map_err(|e| format!("正则表达式错误: {}", e))
-}
-
-/// Check if a path has a supported text file extension.
-fn is_text_file(path: &std::path::Path) -> bool {
-    path.extension()
-        .and_then(|e| e.to_str())
-        .map(|s| matches!(s.to_lowercase().as_str(), "md" | "markdown" | "txt"))
-        .unwrap_or(false)
-}
-
-/// Recursively collect all supported text files in a directory.
-fn collect_files(dir: &std::path::Path) -> Vec<std::path::PathBuf> {
-    let mut files = Vec::new();
-    if let Ok(entries) = std::fs::read_dir(dir) {
-        for entry in entries.flatten() {
-            let p = entry.path();
-            if p.file_name()
-                .and_then(|n| n.to_str())
-                .map(|s| s.starts_with('.'))
-                .unwrap_or(false)
-            {
-                continue;
-            }
-            if p.is_dir() {
-                files.extend(collect_files(&p));
-            } else if p.is_file() && is_text_file(&p) {
-                files.push(p);
-            }
-        }
-    }
-    files
-}
-
-/// Implementation for search_files (runs on a blocking thread).
-fn search_files_impl(
-    directory: &str,
-    query: &str,
-    case_sensitive: bool,
-    use_regex: bool,
-    whole_word: bool,
-) -> Result<Vec<SearchResult>, String> {
-    if query.is_empty() {
-        return Ok(Vec::new());
-    }
-
-    const MAX_RESULTS: usize = 200;
-    let mut results = Vec::new();
-
-    let dir_path = std::path::Path::new(directory);
-    if !dir_path.exists() || !dir_path.is_dir() {
-        return Err(format!("目录不存在或不是目录: {}", directory));
-    }
-
-    let files = collect_files(dir_path);
-
-    let regex = build_search_regex(query, case_sensitive, use_regex, whole_word)?;
-
-    let pattern = if case_sensitive { query.to_string() } else { query.to_lowercase() };
-
-    'outer: for filepath in files {
-        if results.len() >= MAX_RESULTS {
-            break;
-        }
-
-        match read_text_auto_encoding(&filepath.to_string_lossy()) {
-            Ok(content) => {
-                let fname = filepath.file_name()
-                    .and_then(|n| n.to_str())
-                    .unwrap_or("?")
-                    .to_string();
-                let fpath = filepath.to_string_lossy().to_string();
-                let all_lines: Vec<&str> = content.lines().collect();
-
-                for line_idx in 0..all_lines.len() {
-                    let line = all_lines[line_idx];
-                    if results.len() >= MAX_RESULTS {
-                        break 'outer;
-                    }
-
-                    let found = if let Some(ref r) = regex {
-                        r.find(line).is_some()
-                    } else if case_sensitive {
-                        line.contains(&pattern.as_str())
-                    } else {
-                        line.to_lowercase().contains(&pattern)
-                    };
-
-                    if found {
-                        let (ms, me) = if let Some(ref r) = regex {
-                            if let Some(m) = r.find(line) {
-                                (m.start(), m.end())
-                            } else { (0, 0) }
-                        } else if case_sensitive {
-                            let pos = line.find(&pattern).unwrap_or(0);
-                            (pos, pos + pattern.len())
-                        } else {
-                            let lower = line.to_lowercase();
-                            let pos = lower.find(&pattern).unwrap_or(0);
-                            (pos, pos + pattern.len())
-                        };
-
-                        results.push(SearchResult {
-                            file_path: fpath.clone(),
-                            file_name: fname.clone(),
-                            line_number: (line_idx + 1) as u32,
-                            line_content: line.to_string(),
-                            match_start: ms,
-                            match_end: me,
-                            context_before: if line_idx > 0 { Some(all_lines[line_idx - 1].to_string()) } else { None },
-                            context_after: if line_idx + 1 < all_lines.len() { Some(all_lines[line_idx + 1].to_string()) } else { None },
-                        });
-                    }
-                }
-            }
-            Err(_) => { /* skip unreadable files */ }
-        }
-    }
-
-    Ok(results)
-}
-
-/// Search for text across all .md/.markdown/.txt files in a directory (recursive).
-#[tauri::command]
-async fn search_files(
-    directory: String,
-    query: String,
-    case_sensitive: bool,
-    use_regex: bool,
-    whole_word: bool,
-) -> Result<Vec<SearchResult>, String> {
-    validate_user_path(&directory)?;
-    let directory = directory.clone();
-    let query = query.clone();
-    tauri::async_runtime::spawn_blocking(move || {
-        search_files_impl(&directory, &query, case_sensitive, use_regex, whole_word)
-    })
-    .await
-    .map_err(|e| e.to_string())?
-}
-
-#[derive(serde::Serialize)]
-struct ReplaceInFilesResult {
-    replaced_count: u32,
-    files_modified: Vec<String>,
-}
-
-/// Implementation for replace_in_files (runs on a blocking thread).
-fn replace_in_files_impl(
-    directory: &str,
-    query: &str,
-    replacement: &str,
-    case_sensitive: bool,
-    use_regex: bool,
-    whole_word: bool,
-) -> Result<ReplaceInFilesResult, String> {
-    if query.is_empty() {
-        return Ok(ReplaceInFilesResult { replaced_count: 0, files_modified: vec![] });
-    }
-
-    let dir_path = std::path::Path::new(directory);
-    if !dir_path.exists() || !dir_path.is_dir() {
-        return Err(format!("目录不存在或不是目录: {}", directory));
-    }
-
-    let re = build_search_regex(query, case_sensitive, use_regex, whole_word)?;
-
-    let pattern_lower = query.to_lowercase();
-    let mut replaced_count = 0u32;
-    let mut files_modified = Vec::new();
-
-    for filepath in collect_files(dir_path) {
-        let filepath_str = filepath.to_string_lossy().to_string();
-        let content = match read_text_auto_encoding(&filepath_str) {
-            Ok(c) => c,
-            Err(_) => continue,
-        };
-
-        let (new_content, count) = if let Some(ref r) = re {
-            let count = r.find_iter(&content).count() as u32;
-            if count == 0 { continue; }
-            (r.replace_all(&content, replacement).to_string(), count)
-        } else {
-            let needle = if case_sensitive { query } else { &pattern_lower };
-            let haystack = if case_sensitive { content.clone() } else { content.to_lowercase() };
-            let count = haystack.matches(needle).count() as u32;
-            if count == 0 { continue; }
-            let new = if case_sensitive {
-                content.replace(needle, replacement)
-            } else {
-                // Case-insensitive plain text replacement — use char-boundary-safe scanning.
-                // to_lowercase() can change byte lengths (e.g. 'İ' → 'i\u{307}'), so we
-                // cannot assume byte offsets in `content` correspond 1:1 with `lower`.
-                // Instead, find matches in the lowered string with str::find and track
-                // original-content offsets by preserving char boundary alignment.
-                let lower = content.to_lowercase();
-                let needle = &pattern_lower;
-                let mut result = String::with_capacity(content.len());
-                let mut lower_start = 0usize;
-                let mut orig_start = 0usize;
-
-                // Build a mapping: for each byte offset in `lower`, find the
-                // corresponding byte offset in `content` by walking chars in parallel.
-                let orig_chars: Vec<(usize, char)> = content.char_indices().collect();
-                let lower_chars: Vec<(usize, char)> = lower.char_indices().collect();
-                // Map from char index → (orig_byte_offset, lower_byte_offset)
-                // Both strings have the same number of chars.
-                let char_count = orig_chars.len();
-
-                // Find matches in the lowered string
-                let mut char_idx = 0usize;
-                loop {
-                    if let Some(match_pos) = lower[lower_start..].find(needle.as_str()) {
-                        let lower_match = lower_start + match_pos;
-                        let lower_match_end = lower_match + needle.len();
-
-                        // Find char index for lower_match and lower_match_end
-                        while char_idx < char_count && lower_chars[char_idx].0 < lower_match {
-                            char_idx += 1;
-                        }
-                        let orig_match = orig_chars[char_idx].0;
-
-                        let mut end_char_idx = char_idx;
-                        while end_char_idx < char_count && lower_chars[end_char_idx].0 < lower_match_end {
-                            end_char_idx += 1;
-                        }
-                        let orig_match_end = if end_char_idx < char_count {
-                            orig_chars[end_char_idx].0
-                        } else {
-                            content.len()
-                        };
-
-                        result.push_str(&content[orig_start..orig_match]);
-                        result.push_str(replacement);
-                        orig_start = orig_match_end;
-                        lower_start = lower_match_end;
-                    } else {
-                        break;
-                    }
-                }
-                result.push_str(&content[orig_start..]);
-                result
-            };
-            (new, count)
-        };
-
-        std::fs::write(&filepath, new_content.as_bytes())
-            .map_err(|e| format!("写入文件失败 {}: {}", filepath.display(), e))?;
-        replaced_count += count;
-        files_modified.push(filepath_str);
-    }
-
-    Ok(ReplaceInFilesResult { replaced_count, files_modified })
-}
-
-/// Replace text across all .md/.markdown/.txt files in a directory (recursive).
-#[tauri::command]
-async fn replace_in_files(
-    directory: String,
-    query: String,
-    replacement: String,
-    case_sensitive: bool,
-    use_regex: bool,
-    whole_word: bool,
-) -> Result<ReplaceInFilesResult, String> {
-    validate_user_path(&directory)?;
-    let directory = directory.clone();
-    let query = query.clone();
-    let replacement = replacement.clone();
-    tauri::async_runtime::spawn_blocking(move || {
-        replace_in_files_impl(&directory, &query, &replacement, case_sensitive, use_regex, whole_word)
     })
     .await
     .map_err(|e| e.to_string())?
@@ -965,7 +665,7 @@ pub fn run() {
                 }
             }
         }))
-        .invoke_handler(tauri::generate_handler![greet, get_open_file, export_document, restore_session_files, read_file_text, read_file_bytes, write_file_text, write_file_text_with_check, compute_content_hash, write_image_bytes, create_file, delete_file, rename_file, list_directory, read_dir_recursive, search_files, replace_in_files, reveal_in_explorer, is_directory, restart_app, show_unsaved_dialog, context_menu::register_context_menu, context_menu::unregister_context_menu, git::git_get_repo, git::git_get_status, git::git_diff, git::git_commit, git::git_pull, git::git_push, git::git_stage, git::git_unstage, git::git_restore, editor_tools::tool_search, editor_tools::tool_replace, editor_tools::tool_get_lines, editor_tools::tool_replace_lines, editor_tools::tool_insert, editor_tools::tool_delete_lines, editor_tools::tool_get_outline, editor_tools::tool_regex_replace])
+        .invoke_handler(tauri::generate_handler![greet, get_open_file, export_document, restore_session_files, read_file_text, read_file_bytes, write_file_text, write_file_text_with_check, compute_content_hash, write_image_bytes, create_file, delete_file, rename_file, list_directory, read_dir_recursive, search::search_files, search::replace_in_files, reveal_in_explorer, is_directory, restart_app, show_unsaved_dialog, context_menu::register_context_menu, context_menu::unregister_context_menu, git::git_get_repo, git::git_get_status, git::git_diff, git::git_commit, git::git_pull, git::git_push, git::git_stage, git::git_unstage, git::git_restore, editor_tools::tool_search, editor_tools::tool_replace, editor_tools::tool_get_lines, editor_tools::tool_replace_lines, editor_tools::tool_insert, editor_tools::tool_delete_lines, editor_tools::tool_get_outline, editor_tools::tool_regex_replace])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
@@ -1019,5 +719,69 @@ mod tests {
     fn test_restore_session_files_empty_input() {
         let results = restore_session_files_impl(vec![]);
         assert!(results.is_empty());
+    }
+
+    // ── write_file_text_with_check_impl tests ─────────────────────────
+
+    #[test]
+    fn test_write_check_rejects_path_traversal() {
+        let result = write_file_text_with_check_impl(
+            "/some/path/../etc/passwd",
+            "malicious",
+            "anyhash",
+        );
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert_eq!(err.kind, "PathError");
+    }
+
+    #[test]
+    fn test_write_check_rejects_empty_path() {
+        let result = write_file_text_with_check_impl("", "content", "hash");
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err().kind, "PathError");
+    }
+
+    #[test]
+    fn test_write_check_writes_new_file() {
+        let dir = std::env::temp_dir();
+        let path = dir.join("marklite_test_write_check_new.md");
+        let _ = std::fs::remove_file(&path);
+        let path_str = path.to_string_lossy().to_string();
+
+        let result = write_file_text_with_check_impl(&path_str, "hello", "any");
+        assert!(result.is_ok(), "New file should be written without hash check");
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "hello");
+
+        let _ = std::fs::remove_file(&path);
+    }
+
+    #[test]
+    fn test_write_check_detects_external_modification() {
+        let path = tmp_file("write_check_ext.md", "original");
+
+        // Hash of "original"
+        let expected_hash = compute_content_hash("original");
+        // Simulate external modification
+        std::fs::write(&path, "externally changed").unwrap();
+
+        let result = write_file_text_with_check_impl(&path, "new content", &expected_hash);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert_eq!(err.kind, "ExternalModified");
+
+        let _ = std::fs::remove_file(&path);
+    }
+
+    #[test]
+    fn test_write_check_succeeds_when_hash_matches() {
+        let path = tmp_file("write_check_ok.md", "current");
+        let expected_hash = compute_content_hash("current");
+
+        let result = write_file_text_with_check_impl(&path, "updated", &expected_hash);
+        assert!(result.is_ok());
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "updated");
+
+        let _ = std::fs::remove_file(&path);
     }
 }

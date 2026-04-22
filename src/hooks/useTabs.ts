@@ -351,7 +351,7 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
     // If the only tab is an untouched Untitled, replace it instead of adding alongside
     const current = tabsRef.current;
     const isPristineReplace = current.length === 1 && !current[0].filePath && !current[0].isDirty;
-    const tabId = isPristineReplace ? genTabId() : genTabId();
+    const tabId = genTabId();
     docsRef.current[tabId] = content;
     const newTab: Tab = { id: tabId, filePath, doc: content, isDirty: false, displayName };
     if (isPristineReplace) {

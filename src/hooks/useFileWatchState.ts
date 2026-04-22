@@ -5,7 +5,7 @@
  * interaction between useFileWatcher callbacks, auto-reload preference,
  * and tab state mutations. Extracted from App.tsx to reduce inline logic.
  */
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import type { Tab } from '../types';
 import { useFileWatcher } from './useFileWatcher';
@@ -27,11 +27,13 @@ export interface FileChangeToast {
 
 export function useFileWatchState({ tabs, enabled, autoReload, updateTab }: FileWatchStateParams) {
   const [fileChangeToast, setFileChangeToast] = useState<FileChangeToast | null>(null);
+  const tabsRef = useRef(tabs);
+  tabsRef.current = tabs;
 
   const handleReloadFile = useCallback(async (tabId: string, filePath: string) => {
     try {
       const content = await invoke<string>('read_file_text', { path: filePath });
-      const tab = tabs.find(t => t.id === tabId);
+      const tab = tabsRef.current.find(t => t.id === tabId);
       if (tab) {
         updateTab(tabId, { doc: content, isDirty: false });
         // Update hash after reload so subsequent saves compare against fresh disk state
@@ -40,7 +42,7 @@ export function useFileWatchState({ tabs, enabled, autoReload, updateTab }: File
     } catch (err) {
       console.warn('[useFileWatchState] reload failed:', err);
     }
-  }, [tabs, updateTab]);
+  }, [updateTab]);
 
   useFileWatcher({
     tabs,
