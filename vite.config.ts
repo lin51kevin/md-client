@@ -135,10 +135,20 @@ export default defineConfig(async () => ({
 
   // Redirect @codemirror/language-data to our curated subset (~20 languages).
   // @milkdown/crepe imports it transitively; this avoids bundling 89+ grammars.
+  // highlight.js alias uses a regex anchored at ^ and $ to only match the bare
+  // "highlight.js" import, NOT subpath imports like "highlight.js/lib/languages/arduino"
+  // (which lowlight uses and must resolve to the real package).
   resolve: {
-    alias: {
-      '@codemirror/language-data': path.resolve(import.meta.dirname, 'src/lib/cm/cm-languages.ts'),
-    },
+    alias: [
+      {
+        find: '@codemirror/language-data',
+        replacement: path.resolve(import.meta.dirname, 'src/lib/cm/cm-languages.ts'),
+      },
+      {
+        find: /^highlight\.js$/,
+        replacement: path.resolve(import.meta.dirname, 'src/lib/highlight-subset.ts'),
+      },
+    ],
   },
 
   // Milkdown Crepe bundles Vue-based UI internally; suppress esm-bundler warnings
