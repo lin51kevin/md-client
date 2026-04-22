@@ -76,6 +76,12 @@ export function AppContextMenus({
         break;
       case 'image':
         break;
+      case 'insertTable':
+        document.dispatchEvent(new CustomEvent('milkdown-preview-insert', { detail: { action: 'insert-table' } }));
+        break;
+      case 'insertImage':
+        document.dispatchEvent(new CustomEvent('milkdown-preview-insert', { detail: { action: 'insert-image' } }));
+        break;
       default: {
         const aiCommand = AI_ACTION_MAP[action];
         if (aiCommand) {

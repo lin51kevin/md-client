@@ -5,7 +5,7 @@
  * Provides copy, select-all, and view-source actions appropriate for the preview context.
  */
 import { useEffect, useRef } from 'react';
-import { Copy, MousePointerClick, ExternalLink, FileCode, Sparkles, ArrowLeftRight, Globe, FileText } from 'lucide-react';
+import { Copy, MousePointerClick, ExternalLink, FileCode, Sparkles, ArrowLeftRight, Globe, FileText, Table2, ImagePlus } from 'lucide-react';
 import { useI18n } from '../../i18n';
 import type { TranslationKey } from '../../i18n/zh-CN';
 
@@ -60,6 +60,12 @@ function buildMenuItems(
     divider: true,
   });
 
+  // Insert operations (always available)
+  const insertItems: MenuItem[] = [
+    { id: 'insertTable', label: '插入表格', icon: <Table2 size={14} strokeWidth={1.8} /> },
+    { id: 'insertImage', label: '插入图片', icon: <ImagePlus size={14} strokeWidth={1.8} /> },
+  ];
+
   // AI operations
   const aiItems: MenuItem[] = [
     { id: 'aiPolish', label: t('ctx.aiPolish'), icon: <Sparkles size={14} strokeWidth={1.8} />, divider: true, disabled: !hasSelection },
@@ -67,7 +73,7 @@ function buildMenuItems(
     { id: 'aiTranslate', label: t('ctx.aiTranslate'), icon: <Globe size={14} strokeWidth={1.8} />, disabled: !hasSelection },
     { id: 'aiSummarize', label: t('ctx.aiSummarize'), icon: <FileText size={14} strokeWidth={1.8} />, disabled: !hasSelection },
   ];
-  items.push(...aiItems);
+  items.push(...insertItems, ...aiItems);
 
   return items;
 }

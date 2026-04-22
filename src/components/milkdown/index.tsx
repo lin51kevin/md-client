@@ -339,6 +339,76 @@ function MilkdownEditor({
     return () => container.removeEventListener('click', handler);
   }, [containerRef, onWikiLinkNavigate, onOpenFile]);
 
+  // ── Context menu: handle insert-table and insert-image events ─────────
+  useEffect(() => {
+    const handler = async (e: Event) => {
+      const { action } = (e as CustomEvent<{ action: 'insert-table' | 'insert-image' }>).detail;
+      const crepe = crepeRef.current;
+      if (!crepe) return;
+
+      if (action === 'insert-table') {
+        hasUserInteractedRef.current = true;
+        try {
+          const { insertTableCommand } = await import('@milkdown/preset-gfm');
+          const commands = crepe.editor.ctx.get(commandsCtx);
+          commands.call(insertTableCommand.key, { row: 3, col: 3 });
+        } catch (err) {
+          console.warn('[milkdown] insertTableCommand failed:', err);
+        }
+        return;
+      }
+
+      if (action === 'insert-image') {
+        try {
+          const { open } = await import('@tauri-apps/plugin-dialog');
+          const selected = await open({
+            multiple: false,
+            filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp'] }],
+          });
+          if (!selected) return;
+
+          const selectedPath = selected as string;
+          const ext = selectedPath.split('.').pop()?.toLowerCase() ?? 'png';
+          const { invoke } = await import('@tauri-apps/api/core');
+          const imageBytes = await invoke<number[]>('read_file_bytes', { path: selectedPath });
+          const data = new Uint8Array(imageBytes);
+          const { generateImageFileName, getImageSaveDir, buildImageMarkdownPath } = await import('../../lib/utils');
+
+          hasUserInteractedRef.current = true;
+
+          const fileName = generateImageFileName(ext);
+          const saveDir = getImageSaveDir();
+          let actualDir = saveDir;
+
+          if (!actualDir && filePath) {
+            const sepIdx = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'));
+            actualDir = filePath.substring(0, sepIdx + 1) + 'assets/images';
+          }
+
+          if (!actualDir) {
+            const mdText = `\n![](${selectedPath})\n`;
+            const view = crepe.editor.ctx.get(editorViewCtx);
+            view.dispatch(view.state.tr.insertText(mdText));
+            return;
+          }
+
+          const savePath = `${actualDir}/${fileName}`;
+          await invoke('write_image_bytes', { path: savePath, data: Array.from(data) });
+
+          const mdPath = buildImageMarkdownPath(actualDir, fileName, filePath ?? undefined);
+          const mdText = `\n![](${mdPath})\n`;
+          const view = crepe.editor.ctx.get(editorViewCtx);
+          view.dispatch(view.state.tr.insertText(mdText));
+        } catch (err) {
+          console.warn('[milkdown] insert-image failed:', err);
+        }
+      }
+    };
+
+    document.addEventListener('milkdown-preview-insert', handler);
+    return () => document.removeEventListener('milkdown-preview-insert', handler);
+  }, [filePath]);
+
   // Sync external content changes → Milkdown.
   // Deps: only `body` (derived purely from `content`/`debouncedDoc`).
   // `get` is intentionally accessed via getRef.current so that an unstable
