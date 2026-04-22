@@ -41,7 +41,7 @@ describe('SearchPanel', () => {
   describe('打开面板', () => {
     it('visible=true 时显示搜索输入框', () => {
       render(<SearchPanel {...defaultProps} />);
-      expect(screen.getByPlaceholderText(/搜索/)).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(/查找/)).toBeInTheDocument();
     });
 
     it('显示搜索选项 checkbox', () => {
@@ -62,7 +62,7 @@ describe('SearchPanel', () => {
     it('输入 query 后按 Enter 触发搜索，结果显示匹配项', () => {
       render(<SearchPanel {...defaultProps} />);
       
-      const input = screen.getByPlaceholderText(/搜索/);
+      const input = screen.getByPlaceholderText(/查找/);
       fireEvent.change(input, { target: { value: 'Hello' } });
       fireEvent.keyDown(input, { key: 'Enter' });
       
@@ -74,7 +74,7 @@ describe('SearchPanel', () => {
     it('空 query 按 Enter 不报错', () => {
       render(<SearchPanel {...defaultProps} />);
       
-      const input = screen.getByPlaceholderText(/搜索/);
+      const input = screen.getByPlaceholderText(/查找/);
       fireEvent.keyDown(input, { key: 'Enter' });
       
       // Should show enter hint
@@ -84,7 +84,7 @@ describe('SearchPanel', () => {
     it('无匹配结果时显示无结果提示', () => {
       render(<SearchPanel {...defaultProps} />);
       
-      const input = screen.getByPlaceholderText(/搜索/);
+      const input = screen.getByPlaceholderText(/查找/);
       fireEvent.change(input, { target: { value: 'ZZZnotfound' } });
       fireEvent.keyDown(input, { key: 'Enter' });
       
@@ -129,7 +129,7 @@ describe('SearchPanel', () => {
       // First search in current file
       const { rerender } = render(<SearchPanel {...defaultProps} />);
       
-      const input = screen.getByPlaceholderText(/搜索/);
+      const input = screen.getByPlaceholderText(/查找/);
       fireEvent.change(input, { target: { value: 'Hello' } });
       fireEvent.keyDown(input, { key: 'Enter' });
       
@@ -168,7 +168,7 @@ describe('SearchPanel', () => {
       fireEvent.click(checkboxes[1]);
       fireEvent.click(checkboxes[3]);
 
-      const input = screen.getByPlaceholderText(/搜索/);
+      const input = screen.getByPlaceholderText(/查找/);
       fireEvent.change(input, { target: { value: 'Hello' } });
 
       act(() => {
@@ -191,7 +191,7 @@ describe('SearchPanel', () => {
     it('选中结果后替换按钮可用', async () => {
       render(<SearchPanel {...defaultProps} />);
       
-      const input = screen.getByPlaceholderText(/搜索/);
+      const input = screen.getByPlaceholderText(/查找/);
       fireEvent.change(input, { target: { value: 'Hello' } });
       fireEvent.keyDown(input, { key: 'Enter' });
 
@@ -224,7 +224,7 @@ describe('SearchPanel', () => {
       fireEvent.click(checkboxes[1]);
       fireEvent.click(checkboxes[3]);
 
-      fireEvent.change(screen.getByPlaceholderText(/搜索/), { target: { value: 'Hello' } });
+      fireEvent.change(screen.getByPlaceholderText(/查找/), { target: { value: 'Hello' } });
       fireEvent.change(screen.getByPlaceholderText(/替换/), { target: { value: 'Hi' } });
       fireEvent.click(screen.getByTitle(/全部替换/));
 
@@ -245,7 +245,7 @@ describe('SearchPanel', () => {
     it('按 Escape 调用 onClose', () => {
       render(<SearchPanel {...defaultProps} />);
       
-      const input = screen.getByPlaceholderText(/搜索/);
+      const input = screen.getByPlaceholderText(/查找/);
       fireEvent.keyDown(input, { key: 'Escape' });
       
       expect(defaultProps.onClose).toHaveBeenCalledTimes(1);
@@ -288,7 +288,7 @@ describe('SearchPanel', () => {
       fireEvent.click(checkboxes[3]); // crossFile
       
       // Type query
-      const input = screen.getByPlaceholderText(/搜索/);
+      const input = screen.getByPlaceholderText(/查找/);
       fireEvent.change(input, { target: { value: 'Hello' } });
       
       // Before 300ms, search should NOT be called yet
@@ -320,7 +320,7 @@ describe('SearchPanel', () => {
       const checkboxes = screen.getAllByRole('checkbox');
       fireEvent.click(checkboxes[3]);
       
-      const input = screen.getByPlaceholderText(/搜索/);
+      const input = screen.getByPlaceholderText(/查找/);
       
       // Type rapidly
       fireEvent.change(input, { target: { value: 'H' } });
@@ -352,7 +352,7 @@ describe('SearchPanel', () => {
       const checkboxes = screen.getAllByRole('checkbox');
       fireEvent.click(checkboxes[3]);
 
-      const input = screen.getByPlaceholderText(/搜索/);
+      const input = screen.getByPlaceholderText(/查找/);
       fireEvent.change(input, { target: { value: 'Hello' } });
 
       act(() => {
