@@ -9,6 +9,7 @@ import { escapeHtml } from '../utils/html-safety';
 import { toErrorMessage } from '../utils/errors';
 
 let mermaidInitialized = false;
+let currentMermaidTheme = '';
 /** Module-level counter ensures globally unique DOM IDs across repeated renderMermaid calls */
 let mermaidIdCounter = 0;
 
@@ -17,46 +18,136 @@ let mermaidIdCounter = 0;
  */
 export function resetMermaidInit(): void {
   mermaidInitialized = false;
+  currentMermaidTheme = '';
 }
 
 /**
- * 初始化 Mermaid（只执行一次）
+ * Detect current theme from CSS custom properties.
+ * Returns 'dark' if the document background is dark, 'default' otherwise.
+ */
+function detectTheme(): 'dark' | 'default' {
+  if (typeof document === 'undefined') return 'default';
+  const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg-primary').trim();
+  if (!bg) return 'default';
+  // Simple heuristic: if the background color is dark (luminance < 0.4), use dark theme
+  const el = document.createElement('div');
+  el.style.color = bg;
+  document.body.appendChild(el);
+  const computed = getComputedStyle(el).color;
+  document.body.removeChild(el);
+  // computed color is "rgb(r, g, b)" or "rgba(r, g, b, a)"
+  const match = computed.match(/(\d+)/g);
+  if (!match || match.length < 3) return 'default';
+  const [, r, g, b] = match.map(Number);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance < 0.45 ? 'dark' : 'default';
+}
+
+/**
+ * Get theme-appropriate mermaid config (colors, CSS).
+ */
+function getThemeConfig(theme: 'dark' | 'default') {
+  if (theme === 'dark') {
+    return {
+      theme: 'dark' as const,
+      themeVariables: {
+        primaryTextColor: '#e0e0e0',
+        primaryColor: '#2d4a6f',
+        primaryBorderColor: '#4a7ab5',
+        lineColor: '#7ab0e0',
+        secondaryColor: '#3d3d5c',
+        tertiaryColor: '#2a2a3c',
+        nodeTextColor: '#e0e0e0',
+        edgeLabelBackground: '#1e1e2e',
+        clusterBkg: '#2a2a3c',
+        clusterBorder: '#4a5568',
+      },
+      themeCSS: `
+        text, tspan { fill: #e0e0e0 !important; }
+        .nodeLabel, .edgeLabel, .label { color: #e0e0e0 !important; }
+        /* Make connection lines more visible in dark mode */
+        .flowchart-link, .edgePath path.path {
+          stroke-width: 2px !important;
+          stroke: #7ab0e0 !important;
+        }
+        .marker {
+          fill: #7ab0e0 !important;
+          stroke: #7ab0e0 !important;
+        }
+        /* Cluster borders */
+        .cluster rect {
+          stroke: #4a7ab5 !important;
+        }
+      `,
+    };
+  }
+  return {
+    theme: 'default' as const,
+    themeVariables: {
+      primaryTextColor: '#1f1f1f',
+      nodeTextColor: '#1f1f1f',
+      lineColor: '#555',
+      primaryColor: '#e8f4fd',
+      primaryBorderColor: '#1f77b4',
+      secondaryColor: '#f0f0f0',
+      tertiaryColor: '#fafafa',
+      clusterBkg: '#f0f4f8',
+      clusterBorder: '#1f77b4',
+    },
+    themeCSS: `
+      text, tspan { fill: #1f1f1f !important; }
+      .nodeLabel, .edgeLabel, .label { color: #1f1f1f !important; }
+      /* Enhance connection line visibility in light mode */
+      .flowchart-link, .edgePath path.path {
+        stroke-width: 1.8px !important;
+        stroke: #555 !important;
+      }
+      .marker {
+        fill: #555 !important;
+        stroke: #555 !important;
+      }
+      /* Cluster borders */
+      .cluster rect {
+        stroke: #1f77b4 !important;
+      }
+    `,
+  };
+}
+
+/**
+ * 初始化 Mermaid（只在主题变化时重新初始化）
  */
 export async function initMermaid(): Promise<typeof import('mermaid')> {
   const m = await import('mermaid');
-  if (!mermaidInitialized) {
-    // htmlLabels: false → 使用 SVG <text> 而非 <foreignObject>。
-    // <foreignObject> 的 HTML 内容在 Milkdown Crepe 的 DOMPurify + innerHTML
-    // 管道中会丢失，导致节点标签完全不可见。
-    //
-    // 必须同时设置顶层 htmlLabels 和 flowchart.htmlLabels：
-    // Mermaid 11.x 的 labelHelper 直接读 config.htmlLabels（顶层），
-    // 不经过 getEffectiveHtmlLabels()，因此光设 flowchart.htmlLabels 不够。
-    //
-    // themeCSS 注入到 SVG 内部 <style>（带 #svgId 作用域），
-    // 确保 text fill 不受外层 CSS currentColor 继承影响。
+
+  const detectedTheme = detectTheme();
+
+  // Re-initialize if theme changed
+  if (!mermaidInitialized || detectedTheme !== currentMermaidTheme) {
+    const config = getThemeConfig(detectedTheme);
+
     m.default.initialize({
       startOnLoad: false,
-      theme: 'default',
       securityLevel: 'strict',
       fontFamily: 'sans-serif',
       suppressErrorRendering: false,
       htmlLabels: false,
-      flowchart: { htmlLabels: false },
+      flowchart: { htmlLabels: false, curve: 'basis' },
       sequence: { useMaxWidth: false },
-      themeVariables: {
-        primaryTextColor: '#1f1f1f',
-        nodeTextColor: '#1f1f1f',
-        lineColor: '#333',
-      },
-      themeCSS: `
-        text, tspan { fill: #1f1f1f !important; }
-        .nodeLabel, .edgeLabel, .label { color: #1f1f1f !important; }
-      `,
+      ...config,
     });
     mermaidInitialized = true;
+    currentMermaidTheme = detectedTheme;
   }
   return m;
+}
+
+/**
+ * Re-initialize mermaid with the current theme (call when theme changes).
+ */
+export function reinitMermaid(): void {
+  mermaidInitialized = false;
+  currentMermaidTheme = '';
 }
 
 /**

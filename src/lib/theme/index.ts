@@ -89,6 +89,10 @@ export function applyTheme(theme: string): void {
 
   // 设置 color-scheme 以影响系统 UI 元素（滚动条等）
   document.documentElement.style.colorScheme = config.isDark ? 'dark' : 'light';
+
+  // Reset mermaid so it re-initializes with the new theme on next render
+  // (dynamic import to avoid circular dependency and keep mermaid lazy)
+  import('../markdown/mermaid').then(({ reinitMermaid }) => reinitMermaid()).catch(() => {});
 }
 
 /**
