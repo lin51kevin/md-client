@@ -127,7 +127,9 @@ describe('useTabs', () => {
         result.current.updateActiveDoc('# New Content');
       });
       
-      expect(result.current.tabs[0].doc).toBe('# New Content');
+      // updateActiveDoc stores content in docsRef (not tab state) for perf;
+      // getActiveTab() merges docsRef into the returned tab object.
+      expect(result.current.getActiveTab().doc).toBe('# New Content');
       expect(result.current.tabs[0].isDirty).toBe(true);
     });
 
@@ -152,7 +154,8 @@ describe('useTabs', () => {
         result.current.updateActiveDoc('Tab 2 content');
       });
       
-      const tab2Content = result.current.tabs[1]?.doc;
+      const tab2Id = result.current.tabs[1].id;
+      const tab2Content = result.current.resolveTabDoc(tab2Id);
       
       // Switch back to first tab
       act(() => {
@@ -164,8 +167,9 @@ describe('useTabs', () => {
         result.current.updateActiveDoc('Updated content');
       });
       
-      expect(result.current.tabs[0].doc).toBe('Updated content');
-      expect(result.current.tabs[1].doc).toBe(tab2Content);
+      // resolveTabDoc reads the live docsRef content for any tab
+      expect(result.current.resolveTabDoc(result.current.tabs[0].id)).toBe('Updated content');
+      expect(result.current.resolveTabDoc(tab2Id)).toBe(tab2Content);
     });
   });
 
@@ -343,7 +347,8 @@ describe('useTabs', () => {
 
       // After update, ref should reflect new dirty state
       expect(result.current.tabsRef.current[0].isDirty).toBe(true);
-      expect(result.current.tabsRef.current[0].doc).toBe('updated content');
+      // doc content lives in docsRef (perf optimization); use resolveTabDoc to read it
+      expect(result.current.resolveTabDoc(result.current.tabsRef.current[0].id)).toBe('updated content');
     });
 
     it('tabsRef 在新建标签后应同步更新', () => {

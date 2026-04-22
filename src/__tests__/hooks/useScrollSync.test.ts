@@ -35,13 +35,17 @@ describe('useScrollSync', () => {
 
     Object.defineProperty(previewEl, 'scrollHeight', { value: 800, configurable: true });
     Object.defineProperty(previewEl, 'clientHeight', { value: 200, configurable: true });
+    // Handler reads editorRef.current directly (ignores event), so set scroll props on the element
+    Object.defineProperty(editorEl, 'scrollHeight', { value: 500, configurable: true });
+    Object.defineProperty(editorEl, 'clientHeight', { value: 200, configurable: true });
+    Object.defineProperty(editorEl, 'scrollTop', { value: 150, writable: true, configurable: true });
 
     (result.current.editorRef as React.MutableRefObject<HTMLDivElement>).current = editorEl;
     (result.current.previewRef as React.MutableRefObject<HTMLDivElement>).current = previewEl;
 
     // pct = 150 / (500 - 200) = 0.5 → previewEl.scrollTop = 0.5 * (800 - 200) = 300
     const event = {
-      currentTarget: { scrollTop: 150, scrollHeight: 500, clientHeight: 200 },
+      currentTarget: editorEl,
     } as unknown as React.UIEvent<HTMLDivElement>;
     result.current.handleEditorScroll(event);
 
@@ -61,13 +65,17 @@ describe('useScrollSync', () => {
 
     Object.defineProperty(editorEl, 'scrollHeight', { value: 1000, configurable: true });
     Object.defineProperty(editorEl, 'clientHeight', { value: 400, configurable: true });
+    // Handler reads previewRef.current directly (ignores event), so set scroll props on the element
+    Object.defineProperty(previewEl, 'scrollHeight', { value: 300, configurable: true });
+    Object.defineProperty(previewEl, 'clientHeight', { value: 100, configurable: true });
+    Object.defineProperty(previewEl, 'scrollTop', { value: 60, writable: true, configurable: true });
 
     (result.current.editorRef as React.MutableRefObject<HTMLDivElement>).current = editorEl;
     (result.current.previewRef as React.MutableRefObject<HTMLDivElement>).current = previewEl;
 
     // pct = 60 / (300 - 100) = 0.3 → editorEl.scrollTop = 0.3 * (1000 - 400) = 180
     const event = {
-      currentTarget: { scrollTop: 60, scrollHeight: 300, clientHeight: 100 },
+      currentTarget: previewEl,
     } as unknown as React.UIEvent<HTMLDivElement>;
     result.current.handlePreviewScroll(event);
 

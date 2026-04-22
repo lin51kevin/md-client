@@ -70,6 +70,7 @@ describe('useFileOps', () => {
     return renderHook(() => useFileOps({
       getActiveTab: mockGetActiveTab,
       tabs: mockTabs,
+      resolveTabDoc: (tabId: string) => mockTabs.find(t => t.id === tabId)?.doc ?? '',
       openFileInTab: mockOpenFileInTab,
       markSaved: mockMarkSaved,
       markSavedAs: mockMarkSavedAs,
