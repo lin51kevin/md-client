@@ -6,7 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [v0.10.1] - 2026-04-23
+
+
+### Changed
+
+- fix code quality issues and extract search module (`ff643c5`)
+
+
 ## [v0.10.0] - 2026-04-22
+
+
+### Changed
+
+- bump version to v0.10.0 (`570f93b`)
+- remove completed one-time import migration script (`ef7fd51`)
+- add __BUILD_TIME__ constant and bundle size visualizer (`d707907`)
+
 
 
 ### Added
@@ -29,13 +45,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - resolve false 'external modification' toast on Ctrl+S save (`ede776e`)
 - support image paste and drag-drop in Milkdown WYSIWYG mode (`47fc8e7`)
 - auto-search on input, remove press-Enter hints (`b3dbcee`)
-
-
-
-### Changed
-
-- remove completed one-time import migration script (`ef7fd51`)
-- add __BUILD_TIME__ constant and bundle size visualizer (`d707907`)
 
 
 
