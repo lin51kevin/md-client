@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { message } from '@tauri-apps/plugin-dialog';
 import { Tab } from '../types';
@@ -28,11 +28,17 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
     { id: INITIAL_TAB_ID, filePath: null, doc: DEFAULT_MARKDOWN, isDirty: false },
   ]);
   const openingPaths = useRef(new Set<string>());
+  const docsRef = useRef<Record<string, string>>({ [INITIAL_TAB_ID]: DEFAULT_MARKDOWN });
+  const dirtyRef = useRef(new Set<string>());
+  const [activeDocVersion, setActiveDocVersion] = useState(0);
 
   // Restore session on mount
   useEffect(() => {
     restoreSession().then(result => {
       if (result) {
+        for (const tab of result.tabs) {
+          if (tab.doc) docsRef.current[tab.id] = tab.doc;
+        }
         setTabs(result.tabs);
         setActiveTabId(result.activeTabId);
       }
@@ -49,10 +55,26 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
   useEffect(() => { activeTabIdRef.current = activeTabId; }, [activeTabId]);
   useEffect(() => { tabsRef.current = tabs; }, [tabs]);
 
-  const getActiveTab = useCallback((): Tab =>
-    tabs.find(t => t.id === activeTabId) ?? tabs[0],
-    [tabs, activeTabId]
-  );
+  // Sync docsRef: any new tab that has doc in state gets populated into docsRef
+  useEffect(() => {
+    for (const tab of tabs) {
+      if (tab.doc && !(tab.id in docsRef.current)) {
+        docsRef.current[tab.id] = tab.doc;
+      }
+    }
+  }, [tabs]);
+
+  const activeTabMemo = useMemo((): Tab => {
+    const tab = tabs.find(t => t.id === activeTabId) ?? tabs[0];
+    if (!tab) return tab;
+    return { ...tab, doc: docsRef.current[tab.id] ?? tab.doc };
+  }, [tabs, activeTabId, activeDocVersion]);
+
+  const getActiveTab = useCallback((): Tab => activeTabMemo, [activeTabMemo]);
+
+  const resolveTabDoc = useCallback((tabId: string): string => {
+    return docsRef.current[tabId];
+  }, []);
 
   const getTabTitle = (tab: Tab): string => {
     // F013: 自定义显示名优先
@@ -123,24 +145,34 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
   }, [tr, notifyRecent]);
 
   const updateActiveDoc = useCallback((value: string) => {
-    setTabs(prev =>
-      // Only mark dirty when content actually changed — prevents CodeMirror's
-      // programmatic onChange (triggered by external reload) from re-dirtying the tab.
-      prev.map(t => t.id === activeTabId
-        ? { ...t, doc: value, isDirty: t.doc !== value ? true : t.isDirty }
-        : t)
-    );
-  }, [activeTabId]);
+    const id = activeTabIdRef.current;
+    const prevDoc = docsRef.current[id] ?? '';
+    docsRef.current[id] = value;
+    // Only trigger a single setTabs to mark dirty (avoids re-render cascade on every keystroke)
+    if (prevDoc !== value && !dirtyRef.current.has(id)) {
+      dirtyRef.current.add(id);
+      setTabs(prev => prev.map(t => t.id === id ? { ...t, isDirty: true } : t));
+    }
+    setActiveDocVersion(v => v + 1);
+  }, []);
 
   const updateTab = useCallback((tabId: string, patch: Partial<Tab>) => {
+    if (patch.doc !== undefined) {
+      docsRef.current[tabId] = patch.doc;
+    }
+    if (patch.isDirty === false) {
+      dirtyRef.current.delete(tabId);
+    }
     setTabs(prev =>
       prev.map(t => t.id === tabId ? { ...t, ...patch } : t)
     );
   }, []);
 
   const updateTabDoc = useCallback((tabId: string, value: string) => {
+    docsRef.current[tabId] = value;
+    dirtyRef.current.add(tabId);
     setTabs(prev =>
-      prev.map(t => t.id === tabId ? { ...t, doc: value, isDirty: true } : t)
+      prev.map(t => t.id === tabId ? { ...t, isDirty: true } : t)
     );
   }, []);
 
@@ -169,10 +201,12 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
       const cur = tabsRef.current;
       const isPristineBacking = cur.length === 1 && !cur[0].filePath && !cur[0].isDirty && !cur[0].displayName;
       if (isPristineBacking) {
+        docsRef.current[cur[0].id] = content;
         setTabs([{ id: cur[0].id, filePath, doc: content, isDirty: false }]);
         setActiveTabId(cur[0].id);
       } else {
         const newTab: Tab = { id: genTabId(), filePath, doc: content, isDirty: false };
+        docsRef.current[newTab.id] = content;
         setTabs(prev => [...prev, newTab]);
         setActiveTabId(newTab.id);
       }
@@ -198,6 +232,7 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
     }
     const hasContent = initialContent != null && initialContent.length > 0;
     const newTab: Tab = { id: genTabId(), filePath: null, doc: initialContent ?? '', isDirty: hasContent, displayName: name };
+    docsRef.current[newTab.id] = newTab.doc;
     // Replace the pristine backing tab (no file, not dirty, no custom displayName = welcome state)
     const isPristineBacking = current.length === 1 && !current[0].filePath && !current[0].isDirty && !current[0].displayName;
     if (isPristineBacking) {
@@ -217,8 +252,12 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
     const current = tabsRef.current;
     // F013: 固定标签不可关闭
     if (current.find(t => t.id === id)?.isPinned) return;
+    delete docsRef.current[id];
+    dirtyRef.current.delete(id);
     if (current.length === 1) {
-      setTabs([{ id: current[0].id, filePath: null, doc: DEFAULT_MARKDOWN, isDirty: false }]);
+      const newId = current[0].id;
+      docsRef.current[newId] = DEFAULT_MARKDOWN;
+      setTabs([{ id: newId, filePath: null, doc: DEFAULT_MARKDOWN, isDirty: false }]);
       return;
     }
     const idx = current.findIndex(t => t.id === id);
@@ -234,10 +273,12 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
     const current = tabsRef.current;
     const idsSet = new Set(idsToClose);
     // Exclude pinned tabs from closing
+    for (const id of idsToClose) { delete docsRef.current[id]; dirtyRef.current.delete(id); }
     const next = current.filter(t => !idsSet.has(t.id) || t.isPinned);
     if (next.length === 0) {
       // All tabs were closed: reset to a single blank tab
       const newTab: Tab = { id: genTabId(), filePath: null, doc: DEFAULT_MARKDOWN, isDirty: false };
+      docsRef.current[newTab.id] = DEFAULT_MARKDOWN;
       setTabs([newTab]);
       setActiveTabId(newTab.id);
     } else {
@@ -311,6 +352,7 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
     const current = tabsRef.current;
     const isPristineReplace = current.length === 1 && !current[0].filePath && !current[0].isDirty;
     const tabId = isPristineReplace ? genTabId() : genTabId();
+    docsRef.current[tabId] = content;
     const newTab: Tab = { id: tabId, filePath, doc: content, isDirty: false, displayName };
     if (isPristineReplace) {
       setTabs([newTab]);
@@ -324,10 +366,12 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
   }, [notifyRecent]);
 
   const markSaved = (id: string) => {
+    dirtyRef.current.delete(id);
     setTabs(prev => prev.map(t => t.id === id ? { ...t, isDirty: false } : t));
   };
 
   const markSavedAs = (id: string, filePath: string) => {
+    dirtyRef.current.delete(id);
     setTabs(prev => prev.map(t => t.id === id ? { ...t, filePath, isDirty: false, displayName: undefined } : t));
     addRecentFile(filePath);
     notifyRecent();
@@ -340,5 +384,6 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
     createNewTab, closeTab, closeMultipleTabs, reorderTabs, markSaved, markSavedAs,
     renameTab, setTabDisplayName,
     pinTab, unpinTab, nextTab, previousTab,
+    resolveTabDoc, activeDocVersion,
   };
 }
