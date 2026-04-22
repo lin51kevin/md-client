@@ -192,17 +192,22 @@ async fn export_document(
         ));
     }
 
-    match format.as_str() {
-        "pdf" => export_pdf(&markdown, &output_path, &images),
-        "docx" => export_docx(&markdown, &output_path, &images),
-        _ => Err(format!("不支持的格式: {format}。请使用 'pdf' 或 'docx'。")),
-    }
+    let markdown = markdown.clone();
+    let output_path = output_path.clone();
+    let format = format.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        match format.as_str() {
+            "pdf" => export_pdf(&markdown, &output_path, &images),
+            "docx" => export_docx(&markdown, &output_path, &images),
+            _ => Err(format!("不支持的格式: {}。请使用 'pdf' 或 'docx'。", format)),
+        }
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
-/// Batch-read multiple files for session restore.
-/// Returns a list of (path, content) pairs. Files that fail to read get empty content.
-#[tauri::command]
-fn restore_session_files(paths: Vec<String>) -> Vec<(String, String)> {
+/// Implementation for restore_session_files (runs on a blocking thread).
+fn restore_session_files_impl(paths: Vec<String>) -> Vec<(String, String)> {
     paths
         .into_iter()
         .map(|path| {
@@ -211,6 +216,17 @@ fn restore_session_files(paths: Vec<String>) -> Vec<(String, String)> {
             (path, result.unwrap_or_default())
         })
         .collect()
+}
+
+/// Batch-read multiple files for session restore.
+/// Returns a list of (path, content) pairs. Files that fail to read get empty content.
+#[tauri::command]
+async fn restore_session_files(paths: Vec<String>) -> Vec<(String, String)> {
+    tauri::async_runtime::spawn_blocking(move || {
+        restore_session_files_impl(paths)
+    })
+    .await
+    .unwrap_or_else(|_| vec![])
 }
 
 /// Read any file as UTF-8 text, with automatic encoding detection fallback.
@@ -250,12 +266,9 @@ struct DirEntry {
     children: Option<Vec<DirEntry>>,
 }
 
-/// List a single directory (non-recursive). Returns entries filtered to show
-/// directories and supported text files (.md, .markdown, .txt).
-#[tauri::command]
-fn list_directory(path: String) -> Result<Vec<DirEntry>, String> {
-    validate_user_path(&path)?;
-    let dir = std::path::Path::new(&path);
+/// Implementation for list_directory (runs on a blocking thread).
+fn list_directory_impl(path: &str) -> Result<Vec<DirEntry>, String> {
+    let dir = std::path::Path::new(path);
     if !dir.exists() {
         return Err(format!("目录不存在: {}", path));
     }
@@ -304,10 +317,21 @@ fn list_directory(path: String) -> Result<Vec<DirEntry>, String> {
     Ok(entries)
 }
 
-/// Recursively list directory up to `depth` levels.
+/// List a single directory (non-recursive). Returns entries filtered to show
+/// directories and supported text files (.md, .markdown, .txt).
 #[tauri::command]
-fn read_dir_recursive(path: String, depth: Option<u32>) -> Result<DirEntry, String> {
+async fn list_directory(path: String) -> Result<Vec<DirEntry>, String> {
     validate_user_path(&path)?;
+    let path = path.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        list_directory_impl(&path)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+/// Implementation for read_dir_recursive (runs on a blocking thread).
+fn read_dir_recursive_impl(path: &str, depth: Option<u32>) -> Result<DirEntry, String> {
     fn read_recursive(dir_path: &std::path::Path, current_depth: u32, max_depth: u32) -> Result<DirEntry, String> {
         let name = dir_path.file_name()
             .and_then(|n| n.to_str())
@@ -360,7 +384,19 @@ fn read_dir_recursive(path: String, depth: Option<u32>) -> Result<DirEntry, Stri
     }
 
     let d = depth.unwrap_or(2);
-    read_recursive(std::path::Path::new(&path), 0, d)
+    read_recursive(std::path::Path::new(path), 0, d)
+}
+
+/// Recursively list directory up to `depth` levels.
+#[tauri::command]
+async fn read_dir_recursive(path: String, depth: Option<u32>) -> Result<DirEntry, String> {
+    validate_user_path(&path)?;
+    let path = path.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        read_dir_recursive_impl(&path, depth)
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 /// Cross-file search result.
@@ -405,16 +441,45 @@ fn build_search_regex(
         .map_err(|e| format!("正则表达式错误: {}", e))
 }
 
-/// Search for text across all .md/.markdown/.txt files in a directory (recursive).
-#[tauri::command]
-fn search_files(
-    directory: String,
-    query: String,
+/// Check if a path has a supported text file extension.
+fn is_text_file(path: &std::path::Path) -> bool {
+    path.extension()
+        .and_then(|e| e.to_str())
+        .map(|s| matches!(s.to_lowercase().as_str(), "md" | "markdown" | "txt"))
+        .unwrap_or(false)
+}
+
+/// Recursively collect all supported text files in a directory.
+fn collect_files(dir: &std::path::Path) -> Vec<std::path::PathBuf> {
+    let mut files = Vec::new();
+    if let Ok(entries) = std::fs::read_dir(dir) {
+        for entry in entries.flatten() {
+            let p = entry.path();
+            if p.file_name()
+                .and_then(|n| n.to_str())
+                .map(|s| s.starts_with('.'))
+                .unwrap_or(false)
+            {
+                continue;
+            }
+            if p.is_dir() {
+                files.extend(collect_files(&p));
+            } else if p.is_file() && is_text_file(&p) {
+                files.push(p);
+            }
+        }
+    }
+    files
+}
+
+/// Implementation for search_files (runs on a blocking thread).
+fn search_files_impl(
+    directory: &str,
+    query: &str,
     case_sensitive: bool,
     use_regex: bool,
     whole_word: bool,
 ) -> Result<Vec<SearchResult>, String> {
-    validate_user_path(&directory)?;
     if query.is_empty() {
         return Ok(Vec::new());
     }
@@ -422,45 +487,16 @@ fn search_files(
     const MAX_RESULTS: usize = 200;
     let mut results = Vec::new();
 
-    fn is_text_file(path: &std::path::Path) -> bool {
-        path.extension()
-            .and_then(|e| e.to_str())
-            .map(|s| matches!(s.to_lowercase().as_str(), "md" | "markdown" | "txt"))
-            .unwrap_or(false)
-    }
-
-    fn collect_files(dir: &std::path::Path) -> Vec<std::path::PathBuf> {
-        let mut files = Vec::new();
-        if let Ok(entries) = std::fs::read_dir(dir) {
-            for entry in entries.flatten() {
-                let p = entry.path();
-                if p.file_name()
-                    .and_then(|n| n.to_str())
-                    .map(|s| s.starts_with('.'))
-                    .unwrap_or(false)
-                {
-                    continue;
-                }
-                if p.is_dir() {
-                    files.extend(collect_files(&p));
-                } else if p.is_file() && is_text_file(&p) {
-                    files.push(p);
-                }
-            }
-        }
-        files
-    }
-
-    let dir_path = std::path::Path::new(&directory);
+    let dir_path = std::path::Path::new(directory);
     if !dir_path.exists() || !dir_path.is_dir() {
         return Err(format!("目录不存在或不是目录: {}", directory));
     }
 
     let files = collect_files(dir_path);
 
-    let regex = build_search_regex(&query, case_sensitive, use_regex, whole_word)?;
+    let regex = build_search_regex(query, case_sensitive, use_regex, whole_word)?;
 
-    let pattern = if case_sensitive { query.clone() } else { query.to_lowercase() };
+    let pattern = if case_sensitive { query.to_string() } else { query.to_lowercase() };
 
     'outer: for filepath in files {
         if results.len() >= MAX_RESULTS {
@@ -524,69 +560,58 @@ fn search_files(
     Ok(results)
 }
 
+/// Search for text across all .md/.markdown/.txt files in a directory (recursive).
+#[tauri::command]
+async fn search_files(
+    directory: String,
+    query: String,
+    case_sensitive: bool,
+    use_regex: bool,
+    whole_word: bool,
+) -> Result<Vec<SearchResult>, String> {
+    validate_user_path(&directory)?;
+    let directory = directory.clone();
+    let query = query.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        search_files_impl(&directory, &query, case_sensitive, use_regex, whole_word)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
 #[derive(serde::Serialize)]
 struct ReplaceInFilesResult {
     replaced_count: u32,
     files_modified: Vec<String>,
 }
 
-/// Replace text across all .md/.markdown/.txt files in a directory (recursive).
-#[tauri::command]
-fn replace_in_files(
-    directory: String,
-    query: String,
-    replacement: String,
+/// Implementation for replace_in_files (runs on a blocking thread).
+fn replace_in_files_impl(
+    directory: &str,
+    query: &str,
+    replacement: &str,
     case_sensitive: bool,
     use_regex: bool,
     whole_word: bool,
 ) -> Result<ReplaceInFilesResult, String> {
-    validate_user_path(&directory)?;
     if query.is_empty() {
         return Ok(ReplaceInFilesResult { replaced_count: 0, files_modified: vec![] });
     }
 
-    fn is_text_file(path: &std::path::Path) -> bool {
-        path.extension()
-            .and_then(|e| e.to_str())
-            .map(|s| matches!(s.to_lowercase().as_str(), "md" | "markdown" | "txt"))
-            .unwrap_or(false)
-    }
-
-    fn collect_files(dir: &std::path::Path) -> Vec<std::path::PathBuf> {
-        let mut files = Vec::new();
-        if let Ok(entries) = std::fs::read_dir(dir) {
-            for entry in entries.flatten() {
-                let p = entry.path();
-                if p.file_name()
-                    .and_then(|n| n.to_str())
-                    .map(|s| s.starts_with('.'))
-                    .unwrap_or(false)
-                {
-                    continue;
-                }
-                if p.is_dir() {
-                    files.extend(collect_files(&p));
-                } else if p.is_file() && is_text_file(&p) {
-                    files.push(p);
-                }
-            }
-        }
-        files
-    }
-
-    let dir_path = std::path::Path::new(&directory);
+    let dir_path = std::path::Path::new(directory);
     if !dir_path.exists() || !dir_path.is_dir() {
         return Err(format!("目录不存在或不是目录: {}", directory));
     }
 
-    let re = build_search_regex(&query, case_sensitive, use_regex, whole_word)?;
+    let re = build_search_regex(query, case_sensitive, use_regex, whole_word)?;
 
     let pattern_lower = query.to_lowercase();
     let mut replaced_count = 0u32;
     let mut files_modified = Vec::new();
 
     for filepath in collect_files(dir_path) {
-        let content = match read_text_auto_encoding(&filepath.to_string_lossy()) {
+        let filepath_str = filepath.to_string_lossy().to_string();
+        let content = match read_text_auto_encoding(&filepath_str) {
             Ok(c) => c,
             Err(_) => continue,
         };
@@ -594,14 +619,14 @@ fn replace_in_files(
         let (new_content, count) = if let Some(ref r) = re {
             let count = r.find_iter(&content).count() as u32;
             if count == 0 { continue; }
-            (r.replace_all(&content, replacement.as_str()).to_string(), count)
+            (r.replace_all(&content, replacement).to_string(), count)
         } else {
-            let needle = if case_sensitive { query.as_str() } else { pattern_lower.as_str() };
+            let needle = if case_sensitive { query } else { &pattern_lower };
             let haystack = if case_sensitive { content.clone() } else { content.to_lowercase() };
             let count = haystack.matches(needle).count() as u32;
             if count == 0 { continue; }
             let new = if case_sensitive {
-                content.replace(needle, &replacement)
+                content.replace(needle, replacement)
             } else {
                 // Case-insensitive plain text replacement — use char-boundary-safe scanning.
                 // to_lowercase() can change byte lengths (e.g. 'İ' → 'i\u{307}'), so we
@@ -646,7 +671,7 @@ fn replace_in_files(
                         };
 
                         result.push_str(&content[orig_start..orig_match]);
-                        result.push_str(&replacement);
+                        result.push_str(replacement);
                         orig_start = orig_match_end;
                         lower_start = lower_match_end;
                     } else {
@@ -662,10 +687,31 @@ fn replace_in_files(
         std::fs::write(&filepath, new_content.as_bytes())
             .map_err(|e| format!("写入文件失败 {}: {}", filepath.display(), e))?;
         replaced_count += count;
-        files_modified.push(filepath.to_string_lossy().to_string());
+        files_modified.push(filepath_str);
     }
 
     Ok(ReplaceInFilesResult { replaced_count, files_modified })
+}
+
+/// Replace text across all .md/.markdown/.txt files in a directory (recursive).
+#[tauri::command]
+async fn replace_in_files(
+    directory: String,
+    query: String,
+    replacement: String,
+    case_sensitive: bool,
+    use_regex: bool,
+    whole_word: bool,
+) -> Result<ReplaceInFilesResult, String> {
+    validate_user_path(&directory)?;
+    let directory = directory.clone();
+    let query = query.clone();
+    let replacement = replacement.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        replace_in_files_impl(&directory, &query, &replacement, case_sensitive, use_regex, whole_word)
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 /// Write raw bytes (e.g. image data) to a file path.
@@ -883,7 +929,7 @@ mod tests {
         let p2 = tmp_file("b.md", "world");
         let p3 = tmp_file("c.md", "!");
 
-        let results = restore_session_files(vec![p1.clone(), p2.clone(), p3.clone()]);
+        let results = restore_session_files_impl(vec![p1.clone(), p2.clone(), p3.clone()]);
         assert_eq!(results.len(), 3);
 
         let map: std::collections::HashMap<_, _> = results.into_iter().collect();
@@ -902,7 +948,7 @@ mod tests {
         let p1 = tmp_file("exists.md", "ok");
         let missing = "/tmp/marklite_test_nonexistent_12345.md".to_string();
 
-        let results = restore_session_files(vec![p1.clone(), missing.clone()]);
+        let results = restore_session_files_impl(vec![p1.clone(), missing.clone()]);
         assert_eq!(results.len(), 2);
 
         let map: std::collections::HashMap<_, _> = results.into_iter().collect();
@@ -914,9 +960,7 @@ mod tests {
 
     #[test]
     fn test_restore_session_files_empty_input() {
-        let results = restore_session_files(vec![]);
+        let results = restore_session_files_impl(vec![]);
         assert!(results.is_empty());
     }
 }
-
-
