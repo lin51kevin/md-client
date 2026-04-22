@@ -298,27 +298,168 @@
 }
 
 /* ── Floating inline toolbar (text selection) ── */
-/* Background and shadow are handled by --crepe-color-surface / --crepe-shadow-1 above.
-   The icon SVGs use --crepe-color-outline which maps to border-color —
-   override them to use readable text color instead. */
+/* Override Crepe's bulky defaults to match the app's main Toolbar style:
+   compact sizing, matching hover/active states and color scheme.
+   Crepe built-in icons are fill-based; custom icons from toolbar-config
+   are stroke-based — handle both via color + fill: currentColor. */
 .milkdown-preview .milkdown .milkdown-toolbar {
   background: var(--bg-secondary, #f6f8fa) !important;
   border: 1px solid var(--border-color, #d0d7de) !important;
+  border-radius: 6px !important;
   box-shadow: var(--crepe-shadow-1) !important;
+  overflow: visible !important;
+  padding: 1px 2px !important;
 }
+/* Shrink items from Crepe's 32×32 to compact size matching ToolbarButton */
+.milkdown-preview .milkdown .milkdown-toolbar .toolbar-item {
+  width: 26px !important;
+  height: 26px !important;
+  margin: 2px !important;
+  padding: 4px !important;
+  border-radius: 4px !important;
+  transition: all 0.15s !important;
+  color: var(--text-secondary, #656d76) !important;
+}
+/* Icon size: shrink from Crepe's 24×24 to 16×16 matching main toolbar */
 .milkdown-preview .milkdown .milkdown-toolbar .toolbar-item svg {
+  width: 16px !important;
+  height: 16px !important;
   color: var(--text-secondary, #656d76) !important;
   fill: var(--text-secondary, #656d76) !important;
 }
+/* Custom stroke-based icons (table/image from toolbar-config): override fill */
+.milkdown-preview .milkdown .milkdown-toolbar .toolbar-item svg[fill="none"] {
+  fill: none !important;
+  stroke: var(--text-secondary, #656d76) !important;
+}
+/* Hover: background + icon color change, matching ToolbarButton handleEnter */
 .milkdown-preview .milkdown .milkdown-toolbar .toolbar-item:hover {
   background: var(--hover-bg, #f3f4f6) !important;
+}
+.milkdown-preview .milkdown .milkdown-toolbar .toolbar-item:hover svg {
+  color: var(--text-primary, #1f2328) !important;
+  fill: var(--text-primary, #1f2328) !important;
+}
+.milkdown-preview .milkdown .milkdown-toolbar .toolbar-item:hover svg[fill="none"] {
+  fill: none !important;
+  stroke: var(--text-primary, #1f2328) !important;
+}
+/* Active: accent color, matching ToolbarButton toggle variant */
+.milkdown-preview .milkdown .milkdown-toolbar .toolbar-item.active {
+  background: var(--accent-bg, rgba(9, 105, 218, 0.08)) !important;
 }
 .milkdown-preview .milkdown .milkdown-toolbar .toolbar-item.active svg {
   color: var(--accent-color, #0969da) !important;
   fill: var(--accent-color, #0969da) !important;
 }
+.milkdown-preview .milkdown .milkdown-toolbar .toolbar-item.active svg[fill="none"] {
+  fill: none !important;
+  stroke: var(--accent-color, #0969da) !important;
+}
+/* Divider: match main toolbar's w-px h-5 mx-0.5 */
 .milkdown-preview .milkdown .milkdown-toolbar .divider {
+  width: 1px !important;
+  height: 16px !important;
+  margin: 5px 2px !important;
   background: var(--border-color, #d0d7de) !important;
+}
+
+/* ── Table cell-handle button-group (column/row alignment & delete popup) ── */
+/* Override Crepe's bulky defaults to match the app's main Toolbar style. */
+.milkdown-preview .milkdown .milkdown-table-block .cell-handle .button-group {
+  background: var(--bg-secondary, #f6f8fa) !important;
+  border: 1px solid var(--border-color, #d0d7de) !important;
+  border-radius: 6px !important;
+  box-shadow: var(--crepe-shadow-1) !important;
+  padding: 1px 2px !important;
+}
+.milkdown-preview .milkdown .milkdown-table-block .cell-handle .button-group button {
+  margin: 2px !important;
+  padding: 4px !important;
+  border-radius: 4px !important;
+  transition: all 0.15s !important;
+}
+.milkdown-preview .milkdown .milkdown-table-block .cell-handle .button-group button svg {
+  width: 16px !important;
+  height: 16px !important;
+  fill: var(--text-secondary, #656d76) !important;
+}
+.milkdown-preview .milkdown .milkdown-table-block .cell-handle .button-group button:hover {
+  background: var(--hover-bg, #f3f4f6) !important;
+  border-radius: 4px !important;
+}
+.milkdown-preview .milkdown .milkdown-table-block .cell-handle .button-group button:hover svg {
+  fill: var(--text-primary, #1f2328) !important;
+}
+.milkdown-preview .milkdown .milkdown-table-block .cell-handle .button-group button:active {
+  background: var(--accent-bg, rgba(9, 105, 218, 0.08)) !important;
+}
+.milkdown-preview .milkdown .milkdown-table-block .cell-handle .button-group button:active svg {
+  fill: var(--accent-color, #0969da) !important;
+}
+/* Table block SVG color override (Crepe sets fill to outline color globally) */
+.milkdown-preview .milkdown .milkdown-table-block svg {
+  fill: var(--text-secondary, #656d76) !important;
+}
+/* Cell drag handle pill — compact, subtle, matching toolbar style */
+.milkdown-preview .milkdown .milkdown-table-block .cell-handle {
+  background-color: var(--bg-secondary, #f6f8fa) !important;
+  border: 1px solid var(--border-color, #d0d7de) !important;
+  box-shadow: none !important;
+  color: var(--text-secondary, #656d76) !important;
+}
+.milkdown-preview .milkdown .milkdown-table-block .cell-handle:hover {
+  background-color: var(--hover-bg, #f3f4f6) !important;
+  border-color: var(--text-secondary, #656d76) !important;
+}
+.milkdown-preview .milkdown .milkdown-table-block .cell-handle svg {
+  fill: var(--text-secondary, #656d76) !important;
+}
+.milkdown-preview .milkdown .milkdown-table-block .cell-handle:hover svg {
+  fill: var(--text-primary, #1f2328) !important;
+}
+/* Line handle add-button (+ row/column) — match toolbar style */
+.milkdown-preview .milkdown .milkdown-table-block .line-handle .add-button {
+  background-color: var(--bg-secondary, #f6f8fa) !important;
+  border: 1px solid var(--border-color, #d0d7de) !important;
+  box-shadow: none !important;
+  color: var(--text-secondary, #656d76) !important;
+}
+.milkdown-preview .milkdown .milkdown-table-block .line-handle .add-button:hover {
+  background-color: var(--hover-bg, #f3f4f6) !important;
+  border-color: var(--text-secondary, #656d76) !important;
+}
+.milkdown-preview .milkdown .milkdown-table-block .line-handle .add-button svg {
+  fill: var(--text-secondary, #656d76) !important;
+}
+.milkdown-preview .milkdown .milkdown-table-block .line-handle .add-button:hover svg {
+  fill: var(--text-primary, #1f2328) !important;
+}
+
+/* ── Block handle (drag handle on left of blocks) ── */
+.milkdown-preview .milkdown .milkdown-block-handle .operation-item {
+  width: 26px !important;
+  height: 26px !important;
+  padding: 4px !important;
+  border-radius: 4px !important;
+  transition: all 0.15s !important;
+}
+.milkdown-preview .milkdown .milkdown-block-handle .operation-item svg {
+  width: 16px !important;
+  height: 16px !important;
+  fill: var(--text-secondary, #656d76) !important;
+}
+.milkdown-preview .milkdown .milkdown-block-handle .operation-item:hover {
+  background: var(--hover-bg, #f3f4f6) !important;
+}
+.milkdown-preview .milkdown .milkdown-block-handle .operation-item:hover svg {
+  fill: var(--text-primary, #1f2328) !important;
+}
+.milkdown-preview .milkdown .milkdown-block-handle .operation-item.active {
+  background: var(--accent-bg, rgba(9, 105, 218, 0.08)) !important;
+}
+.milkdown-preview .milkdown .milkdown-block-handle .operation-item.active svg {
+  fill: var(--accent-color, #0969da) !important;
 }
 
 /* ── Link preview / link edit tooltips ── */
