@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import YAML from 'js-yaml';
 import { Milkdown, MilkdownProvider, useEditor } from '@milkdown/react';
 import { Crepe, CrepeFeature } from '@milkdown/crepe';
-import { replaceAll } from '@milkdown/kit/utils';
+import { replaceAll, insert } from '@milkdown/kit/utils';
 import { editorViewCtx, commandsCtx } from '@milkdown/core';
 import { undoDepth, redoDepth, undo as pmUndo, redo as pmRedo } from 'prosemirror-history';
 import '@milkdown/crepe/theme/frame.css';
@@ -387,8 +387,7 @@ function MilkdownEditor({
 
           if (!actualDir) {
             const mdText = `\n![](${selectedPath})\n`;
-            const view = crepe.editor.ctx.get(editorViewCtx);
-            view.dispatch(view.state.tr.insertText(mdText));
+            crepe.editor.action(insert(mdText));
             return;
           }
 
@@ -397,8 +396,7 @@ function MilkdownEditor({
 
           const mdPath = buildImageMarkdownPath(actualDir, fileName, filePath ?? undefined);
           const mdText = `\n![](${mdPath})\n`;
-          const view = crepe.editor.ctx.get(editorViewCtx);
-          view.dispatch(view.state.tr.insertText(mdText));
+          crepe.editor.action(insert(mdText));
         } catch (err) {
           console.warn('[milkdown] insert-image failed:', err);
         }
@@ -455,6 +453,22 @@ function MilkdownEditor({
       onContentChangeRef.current?.(newContent);
     };
 
+    // Allow external callers (useImagePaste, useDragDrop) to insert markdown at cursor.
+    // Uses Milkdown's `insert` (markdown→ProseMirror nodes) instead of ProseMirror's
+    // `tr.insertText` which inserts literal text without parsing.
+    milkdownBridge.insertText = (markdown: string) => {
+      const crepe = crepeRef.current;
+      if (!crepe) return;
+      try {
+        hasUserInteractedRef.current = true;
+        const view = crepe.editor.ctx.get(editorViewCtx);
+        if (!view.hasFocus()) view.focus();
+        crepe.editor.action(insert(markdown));
+      } catch (err) {
+        console.warn('[milkdown-bridge] insertText failed:', err);
+      }
+    };
+
     const onFocusIn = () => { milkdownBridge.hasFocus = true; };
     const onFocusOut = (e: FocusEvent) => {
       if (!container.contains(e.relatedTarget as Node | null)) {
@@ -473,6 +487,7 @@ function MilkdownEditor({
       milkdownBridge.undo = null;
       milkdownBridge.redo = null;
       milkdownBridge.runCommand = null;
+      milkdownBridge.insertText = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

@@ -97,12 +97,18 @@ export function useEditorCore({
   }, [milkdownPreview]);
 
   const insertImageMarkdown = useCallback((mdText: string) => {
+    // WYSIWYG mode: insert into Milkdown via bridge
+    if (milkdownPreview && milkdownBridge.insertText) {
+      milkdownBridge.insertText(mdText);
+      return;
+    }
+    // Source mode: insert into CodeMirror
     const view = cmViewRef.current;
     if (!view) return;
     const pos = view.state.selection.main.head;
     view.dispatch({ changes: { from: pos, insert: mdText }, selection: { anchor: pos + mdText.length } });
     view.focus();
-  }, []);
+  }, [milkdownPreview]);
 
   const { saveAndInsert: saveAndInsertImage } = useImagePaste({
     docPath: activeTab.filePath,

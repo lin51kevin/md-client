@@ -78,6 +78,13 @@ class MilkdownEditorBridgeStore {
   runCommand: ((commandKey: unknown, payload?: unknown) => void) | null = null;
 
   /**
+   * Insert raw text at the current cursor position in the Milkdown ProseMirror editor.
+   * Set by MilkdownEditor on mount; used by useImagePaste to insert image markdown
+   * when WYSIWYG mode is active and CodeMirror is not rendered.
+   */
+  insertText: ((text: string) => void) | null = null;
+
+  /**
    * Content from the most recent bridge write.
    * Supports batch action sequences where multiple replaceRange/insertText
    * calls are issued synchronously before React has re-rendered.
