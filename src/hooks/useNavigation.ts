@@ -66,11 +66,25 @@ export function useNavigation({
     const scrollTo = (sameTab: boolean) => {
       setTimeout(() => {
         const view = cmViewRef.current;
-        if (!view) return;
-        const lineInfo = view.state.doc.line(Math.max(0, result.line_number - 1) + 1);
-        const anchor = lineInfo.from + result.match_start;
-        view.dispatch({ selection: { anchor, head: lineInfo.from + result.match_end }, effects: EditorView.scrollIntoView(anchor, { y: 'center', yMargin: 40 }) });
-        view.focus();
+        if (view) {
+          const lineInfo = view.state.doc.line(Math.max(0, result.line_number - 1) + 1);
+          const anchor = lineInfo.from + result.match_start;
+          view.dispatch({ selection: { anchor, head: lineInfo.from + result.match_end }, effects: EditorView.scrollIntoView(anchor, { y: 'center', yMargin: 40 }) });
+          view.focus();
+          return;
+        }
+        // Fallback for preview-only / milkdown mode: scroll preview by line-number ratio
+        const previewEl = previewRef.current;
+        if (!previewEl) return;
+        const doc = getActiveTab().doc;
+        const lines = doc.split('\n');
+        const targetLine = Math.max(0, result.line_number - 1);
+        let charPos = 0;
+        for (let i = 0; i < Math.min(targetLine, lines.length); i++) {
+          charPos += lines[i].length + 1; // +1 for '\n'
+        }
+        const ratio = doc.length > 0 ? charPos / doc.length : 0;
+        previewEl.scrollTo({ top: Math.max(0, ratio * (previewEl.scrollHeight - previewEl.clientHeight) - 40), behavior: 'smooth' });
       }, sameTab ? 0 : 200);
     };
     if (result.tab_id) {
@@ -82,7 +96,7 @@ export function useNavigation({
     const isCurrentFile = !result.file_path || result.file_path === activeTab.filePath;
     if (!isCurrentFile) await openFileInTab(result.file_path);
     scrollTo(isCurrentFile);
-  }, [cmViewRef, openFileInTab, activeTab.filePath, activeTabId, setActiveTabId]);
+  }, [cmViewRef, previewRef, getActiveTab, openFileInTab, activeTab.filePath, activeTabId, setActiveTabId]);
 
   return {
     activeTocId,

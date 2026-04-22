@@ -129,7 +129,7 @@ export function useSearchLogic({
     if (!query.trim()) {
       setSearchResults([]);
       setSelectedIdx(null);
-      setSearchStatus(s => ({ ...s, error: null, replaceMessage: null }));
+      setSearchStatus(s => ({ ...s, loading: false, error: null, replaceMessage: null }));
       onMatchChangeRef.current?.([], -1);
     }
   }, [query]);
@@ -170,6 +170,19 @@ export function useSearchLogic({
       setSearchStatus(s => ({ ...s, loading: false }));
     }
   }, [query, searchDir, caseSensitive, wholeWord, useRegex, openTabs]);
+
+  // Debounced current-file auto-search
+  const currentFileSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (crossFile || !query.trim()) return;
+    setSearchStatus(s => ({ ...s, loading: true, error: null }));
+    if (currentFileSearchTimerRef.current) clearTimeout(currentFileSearchTimerRef.current);
+    currentFileSearchTimerRef.current = setTimeout(() => {
+      doCurrentFileSearch();
+    }, 150);
+    return () => { if (currentFileSearchTimerRef.current) clearTimeout(currentFileSearchTimerRef.current); };
+  }, [query, crossFile, caseSensitive, wholeWord, useRegex, doCurrentFileSearch]);
 
   // Debounced cross-file search
   const crossFileSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
