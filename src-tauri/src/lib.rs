@@ -244,6 +244,63 @@ fn read_file_bytes(path: String) -> Result<Vec<u8>, String> {
     std::fs::read(&path).map_err(|e| e.to_string())
 }
 
+/// Compute MD5 hash of file content (used for external-modification detection).
+#[tauri::command]
+fn compute_content_hash(content: &str) -> String {
+    use md5::{Digest, Md5};
+    let digest = Md5::digest(content.as_bytes());
+    format!("{:x}", digest)
+}
+
+/// Error type for write_file_text_with_check.
+#[derive(serde::Serialize)]
+struct WriteCheckError {
+    kind: String,
+    disk_hash: String,
+    expected_hash: String,
+}
+
+/// Write text content to a file, but first verify the on-disk content hash matches
+/// `expected_hash`.  If the file doesn't exist (new file) the write proceeds normally.
+/// Returns an error with kind "ExternalModified" when hashes differ.
+#[tauri::command]
+fn write_file_text_with_check(
+    path: String,
+    content: String,
+    expected_hash: String,
+) -> Result<String, WriteCheckError> {
+    use md5::{Digest, Md5};
+
+    if let Ok(disk_bytes) = std::fs::read(&path) {
+        let mut hasher = Md5::new();
+        hasher.update(&disk_bytes);
+        let disk_hash = format!("{:x}", hasher.finalize());
+        if disk_hash != expected_hash {
+            return Err(WriteCheckError {
+                kind: "ExternalModified".to_string(),
+                disk_hash,
+                expected_hash,
+            });
+        }
+    }
+    // Hash matches or file doesn't exist — proceed with write.
+    // Create parent directories if they don't exist.
+    if let Some(parent) = std::path::Path::new(&path).parent() {
+        std::fs::create_dir_all(parent).map_err(|e| WriteCheckError {
+            kind: "IoError".to_string(),
+            disk_hash: String::new(),
+            expected_hash: String::new(),
+        })?;
+    }
+    std::fs::write(&path, content.as_bytes()).map_err(|e| WriteCheckError {
+        kind: "IoError".to_string(),
+        disk_hash: String::new(),
+        expected_hash: String::new(),
+    })?;
+    // Return the new hash of written content.
+    Ok(compute_content_hash(&content))
+}
+
 /// Write text content to a file path.
 #[tauri::command]
 fn write_file_text(path: String, content: String) -> Result<(), String> {
@@ -908,7 +965,7 @@ pub fn run() {
                 }
             }
         }))
-        .invoke_handler(tauri::generate_handler![greet, get_open_file, export_document, restore_session_files, read_file_text, read_file_bytes, write_file_text, write_image_bytes, create_file, delete_file, rename_file, list_directory, read_dir_recursive, search_files, replace_in_files, reveal_in_explorer, is_directory, restart_app, show_unsaved_dialog, context_menu::register_context_menu, context_menu::unregister_context_menu, git::git_get_repo, git::git_get_status, git::git_diff, git::git_commit, git::git_pull, git::git_push, git::git_stage, git::git_unstage, git::git_restore, editor_tools::tool_search, editor_tools::tool_replace, editor_tools::tool_get_lines, editor_tools::tool_replace_lines, editor_tools::tool_insert, editor_tools::tool_delete_lines, editor_tools::tool_get_outline, editor_tools::tool_regex_replace])
+        .invoke_handler(tauri::generate_handler![greet, get_open_file, export_document, restore_session_files, read_file_text, read_file_bytes, write_file_text, write_file_text_with_check, compute_content_hash, write_image_bytes, create_file, delete_file, rename_file, list_directory, read_dir_recursive, search_files, replace_in_files, reveal_in_explorer, is_directory, restart_app, show_unsaved_dialog, context_menu::register_context_menu, context_menu::unregister_context_menu, git::git_get_repo, git::git_get_status, git::git_diff, git::git_commit, git::git_pull, git::git_push, git::git_stage, git::git_unstage, git::git_restore, editor_tools::tool_search, editor_tools::tool_replace, editor_tools::tool_get_lines, editor_tools::tool_replace_lines, editor_tools::tool_insert, editor_tools::tool_delete_lines, editor_tools::tool_get_outline, editor_tools::tool_regex_replace])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

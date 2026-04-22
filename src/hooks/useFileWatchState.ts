@@ -9,6 +9,7 @@ import { useState, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import type { Tab } from '../types';
 import { useFileWatcher } from './useFileWatcher';
+import { computeHash, setFileHash } from './useFileHash';
 
 interface FileWatchStateParams {
   tabs: Tab[];
@@ -33,6 +34,8 @@ export function useFileWatchState({ tabs, enabled, autoReload, updateTab }: File
       const tab = tabs.find(t => t.id === tabId);
       if (tab) {
         updateTab(tabId, { doc: content, isDirty: false });
+        // Update hash after reload so subsequent saves compare against fresh disk state
+        void computeHash(content).then(h => setFileHash(filePath, h));
       }
     } catch (err) {
       console.warn('[useFileWatchState] reload failed:', err);

@@ -27,6 +27,7 @@ tauri-plugin-dialog = "2.7"
 tauri-plugin-fs = { version = "2.5", features = ["watch"] }
 tauri-plugin-updater = "2"
 pulldown-cmark = { version = "0.12", features = ["html"] }
+md-5 = "0.10"
 docx-rs = "0.4"
 genpdf = { version = "0.2", features = ["images"] }
 base64 = "0.22"

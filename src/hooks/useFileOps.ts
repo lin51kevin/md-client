@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { Tab } from '../types';
 import type { TranslationKey } from '../i18n/zh-CN';
 import { markSelfSave } from './useFileWatcher';
+import { computeHash, setFileHash, getFileHash } from './useFileHash';
 import { toErrorMessage } from '../lib/utils/errors';
 import { useExportOps } from './useExportOps';
 
@@ -68,6 +69,8 @@ export function useFileOps({ getActiveTab, tabs, resolveTabDoc, openFileInTab, m
       if (savePath) {
         const doc = tabId ? resolveTabDoc(tab.id) : tab.doc;
         await invoke('write_file_text', { path: savePath, content: doc });
+        const hash = await computeHash(doc);
+        setFileHash(savePath, hash);
         const wasUnsaved = !tab.filePath;
         markSavedAs(tab.id, savePath);
         markSelfSave(savePath);
@@ -88,9 +91,43 @@ export function useFileOps({ getActiveTab, tabs, resolveTabDoc, openFileInTab, m
     try {
       if (tab.filePath) {
         const doc = tabId ? resolveTabDoc(tab.id) : tab.doc;
-        await invoke('write_file_text', { path: tab.filePath, content: doc });
-        markSaved(tab.id);
-        markSelfSave(tab.filePath);
+        const contentHash = await computeHash(doc);
+        const diskHash = getFileHash(tab.filePath);
+
+        if (diskHash !== undefined) {
+          // We have a known hash — use atomic check-before-write
+          try {
+            const newHash = await invoke<string>('write_file_text_with_check', {
+              path: tab.filePath,
+              content: doc,
+              expectedHash: diskHash,
+            });
+            setFileHash(tab.filePath, newHash);
+            markSaved(tab.id);
+            markSelfSave(tab.filePath);
+          } catch (checkErr: unknown) {
+            const errObj = checkErr as { kind?: string; disk_hash?: string } | null;
+            if (errObj && errObj.kind === 'ExternalModified') {
+              // External modification detected — show toast, don't overwrite
+              const fileName = tab.filePath.split(/[/\\]/).pop() || tab.filePath;
+              await message(
+                tr('fileWatcher.modified') + `: ${fileName}\n${tr('fileWatcher.keep')}`,
+                { title: tr('fileOps.saveFailed'), kind: 'warning' }
+              );
+              // Reload disk hash so next save attempt compares against current disk
+              // (the watcher should also fire and update the toast)
+              return;
+            }
+            // Other errors (IoError, etc.) — fall through to normal error handling
+            throw checkErr;
+          }
+        } else {
+          // No known hash yet (first save or hash not tracked) — write directly
+          await invoke('write_file_text', { path: tab.filePath, content: doc });
+          setFileHash(tab.filePath, contentHash);
+          markSaved(tab.id);
+          markSelfSave(tab.filePath);
+        }
       } else {
         await handleSaveAsFile(tab.id);
       }
