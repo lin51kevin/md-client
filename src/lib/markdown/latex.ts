@@ -38,7 +38,5 @@ export async function renderLatex(text: string): Promise<string> {
 
 /**
  * 检测文本中是否包含 LaTeX 公式
+ * @deprecated 未被任何生产代码引用，保留仅供参考
  */
-export function hasLatex(text: string): boolean {
-  return /\$[\s\S]+?\$/.test(text);
-}
