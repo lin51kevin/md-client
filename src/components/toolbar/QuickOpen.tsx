@@ -79,9 +79,23 @@ export function QuickOpen({ visible, onClose, onFileOpen, fileTreeRoot, recentFi
 
   const recentPaths = useMemo(() => new Set(recentFiles.map(f => f.path)), [recentFiles]);
 
-  // Load file tree when opened
+  // Cache: skip re-loading if fileTreeRoot hasn't changed
+  const cachedRef = useRef<{ root: string; files: FileItem[] } | null>(null);
+
+  // Mark cached files with recent flag based on current recentPaths
+  const recentMarkedFiles = useMemo(() => {
+    if (allFiles.length === 0) return allFiles;
+    return allFiles.map(f => ({ ...f, isRecent: recentPaths.has(f.path) }));
+  }, [allFiles, recentPaths]);
+
+  // Load file tree only when fileTreeRoot changes or on first open
   useEffect(() => {
-    if (!visible || !fileTreeRoot) return;
+    if (!fileTreeRoot) return;
+    // Use cached result if root unchanged
+    if (cachedRef.current?.root === fileTreeRoot) {
+      setAllFiles(cachedRef.current.files);
+      return;
+    }
     let cancelled = false;
     setLoading(true);
 
@@ -89,9 +103,8 @@ export function QuickOpen({ visible, onClose, onFileOpen, fileTreeRoot, recentFi
       .then(tree => {
         if (cancelled) return;
         const files = flattenFiles(tree, fileTreeRoot);
-        // Mark recent
-        const marked = files.map(f => ({ ...f, isRecent: recentPaths.has(f.path) }));
-        setAllFiles(marked);
+        cachedRef.current = { root: fileTreeRoot, files };
+        setAllFiles(files);
       })
       .catch(() => {
         if (!cancelled) setAllFiles([]);
@@ -101,18 +114,17 @@ export function QuickOpen({ visible, onClose, onFileOpen, fileTreeRoot, recentFi
       });
 
     return () => { cancelled = true; };
-  }, [visible, fileTreeRoot, recentPaths]);
+  }, [fileTreeRoot]);
 
   // Filtered + scored results
   const filteredFiles = useMemo(() => {
-    const matched = allFiles.filter(f => fuzzyMatch(query, f));
+    const matched = recentMarkedFiles.filter(f => fuzzyMatch(query, f));
     return matched.sort((a, b) => scoreItem(query, b, recentPaths) - scoreItem(query, a, recentPaths));
-  }, [query, allFiles, recentPaths]);
+  }, [query, recentMarkedFiles, recentPaths]);
 
   // Show recent files when query is empty
   const displayFiles = useMemo(() => {
     if (query.trim()) return filteredFiles;
-    // When no query: show recent files first, then all
     const recent = filteredFiles.filter(f => f.isRecent);
     const rest = filteredFiles.filter(f => !f.isRecent);
     return [...recent, ...rest];

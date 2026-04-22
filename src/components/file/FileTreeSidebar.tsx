@@ -4,7 +4,7 @@
  * 树形展示目录结构，支持懒加载子目录、点击文件打开、切换根目录。
  * 使用 Tauri invoke 调用 Rust 后端 list_directory 命令。
  */
-import { useState, useEffect, useCallback, useRef, useMemo, forwardRef, useImperativeHandle } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, useDeferredValue, forwardRef, useImperativeHandle } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { message, open as openDialog } from '@tauri-apps/plugin-dialog';
 import { useI18n } from '../../i18n';
@@ -403,10 +403,14 @@ export const FileTreeSidebar = forwardRef<FileTreeSidebarHandle, FileTreeSidebar
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
-  // 搜索过滤后的文件列表
-  const filteredEntries = searchQuery.trim()
-    ? filterTree(rootEntries, searchQuery)
-    : rootEntries;
+  // 搜索过滤后的文件列表（useDeferredValue 让过滤延迟执行，输入框保持即时响应）
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+  const filteredEntries = useMemo(() =>
+    deferredSearchQuery.trim()
+      ? filterTree(rootEntries, deferredSearchQuery)
+      : rootEntries,
+    [rootEntries, deferredSearchQuery]
+  );
 
   if (!visible) return null;
 

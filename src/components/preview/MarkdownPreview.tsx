@@ -349,6 +349,11 @@ export const MarkdownPreview = memo(function MarkdownPreview({
   // Frontmatter 元数据面板（仅在检测到 frontmatter 时显示）
   const frontmatter = useMemo(() => extractFrontmatter(renderContent), [renderContent]);
 
+  // Keep callback references in a ref so customComponents doesn't rebuild
+  // when parent re-renders with new callback identities (e.g. tab switches).
+  const callbacksRef = useRef({ onOpenFile, onWikiLinkNavigate, pluginRenderers });
+  callbacksRef.current = { onOpenFile, onWikiLinkNavigate, pluginRenderers };
+
   const customComponents = useMemo(() => {
     const components: Record<string, unknown> = {};
 
@@ -377,6 +382,8 @@ export const MarkdownPreview = memo(function MarkdownPreview({
       children,
       ...props
     }: React.ComponentPropsWithoutRef<"a">) => {
+      const { onOpenFile: onOpen, onWikiLinkNavigate: onWiki } = callbacksRef.current;
+
       const isWikiLink = 'data-wiki-target' in props;
       const wikiTarget = (props as any)['data-wiki-target'] as string | undefined;
 
@@ -384,7 +391,7 @@ export const MarkdownPreview = memo(function MarkdownPreview({
         // Wiki-link click → delegate to parent
         if (isWikiLink && wikiTarget) {
           e.preventDefault();
-          onWikiLinkNavigate?.(wikiTarget);
+          onWiki?.(wikiTarget);
           return;
         }
 
@@ -406,7 +413,7 @@ export const MarkdownPreview = memo(function MarkdownPreview({
         const ext = absPath.split(".").pop()?.toLowerCase() ?? "";
 
         if (MD_EXTENSIONS.has(ext)) {
-          onOpenFile?.(absPath);
+          onOpen?.(absPath);
         } else {
           openPath(absPath).catch(() => {});
         }
@@ -432,8 +439,9 @@ export const MarkdownPreview = memo(function MarkdownPreview({
     };
 
     // ── Plugin-registered renderers ─────────────────────────────────────────
-    if (pluginRenderers) {
-      for (const [nodeType, renderFn] of pluginRenderers) {
+    const { pluginRenderers: renderers } = callbacksRef.current;
+    if (renderers) {
+      for (const [nodeType, renderFn] of renderers) {
         if (PROTECTED_NODE_TYPES.has(nodeType)) {
           continue; // Built-in renderers take priority
         }
@@ -451,7 +459,7 @@ export const MarkdownPreview = memo(function MarkdownPreview({
     }
 
     return components;
-  }, [filePath, onOpenFile, onWikiLinkNavigate, pluginRenderers]);
+  }, [filePath]);
 
   const handleTableConfirm = useCallback((newTableMd: string) => {
     if (!editingTable || !onContentChange) return;

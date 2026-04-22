@@ -142,6 +142,7 @@ function MilkdownEditor({
 }) {
   // isExternalUpdate: guards replaceAll-triggered markdownUpdated events (tab switch etc.)
   const isExternalUpdate = useRef(false);
+  const selectionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const crepeRef = useRef<Crepe | null>(null);
   // hasUserInteractedRef: the core guard — onContentChange is NEVER called until the
   // user actually types or composes in the editor. This is the only reliable way to
@@ -416,24 +417,34 @@ function MilkdownEditor({
       if (!sel || !sel.anchorNode) return;
       if (!container.contains(sel.anchorNode)) return;
 
-      const selectedText = sel.toString();
-      const fullContent = contentRef.current;
+        // debounce: batch rapid selectionchange events
+      if (selectionTimerRef.current) clearTimeout(selectionTimerRef.current);
+      selectionTimerRef.current = setTimeout(() => {
+        const fullContent = contentRef.current;
+        const currentSel = window.getSelection();
+        if (!currentSel || !currentSel.anchorNode || !container.contains(currentSel.anchorNode)) return;
+        const text = currentSel.toString();
 
-      if (selectedText) {
-        const from = findTextInMarkdown(fullContent, selectedText, sel, container);
-        milkdownBridge.selection = from >= 0
-          ? { from, to: from + selectedText.length, text: selectedText }
-          : null;
-      } else {
-        milkdownBridge.selection = null;
-        if (sel.rangeCount > 0) {
-          milkdownBridge.cursorOffset = computeCursorOffset(fullContent, sel, container);
+        if (text) {
+          if (text.length > 1000) return; // skip expensive search for large selections
+          const from = findTextInMarkdown(fullContent, text, currentSel, container);
+          milkdownBridge.selection = from >= 0
+            ? { from, to: from + text.length, text }
+            : null;
+        } else {
+          milkdownBridge.selection = null;
+          if (currentSel.rangeCount > 0) {
+            milkdownBridge.cursorOffset = computeCursorOffset(fullContent, currentSel, container);
+          }
         }
-      }
+      }, 100);
     };
 
     document.addEventListener('selectionchange', handleSelectionChange);
-    return () => document.removeEventListener('selectionchange', handleSelectionChange);
+    return () => {
+      document.removeEventListener('selectionchange', handleSelectionChange);
+      if (selectionTimerRef.current) clearTimeout(selectionTimerRef.current);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
