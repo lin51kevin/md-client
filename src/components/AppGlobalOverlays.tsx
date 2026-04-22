@@ -18,8 +18,8 @@ import type { FileChangeToast as FileChangeToastState } from '../hooks/useFileWa
 import type { UpdateInfo } from '../hooks/useAutoUpgrade';
 import { useUIStore, useEditorStore } from '../stores';
 import { useI18n } from '../i18n';
-import { CommandPalette } from './toolbar/CommandPalette';
-import { QuickOpen } from './toolbar/QuickOpen';
+const CommandPalette = lazy(() => import('./toolbar/CommandPalette').then(m => ({ default: m.CommandPalette })));
+const QuickOpen = lazy(() => import('./toolbar/QuickOpen').then(m => ({ default: m.QuickOpen })));
 import { SnippetPicker } from './modal/SnippetPicker';
 import { SnippetManager } from './modal/SnippetManager';
 import { FileChangeToast } from './editor/FileChangeToast';
@@ -100,6 +100,7 @@ export function AppGlobalOverlays({
         </div>
       )}
 
+      <Suspense fallback={null}>
       <CommandPalette
         visible={showCommandPalette}
         commands={commandRegistry}
@@ -107,7 +108,9 @@ export function AppGlobalOverlays({
         locale={locale}
         t={t}
       />
+      </Suspense>
 
+      <Suspense fallback={null}>
       <QuickOpen
         visible={showQuickOpen}
         onClose={() => setShowQuickOpen(false)}
@@ -115,6 +118,7 @@ export function AppGlobalOverlays({
         fileTreeRoot={fileTreeRoot}
         recentFiles={recentFiles}
       />
+      </Suspense>
 
       <SnippetPicker
         visible={showSnippetPicker}

@@ -6,7 +6,7 @@
  * Context menus and inline modals are rendered via AppContextMenus.
  * Global overlays (CommandPalette, QuickOpen, etc.) via AppGlobalOverlays.
  */
-import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo, memo, lazy, Suspense } from 'react';
 import { undo, redo } from '@codemirror/commands';
 
 import { useI18n } from '../i18n';
@@ -49,15 +49,17 @@ import { Toolbar } from '../components/toolbar/Toolbar';
 import { TabBar } from '../components/toolbar/TabBar';
 import { TabContextMenu } from '../components/toolbar/TabContextMenu';
 import { StatusBar } from '../components/toolbar/StatusBar';
-import { SettingsModal } from '../components/modal/SettingsModal';
+const SettingsModal = lazy(() => import('../components/modal/SettingsModal').then(m => ({ default: memo(m.SettingsModal) })));
 import { DragOverlay } from '../components/editor/DragOverlay';
-import { SearchPanel } from '../components/toolbar/SearchPanel';
-import { TocSidebar } from '../components/sidebar/TocSidebar';
-import { FileTreeSidebar, type FileTreeSidebarHandle } from '../components/file/FileTreeSidebar';
+const SearchPanel = lazy(() => import('../components/toolbar/SearchPanel').then(m => ({ default: m.SearchPanel })));
+import { TocSidebar as _TocSidebar } from '../components/sidebar/TocSidebar';
+const TocSidebar = memo(_TocSidebar);
+import { FileTreeSidebar as _FileTreeSidebar, type FileTreeSidebarHandle } from '../components/file/FileTreeSidebar';
+const FileTreeSidebar = memo(_FileTreeSidebar);
 import { ActivityBar } from '../components/editor/ActivityBar';
 import { SidebarContainer } from '../components/sidebar/SidebarContainer';
 import { PluginPanel } from '../components/plugin';
-import { AboutModal } from '../components/modal/AboutModal';
+const AboutModal = lazy(() => import('../components/modal/AboutModal').then(m => ({ default: m.AboutModal })));
 import { EditorContentArea } from '../components/editor/EditorContentArea';
 import { PluginSidebarRenderer } from '../components/plugin';
 import { FloatingPanel } from '../components/modal/FloatingPanel';
@@ -127,6 +129,7 @@ export function AppShell() {
     openFileInTab, openFileWithContent, createNewTab, closeTab, closeMultipleTabs, reorderTabs,
     markSaved, markSavedAs, renameTab, setTabDisplayName, pinTab, unpinTab, updateTab,
     nextTab, previousTab,
+    resolveTabDoc,
   } = useTabs(t, () => recentFilesHook.refreshRecentFiles());
 
   const isPristine = tabs.length === 1 && !tabs[0].filePath && !tabs[0].isDirty && !tabs[0].displayName;
@@ -144,7 +147,7 @@ export function AppShell() {
 
   // ── File operations ──────────────────────────────────────────────
   const { handleOpenFile, handleSaveFile: rawHandleSaveFile, handleSaveAsFile, handleExportDocx, handleExportPdf, handleExportHtml, handleExportEpub, handleExportPng, exporting } = useFileOps({
-    getActiveTab, tabs, openFileInTab, markSaved, markSavedAs, t, onFirstSave: handleFirstSave,
+    getActiveTab, tabs, resolveTabDoc, openFileInTab, markSaved, markSavedAs, t, onFirstSave: handleFirstSave,
   });
 
   // ── Import operations ──────────────────────────────────────────
@@ -317,7 +320,8 @@ export function AppShell() {
     },
   });
 
-  const commandRegistry = useMemo(() => createCommandRegistry({
+  const commandRegistryRef = useRef<any[]>([]);
+  commandRegistryRef.current = createCommandRegistry({
     createNewTab, handleOpenFile, handleSaveFile: handleSaveWithWatchMark, handleSaveAsFile,
     setViewMode, focusMode, setFocusMode,
     handleFormatAction, handleExportDocx, handleExportPdf, handleExportHtml,
@@ -332,7 +336,7 @@ export function AppShell() {
       const tab = tabsRef.current.find(t => t.id === activeTabIdRef.current);
       if (tab?.filePath) revealInExplorer(tab.filePath).catch(() => {});
     },
-  }), [createNewTab, handleOpenFile, handleSaveWithWatchMark, handleSaveAsFile, setViewMode, focusMode, setFocusMode, handleFormatAction, handleExportDocx, handleExportPdf, handleExportHtml, handleExportPng, previewRef, setShowSnippetPicker, setShowSnippetManager, activePanel, setActivePanel, cmViewRef, isTauri]);
+  });
 
   const AI_PANEL_ID = 'ai-copilot-official';
 
@@ -451,6 +455,7 @@ export function AppShell() {
             onToggleWysiwygMode={() => setMilkdownPreview(!milkdownPreview)}
           />
 
+          <Suspense fallback={null}>
           {showSettings && (
             <SettingsModal
               visible={showSettings} onClose={() => setShowSettings(false)}
@@ -470,8 +475,11 @@ export function AppShell() {
               typewriterOptions={typewriterOptions} onTypewriterOptionsChange={setTypewriterOptions}
             />
           )}
+          </Suspense>
 
+          <Suspense fallback={null}>
           {showAbout && <AboutModal visible={showAbout} onClose={() => setShowAbout(false)} />}
+          </Suspense>
 
           <TabBar
             tabs={isPristine ? [] : tabs} activeTabId={activeTabId}
@@ -505,6 +513,7 @@ export function AppShell() {
           <FileTreeSidebar ref={fileTreeSidebarRef} visible={showFileTree} onFileOpen={(path) => openFileInTab(path)} activeFilePath={activeTab.filePath ?? null} onClose={() => setActivePanel(null)} onRootChange={setFileTreeRoot} />
           <TocSidebar key={activeTabId} toc={isPristine ? [] : tocEntries} onNavigate={handleTocNavigate} activeId={activeTocId} visible={showToc} onClose={() => setActivePanel(null)} />
 
+          <Suspense fallback={null}>
           <SearchPanel
             visible={showSearchPanel} content={activeTab.doc}
             currentFilePath={activeTab.filePath ?? null}
@@ -519,6 +528,7 @@ export function AppShell() {
             onClose={() => { clearMatches(); setActivePanel(null); }}
             openTabs={tabs} currentTabId={activeTabId} onAnyTabContentChange={updateTabDoc}
           />
+          </Suspense>
 
           {showPluginsPanel && (
             <PluginPanel
@@ -601,7 +611,7 @@ export function AppShell() {
       )}
 
       <AppGlobalOverlays
-        commandRegistry={commandRegistry}
+        commandRegistry={commandRegistryRef.current}
         locale={locale}
         fileTreeRoot={fileTreeRoot}
         recentFiles={recentFiles}
