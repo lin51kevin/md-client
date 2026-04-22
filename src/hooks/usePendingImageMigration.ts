@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import type { Tab } from '../types';
 import { getPendingImages, clearPendingImages } from '../lib/file';
 import { buildImageMarkdownPath } from '../lib/utils';
+import { markSelfSave } from './useFileWatcher';
 
 interface UsePendingImageMigrationOptions {
   tabs: Tab[];
@@ -49,6 +50,7 @@ export function usePendingImageMigration({ tabs, updateTabDoc, markSaved }: UseP
       try {
         await invoke('write_file_text', { path: savedPath, content });
         markSaved(tabId);
+        markSelfSave(savedPath);
       } catch {
         // 重新保存失败时不阻塞
       }

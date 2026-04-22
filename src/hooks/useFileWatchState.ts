@@ -13,7 +13,7 @@ import { useFileWatcher } from './useFileWatcher';
 interface FileWatchStateParams {
   tabs: Tab[];
   enabled: boolean;
-  /** autoReload kept for backward compat; clean tabs always reload silently */
+  /** True = auto-reload clean tabs silently; False = always show toast */
   autoReload: boolean;
   updateTab: (tabId: string, patch: Partial<Tab>) => void;
 }
@@ -24,7 +24,7 @@ export interface FileChangeToast {
   filePath: string;
 }
 
-export function useFileWatchState({ tabs, enabled, autoReload: _autoReload, updateTab }: FileWatchStateParams) {
+export function useFileWatchState({ tabs, enabled, autoReload, updateTab }: FileWatchStateParams) {
   const [fileChangeToast, setFileChangeToast] = useState<FileChangeToast | null>(null);
 
   const handleReloadFile = useCallback(async (tabId: string, filePath: string) => {
@@ -43,13 +43,17 @@ export function useFileWatchState({ tabs, enabled, autoReload: _autoReload, upda
     tabs,
     enabled,
     onFileChanged: (tabId, filePath) => {
-      const tab = tabs.find(t => t.id === tabId);
-      if (tab?.isDirty) {
-        // User has unsaved edits — always show toast to avoid data loss
-        setFileChangeToast({ type: 'modified', tabId, filePath });
+      if (autoReload) {
+        const tab = tabs.find(t => t.id === tabId);
+        if (tab?.isDirty) {
+          // User has unsaved edits — show toast to avoid data loss
+          setFileChangeToast({ type: 'modified', tabId, filePath });
+        } else {
+          // Tab is clean — silently reload
+          void handleReloadFile(tabId, filePath);
+        }
       } else {
-        // Tab is clean (no unsaved edits) — silently reload
-        void handleReloadFile(tabId, filePath);
+        setFileChangeToast({ type: 'modified', tabId, filePath });
       }
     },
     onFileDeleted: (tabId, filePath) => {

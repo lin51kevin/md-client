@@ -6,6 +6,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { searchAll, replaceAll } from '../lib/search';
+import { markSelfSave } from './useFileWatcher';
 import type { SearchResultItem } from '../types/search';
 
 export type SearchOptions = { caseSensitive: boolean; wholeWord: boolean; regex: boolean };
@@ -234,6 +235,7 @@ export function useSearchLogic({
         const absTo = lineStart + r.match_end;
         const newContent = fileContent.slice(0, absFrom) + replacement + fileContent.slice(absTo);
         await invoke('write_file_text', { path: r.file_path, content: newContent });
+        markSelfSave(r.file_path);
         setSearchResults(prev => prev.filter((_, i) => i !== selectedIdx));
         setSelectedIdx(null);
         setSearchStatus(s => ({ ...s, replaceMessage: t('search.replaced', { count: 1 }) }));
