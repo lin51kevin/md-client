@@ -28,18 +28,8 @@ export function renderMermaidPreview(
       const wrapper = document.createElement('div');
       wrapper.className = 'mermaid-diagram';
       wrapper.innerHTML = svg;
-
-      // Force text visibility via inline !important styles — the highest CSS
-      // specificity, immune to Mermaid's internal <style> and Crepe's resets.
-      wrapper.querySelectorAll('text, tspan').forEach((el) => {
-        (el as SVGElement).style.setProperty('fill', '#1f1f1f', 'important');
-      });
-      // Safety net for any foreignObject content (shouldn't exist with
-      // htmlLabels: false, but guard against edge cases).
-      wrapper.querySelectorAll('foreignObject div, .nodeLabel').forEach((el) => {
-        (el as HTMLElement).style.setProperty('color', '#1f1f1f', 'important');
-      });
-
+      // Text color is handled by theme.css (.mermaid-diagram svg text { fill: var(--text-primary) })
+      // which correctly adapts to light/dark theme without needing inline overrides here.
       applyPreview(wrapper);
     })
     .catch((err) => {

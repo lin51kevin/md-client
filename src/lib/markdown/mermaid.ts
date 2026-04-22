@@ -38,7 +38,7 @@ function detectTheme(): 'dark' | 'default' {
   // computed color is "rgb(r, g, b)" or "rgba(r, g, b, a)"
   const match = computed.match(/(\d+)/g);
   if (!match || match.length < 3) return 'default';
-  const [, r, g, b] = match.map(Number);
+  const [r, g, b] = match.map(Number);
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
   return luminance < 0.45 ? 'dark' : 'default';
 }
@@ -51,6 +51,7 @@ function getThemeConfig(theme: 'dark' | 'default') {
     return {
       theme: 'dark' as const,
       themeVariables: {
+        // --- General ---
         primaryTextColor: '#e0e0e0',
         primaryColor: '#2d4a6f',
         primaryBorderColor: '#4a7ab5',
@@ -61,11 +62,85 @@ function getThemeConfig(theme: 'dark' | 'default') {
         edgeLabelBackground: '#1e1e2e',
         clusterBkg: '#2a2a3c',
         clusterBorder: '#4a5568',
+        // --- Sequence diagram ---
+        actorBkg: '#2d4a6f',
+        actorBorder: '#4a7ab5',
+        actorTextColor: '#e0e0e0',
+        actorLineColor: '#7ab0e0',
+        signalColor: '#7ab0e0',
+        signalTextColor: '#e0e0e0',
+        labelBoxBkgColor: '#2a2a3c',
+        labelBoxBorderColor: '#4a5568',
+        labelTextColor: '#e0e0e0',
+        loopTextColor: '#e0e0e0',
+        noteBkgColor: '#3d3d5c',
+        noteBorderColor: '#4a5568',
+        noteTextColor: '#e0e0e0',
+        activationBkgColor: '#2d4a6f',
+        activationBorderColor: '#4a7ab5',
+        // --- Gantt ---
+        taskTextColor: '#e0e0e0',
+        taskTextLightColor: '#e0e0e0',
+        taskTextDarkColor: '#e0e0e0',
+        taskTextOutsideColor: '#e0e0e0',
+        taskTextClickableColor: '#79c0ff',
+        sectionBkgColor: '#21262d',
+        altSectionBkgColor: '#161b22',
+        gridColor: '#30363d',
+        activeTaskBkgColor: '#2d4a6f',
+        activeTaskBorderColor: '#4a7ab5',
+        doneTaskBkgColor: '#1a2d1a',
+        doneTaskBorderColor: '#3c6e3c',
+        critBkgColor: '#4a1a1a',
+        critBorderColor: '#8b2020',
+        todayLineColor: '#f85149',
+        // --- Pie chart ---
+        pieTitleTextColor: '#e0e0e0',
+        pieSectionTextColor: '#e0e0e0',
+        pieLegendTextColor: '#e0e0e0',
+        // --- Class diagram ---
+        classText: '#e0e0e0',
+        // --- State diagram ---
+        labelColor: '#e0e0e0',
+        // --- ER diagram ---
+        attributeBackgroundColorEven: '#21262d',
+        attributeBackgroundColorOdd: '#161b22',
       },
       themeCSS: `
         text, tspan { fill: #e0e0e0 !important; }
         .nodeLabel, .edgeLabel, .label { color: #e0e0e0 !important; }
-        /* Make connection lines more visible in dark mode */
+        /* Sequence diagram */
+        .actor text, .actor tspan { fill: #e0e0e0 !important; }
+        .messageText { fill: #e0e0e0 !important; stroke: none !important; }
+        .labelText, .labelText tspan { fill: #e0e0e0 !important; }
+        .loopText, .loopText tspan { fill: #e0e0e0 !important; }
+        .noteText, .noteText tspan { fill: #c0c0c0 !important; }
+        /* Gantt */
+        .taskText, .taskTextOutsideLeft, .taskTextOutsideRight { fill: #e0e0e0 !important; }
+        .titleText { fill: #e0e0e0 !important; }
+        .sectionTitle, .grid .tick text { fill: #b0b0b0 !important; }
+        /* Pie chart */
+        .pieTitleText { fill: #e0e0e0 !important; }
+        .legend text, .pieLegend text { fill: #e0e0e0 !important; }
+        text.slice { fill: #e0e0e0 !important; }
+        /* Class diagram */
+        .classText { fill: #e0e0e0 !important; }
+        .classLabel .label { color: #e0e0e0 !important; }
+        /* State diagram */
+        .stateLabel text, .stateLabel tspan { fill: #e0e0e0 !important; }
+        .statediagram-state .state-title text { fill: #e0e0e0 !important; }
+        /* ER diagram */
+        .er.entityLabel { fill: #e0e0e0 !important; }
+        .er.relationshipLabel { fill: #c0c0c0 !important; }
+        .er.attributeBoxEven text, .er.attributeBoxOdd text { fill: #e0e0e0 !important; }
+        /* Git graph */
+        .gitGraph .label text, .gitGraph .label tspan { fill: #e0e0e0 !important; }
+        .branch-label text { fill: #e0e0e0 !important; }
+        /* Mindmap */
+        .mindmap-node .label, .mindmap-node text { fill: #e0e0e0 !important; }
+        /* Timeline */
+        .timeline-section text, .cScale0 text, .cScale1 text, .cScale2 text { fill: #e0e0e0 !important; }
+        /* Connection lines */
         .flowchart-link, .edgePath path.path {
           stroke-width: 2px !important;
           stroke: #7ab0e0 !important;

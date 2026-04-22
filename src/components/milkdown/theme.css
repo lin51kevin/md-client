@@ -197,17 +197,14 @@
 
 /* ── Mermaid diagrams ── */
 /* Reset Crepe's "* { margin:0; padding:0; box-sizing:border-box }" which clips
-   <foreignObject> labels, and reset `color` so SVG <text fill="currentColor">
-   nodes are readable on mermaid's light-colored node shapes (theme: 'default').
-   The app's dark-mode sets color: var(--text-primary) = white on .milkdown,
-   which propagates into SVG text via fill:currentColor → invisible text. */
+   <foreignObject> labels.
+   Use var(--text-primary) so currentColor inheritance follows the app theme
+   (dark mode: #f0f6fc, light mode: #1f2328). */
 .milkdown-preview .mermaid-diagram {
   display: flex;
   justify-content: center;
   margin: 16px 0;
-  /* Break the CSS color inheritance chain: mermaid uses theme:'default' which
-     renders light-background nodes, so text must always be dark. */
-  color: #1f1f1f;
+  color: var(--text-primary, #1f1f1f);
 }
 .milkdown-preview .mermaid-diagram svg,
 .milkdown-preview .mermaid-diagram svg * {
@@ -220,11 +217,13 @@
   height: auto;
   overflow: visible !important;
 }
-/* Ensure SVG <text> elements are visible (fill overrides currentColor
-   inheritance from dark-mode).  Also cover <tspan> for nested labels. */
+/* SVG text visibility — use theme-aware color so both light and dark modes work.
+   Mermaid's themeCSS injects fill values inside the SVG <style>, but external
+   stylesheet specificity wins, so we must match here. var(--text-primary) maps
+   to the correct readable color for the active theme. */
 .milkdown-preview .mermaid-diagram svg text,
 .milkdown-preview .mermaid-diagram svg tspan {
-  fill: #1f1f1f !important;
+  fill: var(--text-primary, #1f1f1f) !important;
   opacity: 1 !important;
   visibility: visible !important;
 }
@@ -232,7 +231,7 @@
 .milkdown-preview .mermaid-diagram .nodeLabel,
 .milkdown-preview .mermaid-diagram .label div,
 .milkdown-preview .mermaid-diagram .label span {
-  color: #1f1f1f !important;
+  color: var(--text-primary, #1f1f1f) !important;
   opacity: 1 !important;
   visibility: visible !important;
 }
@@ -241,11 +240,11 @@
   overflow: visible !important;
 }
 .milkdown-preview .mermaid-diagram svg foreignObject > div {
-  color: #1f1f1f !important;
+  color: var(--text-primary, #1f1f1f) !important;
 }
 /* Edge labels inherit from .mermaid-diagram via color or foreignObject */
 .milkdown-preview .mermaid-diagram .edgeLabel .label {
-  color: #1f1f1f;
+  color: var(--text-primary, #1f1f1f);
   background-color: transparent;
 }
 

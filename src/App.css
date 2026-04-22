@@ -180,6 +180,44 @@ body {
   max-width: 100%;
   height: auto;
 }
+/* Dark mode: ensure all SVG text stays readable as a CSS-level fallback */
+.markdown-preview-dark .mermaid svg text,
+.markdown-preview-dark .mermaid svg tspan {
+  fill: #e0e0e0 !important;
+}
+/* Sequence */
+.markdown-preview-dark .mermaid svg .messageText {
+  fill: #e0e0e0 !important;
+  stroke: none !important;
+}
+.markdown-preview-dark .mermaid svg .actor text,
+.markdown-preview-dark .mermaid svg .actor tspan {
+  fill: #e0e0e0 !important;
+}
+.markdown-preview-dark .mermaid svg .noteText,
+.markdown-preview-dark .mermaid svg .noteText tspan {
+  fill: #c0c0c0 !important;
+}
+/* Gantt */
+.markdown-preview-dark .mermaid svg .taskText,
+.markdown-preview-dark .mermaid svg .taskTextOutsideLeft,
+.markdown-preview-dark .mermaid svg .taskTextOutsideRight,
+.markdown-preview-dark .mermaid svg .titleText {
+  fill: #e0e0e0 !important;
+}
+/* Pie */
+.markdown-preview-dark .mermaid svg .pieTitleText,
+.markdown-preview-dark .mermaid svg .legend text,
+.markdown-preview-dark .mermaid svg text.slice {
+  fill: #e0e0e0 !important;
+}
+/* Class / State / ER / Git */
+.markdown-preview-dark .mermaid svg .classText,
+.markdown-preview-dark .mermaid svg .stateLabel text,
+.markdown-preview-dark .mermaid svg .er.entityLabel,
+.markdown-preview-dark .mermaid svg .branch-label text {
+  fill: #e0e0e0 !important;
+}
 .markdown-preview .mermaid-error {
   background-color: #fef2f2;
   border: 1px solid #fecaca;
