@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef, useId, memo } from "
 import DOMPurify from "dompurify";
 import ReactMarkdown from "react-markdown";
 import "katex/dist/katex.min.css";
+import './preview.css';
 import { invoke } from "@tauri-apps/api/core";
 import { openPath, openUrl } from "@tauri-apps/plugin-opener";
 import { PREVIEW_REMARK_PLUGINS, PREVIEW_REHYPE_PLUGINS } from "../../lib/markdown/pipeline";

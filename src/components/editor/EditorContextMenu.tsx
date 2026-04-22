@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import './context-menu.css';
 import {
   Scissors, Copy, Clipboard, MousePointerClick,
   Bold, Italic, Strikethrough, Code, Link2, Image,

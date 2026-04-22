@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
+import './command-palette.css';
 import type { Command } from '../../lib/editor';
 import { searchCommands, recordCommandExecution, CATEGORY_LABELS } from '../../lib/editor';
 

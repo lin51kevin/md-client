@@ -1,0 +1,155 @@
+/* ── Command Palette ───────────────────────────────────────────────── */
+
+.command-palette-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+  z-index: 10000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 15vh;
+  animation: cmd-palette-fade-in 0.12s ease-out;
+}
+
+@keyframes cmd-palette-fade-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.command-palette {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  width: 540px;
+  max-width: 90vw;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.command-palette-search {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.command-palette-search-icon {
+  padding: 14px 10px 14px 16px;
+  font-size: 16px;
+  color: var(--text-secondary);
+  user-select: none;
+}
+
+.command-palette-input {
+  flex: 1;
+  padding: 14px 16px 14px 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 15px;
+  outline: none;
+}
+.command-palette-input::placeholder {
+  color: var(--text-tertiary, var(--text-secondary));
+  opacity: 0.6;
+}
+
+.command-palette-list {
+  max-height: 360px;
+  overflow-y: auto;
+  padding: 6px 0;
+}
+
+.command-group-header {
+  padding: 8px 16px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary, var(--text-secondary));
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  user-select: none;
+}
+
+.command-item {
+  display: flex;
+  align-items: center;
+  padding: 9px 16px;
+  cursor: pointer;
+  gap: 12px;
+  transition: background-color 0.08s ease;
+}
+.command-item-selected {
+  background: var(--accent-bg, rgba(59, 130, 246, 0.1));
+}
+.command-item:hover {
+  background: var(--accent-bg-hover, rgba(59, 130, 246, 0.06));
+}
+
+.command-item-label {
+  flex: 1;
+  color: var(--text-primary);
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.command-item-shortcut {
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  padding: 2px 7px;
+  border-radius: 4px;
+  white-space: nowrap;
+  font-family: 'SF Mono', 'Cascadia Code', Consolas, monospace;
+}
+
+.command-palette-empty {
+  padding: 20px 16px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.command-palette-footer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 16px;
+  border-top: 1px solid var(--border-color);
+  font-size: 11px;
+  color: var(--text-secondary);
+  user-select: none;
+}
+
+/* ── Quick Open ── */
+.quick-open-path {
+  font-size: 12px;
+  color: var(--text-tertiary, var(--text-secondary));
+  opacity: 0.65;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px;
+  flex-shrink: 1;
+}
+
+/* ── Cross-File Search Panel ── */
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+.cross-file-search-panel .search-highlight {
+  background-color: rgba(255, 200, 50, 0.4);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+.cross-file-search-panel .spin-icon {
+  animation: spin 1s linear infinite;
+}

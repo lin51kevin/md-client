@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Maximize, Minimize } from 'lucide-react';
+import './slideshow.css';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeKatex from 'rehype-katex';

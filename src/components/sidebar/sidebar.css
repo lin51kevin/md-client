@@ -1,0 +1,101 @@
+/* ── File Tree ─────────────────────────────────────────────────────── */
+
+.file-tree-tool-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.file-tree-tool-btn:hover {
+  background-color: var(--hover-bg, color-mix(in srgb, var(--text-secondary) 10%, transparent));
+  color: var(--text-primary);
+}
+
+.file-tree-item:hover {
+  background-color: var(--hover-bg, rgba(0,0,0,0.04));
+  color: var(--accent-color);
+}
+
+[data-theme="dark"] .file-tree-item:hover {
+  background-color: rgba(255,255,255,0.06);
+}
+
+@keyframes fileTreeHighlight {
+  0% { background-color: color-mix(in srgb, var(--accent-color) 25%, transparent); }
+  100% { background-color: color-mix(in srgb, var(--accent-color) 12%, transparent); }
+}
+.file-tree-item-active {
+  animation: fileTreeHighlight 0.3s ease-out;
+}
+
+/* ── Breadcrumb Navigation ─────────────────────────────────────────── */
+
+.breadcrumb-nav {
+  display: flex;
+  align-items: center;
+  padding: 2px 12px;
+  min-height: 24px;
+  background: var(--bg-secondary, #f5f5f5);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 12px;
+  color: var(--text-secondary);
+  overflow: hidden;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.breadcrumb-segment {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.breadcrumb-separator {
+  margin: 0 2px;
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+.breadcrumb-icon {
+  margin-right: 3px;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.breadcrumb-link {
+  display: inline-flex;
+  align-items: center;
+  background: none;
+  border: none;
+  padding: 1px 3px;
+  border-radius: 3px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background-color 0.1s, color 0.1s;
+}
+
+.breadcrumb-link:hover {
+  background: var(--accent-bg, rgba(59, 130, 246, 0.1));
+  color: var(--accent-color, #3b82f6);
+}
+
+.breadcrumb-current {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 3px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.breadcrumb-empty {
+  color: var(--text-tertiary, var(--text-secondary));
+  opacity: 0.6;
+  font-style: italic;
+}

@@ -1,0 +1,345 @@
+/* ── Snippet Picker ─────────────────────────────────────────────────── */
+
+.snippet-picker-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.snippet-picker {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  width: 440px;
+  max-height: 60vh;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.snippet-picker-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-color);
+}
+.snippet-picker-input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+  padding: 2px 0;
+}
+.snippet-picker-list {
+  overflow-y: auto;
+  flex: 1;
+  max-height: 50vh;
+  padding: 4px 0;
+}
+.snippet-item {
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+  border-left: 3px solid transparent;
+}
+.snippet-item:hover,
+.snippet-item-active {
+  background: var(--hover-bg);
+  border-left-color: var(--accent-color, #007acc);
+}
+.snippet-name {
+  font-size: 14px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+.snippet-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+.snippet-preview {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-top: 3px;
+  font-family: monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.snippet-empty {
+  padding: 24px 16px;
+  text-align: center;
+  font-size: 13px;
+}
+
+/* ── Snippet Manager ── */
+.snippet-manager {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.snippet-manager-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.snippet-manager-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.snippet-manager-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.snippet-manager-btn:hover {
+  background: var(--hover-bg);
+  color: var(--text-primary);
+}
+.snippet-manager-btn-primary {
+  background: var(--accent-color, #007acc);
+  color: #fff !important;
+  border-color: var(--accent-color, #007acc);
+}
+.snippet-manager-btn-primary:hover {
+  opacity: 0.9;
+}
+.snippet-manager-btn-danger:hover {
+  background: #dc354522;
+  color: #dc3545;
+  border-color: #dc354555;
+}
+.snippet-manager-btn-text {
+  border: none;
+  background: none;
+  color: var(--accent-color, #007acc);
+  padding: 4px 8px;
+}
+.snippet-manager-btn-text:hover {
+  text-decoration: underline;
+  opacity: 0.85;
+}
+.snippet-manager-list {
+  flex: 1;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  min-height: 120px;
+}
+.snippet-manager-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color 0.12s;
+  cursor: pointer;
+}
+.snippet-manager-item:last-child {
+  border-bottom: none;
+}
+.snippet-manager-item:hover {
+  background: var(--hover-bg);
+}
+.snippet-manager-item-editing {
+  background: var(--accent-bg);
+}
+.snippet-manager-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.snippet-manager-item-name {
+  font-size: 13px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+.snippet-manager-item-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.snippet-manager-footer {
+  margin-top: 8px;
+  text-align: right;
+}
+
+/* ── Recent file remove button ── */
+button:hover .recent-remove-btn,
+button:focus .recent-remove-btn {
+  opacity: 1 !important;
+}
+.recent-remove-btn:hover {
+  color: #ef4444 !important;
+  background: rgba(239, 68, 68, 0.12);
+}
+
+/* ── Snippet Editor Modal ── */
+.snippet-editor-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 10002;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.snippet-editor {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  width: 480px;
+  max-height: 80vh;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.snippet-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.snippet-editor-header button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.snippet-editor-header button:hover {
+  background: var(--hover-bg);
+  color: var(--text-secondary);
+}
+.snippet-editor-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+}
+.snippet-editor-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.snippet-editor-input {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.snippet-editor-input:focus {
+  border-color: var(--accent-color, #007acc);
+}
+.snippet-editor-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Consolas, monospace;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.snippet-editor-textarea:focus {
+  border-color: var(--accent-color, #007acc);
+}
+.snippet-editor-hint {
+  font-size: 11px;
+  padding: 6px 10px;
+  background: var(--bg-secondary);
+  border-radius: 6px;
+  font-family: monospace;
+}
+.snippet-editor-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-color);
+}
+
+/* ── Snippet Manager Standalone Modal ── */
+.snippet-manager-modal {
+  width: 520px;
+  max-height: 70vh;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.snippet-manager-modal .snippet-manager-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.snippet-manager-modal .snippet-manager-header button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+}
+.snippet-manager-modal .snippet-manager-header button:hover {
+  background: var(--hover-bg);
+  color: var(--text-secondary);
+}
+.snippet-manager-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}

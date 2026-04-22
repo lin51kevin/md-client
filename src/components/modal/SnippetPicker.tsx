@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Search } from 'lucide-react';
+import './snippet.css';
 import { useI18n } from '../../i18n';
 import type { Snippet } from '../../lib/storage';
 import { getSnippets, resolveSnippet } from '../../lib/storage';

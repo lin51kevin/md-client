@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useI18n } from '../../i18n';
 import { Search, X, CaseSensitive, Regex, FileText } from 'lucide-react';
+import './command-palette.css';
 import { useSearchLogic } from '../../hooks/useSearchLogic';
 import type { SearchResultItem } from '../../types/search';
 
