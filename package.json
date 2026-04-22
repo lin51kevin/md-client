@@ -1,7 +1,7 @@
 {
   "name": "marklite",
   "private": true,
-  "version": "0.9.9",
+  "version": "0.10.0",
   "description": "A lightweight Markdown editor built with Tauri, React, and CodeMirror",
   "author": "kevin",
   "license": "MIT",

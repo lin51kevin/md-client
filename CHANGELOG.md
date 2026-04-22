@@ -6,7 +6,72 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [v0.10.0] - 2026-04-22
+
+
+### Added
+
+- display build time in About modal (`a872578`)
+- add insert table/image to preview context menu (`f001f36`)
+- detect external modifications before save (`90ef417`)
+
+
+
+### Test
+
+- update placeholder matcher after findPlaceholder text change (`04da8b6`)
+
+
+
+### Fixed
+
+- restore autoReload logic and add missing markSelfSave calls (`2d6304c`)
+- resolve false 'external modification' toast on Ctrl+S save (`ede776e`)
+- support image paste and drag-drop in Milkdown WYSIWYG mode (`47fc8e7`)
+- auto-search on input, remove press-Enter hints (`b3dbcee`)
+
+
+
+### Changed
+
+- remove completed one-time import migration script (`ef7fd51`)
+- add __BUILD_TIME__ constant and bundle size visualizer (`d707907`)
+
+
+
+### Performance
+
+- lazy-load non-default i18n locales on demand (`ae7bf4c`)
+- split highlight.js into eager Tier 1 + async Tier 2 (`fb16ebc`)
+
+
+
+### Changed
+
+- deduplicate isAbsolutePath via shared path utility (`10d9207`)
+- remove dead exports (clampPosition, hasLatex) (`862b47f`)
+- convert markdown barrel to explicit named exports (`925047c`)
+- improve mermaid rendering and theme system (`36b3ae5`)
+
+
+
+### Style
+
+- align milkdown floating toolbars with main toolbar style (`bdcae40`)
+
+
+
+
+
+
+
 ## [v0.9.9] - 2026-04-22
+
+
+### Changed
+
+- bump version to v0.9.9 (`3a37664`)
+
 
 
 ### Test
