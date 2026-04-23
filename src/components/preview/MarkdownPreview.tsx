@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef, useId, memo } from "
 import DOMPurify from "dompurify";
 import ReactMarkdown from "react-markdown";
 import "katex/dist/katex.min.css";
+import '../css/embed-containers.css';
 import './preview.css';
 import { invoke } from "@tauri-apps/api/core";
 import { openPath, openUrl } from "@tauri-apps/plugin-opener";
@@ -415,6 +416,70 @@ export const MarkdownPreview = memo(function MarkdownPreview({
         <a href={href} onClick={handleClick} {...props}>
           {children}
         </a>
+      );
+    };
+
+    // ── Video embed ───────────────────────────────────────────────────────────
+    // Supports raw <video> HTML tags (with optional controls, autoplay, loop, muted, poster).
+    // rehype-raw parses these into hast element nodes; we render them as native <video>.
+    components.video = ({
+      src,
+      controls = true,
+      autoPlay,
+      loop,
+      muted,
+      poster,
+      width,
+      height,
+      ...props
+    }: React.ComponentPropsWithoutRef<'video'>) => {
+      if (!src) return null;
+      // Resolve local relative paths against the document directory
+      const resolvedSrc = filePath && !/^(https?:|data:|blob:)/.test(src)
+        ? resolvePath(filePath, src)
+        : src;
+      return (
+        <div className="video-container">
+          <video
+            src={resolvedSrc}
+            controls={controls}
+            autoPlay={autoPlay}
+            loop={loop}
+            muted={muted}
+            poster={poster}
+            width={width}
+            height={height}
+            preload="metadata"
+            {...props}
+          />
+        </div>
+      );
+    };
+
+    // ── iframe embed (YouTube, Bilibili, etc.) ─────────────────────────────────
+    // rehype-raw passes through <iframe> elements; we sandbox them for security.
+    components.iframe = ({
+      src,
+      title,
+      width,
+      height,
+      allow,
+      ...props
+    }: React.ComponentPropsWithoutRef<'iframe'>) => {
+      if (!src) return null;
+      return (
+        <div className="iframe-container">
+          <iframe
+            src={src}
+            title={title ?? 'embedded content'}
+            width={width}
+            height={height}
+            allow={allow ?? 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen'}
+            sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
+            loading="lazy"
+            {...props}
+          />
+        </div>
       );
     };
 

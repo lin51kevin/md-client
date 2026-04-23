@@ -8,6 +8,7 @@ import { undoDepth, redoDepth, undo as pmUndo, redo as pmRedo } from 'prosemirro
 import '@milkdown/crepe/theme/frame.css';
 import '@milkdown/crepe/theme/common/style.css';
 import 'katex/dist/katex.min.css';
+import '../css/embed-containers.css';
 import './theme.css';
 import { extractFrontmatter, type Frontmatter } from '../../lib/markdown/extensions';
 import { FrontmatterPanel } from './FrontmatterPanel';
