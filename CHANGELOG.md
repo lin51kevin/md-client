@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.10.1] - 2026-04-23
 
 
+### Added
+
+- add video and iframe embed rendering in both preview engines (`32c2cd8`)
+  - Milkdown: extend DOMPurify allowlist for `<video>`/`<source>`/`<iframe>`; wrap in responsive `.video-container` / `.iframe-container`; enforce sandbox on iframes
+  - MarkdownPreview: custom `components.video` and `components.iframe` renderers with local path resolution and security sandboxing
+
+
+### Fixed
+
+- prevent stale plugin context closures via Proxy in usePluginRuntime (`659c9c2`)
+- align Milkdown preview typography and spacing with MarkdownPreview (`6dea2ca`)
+  - Remove hardcoded `font-size: 15px` from `.milkdown-preview`
+  - Align `line-height` 1.7 → 1.6
+  - Add missing `margin-top: 0` on `p`, `ul`, `ol`; add `li { margin-top: 0.25em }`
+  - Fix double vertical spacing on raw HTML blocks (`<p align="center">` etc.) via `:has()` selector
+  - Add `p { margin-bottom: 16px }` and `hr` rule to MarkdownPreview (Tailwind Preflight strips browser defaults)
+
+
 ### Changed
 
 - fix code quality issues and extract search module (`ff643c5`)
