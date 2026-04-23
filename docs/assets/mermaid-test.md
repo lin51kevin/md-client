@@ -219,18 +219,18 @@ timeline
 
 ```mermaid
 quadrantChart
-    title 功能优先级矩阵
-    x-axis 低复杂度 --> 高复杂度
-    y-axis 低价值 --> 高价值
-    quadrant-1 立即实现
-    quadrant-2 计划实现
-    quadrant-3 暂缓
-    quadrant-4 重新评估
-    Mermaid 修复: [0.2, 0.9]
-    插件热更新: [0.7, 0.8]
-    自定义主题: [0.4, 0.6]
-    移动端支持: [0.9, 0.5]
-    拼写检查: [0.3, 0.3]
+    title Feature Priority Matrix
+    x-axis Low Complexity --> High Complexity
+    y-axis Low Value --> High Value
+    quadrant-1 Implement Now
+    quadrant-2 Plan
+    quadrant-3 Defer
+    quadrant-4 Reevaluate
+    Mermaid Fix: [0.2, 0.9]
+    Plugin HotReload: [0.7, 0.8]
+    Custom Theme: [0.4, 0.6]
+    Mobile Support: [0.9, 0.5]
+    Spell Check: [0.3, 0.3]
 ```
 
 ---

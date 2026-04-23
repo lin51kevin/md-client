@@ -16,26 +16,29 @@ const host = process.env.TAURI_DEV_HOST;
 // show a "diagram not registered" error instead of silently crashing.
 const EXCLUDED_MERMAID_DIAGRAMS = [
   'wardleyDiagram',      // 507 KB (+ chevrotain parser)
-  'architectureDiagram', // 146 KB (+ cytoscape 442 KB + cose-bilkent 82 KB)
+  'architectureDiagram', // 146 KB (cytoscape already bundled for mindmap)
   'c4Diagram',           //  70 KB
-  'blockDiagram',        //  72 KB
   'vennDiagram',         //  42 KB
   'xychartDiagram',      //  39 KB
-  'quadrantDiagram',     //  34 KB
   'requirementDiagram',  //  31 KB
   'sankeyDiagram',       //  22 KB
   'kanban-definition',   //  21 KB
   'ishikawaDiagram',     //  18 KB
+  // NOTE: blockDiagram (72 KB), quadrantDiagram (34 KB) are intentionally kept —
+  // they are used in the test file and displayed in production.
+  // NOTE: cose-bilkent (82 KB) must NOT be excluded — mindmap uses it as its
+  // layout algorithm (both as explicit default and as fallback).
 ];
 
 // Parser module names in @mermaid-js/parser (shorter, no "Diagram" suffix)
 const EXCLUDED_PARSER_MODULES = [
   'wardley',
   'architecture',
-  'block',
   'kanban',
   'packet',        // packet diagram parser
   'radar',         // radar diagram parser
+  // NOTE: 'block' removed — @mermaid-js/parser has no block module and
+  // blockDiagram uses mermaid's own internal parser, not this package.
 ];
 
 function mermaidSlimPlugin(): Plugin {
@@ -49,10 +52,6 @@ function mermaidSlimPlugin(): Plugin {
       // Intercept mermaid's internal diagram imports
       if (normalized.includes('node_modules/mermaid/')) {
         if (EXCLUDED_MERMAID_DIAGRAMS.some(d => source.includes(d))) {
-          return '\0mermaid-excluded-diagram';
-        }
-        // Also exclude cose-bilkent layout (only used by architectureDiagram)
-        if (source.includes('cose-bilkent')) {
           return '\0mermaid-excluded-diagram';
         }
       }
