@@ -92,7 +92,12 @@ export function usePluginRuntime(deps: PluginContextDeps) {
         return;
       }
 
-      const ctx = createPluginContext(depsRef.current, id);
+      // Proxy ensures every property read resolves through `depsRef.current`,
+      // so the plugin context always sees the latest callbacks (e.g. getActiveTab).
+      const liveDeps = new Proxy({} as PluginContextDeps, {
+        get(_, prop) { return (depsRef.current as unknown as Record<string, unknown>)[prop as string]; },
+      });
+      const ctx = createPluginContext(liveDeps, id);
       const result = mod.activate(ctx) as { deactivate?: () => void | Promise<void> } | undefined;
 
       activePlugins.current.set(id, {

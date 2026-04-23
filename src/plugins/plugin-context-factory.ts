@@ -49,10 +49,22 @@ export interface PluginContextDeps {
  * @returns A fully assembled PluginContext object.
  */
 export function createPluginContext(deps: PluginContextDeps, pluginId?: string): PluginContext {
+  // Wrap callback deps in lazy forwarders so they read through `deps` at call
+  // time.  When `deps` is a Proxy (see usePluginRuntime), each access resolves
+  // to the latest function, preventing stale closures after tab switches.
   return {
     commands: createCommandsAPI(),
-    workspace: createWorkspaceAPI(deps),
-    editor: createEditorAPI({ cmViewRef: deps.cmViewRef, getActiveTab: deps.getActiveTab }),
+    workspace: createWorkspaceAPI({
+      getActiveTab: () => deps.getActiveTab?.() ?? null,
+      openFileInTab: (p: string) => deps.openFileInTab(p),
+      getOpenFilePaths: () => deps.getOpenFilePaths(),
+      getAllWorkspaceFiles: deps.getAllWorkspaceFiles ? () => deps.getAllWorkspaceFiles!() : undefined,
+      openNewUntitled: deps.openNewUntitled ? (c: string) => deps.openNewUntitled!(c) : undefined,
+    }),
+    editor: createEditorAPI({
+      cmViewRef: deps.cmViewRef,
+      getActiveTab: () => deps.getActiveTab?.() ?? null,
+    }),
     sidebar: createSidebarAPI(deps),
     statusbar: createStatusBarAPI(deps),
     storage: createStorageAPI(pluginId) as PluginContext['storage'],
