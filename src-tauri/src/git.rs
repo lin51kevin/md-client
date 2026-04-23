@@ -109,9 +109,19 @@ fn run_git(dir: &str, args: &[&str]) -> Result<String, String> {
         }
     }
 
-    let output = Command::new("git")
-        .current_dir(dir)
-        .args(args)
+    #[allow(unused_mut)]
+    let mut cmd = Command::new("git");
+    cmd.current_dir(dir).args(args);
+
+    // On Windows, prevent git.exe from flashing a console window in GUI apps.
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
+
+    let output = cmd
         .output()
         .map_err(|e| format!("ERR_GIT_EXEC_FAILED: Failed to execute git: {}", e))?;
 
@@ -136,9 +146,19 @@ fn run_git_truncate(dir: &str, args: &[&str]) -> Result<String, String> {
         }
     }
 
-    let output = Command::new("git")
-        .current_dir(dir)
-        .args(args)
+    #[allow(unused_mut)]
+    let mut cmd = Command::new("git");
+    cmd.current_dir(dir).args(args);
+
+    // On Windows, prevent git.exe from flashing a console window in GUI apps.
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
+
+    let output = cmd
         .output()
         .map_err(|e| format!("ERR_GIT_EXEC_FAILED: Failed to execute git: {}", e))?;
 
