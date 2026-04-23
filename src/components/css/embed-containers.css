@@ -1,0 +1,58 @@
+/**
+ * embed-containers.css — Shared responsive wrappers for embedded media.
+ *
+ * Imported by both MarkdownPreview (preview.css → here) and
+ * MilkdownPreview (theme.css → here) so the styles stay in one place.
+ *
+ * Selectors are intentionally unprefixed; the class names are specific
+ * enough and are only applied by our own rendering code.
+ */
+
+/* ── Video embed ── */
+.video-container {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  margin: 16px 0;
+  border-radius: 6px;
+  overflow: hidden;
+  background-color: var(--bg-secondary, #f6f8fa);
+}
+.video-container video {
+  display: block;
+  width: 100%;
+  max-height: 480px;
+  object-fit: contain;
+  background-color: #000;
+  border-radius: 6px;
+}
+
+/* ── Iframe embed (YouTube, Bilibili, etc.) ── */
+.iframe-container {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  margin: 16px 0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.iframe-container iframe {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 480px;
+  border: 1px solid var(--border-color, #d0d7de);
+  border-radius: 6px;
+}
+
+/*
+ * YouTube / Bilibili iframes carry hardcoded width/height HTML attributes.
+ * Override them so our aspect-ratio layout takes control.
+ * `height: unset` (not `auto`) correctly removes the attribute-driven height
+ * without collapsing the iframe — aspect-ratio fills the gap.
+ */
+.iframe-container iframe[width],
+.iframe-container iframe[height] {
+  width: 100% !important;
+  height: unset !important;
+}
