@@ -9,7 +9,7 @@ import { openPath, openUrl } from "@tauri-apps/plugin-opener";
 import { PREVIEW_REMARK_PLUGINS, PREVIEW_REHYPE_PLUGINS } from "../../lib/markdown/pipeline";
 import { MAX_IMAGE_CACHE } from "../../constants";
 import { toErrorMessage } from "../../lib/utils/errors";
-import { isAbsolutePath } from "../../lib/utils/path";
+import { isAbsolutePath, resolvePath } from "../../lib/utils/path";
 import { initMermaid, type TableData } from "../../lib/markdown";
 import { extractFrontmatter, type Frontmatter } from "../../lib/markdown/extensions";
 import { TableEditor } from "../modal/TableEditor";
@@ -72,24 +72,6 @@ interface MarkdownPreviewProps {
 }
 
 /**
- * Resolve a relative path against the directory of the open document.
- * Works for both forward and back slashes on Windows.
- */
-
-function resolvePath(docFilePath: string, rel: string): string {
-  // If src is already absolute, return as-is
-  if (isAbsolutePath(rel)) return rel;
-
-  const dir = docFilePath.replace(/\\/g, "/").replace(/\/[^/]+$/, "");
-  const parts = (dir + "/" + rel.replace(/\\/g, "/")).split("/");
-  const resolved: string[] = [];
-  for (const part of parts) {
-    if (part === "..") resolved.pop();
-    else if (part !== ".") resolved.push(part);
-  }
-  return resolved.join("/");
-}
-
 /**
  * Reads a local image via Tauri fs.readFile and renders it as a base64 data URL.
  * Works cross-platform in both dev and release without any asset protocol.
