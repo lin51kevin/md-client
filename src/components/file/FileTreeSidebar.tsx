@@ -517,7 +517,7 @@ export const FileTreeSidebar = forwardRef<FileTreeSidebarHandle, FileTreeSidebar
       {/* 内容区 */}
       {error ? (
         <div className="flex-1 flex items-center justify-center p-4">
-          <p className="text-xs text-center" style={{ color: 'var(--danger-color, #ef4444)' }}>
+          <p className="text-xs text-center" style={{ color: 'var(--danger-color, #ef4444)', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
             {error}
           </p>
         </div>

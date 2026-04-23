@@ -163,7 +163,7 @@ export class GitPanelContent {
         git.error && createElement('div', {
           className: 'flex items-start gap-1.5 px-3 py-2 mx-2 my-1.5 rounded text-[10px]',
           style: { backgroundColor: 'var(--warning-bg)', color: 'var(--warning-color)' },
-        }, createElement('span', { className: 'break-all' }, git.error)),
+        }, createElement('span', { style: { whiteSpace: 'pre-wrap', wordBreak: 'break-word' } }, git.error)),
 
         // Loading
         git.isLoading && createElement('div', {
