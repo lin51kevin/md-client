@@ -16,6 +16,7 @@ import { useLocalImage, useHtmlBlocks, remarkWikiLinkPlugin, wikiLinkSchema } fr
 import { renderMermaidPreview } from './nodeviews/MermaidBlockView';
 import { CodeBlockFoldOverlay } from './CodeBlockFoldOverlay';
 import { milkdownBridge } from '../../lib/milkdown/editor-bridge';
+import { resolvePath } from '../../lib/utils/path';
 
 // ── Selection helpers ─────────────────────────────────────────────────────────
 
@@ -331,14 +332,16 @@ function MilkdownEditor({
         // Only handle relative/local file links (not http/https/mailto/hash)
         if (href && !/^https?:|^mailto:|^#/i.test(href)) {
           e.preventDefault();
-          onOpenFile?.(href);
+          // Resolve relative paths against the current document directory
+          const absPath = filePath ? resolvePath(filePath, href) : href;
+          onOpenFile?.(absPath);
         }
       }
     };
 
     container.addEventListener('click', handler);
     return () => container.removeEventListener('click', handler);
-  }, [containerRef, onWikiLinkNavigate, onOpenFile]);
+  }, [containerRef, onWikiLinkNavigate, onOpenFile, filePath]);
 
   // ── Context menu: handle insert-table and insert-image events ─────────
   useEffect(() => {
