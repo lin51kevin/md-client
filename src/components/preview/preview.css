@@ -5,6 +5,18 @@
   color: var(--text-primary);
   line-height: 1.6;
 }
+.markdown-preview p {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+.markdown-preview hr {
+  border: none;
+  border-top: 1px solid var(--border-color);
+  margin: 2em 0;
+  height: auto;
+  padding: 0;
+  background: transparent;
+}
 .markdown-preview h1,
 .markdown-preview h2,
 .markdown-preview h3,

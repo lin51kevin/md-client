@@ -1,10 +1,9 @@
 /* MilkdownPreview theme overrides */
 
 .milkdown-preview {
-  padding: 8px;
+  /* padding: 8px; */
   min-height: 100%;
-  font-size: 15px;
-  line-height: 1.7;
+  line-height: 1.6;
   color: var(--text-primary, inherit);
 }
 
@@ -67,8 +66,8 @@
 /* Paragraph sizing to match markdown-preview */
 .milkdown-preview .milkdown .ProseMirror p {
   font-size: inherit;
-  line-height: 1.6;
   padding: 0;
+  margin-top: 0;
   margin-bottom: 16px;
 }
 
@@ -92,6 +91,39 @@
 .milkdown-preview .milkdown .ProseMirror pre code {
   background: transparent;
   padding: 0;
+}
+
+/* Raw HTML blocks: reset white-space so injected HTML renders normally.
+   ProseMirror sets white-space: break-spaces which causes newlines inside
+   the raw HTML (e.g. between <a> tags in a <p align="center"> block) to
+   render as visible line breaks, stacking inline elements vertically. */
+.milkdown-preview .milkdown .ProseMirror span[data-type="html"] {
+  white-space: normal;
+  display: block;
+}
+
+/* Prevent double vertical spacing on HTML block nodes.
+   ProseMirror wraps each html atom in a <p> (margin-bottom: 16px), and the
+   injected content often contains its own <p> which also gets margin-bottom: 16px.
+   (1) Collapse the outer wrapper <p> margin when it contains only an html span. */
+.milkdown-preview .milkdown .ProseMirror p:has(> span[data-type="html"]) {
+  margin-bottom: 0;
+  line-height: 1;
+}
+/* (2) Reset margins on block-level elements injected inside the html span so
+       they control their own spacing, unaffected by the .ProseMirror p rule. */
+.milkdown-preview .milkdown .ProseMirror span[data-type="html"] p,
+.milkdown-preview .milkdown .ProseMirror span[data-type="html"] div {
+  margin-top: 0;
+  margin-bottom: 16px;
+  line-height: 1.6;
+  padding: 0;
+}
+/* Last child inside an html block: remove trailing margin to avoid double gap
+   between consecutive html blocks or between an html block and the next node. */
+.milkdown-preview .milkdown .ProseMirror span[data-type="html"] > p:last-child,
+.milkdown-preview .milkdown .ProseMirror span[data-type="html"] > div:last-child {
+  margin-bottom: 0;
 }
 
 /* Links */
@@ -121,7 +153,12 @@
 .milkdown-preview .milkdown .ProseMirror ul,
 .milkdown-preview .milkdown .ProseMirror ol {
   padding-left: 2em;
+  margin-top: 0;
   margin-bottom: 16px;
+}
+
+.milkdown-preview .milkdown .ProseMirror li {
+  margin-top: 0.25em;
 }
 
 /* Tables */
