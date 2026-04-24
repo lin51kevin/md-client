@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [v0.10.2] - 2026-04-24
+
+
+### Fixed
+
+- use ubuntu-20.04 runner for Linux CI/release builds, reducing minimum GLIBC requirement from 2.39 to 2.31 and supporting Ubuntu 20.04+
+
+
 ## [v0.10.1] - 2026-04-23
 
 
