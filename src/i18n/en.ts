@@ -652,6 +652,9 @@ export const en: Record<TranslationKey, string> = {
   'fileWatcher.reload': 'Reload',
   'fileWatcher.keep': 'Keep',
   'fileWatcher.saveAs': 'Save As',
+  'fileWatcher.overwriteConfirm': '{name} has been modified externally. Overwrite?',
+  'fileWatcher.overwrite': 'Overwrite',
+  'fileWatcher.cancel': 'Cancel',
 
   // ── Auto Update ───────────────────────────────────────────────────────────
   'update.available': 'New version v{version} available',

@@ -649,6 +649,9 @@ export const zhCN = {
   'fileWatcher.reload': '重载',
   'fileWatcher.keep': '保留',
   'fileWatcher.saveAs': '另存为',
+  'fileWatcher.overwriteConfirm': '{name} 已被外部修改，确认覆盖保存？',
+  'fileWatcher.overwrite': '覆盖',
+  'fileWatcher.cancel': '取消',
 
   // ── Auto Update ───────────────────────────────────────────────────────────
   'update.available': '新版本 v{version} 可用',

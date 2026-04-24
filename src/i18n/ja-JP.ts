@@ -652,6 +652,9 @@ export const jaJP: Record<TranslationKey, string> = {
   'fileWatcher.reload': '再読込',
   'fileWatcher.keep': '保持',
   'fileWatcher.saveAs': '名前を付けて保存',
+  'fileWatcher.overwriteConfirm': '{name} は外部で変更されました。上書きしますか？',
+  'fileWatcher.overwrite': '上書き',
+  'fileWatcher.cancel': 'キャンセル',
 
   // ── Auto Update ───────────────────────────────────────────────────────────
   'update.available': '新バージョン v{version} が利用可能です',
