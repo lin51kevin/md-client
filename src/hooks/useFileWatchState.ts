@@ -35,13 +35,22 @@ export function useFileWatchState({ tabs, enabled, autoReload, updateTab }: File
       const content = await invoke<string>('read_file_text', { path: filePath });
       const tab = tabsRef.current.find(t => t.id === tabId);
       if (tab) {
-        updateTab(tabId, { doc: content, isDirty: false });
+        updateTab(tabId, { doc: content, isDirty: false, externalModified: false });
         // Update hash after reload so subsequent saves compare against fresh disk state
         void computeHash(content).then(h => setFileHash(filePath, h));
       }
     } catch (err) {
       console.warn('[useFileWatchState] reload failed:', err);
     }
+  }, [updateTab]);
+
+  /**
+   * User chose "Keep" — dismiss toast but mark the tab so that a
+   * subsequent save triggers a confirmation dialog.
+   */
+  const handleKeepFile = useCallback((tabId: string) => {
+    updateTab(tabId, { externalModified: true });
+    setFileChangeToast(null);
   }, [updateTab]);
 
   useFileWatcher({
@@ -51,7 +60,7 @@ export function useFileWatchState({ tabs, enabled, autoReload, updateTab }: File
       if (autoReload) {
         const tab = tabs.find(t => t.id === tabId);
         if (tab?.isDirty) {
-          // User has unsaved edits — show toast to avoid data loss
+          // User has unsaved edits — show persistent toast
           setFileChangeToast({ type: 'modified', tabId, filePath });
         } else {
           // Tab is clean — silently reload
@@ -66,5 +75,5 @@ export function useFileWatchState({ tabs, enabled, autoReload, updateTab }: File
     },
   });
 
-  return { fileChangeToast, setFileChangeToast, handleReloadFile };
+  return { fileChangeToast, setFileChangeToast, handleReloadFile, handleKeepFile };
 }

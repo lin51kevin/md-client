@@ -126,6 +126,8 @@ export function useFileOps({ getActiveTab, tabs, resolveTabDoc, openFileInTab, m
             setFileHash(tab.filePath, newHash);
             markSaved(tab.id);
             markSelfSave(tab.filePath);
+            updateTab?.(tab.id, { externalModified: false });
+            return;
           } catch (checkErr: unknown) {
             const errObj = checkErr as { kind?: string; disk_hash?: string } | null;
             if (errObj && errObj.kind === 'ExternalModified') {
