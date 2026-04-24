@@ -6,18 +6,25 @@ export interface FileChangeToastProps {
   type: 'modified' | 'deleted';
   filePath: string;
   tabId: string;
+  /** True when the user has unsaved edits in the tab — toast should persist until action. */
+  isDirty: boolean;
   onReload: (tabId: string) => void;
   onKeep: () => void;
   onSaveAs: (tabId: string) => void;
   onClose: () => void;
 }
 
+/**
+ * Auto-dismiss timeout for non-dirty tabs (file changed but user hasn't edited it
+ * in this session). Dirty tabs must be explicitly dismissed to avoid data loss.
+ */
 const AUTO_DISMISS_MS = 10_000;
 
 export function FileChangeToast({
   type,
   filePath,
   tabId,
+  isDirty,
   onReload,
   onKeep,
   onSaveAs,
@@ -26,18 +33,29 @@ export function FileChangeToast({
   const { t } = useI18n();
   const [visible, setVisible] = useState(true);
 
+  // Auto-dismiss only when the user has NOT edited the file.
+  // When dirty, the toast stays until the user explicitly picks an action.
+  // On auto-dismiss, auto-reload since there are no unsaved edits to lose.
   useEffect(() => {
+    if (isDirty) return; // persistent — no auto-dismiss
     const timer = setTimeout(() => {
       setVisible(false);
+      if (type === 'modified') {
+        onReload(tabId);
+      }
       onClose();
     }, AUTO_DISMISS_MS);
     return () => clearTimeout(timer);
-  }, [onClose]);
+  }, [onClose, isDirty, type, tabId, onReload]);
 
   const handleDismiss = useCallback(() => {
     setVisible(false);
+    // Non-dirty + modified: user dismissed without action, auto-reload to stay in sync
+    if (!isDirty && type === 'modified') {
+      onReload(tabId);
+    }
     onClose();
-  }, [onClose]);
+  }, [onClose, isDirty, type, tabId, onReload]);
 
   if (!visible) return null;
 
@@ -100,13 +118,17 @@ export function FileChangeToast({
         )}
       </div>
 
-      <button
-        onClick={handleDismiss}
-        className="shrink-0 p-0.5 rounded transition-colors"
-        style={{ color: 'var(--text-tertiary)' }}
-      >
-        <X size={12} />
-      </button>
+      {/* Close button — only show for non-dirty toasts.
+          Dirty toasts require an explicit action (Reload / Keep). */}
+      {!isDirty && (
+        <button
+          onClick={handleDismiss}
+          className="shrink-0 p-0.5 rounded transition-colors"
+          style={{ color: 'var(--text-tertiary)' }}
+        >
+          <X size={12} />
+        </button>
+      )}
     </div>
   );
 }
