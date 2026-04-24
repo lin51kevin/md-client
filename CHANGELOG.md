@@ -9,35 +9,92 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.10.2] - 2026-04-24
 
 
+### Changed
+
+- bump version to v0.10.2 (`cf97b91`)
+- adjust quadrant coordinates in mermaid-test (`025c3c5`)
+
+
+
+### Changed
+
+- wrap handleDismiss in arrow function in FileChangeToast (`59f43d2`)
+
+
+
+### Ci
+
+- use ubuntu-20.04 for Linux builds to support GLIBC 2.31+ (`532d6d2`)
+
+
+
+### Test
+
+- update and extend tests for externalModified and isDirty (`4049fcc`)
+
+
+
+### Added
+
+- track and guard against external file modifications (`2f5f165`)
+- add overwrite confirmation strings for external modification (`597eb65`)
+- wire fileChangeTabs and handleKeepFile through overlays (`3c186ed`)
+- add isDirty-aware behaviour to FileChangeToast (`66168ab`)
+- add externalModified field to Tab (`ed7ecb9`)
+- show ↻ indicator on tabs with external modification (`733ebe4`)
+
+
+
 ### Fixed
 
-- use ubuntu-20.04 runner for Linux CI/release builds, reducing minimum GLIBC requirement from 2.39 to 2.31 and supporting Ubuntu 20.04+
+- restore blockDiagram/quadrantDiagram and fix mindmap cose-bilkent in prod build (`72f81f4`)
+- show overwrite confirmation instead of save failure for externally modified files (`28b44a4`)
+- auto-reload file when toast dismisses for non-dirty tabs (`efcf31a`)
+
+
+
+
+
 
 
 ## [v0.10.1] - 2026-04-23
 
 
-### Added
-
-- add video and iframe embed rendering in both preview engines (`32c2cd8`)
-  - Milkdown: extend DOMPurify allowlist for `<video>`/`<source>`/`<iframe>`; wrap in responsive `.video-container` / `.iframe-container`; enforce sandbox on iframes
-  - MarkdownPreview: custom `components.video` and `components.iframe` renderers with local path resolution and security sandboxing
-
-
 ### Fixed
 
-- prevent stale plugin context closures via Proxy in usePluginRuntime (`659c9c2`)
+- resolve relative links in Milkdown preview (`d131436`)
+- format git/file error messages with pre-wrap (`d54bef1`)
+- suppress git.exe console window flash on Windows (`a9c5beb`)
 - align Milkdown preview typography and spacing with MarkdownPreview (`6dea2ca`)
-  - Remove hardcoded `font-size: 15px` from `.milkdown-preview`
-  - Align `line-height` 1.7 → 1.6
-  - Add missing `margin-top: 0` on `p`, `ul`, `ol`; add `li { margin-top: 0.25em }`
-  - Fix double vertical spacing on raw HTML blocks (`<p align="center">` etc.) via `:has()` selector
-  - Add `p { margin-bottom: 16px }` and `hr` rule to MarkdownPreview (Tailwind Preflight strips browser defaults)
+- prevent stale plugin context closures via Proxy in usePluginRuntime (`659c9c2`)
+- correct mermaid dark-mode text visibility across all diagram types (`ce67396`)
+
 
 
 ### Changed
 
+- extract resolvePath to shared path utils (`e766e53`)
 - fix code quality issues and extract search module (`ff643c5`)
+- split App.css into component-local CSS files (`ac67526`)
+
+
+
+### Changed
+
+- update CHANGELOG.md (`369c22f`)
+- update Cargo.lock (`9cc3627`)
+- bump version to v0.10.1 (`2185c62`)
+
+
+
+### Added
+
+- add video and iframe embed rendering in both preview engines (`32c2cd8`)
+
+
+
+
+
 
 
 ## [v0.10.0] - 2026-04-22
