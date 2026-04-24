@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { StatusBar } from '../../../components/toolbar/StatusBar';
+import { useEditorStore } from '../../../stores/editor-store';
 import type { Snapshot } from '../../../lib/storage';
 
 describe('StatusBar', () => {
@@ -33,6 +34,8 @@ describe('StatusBar', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Seed store with values matching defaultProps so prop-based tests still pass
+    useEditorStore.setState({ cursor: { line: 10, col: 25 } } as any);
   });
 
   describe('Basic Rendering', () => {
@@ -327,6 +330,21 @@ describe('StatusBar', () => {
       render(<StatusBar {...defaultProps} wordCount={1234567} />);
       
       expect(screen.getByText('1234567 字')).toBeInTheDocument();
+    });
+  });
+
+  // ── P0-A: Store-based cursor ──────────────────────────────────────────────
+  describe('Store cursor fallback', () => {
+    it('reads line/col from editor-store when props are omitted', () => {
+      useEditorStore.setState({ cursor: { line: 7, col: 42 } } as any);
+      render(<StatusBar filePath={null} />);
+      expect(screen.getByText(/行 7，列 42/)).toBeInTheDocument();
+    });
+
+    it('prop-provided line/col override the store value', () => {
+      useEditorStore.setState({ cursor: { line: 99, col: 99 } } as any);
+      render(<StatusBar filePath={null} line={3} col={5} />);
+      expect(screen.getByText(/行 3，列 5/)).toBeInTheDocument();
     });
   });
 });

@@ -151,7 +151,6 @@ export function AppShell() {
   const {
     cmViewRef,
     editorRef, previewRef, handleEditorScroll, handlePreviewScroll,
-    cursorPos,
     setMatches, clearMatches,
     inputDialogState, setInputDialogState,
     handleFormatAction,
@@ -570,7 +569,6 @@ export function AppShell() {
       {!effectiveHideStatusBar && (
         <StatusBar
           filePath={activeTab.filePath} isDirty={activeTab.isDirty}
-          line={cursorPos.line} col={cursorPos.col}
           snapshots={snapshots} wordCount={wordCount} readingTime={readingTime} cursorCount={cursorCount}
           vimMode={vimMode} wysiwygMode={milkdownPreview}
           focusStartTime={typewriterOptions.showDuration && focusMode === 'typewriter' ? focusStartRef.current ?? undefined : undefined}

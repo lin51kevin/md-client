@@ -63,7 +63,7 @@ export function useEditorCore({
   const setEditorCtxMenu = useUIStore((s) => s.setEditorCtxMenu);
 
   const { editorRef, previewRef, handleEditorScroll, handlePreviewScroll } = useScrollSync(viewMode);
-  const { cursorPos, cursorExtension } = useCursorPosition();
+  const { cursorExtension } = useCursorPosition();
   const { searchHighlightExtension, setMatches, clearMatches } = useSearchHighlight();
   const { inputDialogState, setInputDialogState, promptUser } = useInputDialog();
   const { handleFormatAction } = useFormatActions({ cmViewRef, getActiveTab, promptUser, isTauri });
@@ -130,7 +130,6 @@ export function useEditorCore({
   return {
     cmViewRef,
     editorRef, previewRef, handleEditorScroll, handlePreviewScroll,
-    cursorPos,
     setMatches, clearMatches,
     inputDialogState, setInputDialogState,
     handleFormatAction,

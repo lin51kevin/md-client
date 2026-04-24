@@ -2,12 +2,15 @@ import { useState, useEffect, memo } from 'react';
 import { History, X, Download } from 'lucide-react';
 import { useI18n } from '../../i18n';
 import { formatDuration } from '../../lib/utils';
+import { useEditorStore } from '../../stores/editor-store';
 
 interface StatusBarProps {
   filePath: string | null;
   isDirty?: boolean;
-  line: number;
-  col: number;
+  /** Optional override. When omitted, the value is read from editor-store (set by useCursorPosition). */
+  line?: number;
+  /** Optional override. When omitted, the value is read from editor-store (set by useCursorPosition). */
+  col?: number;
   /** F012: 字数统计 */
   wordCount?: number;
   /** 阅读时间 */
@@ -32,6 +35,10 @@ interface StatusBarProps {
 
 export const StatusBar = memo(function StatusBar({ filePath, isDirty, line, col, wordCount, readingTime, cursorCount, vimMode, saveStatus, snapshots, onSnapshotRestore, updateAvailable, onUpdateClick, focusStartTime, wysiwygMode }: StatusBarProps) {
   const { t } = useI18n();
+  const storeCursor = useEditorStore((s) => s.cursor);
+  // Props override store — keep backward-compat for tests that pass line/col directly
+  const displayLine = line ?? storeCursor.line;
+  const displayCol = col ?? storeCursor.col;
   const [showSnapshots, setShowSnapshots] = useState(false);
 
   // Self-contained 1s timer — only this component re-renders
@@ -93,7 +100,7 @@ export const StatusBar = memo(function StatusBar({ filePath, isDirty, line, col,
           {!wysiwygMode && vimMode && <span className="font-mono font-bold" style={{ color: 'var(--accent-color)' }}>NORMAL</span>}
           {saveStatus === 'saving' && <span>💾</span>}
           {saveStatus === 'unsaved' && <span style={{ color: 'var(--warning-color)' }}>⚠️</span>}
-          {!wysiwygMode && <span className="tabular-nums">{t('status.lineCol', { line, col })}</span>}
+          {!wysiwygMode && <span className="tabular-nums">{t('status.lineCol', { line: displayLine, col: displayCol })}</span>}
         </div>
       </div>
 

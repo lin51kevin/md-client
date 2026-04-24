@@ -1,15 +1,27 @@
-import { describe, it, expect, vi } from 'vitest';
-import { renderHook } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { renderHook, act } from '@testing-library/react';
 import { useCursorPosition } from '../../hooks/useCursorPosition';
+import { useEditorStore } from '../../stores/editor-store';
 import { EditorView } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
 
 describe('useCursorPosition', () => {
+  beforeEach(() => {
+    // Reset fake timers for rAF tests
+    vi.useFakeTimers();
+    // Reset store to clean state
+    useEditorStore.setState({ cursor: { line: 1, col: 1 } } as any);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
   describe('Initial State', () => {
-    it('should initialize with line 1, col 1', () => {
-      const { result } = renderHook(() => useCursorPosition());
-      
-      expect(result.current.cursorPos).toEqual({ line: 1, col: 1 });
+    it('editor-store starts at line 1, col 1', () => {
+      // cursorPos is now in the store; hook no longer returns it
+      renderHook(() => useCursorPosition());
+      const { line, col } = useEditorStore.getState().cursor;
+      expect({ line, col }).toEqual({ line: 1, col: 1 });
     });
 
     it('should return a cursor extension', () => {
@@ -127,8 +139,10 @@ describe('useCursorPosition', () => {
         parent: document.body,
       });
 
-      expect(result.current.cursorPos.line).toBeGreaterThanOrEqual(1);
-      expect(result.current.cursorPos.col).toBeGreaterThanOrEqual(1);
+      // cursorPos is in the store after the refactor
+      const { line, col } = useEditorStore.getState().cursor;
+      expect(line).toBeGreaterThanOrEqual(1);
+      expect(col).toBeGreaterThanOrEqual(1);
 
       view.destroy();
     });
@@ -154,6 +168,56 @@ describe('useCursorPosition', () => {
       expect(result.current.cursorExtension).toBeDefined();
 
       view.destroy();
+    });
+  });
+
+  // ── P0-A: Store-based cursor ──────────────────────────────────────────────
+  describe('Store Integration', () => {
+    it('writes line/col to editor-store when cursor moves', () => {
+      useEditorStore.setState({ cursor: { line: 1, col: 1 } } as any);
+      const { result } = renderHook(() => useCursorPosition());
+
+      const state = EditorState.create({
+        doc: 'Line 1\nLine 2',
+        extensions: [result.current.cursorExtension],
+      });
+      const view = new EditorView({ state, parent: document.body });
+
+      act(() => {
+        // Position 7 = start of "Line 2"
+        view.dispatch({ selection: { anchor: 7, head: 7 } });
+        vi.runAllTimers(); // flush rAF
+      });
+
+      expect(useEditorStore.getState().cursor.line).toBe(2);
+      expect(useEditorStore.getState().cursor.col).toBe(1);
+      view.destroy();
+    });
+
+    it('writes col offset correctly for mid-line cursor', () => {
+      useEditorStore.setState({ cursor: { line: 1, col: 1 } } as any);
+      const { result } = renderHook(() => useCursorPosition());
+
+      const state = EditorState.create({
+        doc: 'abcdef',
+        extensions: [result.current.cursorExtension],
+      });
+      const view = new EditorView({ state, parent: document.body });
+
+      act(() => {
+        view.dispatch({ selection: { anchor: 3, head: 3 } });
+        vi.runAllTimers();
+      });
+
+      expect(useEditorStore.getState().cursor.col).toBe(4); // 0-indexed → col 4
+      view.destroy();
+    });
+
+    it('does not expose cursorPos on hook return (store is source of truth)', () => {
+      const { result } = renderHook(() => useCursorPosition());
+      // After the refactor cursorPos is removed from the return object.
+      // Accessing it should return undefined.
+      expect((result.current as any).cursorPos).toBeUndefined();
     });
   });
 });

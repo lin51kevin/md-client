@@ -13,6 +13,12 @@
 import { create } from 'zustand';
 import type { ViewMode } from '../types';
 
+/** Cursor position kept in store so only StatusBar re-renders on cursor moves. */
+export interface CursorPos {
+  line: number;
+  col: number;
+}
+
 /** UI visibility & editor mode state */
 interface UIEditorState {
   viewMode: ViewMode;
@@ -23,6 +29,10 @@ interface UIEditorState {
 
   isRestoringSession: boolean;
   setIsRestoringSession: (v: boolean) => void;
+
+  /** Current cursor position — written by useCursorPosition, read by StatusBar */
+  cursor: CursorPos;
+  setCursor: (pos: CursorPos) => void;
 }
 
 export const useEditorStore = create<UIEditorState>()((set) => ({
@@ -37,4 +47,7 @@ export const useEditorStore = create<UIEditorState>()((set) => ({
 
   isRestoringSession: true,
   setIsRestoringSession: (v) => set({ isRestoringSession: v }),
+
+  cursor: { line: 1, col: 1 },
+  setCursor: (pos) => set({ cursor: pos }),
 }));
