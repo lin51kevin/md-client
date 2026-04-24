@@ -124,7 +124,7 @@ export function FileChangeToast({
           Dirty toasts require an explicit action (Reload / Keep). */}
       {!isDirty && (
         <button
-          onClick={handleDismiss}
+          onClick={() => handleDismiss()}
           className="shrink-0 p-0.5 rounded transition-colors"
           style={{ color: 'var(--text-tertiary)' }}
         >
