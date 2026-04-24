@@ -5,7 +5,7 @@
 // ── Table of Contents ────────────────────────────────────────────────────────
 export { extractToc, slugify, type TocEntry } from './toc';
 // ── Mermaid Diagrams ─────────────────────────────────────────────────────────
-export { initMermaid, renderMermaid, resetMermaidInit } from './mermaid';
+export { initMermaid, renderMermaid, resetMermaidInit, clearMermaidSvgCache } from './mermaid';
 // ── Table Parser ─────────────────────────────────────────────────────────────
 export { parseTable, serializeTable, type TableData, type Alignment } from './table-parser';
 // ── Slide Parser ─────────────────────────────────────────────────────────────

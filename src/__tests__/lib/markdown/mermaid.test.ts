@@ -10,13 +10,14 @@ vi.mock('mermaid', () => ({
 }));
 
 import { renderMermaid } from '../../../lib/markdown';
-import { resetMermaidInit } from '../../../lib/markdown';
+import { resetMermaidInit, clearMermaidSvgCache } from '../../../lib/markdown/mermaid';
 
 describe('F008 — Mermaid 图表渲染', () => {
 
   beforeEach(() => {
     // 每次测试前重置初始化状态
     resetMermaidInit?.();
+    clearMermaidSvgCache?.();
     mockRender.mockClear();
   });
 
@@ -66,6 +67,38 @@ describe('F008 — Mermaid 图表渲染', () => {
       const result = await renderMermaid(md);
       expect(result).toContain('mermaid-error');
       expect(result).not.toContain('<svg');
+    });
+  });
+
+  // ── P1-C: SVG cache ───────────────────────────────────────────────────────
+  describe('SVG cache (P1-C)', () => {
+    it('skips mermaid.render on second call with identical code', async () => {
+      const md = `\`\`\`mermaid\ngraph LR\n    A-->B\n\`\`\``;
+      await renderMermaid(md);
+      expect(mockRender).toHaveBeenCalledTimes(1);
+      mockRender.mockClear();
+
+      // Same code again — should use cache, render NOT called
+      await renderMermaid(md);
+      expect(mockRender).not.toHaveBeenCalled();
+    });
+
+    it('calls mermaid.render when code changes', async () => {
+      await renderMermaid(`\`\`\`mermaid\ngraph LR\n    A-->B\n\`\`\``);
+      mockRender.mockClear();
+
+      await renderMermaid(`\`\`\`mermaid\ngraph LR\n    X-->Y\n\`\`\``);
+      expect(mockRender).toHaveBeenCalledTimes(1);
+    });
+
+    it('clearMermaidSvgCache resets cache so render is called again', async () => {
+      const md = `\`\`\`mermaid\ngraph LR\n    A-->B\n\`\`\``;
+      await renderMermaid(md);
+      mockRender.mockClear();
+
+      clearMermaidSvgCache();
+      await renderMermaid(md);
+      expect(mockRender).toHaveBeenCalledTimes(1);
     });
   });
 });

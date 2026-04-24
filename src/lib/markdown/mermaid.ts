@@ -14,11 +14,28 @@ let currentMermaidTheme = '';
 let mermaidIdCounter = 0;
 
 /**
+ * Module-level SVG cache: code string → rendered SVG.
+ * Prevents redundant mermaid.render() calls when the same diagram appears
+ * in multiple preview re-renders (e.g. typing elsewhere in the document).
+ * Keyed by the raw diagram source; entries are invalidated when the theme
+ * changes (via reinitMermaid / resetMermaidInit).
+ */
+const svgCache = new Map<string, string>();
+
+/**
  * 重置 Mermaid 初始化状态（仅供测试使用）
  */
 export function resetMermaidInit(): void {
   mermaidInitialized = false;
   currentMermaidTheme = '';
+  svgCache.clear();
+}
+
+/**
+ * 清空 SVG 缓存（仅供测试使用）
+ */
+export function clearMermaidSvgCache(): void {
+  svgCache.clear();
 }
 
 /**
@@ -223,6 +240,7 @@ export async function initMermaid(): Promise<typeof import('mermaid')> {
 export function reinitMermaid(): void {
   mermaidInitialized = false;
   currentMermaidTheme = '';
+  svgCache.clear();
 }
 
 /**
@@ -243,17 +261,23 @@ export async function renderMermaid(text: string): Promise<string> {
   const results = await Promise.all(
     [...text.matchAll(mermaidRe)].map(async (match) => {
       const code = match[1].trim();
+
+      // Cache hit: same diagram source → reuse previous SVG output
+      const cached = svgCache.get(code);
+      if (cached !== undefined) {
+        return { fullMatch: match[0], replacement: cached };
+      }
+
       const id = `mermaid-${idCounter++}`;
       mermaidIdCounter = idCounter;
       try {
         const { svg } = await mermaid.render(id, code);
+        svgCache.set(code, svg);
         return { fullMatch: match[0], replacement: svg };
       } catch (err) {
         // 渲染失败时返回带错误信息的占位符
-        return {
-          fullMatch: match[0],
-          replacement: `<div class="mermaid-error" style="color:red;padding:8px;border:1px solid red;">Mermaid render error: ${escapeHtml(toErrorMessage(err))}</div>`,
-        };
+        const errHtml = `<div class="mermaid-error" style="color:red;padding:8px;border:1px solid red;">Mermaid render error: ${escapeHtml(toErrorMessage(err))}</div>`;
+        return { fullMatch: match[0], replacement: errHtml };
       }
     })
   );
