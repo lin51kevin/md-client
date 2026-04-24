@@ -635,6 +635,12 @@ fn show_unsaved_dialog(
     show_dialog_impl(&title, &message, &save_label, &discard_label, &cancel_label)
 }
 
+#[tauri::command]
+fn show_main_window(window: tauri::WebviewWindow) {
+    let _ = window.show();
+    let _ = window.maximize();
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -665,7 +671,7 @@ pub fn run() {
                 }
             }
         }))
-        .invoke_handler(tauri::generate_handler![greet, get_open_file, export_document, restore_session_files, read_file_text, read_file_bytes, write_file_text, write_file_text_with_check, compute_content_hash, write_image_bytes, create_file, delete_file, rename_file, list_directory, read_dir_recursive, search::search_files, search::replace_in_files, reveal_in_explorer, is_directory, restart_app, show_unsaved_dialog, context_menu::register_context_menu, context_menu::unregister_context_menu, git::git_get_repo, git::git_get_status, git::git_diff, git::git_commit, git::git_pull, git::git_push, git::git_stage, git::git_unstage, git::git_restore, editor_tools::tool_search, editor_tools::tool_replace, editor_tools::tool_get_lines, editor_tools::tool_replace_lines, editor_tools::tool_insert, editor_tools::tool_delete_lines, editor_tools::tool_get_outline, editor_tools::tool_regex_replace])
+        .invoke_handler(tauri::generate_handler![greet, show_main_window, get_open_file, export_document, restore_session_files, read_file_text, read_file_bytes, write_file_text, write_file_text_with_check, compute_content_hash, write_image_bytes, create_file, delete_file, rename_file, list_directory, read_dir_recursive, search::search_files, search::replace_in_files, reveal_in_explorer, is_directory, restart_app, show_unsaved_dialog, context_menu::register_context_menu, context_menu::unregister_context_menu, git::git_get_repo, git::git_get_status, git::git_diff, git::git_commit, git::git_pull, git::git_push, git::git_stage, git::git_unstage, git::git_restore, editor_tools::tool_search, editor_tools::tool_replace, editor_tools::tool_get_lines, editor_tools::tool_replace_lines, editor_tools::tool_insert, editor_tools::tool_delete_lines, editor_tools::tool_get_outline, editor_tools::tool_regex_replace])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

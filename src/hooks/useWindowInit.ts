@@ -9,16 +9,24 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { THEMES, type ThemeName } from '../lib/theme';
 
 export function useWindowInit(isTauri: boolean, theme: ThemeName) {
-  // Window initialization: show and maximize once on mount
+  // Show and maximize window; window starts hidden (visible:false) to prevent flash.
+  // Fallback timer ensures show() fires even if maximize() never settles (Wayland).
   useLayoutEffect(() => {
-    if (isTauri) {
-      const win = getCurrentWindow();
-      win.maximize()
-        .catch((err) => console.error('Failed to maximize window:', err))
-        .finally(() => {
-          win.show().catch((err) => console.error('Failed to show window:', err));
-        });
-    }
+    if (!isTauri) return;
+    const win = getCurrentWindow();
+    let shown = false;
+    const doShow = () => {
+      if (shown) return;
+      shown = true;
+      win.show().catch((err) => console.error('Failed to show window:', err));
+    };
+
+    win.maximize()
+      .catch((err) => console.error('Failed to maximize window:', err))
+      .finally(doShow);
+
+    const t = setTimeout(doShow, 500);
+    return () => clearTimeout(t);
   }, [isTauri]);
 
   // Set native titlebar theme
