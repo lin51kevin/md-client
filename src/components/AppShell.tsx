@@ -6,21 +6,18 @@
  * Context menus and inline modals are rendered via AppContextMenus.
  * Global overlays (CommandPalette, QuickOpen, etc.) via AppGlobalOverlays.
  */
-import { useState, useRef, useCallback, useEffect, useMemo, memo, lazy, Suspense } from 'react';
-import { undo, redo } from '@codemirror/commands';
+import { useRef, useCallback, useEffect, useMemo, memo, lazy, Suspense } from 'react';
 
 import { useI18n } from '../i18n';
 import type { DragKind as DragOverlayKind } from '../hooks/useDragDrop';
 import { useUpdateNotification } from '../hooks/useUpdateNotification';
-import { useUIStore, useEditorStore } from '../stores';
+import { useUIStore } from '../stores';
 import { useTabs } from '../hooks/useTabs';
 import { useFileOps } from '../hooks/useFileOps';
 import { useDragDrop } from '../hooks/useDragDrop';
 import { useWindowTitle } from '../hooks/useWindowTitle';
 import { useWindowInit } from '../hooks/useWindowInit';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
-import { useFocusMode } from '../hooks/useFocusMode';
-import { useWelcome } from '../hooks/useWelcome';
 import { useDocMetrics } from '../hooks/useDocMetrics';
 import { useVersionHistory } from '../hooks/useVersionHistory';
 import { useNavigation } from '../hooks/useNavigation';
@@ -30,20 +27,18 @@ import { useFileWatchState } from '../hooks/useFileWatchState';
 import { useRecentFiles } from '../hooks/useRecentFiles';
 import { useImportOps } from '../hooks/useImportOps';
 import { useTabActions } from '../hooks/useTabActions';
-import { useTypewriterOptions } from '../hooks/useTypewriterOptions';
 import { usePreviewRenderers } from '../hooks/usePreviewRenderers';
 import { usePluginRuntime } from '../hooks/usePluginRuntime';
 import { usePluginPanels } from '../hooks/usePluginPanels';
-import { usePreferences } from '../hooks/usePreferences';
-import { useSidebarPanel } from '../hooks/useSidebarPanel';
 import { useEditorCore } from '../hooks/useEditorCore';
+import { useAppLayout } from '../hooks/useAppLayout';
+import { useAppPreferences } from '../hooks/useAppPreferences';
+import { useAppUIState } from '../hooks/useAppUIState';
+import { useAppToolbar } from '../hooks/useAppToolbar';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { getReadingTime } from '../lib/utils/text-stats';
-import { restoreSnapshot } from '../lib/storage/version-history';
-import { StorageKeys } from '../lib/storage';
 import { revealInExplorer } from '../lib/file/reveal-in-explorer';
 import { createCommandRegistry } from '../lib/editor/command-registry';
-import { milkdownBridge } from '../lib/milkdown/editor-bridge';
 
 import { Toolbar } from '../components/toolbar/Toolbar';
 import { TabBar } from '../components/toolbar/TabBar';
@@ -69,35 +64,34 @@ import { AppGlobalOverlays } from '../components/AppGlobalOverlays';
 export function AppShell() {
   const { t, locale } = useI18n();
 
-  // ── Zustand store selectors ──────────────────────────────────────
-  const viewMode = useEditorStore((s) => s.viewMode);
-  const setViewMode = useEditorStore((s) => s.setViewMode);
-  const splitSizes = useEditorStore((s) => s.splitSizes);
-  const setSplitSizes = useEditorStore((s) => s.setSplitSizes);
+  // ── State groups ─────────────────────────────────────────────────
+  const {
+    viewMode, setViewMode, splitSizes, setSplitSizes,
+    fileTreeRoot, setFileTreeRoot,
+    activePanel, setActivePanel, togglePanel, showFileTree, showToc, showSearchPanel, showPluginsPanel,
+  } = useAppLayout();
 
-  const showSettings = useUIStore((s) => s.showSettings);
-  const setShowSettings = useUIStore((s) => s.setShowSettings);
-  const openSettings = useCallback(() => setShowSettings(true), [setShowSettings]);
-  const showAbout = useUIStore((s) => s.showAbout);
-  const setShowAbout = useUIStore((s) => s.setShowAbout);
-  const showAIPanel = useUIStore((s) => s.showAIPanel);
-  const setShowAIPanel = useUIStore((s) => s.setShowAIPanel);
+  const {
+    spellCheck, setSpellCheck, vimMode, setVimMode, autoSave, setAutoSave, autoSaveDelay, setAutoSaveDelay,
+    gitMdOnly, setGitMdOnly, milkdownPreview, setMilkdownPreview, mermaidTheme, setMermaidTheme,
+    theme, setTheme, fileWatch, setFileWatch, fileWatchBehavior, setFileWatchBehavior,
+    autoUpdateCheck, setAutoUpdateCheck, updateCheckFrequency, setUpdateCheckFrequency,
+    contextMenuIntegration, setContextMenuIntegration,
+    typewriterOptions, setTypewriterOptions,
+  } = useAppPreferences();
 
-  const isDragOver = useUIStore((s) => s.isDragOver);
-  const setIsDragOver = useUIStore((s) => s.setIsDragOver);
-  const dragKind = useUIStore((s) => s.dragKind);
-  const setDragKind = useUIStore((s) => s.setDragKind);
-  const ctxMenu = useUIStore((s) => s.ctxMenu);
-  const setCtxMenu = useUIStore((s) => s.setCtxMenu);
-  const setPreviewCtxMenu = useUIStore((s) => s.setPreviewCtxMenu);
-
-  // ── Extracted state hooks ────────────────────────────────────────
-  const { activePanel, setActivePanel, togglePanel, showFileTree, showToc, showSearchPanel, showPluginsPanel } = useSidebarPanel();
-  const { spellCheck, setSpellCheck, vimMode, setVimMode, autoSave, setAutoSave, autoSaveDelay, setAutoSaveDelay, gitMdOnly, setGitMdOnly, milkdownPreview, setMilkdownPreview, mermaidTheme, setMermaidTheme, theme, setTheme, fileWatch, setFileWatch, fileWatchBehavior, setFileWatchBehavior, autoUpdateCheck, setAutoUpdateCheck, updateCheckFrequency, setUpdateCheckFrequency, contextMenuIntegration, setContextMenuIntegration } = usePreferences();
-  const [typewriterOptions, setTypewriterOptions] = useTypewriterOptions();
+  const {
+    showSettings, setShowSettings, openSettings,
+    showAbout, setShowAbout,
+    showAIPanel, setShowAIPanel,
+    isDragOver, setIsDragOver, dragKind, setDragKind,
+    ctxMenu, setCtxMenu, setPreviewCtxMenu,
+    focusMode, setFocusMode, isChromeless, hideStatusBar,
+    welcomeDismissed, handleDismissWelcome, handleShowWelcome,
+    focusStartRef,
+  } = useAppUIState();
 
   // ── Core hooks ───────────────────────────────────────────────────
-  const { focusMode, setFocusMode, isChromeless, hideStatusBar } = useFocusMode();
 
   const effectiveChromeless = isChromeless || (focusMode === 'typewriter' && typewriterOptions.hideUI);
   const effectiveHideStatusBar = hideStatusBar || (focusMode === 'typewriter' && typewriterOptions.hideUI);
@@ -109,17 +103,8 @@ export function AppShell() {
     }
   }, [milkdownPreview, viewMode, setViewMode]);
 
-  const focusStartRef = useRef<number | null>(null);
-  useEffect(() => {
-    if (focusMode === 'typewriter') {
-      if (!focusStartRef.current) focusStartRef.current = Date.now();
-    } else {
-      focusStartRef.current = null;
-    }
-  }, [focusMode]);
   const { renderers: pluginRenderers, registerPreviewRenderer, unregisterPreviewRenderer } = usePreviewRenderers();
   const { panels: pluginPanels, registerPanel: registerPluginPanel, unregisterPanel: unregisterPluginPanel } = usePluginPanels();
-  const { welcomeDismissed, handleDismissWelcome, handleShowWelcome } = useWelcome();
   const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
   const {
@@ -140,10 +125,6 @@ export function AppShell() {
   const { recentFiles, handleOpenRecent, handleClearRecent, handleRemoveRecent } = recentFilesHook;
 
   const { handleFirstSave } = usePendingImageMigration({ tabs, updateTabDoc, markSaved });
-
-  const [fileTreeRoot, setFileTreeRoot] = useState<string>(() => {
-    try { return localStorage.getItem(StorageKeys.FILETREE_ROOT) || ''; } catch { return ''; }
-  });
 
   // ── File operations ──────────────────────────────────────────────
   const { handleOpenFile, handleSaveFile: rawHandleSaveFile, handleSaveAsFile, handleExportDocx, handleExportPdf, handleExportHtml, handleExportEpub, handleExportPng, exporting } = useFileOps({
@@ -340,37 +321,26 @@ export function AppShell() {
 
   const AI_PANEL_ID = 'ai-copilot-official';
 
-  // ── Stable callbacks for child components (useCallback) ────────
-  const stableOnSaveFile = useCallback(() => handleSaveWithWatchMark(), [handleSaveWithWatchMark]);
-  const stableOnSaveAsFile = useCallback(() => handleSaveAsFile(), [handleSaveAsFile]);
-  const stableOnExportPng = useCallback(() => handleExportPng(previewRef.current), [handleExportPng, previewRef]);
-  const stableOnToggleSpellCheck = useCallback(() => setSpellCheck(!spellCheck), [setSpellCheck, spellCheck]);
-  const stableOnToggleVimMode = useCallback(() => setVimMode(!vimMode), [setVimMode, vimMode]);
-  const stableOnToggleAIPanel = useCallback(() => setShowAIPanel(!showAIPanel), [setShowAIPanel, showAIPanel]);
-  const stableOnUndo = useCallback(() => {
-    if (milkdownPreview) { milkdownBridge.undo?.(); return; }
-    const v = cmViewRef.current; if (v) undo(v);
-  }, [milkdownPreview, cmViewRef]);
-  const stableOnRedo = useCallback(() => {
-    if (milkdownPreview) { milkdownBridge.redo?.(); return; }
-    const v = cmViewRef.current; if (v) redo(v);
-  }, [milkdownPreview, cmViewRef]);
-  const stableOnConfirmRename = useCallback(async (id: string, name: string) => {
-    const ok = await renameTab(id, name);
-    if (ok) setRenamingTabId(null);
-  }, [renameTab, setRenamingTabId]);
-  const stableOnCancelRename = useCallback(() => setRenamingTabId(null), [setRenamingTabId]);
-  const stableOnPin = useCallback((id: string) => { pinTab(id); setCtxMenu(null); }, [pinTab, setCtxMenu]);
-  const stableOnUnpin = useCallback((id: string) => { unpinTab(id); setCtxMenu(null); }, [unpinTab, setCtxMenu]);
-  const stableOnUpdateClick = useCallback(() => {
-    const cur = useUIStore.getState().showUpdateNotification;
-    useUIStore.getState().setShowUpdateNotification(!cur);
-  }, []);
-  const stableOnSnapshotRestore = useCallback((id: string) => {
-    if (!activeTab.filePath) return;
-    const content = restoreSnapshot(activeTab.filePath, id);
-    if (content !== null) updateActiveDoc(content);
-  }, [activeTab.filePath, updateActiveDoc]);
+  // ── Toolbar stable callbacks ─────────────────────────────────────
+  const {
+    stableOnSaveFile, stableOnSaveAsFile, stableOnExportPng,
+    stableOnToggleSpellCheck, stableOnToggleVimMode, stableOnToggleAIPanel,
+    stableOnUndo, stableOnRedo,
+    stableOnConfirmRename, stableOnCancelRename,
+    stableOnPin, stableOnUnpin,
+    stableOnUpdateClick, stableOnSnapshotRestore,
+  } = useAppToolbar({
+    handleSaveWithWatchMark, handleSaveAsFile,
+    handleExportPng, previewRef,
+    spellCheck, setSpellCheck,
+    vimMode, setVimMode,
+    showAIPanel, setShowAIPanel,
+    milkdownPreview, cmViewRef,
+    renameTab, setRenamingTabId,
+    pinTab, unpinTab, setCtxMenu,
+    activeTabFilePath: activeTab.filePath ?? null,
+    updateActiveDoc,
+  });
 
   // ── Render ───────────────────────────────────────────────────────
   return (
