@@ -229,7 +229,7 @@ quadrantChart
     Mermaid Fix: [0.2, 0.9]
     Plugin HotReload: [0.7, 0.8]
     Custom Theme: [0.4, 0.6]
-    Mobile Support: [0.9, 0.5]
+    Mobile Support: [0.8, 0.4]
     Spell Check: [0.3, 0.3]
 ```
 
