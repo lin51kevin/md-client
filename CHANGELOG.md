@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Ci
 
-- use ubuntu-20.04 for Linux builds to support GLIBC 2.31+ (`532d6d2`)
+- use ubuntu-22.04 for Linux builds to support GLIBC 2.35+ (`532d6d2`)
 
 
 
