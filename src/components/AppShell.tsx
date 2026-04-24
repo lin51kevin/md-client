@@ -300,8 +300,9 @@ export function AppShell() {
     },
   });
 
-  const commandRegistryRef = useRef<any[]>([]);
-  commandRegistryRef.current = createCommandRegistry({
+  // useMemo so the registry is only recreated when its stable dependencies change,
+  // not on every render triggered by cursor moves or other unrelated state.
+  const commandRegistry = useMemo(() => createCommandRegistry({
     createNewTab, handleOpenFile, handleSaveFile: handleSaveWithWatchMark, handleSaveAsFile,
     setViewMode, focusMode, setFocusMode,
     handleFormatAction, handleExportDocx, handleExportPdf, handleExportHtml,
@@ -316,7 +317,11 @@ export function AppShell() {
       const tab = tabsRef.current.find(t => t.id === activeTabIdRef.current);
       if (tab?.filePath) revealInExplorer(tab.filePath).catch(() => {});
     },
-  });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [createNewTab, handleOpenFile, handleSaveWithWatchMark, handleSaveAsFile,
+    setViewMode, focusMode, setFocusMode, handleFormatAction,
+    handleExportDocx, handleExportPdf, handleExportHtml,
+    handleExportPng, setShowSnippetPicker, setShowSnippetManager, isTauri]);
 
   const AI_PANEL_ID = 'ai-copilot-official';
 
@@ -579,7 +584,7 @@ export function AppShell() {
       )}
 
       <AppGlobalOverlays
-        commandRegistry={commandRegistryRef.current}
+        commandRegistry={commandRegistry}
         locale={locale}
         fileTreeRoot={fileTreeRoot}
         recentFiles={recentFiles}
