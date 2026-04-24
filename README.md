@@ -341,6 +341,7 @@ git-chglog -o CHANGELOG.md    # Write to file
 git-chglog v0.1.0..           # Changes since v0.1.0
 ```
 
+
 **Note**: Commits should follow [Conventional Commits](https://www.conventionalcommits.org/) format:
 
 * `feat:` → Added
