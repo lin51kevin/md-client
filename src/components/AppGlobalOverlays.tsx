@@ -3,7 +3,7 @@
  * outside the main layout hierarchy.
  *
  * Includes: CommandPalette, QuickOpen, SnippetPicker/Manager, UpdateNotification,
- * FileChangeToast, SlidePreview, MindmapView, and the export loading indicator.
+ * FileChangeToast, MindmapView, and the export loading indicator.
  *
  * Reads showCommandPalette, showQuickOpen, showUpdateNotification, viewMode
  * directly from Zustand stores to avoid prop drilling for visibility flags.
@@ -26,7 +26,6 @@ import { SnippetManager } from './modal/SnippetManager';
 import { FileChangeToast } from './editor/FileChangeToast';
 import { UpdateNotification } from './modal/UpdateNotification';
 
-const SlidePreview = lazy(() => import('./preview/SlidePreview').then(m => ({ default: m.SlidePreview })));
 const MindmapView = lazy(() => import('./preview/MindmapView').then(m => ({ default: m.MindmapView })));
 
 export interface AppGlobalOverlaysProps {
@@ -144,12 +143,6 @@ export function AppGlobalOverlays({
           onSaveAs={(tabId) => { onSaveAsFile(tabId); onCloseToast(); }}
           onClose={onCloseToast}
         />
-      )}
-
-      {viewMode === 'slide' && (
-        <Suspense fallback={<LoadingSpinner />}>
-          <SlidePreview markdown={activeTabDoc} onClose={() => setViewMode('split')} />
-        </Suspense>
       )}
 
       {viewMode === 'mindmap' && (

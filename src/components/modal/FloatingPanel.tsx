@@ -112,7 +112,7 @@ export function FloatingPanel({ visible, children }: FloatingPanelProps) {
   ];
 
   // Use display:none instead of returning null to preserve child component
-  // state (e.g. AI chat messages) across visibility toggles (slide/mindmap mode).
+  // state (e.g. AI chat messages) across visibility toggles (mindmap mode).
   return (
     <div data-testid="floating-panel-root" style={{
       position: 'fixed', left: rect.x, top: rect.y, width: rect.w, height: rect.h,

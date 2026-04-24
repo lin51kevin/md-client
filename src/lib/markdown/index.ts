@@ -8,8 +8,6 @@ export { extractToc, slugify, type TocEntry } from './toc';
 export { initMermaid, renderMermaid, resetMermaidInit, clearMermaidSvgCache } from './mermaid';
 // ── Table Parser ─────────────────────────────────────────────────────────────
 export { parseTable, serializeTable, type TableData, type Alignment } from './table-parser';
-// ── Slide Parser ─────────────────────────────────────────────────────────────
-export { parseSlides, extractSlideMetadata, type SlideMetadata } from './slide-parser';
 // ── Mindmap Converter ────────────────────────────────────────────────────────
 export { tocToMindmap, sanitizeText } from './mindmap-converter';
 // ── LaTeX Rendering ──────────────────────────────────────────────────────────

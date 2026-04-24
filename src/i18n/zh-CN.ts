@@ -86,7 +86,6 @@ export const zhCN = {
   'settings.shortcuts.editMode': '仅编辑模式',
   'settings.shortcuts.splitMode': '分栏模式',
   'settings.shortcuts.previewMode': '仅预览模式',
-  'settings.shortcuts.slideMode': '幻灯片放映模式',
   'settings.shortcuts.insertSnippet': '插入片段',
   'settings.shortcuts.typewriterMode': '打字机模式',
   'settings.shortcuts.focusMode': '专注模式',
@@ -182,8 +181,7 @@ export const zhCN = {
   'toolbar.split': '分栏视图 (Ctrl+2)',
   'toolbar.previewOnly': '仅预览 (Ctrl+3)',
   'toolbar.editablePreview': '预览可编辑（Milkdown WYSIWYG）',
-  'toolbar.slideMode': '幻灯片放映 (Ctrl+4)',
-  'toolbar.mindmapMode': '思维导图 (Ctrl+5)',
+  'toolbar.mindmapMode': '思维导图 (Ctrl+4)',
   'toolbar.insertSnippet': '插入片段 (Ctrl+Shift+J)',
   'toolbar.prevTab': '上一个标签页',
   'toolbar.nextTab': '下一个标签页',
@@ -701,10 +699,6 @@ export const zhCN = {
   'quickOpen.open': '打开',
   'quickOpen.close': '关闭',
 
-  // ── Slide Preview ──────────────────────────────────────────────────────
-  'slidePreview.exit': '退出 (ESC)',
-  'slidePreview.fullscreen': '全屏 (F11)',
-  'slidePreview.exitFullscreen': '退出全屏 (ESC)',
   // ── Command Palette ───────────────────────────────────────────────────────
   'commandPalette.title': '命令面板',
   'commandPalette.placeholder': '输入命令搜索...',

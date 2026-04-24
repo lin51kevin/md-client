@@ -108,7 +108,6 @@
 | **TableSizePicker** | `components/TableSizePicker.tsx` | 表格尺寸网格选择器 (8×8) |
 | **DragOverlay** | `components/DragOverlay.tsx` | 拖拽覆盖层提示 |
 | **DiffViewer** | `components/DiffViewer.tsx` | 版本比较查看器 |
-| **SlidePreview** | `components/SlidePreview.tsx` | 幻灯片演示预览 |
 | **WelcomePage** | `components/WelcomePage.tsx` | 欢迎页 |
 | **CustomCssEditor** | `components/CustomCssEditor.tsx` | 自定义 CSS 编辑器 |
 

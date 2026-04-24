@@ -88,7 +88,6 @@ export const jaJP: Record<TranslationKey, string> = {
   'settings.shortcuts.editMode': '編集のみモード',
   'settings.shortcuts.splitMode': '分割表示モード',
   'settings.shortcuts.previewMode': 'プレビューのみモード',
-  'settings.shortcuts.slideMode': 'スライドショーモード',
   'settings.shortcuts.insertSnippet': 'スニペットの挿入',
   'settings.shortcuts.typewriterMode': 'タイプライターモード',
   'settings.shortcuts.focusMode': '集中モード',
@@ -184,8 +183,7 @@ export const jaJP: Record<TranslationKey, string> = {
   'toolbar.split': '分割表示 (Ctrl+2)',
   'toolbar.previewOnly': 'プレビューのみ (Ctrl+3)',
   'toolbar.editablePreview': '編集可能なプレビュー（Milkdown WYSIWYG）',
-  'toolbar.slideMode': 'スライドショー (Ctrl+4)',
-  'toolbar.mindmapMode': 'マインドマップ (Ctrl+5)',
+  'toolbar.mindmapMode': 'マインドマップ (Ctrl+4)',
   'toolbar.insertSnippet': 'スニペットの挿入 (Ctrl+Shift+J)',
   'toolbar.prevTab': '前のタブ',
   'toolbar.nextTab': '次のタブ',
@@ -703,10 +701,6 @@ export const jaJP: Record<TranslationKey, string> = {
   'quickOpen.open': '開く',
   'quickOpen.close': '閉じる',
 
-  // ── Slide Preview ──────────────────────────────────────────────────────
-  'slidePreview.exit': '終了 (ESC)',
-  'slidePreview.fullscreen': 'フルスクリーン (F11)',
-  'slidePreview.exitFullscreen': 'フルスクリーン終了 (ESC)',
   // ── Command Palette ───────────────────────────────────────────────────────
   'commandPalette.title': 'コマンドパレット',
   'commandPalette.placeholder': 'コマンドを入力...',

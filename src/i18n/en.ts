@@ -88,7 +88,6 @@ export const en: Record<TranslationKey, string> = {
   'settings.shortcuts.editMode': 'Edit Only Mode',
   'settings.shortcuts.splitMode': 'Split View Mode',
   'settings.shortcuts.previewMode': 'Preview Only Mode',
-  'settings.shortcuts.slideMode': 'Slide Show Mode',
   'settings.shortcuts.insertSnippet': 'Insert Snippet',
   'settings.shortcuts.typewriterMode': 'Typewriter Mode',
   'settings.shortcuts.focusMode': 'Focus Mode',
@@ -184,8 +183,7 @@ export const en: Record<TranslationKey, string> = {
   'toolbar.split': 'Split View (Ctrl+2)',
   'toolbar.previewOnly': 'Preview Only (Ctrl+3)',
   'toolbar.editablePreview': 'Editable Preview (Milkdown WYSIWYG)',
-  'toolbar.slideMode': 'Slide Show (Ctrl+4)',
-  'toolbar.mindmapMode': 'Mindmap (Ctrl+5)',
+  'toolbar.mindmapMode': 'Mindmap (Ctrl+4)',
   'toolbar.insertSnippet': 'Insert Snippet (Ctrl+Shift+J)',
   'toolbar.prevTab': 'Previous Tab',
   'toolbar.nextTab': 'Next Tab',
@@ -704,10 +702,6 @@ export const en: Record<TranslationKey, string> = {
   'quickOpen.open': 'open',
   'quickOpen.close': 'close',
 
-  // ── Slide Preview ──────────────────────────────────────────────────────
-  'slidePreview.exit': 'Exit (ESC)',
-  'slidePreview.fullscreen': 'Fullscreen (F11)',
-  'slidePreview.exitFullscreen': 'Exit Fullscreen (ESC)',
   // ── Command Palette ───────────────────────────────────────────────────────
   'commandPalette.title': 'Command Palette',
   'commandPalette.placeholder': 'Type a command...',

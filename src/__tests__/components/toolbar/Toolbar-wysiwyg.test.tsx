@@ -47,7 +47,6 @@ vi.mock('../../../i18n', () => ({
         'toolbar.aiCopilotOpen': '打开AI助手',
         'toolbar.aiCopilotClose': '关闭AI助手',
         'file.openFolder': '打开文件夹',
-        'toolbar.slideMode': '幻灯片模式',
         'toolbar.mindmapMode': '思维导图模式',
       };
       return map[key] ?? key;
@@ -84,16 +83,15 @@ describe('Toolbar — WYSIWYG mode (wysiwygMode=true)', () => {
     vi.clearAllMocks();
   });
 
-  // ── 视图切换按钮：编辑/分栏/预览隐藏，幻灯片/思维导图保留 ──
+  // ── 视图切换按钮：编辑/分栏/预览隐藏，思维导图保留 ──
 
-  it('hides edit/split/preview view buttons but keeps slide/mindmap', () => {
+  it('hides edit/split/preview view buttons but keeps mindmap', () => {
     render(<Toolbar {...defaultProps} wysiwygMode={true} />);
 
     expect(screen.queryByTitle('仅编辑')).not.toBeInTheDocument();
     expect(screen.queryByTitle('分栏预览')).not.toBeInTheDocument();
     expect(screen.queryByTitle('仅预览')).not.toBeInTheDocument();
-    // slide/mindmap are always visible
-    expect(screen.getByTitle('幻灯片模式')).toBeInTheDocument();
+    // mindmap is always visible
     expect(screen.getByTitle('思维导图模式')).toBeInTheDocument();
   });
 
@@ -205,13 +203,12 @@ describe('Toolbar — normal mode (wysiwygMode=false, default)', () => {
     });
   });
 
-  it('shows all view mode buttons including slide and mindmap', () => {
+  it('shows all view mode buttons including mindmap', () => {
     render(<Toolbar {...defaultProps} wysiwygMode={false} />);
 
     expect(screen.getByTitle('仅编辑')).toBeInTheDocument();
     expect(screen.getByTitle('分栏预览')).toBeInTheDocument();
     expect(screen.getByTitle('仅预览')).toBeInTheDocument();
-    expect(screen.getByTitle('幻灯片模式')).toBeInTheDocument();
     expect(screen.getByTitle('思维导图模式')).toBeInTheDocument();
   });
 

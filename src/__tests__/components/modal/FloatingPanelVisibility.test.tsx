@@ -20,11 +20,11 @@ describe('FloatingPanel — visibility gating', () => {
     expect(screen.getByTestId('floating-panel-root')).toHaveStyle('display: none');
   });
 
-  it('hides when viewMode is slide (visible=false)', () => {
-    const viewMode = 'slide';
+  it('hides when viewMode is mindmap (visible=false)', () => {
+    const viewMode = 'mindmap';
     const showAIPanel = true;
     const showSettings = false;
-    const visible = showAIPanel && !showSettings && viewMode !== 'slide' && viewMode !== 'mindmap';
+    const visible = showAIPanel && !showSettings && viewMode !== 'mindmap';
     render(<FloatingPanel visible={visible}>{child}</FloatingPanel>);
     expect(screen.getByTestId('panel-content')).toBeInTheDocument();
     expect(screen.getByTestId('floating-panel-root')).toHaveStyle('display: none');
@@ -34,7 +34,7 @@ describe('FloatingPanel — visibility gating', () => {
     const viewMode = 'mindmap';
     const showAIPanel = true;
     const showSettings = false;
-    const visible = showAIPanel && !showSettings && viewMode !== 'slide' && viewMode !== 'mindmap';
+    const visible = showAIPanel && !showSettings && viewMode !== 'mindmap';
     render(<FloatingPanel visible={visible}>{child}</FloatingPanel>);
     expect(screen.getByTestId('panel-content')).toBeInTheDocument();
     expect(screen.getByTestId('floating-panel-root')).toHaveStyle('display: none');
@@ -44,7 +44,7 @@ describe('FloatingPanel — visibility gating', () => {
     const viewMode = 'split';
     const showAIPanel = true;
     const showSettings = true;
-    const visible = showAIPanel && !showSettings && viewMode !== 'slide' && viewMode !== 'mindmap';
+    const visible = showAIPanel && !showSettings && viewMode !== 'mindmap';
     render(<FloatingPanel visible={visible}>{child}</FloatingPanel>);
     expect(screen.getByTestId('panel-content')).toBeInTheDocument();
     expect(screen.getByTestId('floating-panel-root')).toHaveStyle('display: none');
@@ -54,7 +54,7 @@ describe('FloatingPanel — visibility gating', () => {
     const viewMode = 'split';
     const showAIPanel = true;
     const showSettings = false;
-    const visible = showAIPanel && !showSettings && viewMode !== 'slide' && viewMode !== 'mindmap';
+    const visible = showAIPanel && !showSettings && viewMode !== 'mindmap';
     render(<FloatingPanel visible={visible}>{child}</FloatingPanel>);
     expect(screen.getByTestId('panel-content')).toBeInTheDocument();
   });
@@ -63,17 +63,17 @@ describe('FloatingPanel — visibility gating', () => {
     const viewMode = 'split';
     const showAIPanel = false;
     const showSettings = false;
-    const visible = showAIPanel && !showSettings && viewMode !== 'slide' && viewMode !== 'mindmap';
+    const visible = showAIPanel && !showSettings && viewMode !== 'mindmap';
     render(<FloatingPanel visible={visible}>{child}</FloatingPanel>);
     expect(screen.getByTestId('panel-content')).toBeInTheDocument();
     expect(screen.getByTestId('floating-panel-root')).toHaveStyle('display: none');
   });
 
-  it('shows when preview mode (not slide/mindmap)', () => {
+  it('shows when preview mode (not mindmap)', () => {
     const viewMode = 'preview';
     const showAIPanel = true;
     const showSettings = false;
-    const visible = showAIPanel && !showSettings && viewMode !== 'slide' && viewMode !== 'mindmap';
+    const visible = showAIPanel && !showSettings && viewMode !== 'mindmap';
     render(<FloatingPanel visible={visible}>{child}</FloatingPanel>);
     expect(screen.getByTestId('panel-content')).toBeInTheDocument();
   });

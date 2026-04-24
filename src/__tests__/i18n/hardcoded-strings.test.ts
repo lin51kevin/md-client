@@ -25,9 +25,6 @@ const REQUIRED_KEYS = [
   'quickOpen.navigate',
   'quickOpen.open',
   'quickOpen.close',
-  'slidePreview.exit',
-  'slidePreview.fullscreen',
-  'slidePreview.exitFullscreen',
 ] as const;
 
 describe('i18n: hardcoded strings migration', () => {

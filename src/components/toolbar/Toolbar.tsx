@@ -1,6 +1,6 @@
 
 import { useRef, useState, useEffect, memo } from 'react';
-import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, SpellCheck, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, HelpCircle, FilePlus, FileText, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight, Table2, FileCode2, Minus, ListChecks, Sigma, Presentation, Library, List, Brain, Undo2, Redo2, Bot, ArrowUpFromLine, PenLine } from 'lucide-react';
+import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, SpellCheck, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, HelpCircle, FilePlus, FileText, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight, Table2, FileCode2, Minus, ListChecks, Sigma, Library, List, Brain, Undo2, Redo2, Bot, ArrowUpFromLine, PenLine } from 'lucide-react';
 import { ViewMode, FocusMode } from '../../types';
 
 import { FileMenuDropdown } from '../editor/FileMenuDropdown';
@@ -410,15 +410,7 @@ export const Toolbar = memo(function Toolbar({
           </ToolbarButton>
         </>)}
 
-        {/* 幻灯片/思维导图 — always visible */}
-        <ToolbarButton
-          variant="view"
-          active={viewMode === 'slide'}
-          onClick={() => onSetViewMode('slide')}
-          title={t('toolbar.slideMode') || 'Slide Show (Ctrl+4)'}
-        >
-          <Presentation size={15} strokeWidth={1.8} />
-        </ToolbarButton>
+        {/* 思维导图 — always visible */}
         <ToolbarButton
           variant="view"
           active={viewMode === 'mindmap'}

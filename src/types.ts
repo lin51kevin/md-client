@@ -13,7 +13,7 @@ export interface Tab {
   externalModified?: boolean;
 }
 
-export type ViewMode = 'split' | 'edit' | 'preview' | 'slide' | 'mindmap';
+export type ViewMode = 'split' | 'edit' | 'preview' | 'mindmap';
 
 /** F009 — 编辑器焦点模式 */
 export type FocusMode = 'normal' | 'typewriter' | 'focus' | 'fullscreen';

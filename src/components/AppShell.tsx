@@ -98,7 +98,7 @@ export function AppShell() {
 
   // WYSIWYG mode: auto-switch to preview view when milkdownPreview is enabled
   useEffect(() => {
-    if (milkdownPreview && viewMode !== 'preview' && viewMode !== 'slide' && viewMode !== 'mindmap') {
+    if (milkdownPreview && viewMode !== 'preview' && viewMode !== 'mindmap') {
       setViewMode('preview');
     }
   }, [milkdownPreview, viewMode, setViewMode]);
@@ -559,7 +559,7 @@ export function AppShell() {
             content.onClose = () => setShowAIPanel(false);
           }
           return (
-            <FloatingPanel visible={showAIPanel && !showSettings && viewMode !== 'slide' && viewMode !== 'mindmap'}>
+            <FloatingPanel visible={showAIPanel && !showSettings && viewMode !== 'mindmap'}>
               {(dragHandle) => {
                 if (content && typeof content === 'object') {
                   content.onDragStart = dragHandle;
