@@ -6,7 +6,54 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [v0.10.4] - 2026-04-24
+
+
+### Changed
+
+- bump version to v0.10.4 (`ba8208a`)
+
+
+
+### Added
+
+- remove slide presentation mode (`e484e9f`)
+
+
+
+### Performance
+
+- add SVG cache to mermaid renderer (P1-C) (`412bb5d`)
+- memoize commandRegistry in AppShell (`4b2c184`)
+- move cursor position to editor-store to reduce re-renders (`7f7d62e`)
+
+
+
+
+
+
+
 ## [v0.10.3] - 2026-04-24
+
+
+### Changed
+
+- bump version to v0.10.3 (`3cfb531`)
+- update Cargo.lock to reflect v0.10.2 (`9e17960`)
+
+
+
+### Ci
+
+- fix cargo check failure on Ubuntu 22.04 by expanding system deps and reordering steps (`e7014e8`)
+
+
+
+### Changed
+
+- extract file operations into useAppFileHandlers (`9ec50ba`)
+- extract state groups into useAppPreferences / useAppLayout / useAppUIState / useAppToolbar (`1abdbfe`)
+
 
 
 ### Fixed
@@ -15,20 +62,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-### Refactored
-
-- extract state groups into useAppPreferences / useAppLayout / useAppUIState / useAppToolbar (`1abdbfe`)
-- extract file operations into useAppFileHandlers (`9ec50ba`)
-
-
-
 ### Test
 
-- add tests for useAppPreferences / useAppLayout / useAppUIState / useAppToolbar (`e0c0d56`)
+- add tests for useAppPreferences / useAppLayout / useAppUIState / useAppToolbar (60 cases) (`e0c0d56`)
+
+
+
+
 
 
 
 ## [v0.10.2] - 2026-04-24
+
+
+### Ci
+
+- use ubuntu-22.04 for Linux builds (GLIBC 2.35, supports Ubuntu 22.04+) (`7aba092`)
+- use ubuntu-20.04 for Linux builds to support GLIBC 2.31+ (`532d6d2`)
+
+
+
+### Docs
+
+- regenerate CHANGELOG.md via git-chglog for v0.10.2 (`ee26020`)
+
 
 
 ### Changed
@@ -41,12 +98,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - wrap handleDismiss in arrow function in FileChangeToast (`59f43d2`)
-
-
-
-### Ci
-
-- use ubuntu-22.04 for Linux builds to support GLIBC 2.35+ (`532d6d2`)
 
 
 
