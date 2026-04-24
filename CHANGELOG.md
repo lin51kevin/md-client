@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [v0.10.3] - 2026-04-24
+
+
+### Fixed
+
+- resolve Tauri webview black screen on Ubuntu 22.04 (`f79b497`)
+
+
+
+### Refactored
+
+- extract state groups into useAppPreferences / useAppLayout / useAppUIState / useAppToolbar (`1abdbfe`)
+- extract file operations into useAppFileHandlers (`9ec50ba`)
+
+
+
+### Test
+
+- add tests for useAppPreferences / useAppLayout / useAppUIState / useAppToolbar (`e0c0d56`)
+
+
+
 ## [v0.10.2] - 2026-04-24
 
 

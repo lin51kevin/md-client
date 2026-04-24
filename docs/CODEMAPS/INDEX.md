@@ -1,7 +1,7 @@
 # MarkLite 代码映射索引
 
 **最后更新** — 2026-04-24
-**版本** — v0.10.2 (当前)
+**版本** — v0.10.3 (当前)
 **项目** — MarkLite 桌面 Markdown 编辑器（Tauri 2 + React 19 + CodeMirror 6）
 
 ---
