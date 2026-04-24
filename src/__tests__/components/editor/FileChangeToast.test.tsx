@@ -27,6 +27,7 @@ describe('FileChangeToast', () => {
         type="modified"
         filePath="/path/to/file.md"
         tabId="tab-1"
+        isDirty={true}
         onReload={onReload}
         onKeep={onKeep}
         onSaveAs={onSaveAs}
@@ -51,6 +52,7 @@ describe('FileChangeToast', () => {
         type="deleted"
         filePath="/path/to/file.md"
         tabId="tab-1"
+        isDirty={false}
         onReload={onReload}
         onKeep={onKeep}
         onSaveAs={onSaveAs}
@@ -74,6 +76,7 @@ describe('FileChangeToast', () => {
         type="modified"
         filePath="/path/to/file.md"
         tabId="tab-1"
+        isDirty={true}
         onReload={onReload}
         onKeep={onKeep}
         onSaveAs={onSaveAs}
@@ -96,6 +99,7 @@ describe('FileChangeToast', () => {
         type="modified"
         filePath="/path/to/file.md"
         tabId="tab-1"
+        isDirty={true}
         onReload={onReload}
         onKeep={onKeep}
         onSaveAs={onSaveAs}
@@ -118,6 +122,7 @@ describe('FileChangeToast', () => {
         type="deleted"
         filePath="/path/to/file.md"
         tabId="tab-1"
+        isDirty={false}
         onReload={onReload}
         onKeep={onKeep}
         onSaveAs={onSaveAs}
@@ -129,13 +134,14 @@ describe('FileChangeToast', () => {
     expect(onSaveAs).toHaveBeenCalledWith('tab-1');
   });
 
-  it('should auto-dismiss after 10 seconds', () => {
+  it('should auto-dismiss after 10 seconds when tab is NOT dirty', () => {
     const onClose = vi.fn();
     render(
       <FileChangeToast
         type="modified"
         filePath="/path/to/file.md"
         tabId="tab-1"
+        isDirty={false}
         onReload={vi.fn()}
         onKeep={vi.fn()}
         onSaveAs={vi.fn()}
@@ -145,5 +151,45 @@ describe('FileChangeToast', () => {
 
     vi.advanceTimersByTime(10_000);
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('should NOT auto-dismiss when tab IS dirty (persistent until action)', () => {
+    const onClose = vi.fn();
+    render(
+      <FileChangeToast
+        type="modified"
+        filePath="/path/to/file.md"
+        tabId="tab-1"
+        isDirty={true}
+        onReload={vi.fn()}
+        onKeep={vi.fn()}
+        onSaveAs={vi.fn()}
+        onClose={onClose}
+      />
+    );
+
+    vi.advanceTimersByTime(100_000); // way past the 10s threshold
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('should NOT show close button when tab is dirty', () => {
+    render(
+      <FileChangeToast
+        type="modified"
+        filePath="/path/to/file.md"
+        tabId="tab-1"
+        isDirty={true}
+        onReload={vi.fn()}
+        onKeep={vi.fn()}
+        onSaveAs={vi.fn()}
+        onClose={vi.fn()}
+      />
+    );
+
+    // No standalone close button (X) — only Reload and Keep actions
+    // The toast has reload + keep buttons but no X close icon
+    const buttons = screen.getAllByRole('button');
+    // Should have reload + keep (2 buttons), no close button
+    expect(buttons.length).toBe(2);
   });
 });

@@ -103,6 +103,7 @@ describe('useFileWatchState', () => {
     expect(updateTab).toHaveBeenCalledWith('tab-1', {
       doc: 'fresh content',
       isDirty: false,
+      externalModified: false,
     });
   });
 
@@ -191,6 +192,7 @@ describe('useFileWatchState', () => {
     expect(updateTab).toHaveBeenCalledWith('tab-1', {
       doc: 'reloaded content',
       isDirty: false,
+      externalModified: false,
     });
   });
 });
