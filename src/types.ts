@@ -8,6 +8,9 @@ export interface Tab {
   color?: string;
   doc: string;
   isDirty: boolean;
+  /** External modification detected while tab has unsaved changes;
+   *  cleared after reload or save. */
+  externalModified?: boolean;
 }
 
 export type ViewMode = 'split' | 'edit' | 'preview' | 'slide' | 'mindmap';
