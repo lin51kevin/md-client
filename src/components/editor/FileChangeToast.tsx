@@ -48,10 +48,12 @@ export function FileChangeToast({
     return () => clearTimeout(timer);
   }, [onClose, isDirty, type, tabId, onReload]);
 
-  const handleDismiss = useCallback(() => {
+  /** Dismiss the toast. Pass `true` when an explicit action (Reload/Keep/SaveAs) was
+   *  already triggered so we skip the auto-reload that would otherwise fire. */
+  const handleDismiss = useCallback((actionTaken = false) => {
     setVisible(false);
-    // Non-dirty + modified: user dismissed without action, auto-reload to stay in sync
-    if (!isDirty && type === 'modified') {
+    // Non-dirty + modified: if user didn't explicitly act, auto-reload to stay in sync
+    if (!actionTaken && !isDirty && type === 'modified') {
       onReload(tabId);
     }
     onClose();
@@ -89,7 +91,7 @@ export function FileChangeToast({
         {type === 'modified' ? (
           <>
             <button
-              onClick={() => { onReload(tabId); handleDismiss(); }}
+              onClick={() => { onReload(tabId); handleDismiss(true); }}
               className="flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors"
               style={{ backgroundColor: 'var(--accent-bg)', color: 'var(--accent-color)' }}
             >
@@ -97,7 +99,7 @@ export function FileChangeToast({
               {t('fileWatcher.reload')}
             </button>
             <button
-              onClick={() => { onKeep(); handleDismiss(); }}
+              onClick={() => { onKeep(); handleDismiss(true); }}
               className="text-xs px-2 py-1 rounded transition-colors"
               style={{ color: 'var(--text-secondary)' }}
             >
@@ -107,7 +109,7 @@ export function FileChangeToast({
         ) : (
           <>
             <button
-              onClick={() => { onSaveAs(tabId); handleDismiss(); }}
+              onClick={() => { onSaveAs(tabId); handleDismiss(true); }}
               className="flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors"
               style={{ backgroundColor: 'var(--accent-bg)', color: 'var(--accent-color)' }}
             >
