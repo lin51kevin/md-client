@@ -19,9 +19,11 @@ interface FileOpsParams {
   t?: TFn;
   /** 首次保存（Save As）完成后的回调，用于转存待处理图片 */
   onFirstSave?: (tabId: string, savedPath: string) => Promise<void>;
+  /** Clear externalModified flag on the tab after save */
+  updateTab?: (tabId: string, patch: Partial<Tab>) => void;
 }
 
-export function useFileOps({ getActiveTab, tabs, resolveTabDoc, openFileInTab, markSaved, markSavedAs, t, onFirstSave }: FileOpsParams) {
+export function useFileOps({ getActiveTab, tabs, resolveTabDoc, openFileInTab, markSaved, markSavedAs, t, onFirstSave, updateTab }: FileOpsParams) {
   const tr = t ?? ((k: string) => k);
 
   // ── Export operations (separate concern) ──────────────────────────
@@ -97,12 +99,24 @@ export function useFileOps({ getActiveTab, tabs, resolveTabDoc, openFileInTab, m
     if (!tab) return;
     try {
       if (tab.filePath) {
+        // ── External modification guard ────────────────────────────────
+        // If the file was modified externally (either detected by watcher or
+        // by the atomic hash check below), confirm before overwriting.
+        if (tab.externalModified) {
+          const fileName = tab.filePath.split(/[/\\]/).pop() || tab.filePath;
+          const overwrite = await ask(
+            tr('fileWatcher.overwriteConfirm', { name: fileName }),
+            { title: tr('fileWatcher.modified'), kind: 'warning', okLabel: tr('fileWatcher.overwrite'), cancelLabel: tr('fileWatcher.cancel') }
+          );
+          if (!overwrite) return;
+        }
+
         const doc = tabId ? resolveTabDoc(tab.id) : tab.doc;
         const contentHash = await computeHash(doc);
         const diskHash = getFileHash(tab.filePath);
 
-        if (diskHash !== undefined) {
-          // We have a known hash — use atomic check-before-write
+        if (diskHash !== undefined && !tab.externalModified) {
+          // We have a known hash and file was NOT externally modified — use atomic check-before-write
           try {
             const newHash = await invoke<string>('write_file_text_with_check', {
               path: tab.filePath,
@@ -115,26 +129,27 @@ export function useFileOps({ getActiveTab, tabs, resolveTabDoc, openFileInTab, m
           } catch (checkErr: unknown) {
             const errObj = checkErr as { kind?: string; disk_hash?: string } | null;
             if (errObj && errObj.kind === 'ExternalModified') {
-              // External modification detected — show toast, don't overwrite
+              // External modification detected — mark tab and ask confirmation
               const fileName = tab.filePath.split(/[/\\]/).pop() || tab.filePath;
-              await message(
-                tr('fileWatcher.modified') + `: ${fileName}\n${tr('fileWatcher.keep')}`,
-                { title: tr('fileOps.saveFailed'), kind: 'warning' }
+              updateTab?.(tab.id, { externalModified: true });
+              const overwrite = await ask(
+                tr('fileWatcher.overwriteConfirm', { name: fileName }),
+                { title: tr('fileWatcher.modified'), kind: 'warning', okLabel: tr('fileWatcher.overwrite'), cancelLabel: tr('fileWatcher.cancel') }
               );
-              // Reload disk hash so next save attempt compares against current disk
-              // (the watcher should also fire and update the toast)
-              return;
+              if (!overwrite) return;
+              // User confirmed — fall through to direct write below
+            } else {
+              // Other errors (IoError, etc.) — fall through to normal error handling
+              throw checkErr;
             }
-            // Other errors (IoError, etc.) — fall through to normal error handling
-            throw checkErr;
           }
-        } else {
-          // No known hash yet (first save or hash not tracked) — write directly
-          await invoke('write_file_text', { path: tab.filePath, content: doc });
-          setFileHash(tab.filePath, contentHash);
-          markSaved(tab.id);
-          markSelfSave(tab.filePath);
         }
+        // Write the file (either no known hash, or user confirmed overwrite)
+        await invoke('write_file_text', { path: tab.filePath, content: doc });
+        setFileHash(tab.filePath, contentHash);
+        markSaved(tab.id);
+        markSelfSave(tab.filePath);
+        updateTab?.(tab.id, { externalModified: false });
       } else {
         await handleSaveAsFile(tab.id);
       }
