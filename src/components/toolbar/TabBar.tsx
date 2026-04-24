@@ -212,6 +212,9 @@ export const TabBar = memo(function TabBar({ tabs, activeTabId, onActivate, onCl
                     {tab.isDirty && (
                       <span style={{ color: 'var(--warning-color)' }}> ●</span>
                     )}
+                    {tab.externalModified && tab.isDirty && (
+                      <span style={{ color: 'var(--warning-color)' }} title="External modification detected"> ↻</span>
+                    )}
                   </span>
                   {/* 非固定标签显示关闭按钮 */}
                   {!isPinned && (
