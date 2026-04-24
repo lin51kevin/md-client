@@ -147,7 +147,7 @@ export function AppShell() {
 
   // ── File operations ──────────────────────────────────────────────
   const { handleOpenFile, handleSaveFile: rawHandleSaveFile, handleSaveAsFile, handleExportDocx, handleExportPdf, handleExportHtml, handleExportEpub, handleExportPng, exporting } = useFileOps({
-    getActiveTab, tabs, resolveTabDoc, openFileInTab, markSaved, markSavedAs, t, onFirstSave: handleFirstSave,
+    getActiveTab, tabs, resolveTabDoc, openFileInTab, markSaved, markSavedAs, t, updateTab, onFirstSave: handleFirstSave,
   });
 
   // ── Import operations ──────────────────────────────────────────
@@ -160,7 +160,7 @@ export function AppShell() {
   });
 
   // ── File watcher state ────────────────────────────────────────
-  const { fileChangeToast, setFileChangeToast, handleReloadFile } = useFileWatchState({
+  const { fileChangeToast, setFileChangeToast, handleReloadFile, handleKeepFile } = useFileWatchState({
     tabs, enabled: fileWatch, autoReload: fileWatchBehavior, updateTab,
   });
 
@@ -624,8 +624,9 @@ export function AppShell() {
         activeTabDoc={activeTab.doc}
         onTocNavigate={handleTocNavigate}
         fileChangeToast={fileChangeToast}
+        fileChangeTabs={tabs}
         onReloadFile={handleReloadFile}
-        onKeepFile={() => setFileChangeToast(null)}
+        onKeepFile={(tabId) => handleKeepFile(tabId)}
         onSaveAsFile={handleSaveAsFile}
         onCloseToast={() => setFileChangeToast(null)}
         updateInfo={updateInfo}

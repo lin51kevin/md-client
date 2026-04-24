@@ -15,6 +15,7 @@ import type { Command } from '../lib/editor';
 import type { RecentFile } from '../lib/file';
 import type { TocEntry } from '../lib/markdown';
 import type { FileChangeToast as FileChangeToastState } from '../hooks/useFileWatchState';
+import type { Tab } from '../types';
 import type { UpdateInfo } from '../hooks/useAutoUpgrade';
 import { useUIStore, useEditorStore } from '../stores';
 import { useI18n } from '../i18n';
@@ -42,8 +43,9 @@ export interface AppGlobalOverlaysProps {
   activeTabDoc: string;
   onTocNavigate: (entry: TocEntry) => void;
   fileChangeToast: FileChangeToastState | null;
+  fileChangeTabs: Tab[];
   onReloadFile: (tabId: string, filePath: string) => void;
-  onKeepFile: () => void;
+  onKeepFile: (tabId: string) => void;
   onSaveAsFile: (tabId?: string) => Promise<void>;
   onCloseToast: () => void;
   updateInfo: UpdateInfo | null;
@@ -61,7 +63,7 @@ export function AppGlobalOverlays({
   showSnippetPicker, setShowSnippetPicker, onSnippetInsert,
   showSnippetManager, setShowSnippetManager,
   activeTabDoc, onTocNavigate,
-  fileChangeToast, onReloadFile, onKeepFile, onSaveAsFile, onCloseToast,
+  fileChangeToast, fileChangeTabs, onReloadFile, onKeepFile, onSaveAsFile, onCloseToast,
   updateInfo, downloadProgress, isDownloading, readyToRestart, onDownloadUpdate, onDismissUpdate,
   exporting,
 }: AppGlobalOverlaysProps) {
@@ -136,8 +138,9 @@ export function AppGlobalOverlays({
           type={fileChangeToast.type}
           filePath={fileChangeToast.filePath}
           tabId={fileChangeToast.tabId}
+          isDirty={fileChangeTabs.find(t => t.id === fileChangeToast.tabId)?.isDirty ?? false}
           onReload={(tabId) => { onReloadFile(tabId, fileChangeToast.filePath); onCloseToast(); }}
-          onKeep={onKeepFile}
+          onKeep={() => onKeepFile(fileChangeToast.tabId)}
           onSaveAs={(tabId) => { onSaveAsFile(tabId); onCloseToast(); }}
           onClose={onCloseToast}
         />
