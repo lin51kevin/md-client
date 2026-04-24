@@ -1,6 +1,6 @@
 [package]
 name = "marklite"
-version = "0.10.3"
+version = "0.10.4"
 description = "A lightweight Markdown editor built with Tauri, React, and CodeMirror"
 authors = ["lin51kevin"]
 edition = "2021"

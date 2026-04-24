@@ -1,7 +1,7 @@
 # MarkLite 用户指南
 
 > **最后更新**：2026-04-24
-> **MarkLite 版本**：v0.10.3 (当前版本)
+> **MarkLite 版本**：v0.10.4 (当前版本)
 > **本指南包含**：基础使用、功能详解、快捷键、常见问题、高级技巧
 
 ---
@@ -15,6 +15,7 @@
 5. [常见问题](#5-常见问题)
 6. [提示与技巧](#6-提示与技巧)
 
+> **v0.10.4 新功能**：移除幻灯片演示模式 · 思维导图快捷键更新为 Ctrl+4
 > **v0.10.3 新功能**：Linux 黑屏修复（WEBKIT_DISABLE_COMPOSITING_MODE）+ AppShell 状态重构（useAppPreferences / useAppLayout / useAppUIState / useAppToolbar）
 > **v0.10.1 新功能**：修复代码质量问题 · 提取搜索模块
 > **v0.10.0 新功能**：修复自保存触发外部修改通知 · 恢复 autoReload 逻辑 · 跨文件替换补 markSelfSave
