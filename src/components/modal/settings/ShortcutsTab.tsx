@@ -31,6 +31,12 @@ function EditableShortcuts() {
         return;
       }
       const formatted = formatKeyEvent(e);
+      // 纯修饰键（如单独按 Ctrl/Shift/Alt）不算有效快捷键，必须包含主键
+      const isModifierOnly = e.key === 'Control' || e.key === 'Meta' || e.key === 'Shift' || e.key === 'Alt';
+      if (isModifierOnly) {
+        setTempKeys(formatted);
+        return;
+      }
       if (formatted) {
         setTempKeys(formatted);
         const conflictId = detectConflict(formatted, editingId);
@@ -72,7 +78,7 @@ function EditableShortcuts() {
   ];
 
   return (
-    <div ref={containerRef} className="space-y-2">
+    <div ref={containerRef} className="flex flex-col gap-2 h-full pb-6 min-h-0">
       <div className="flex items-center gap-2 flex-wrap">
         <input
           type="text"
@@ -129,7 +135,7 @@ function EditableShortcuts() {
         </div>
       )}
 
-      <div className="space-y-1 max-h-64 overflow-y-auto">
+      <div className="space-y-1 flex-1 overflow-y-auto min-h-0">
         {filtered.length === 0 ? (
           <div className="text-xs text-center py-4" style={{ color: 'var(--text-tertiary)' }}>
             {t('settings.shortcuts.noResults', { query: search })}
@@ -195,8 +201,8 @@ function EditableShortcuts() {
 export function ShortcutsTab() {
   const { t } = useI18n();
   return (
-    <div className="space-y-2">
-      <p className="text-xs mb-3" style={{ color: 'var(--text-secondary)' }}>
+    <div className="flex flex-col gap-2 h-full min-h-0">
+      <p className="text-xs shrink-0" style={{ color: 'var(--text-secondary)' }}>
         {t('settings.shortcuts.description')}
       </p>
       <EditableShortcuts />
