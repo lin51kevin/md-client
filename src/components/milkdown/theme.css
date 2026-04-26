@@ -66,15 +66,25 @@
 /* Paragraph sizing to match markdown-preview */
 .milkdown-preview .milkdown .ProseMirror p {
   font-size: inherit;
+  line-height: inherit;
   padding: 0;
   margin-top: 0;
   margin-bottom: 16px;
+}
+
+/* Table cells: ProseMirror wraps cell content in <p>. Remove margin so rows
+   match the compact height of standard markdown-preview tables. */
+.milkdown-preview .milkdown .ProseMirror td > p,
+.milkdown-preview .milkdown .ProseMirror th > p {
+  margin: 0;
 }
 
 /* Code blocks */
 .milkdown-preview .milkdown .ProseMirror pre {
   background: var(--bg-secondary, #f6f8fa);
   border-radius: 6px;
+  font-size: 85%;
+  line-height: 1.45;
   padding: 16px;
   overflow-x: auto;
 }
@@ -91,6 +101,7 @@
 .milkdown-preview .milkdown .ProseMirror pre code {
   background: transparent;
   padding: 0;
+  line-height: inherit;
 }
 
 /* Raw HTML blocks: reset white-space so injected HTML renders normally.
@@ -159,6 +170,27 @@
 
 .milkdown-preview .milkdown .ProseMirror li {
   margin-top: 0.25em;
+}
+
+/* List items: ProseMirror wraps item content in <p>, adding unwanted margin.
+   DOM: li > .milkdown-list-item-block > .list-item > .children > p
+   Remove p margin so list spacing matches markdown-preview (no <p> inside <li>). */
+.milkdown-preview .milkdown .ProseMirror li p {
+  margin: 0;
+}
+
+/* Override Crepe list-item wrapper sizing — Crepe uses a flex layout with
+   .label-wrapper fixed at 32px height + 4px padding, causing excessive
+   vertical spacing compared to the standard markdown-preview (li margin-top: 0.25em).
+   Reset to auto so list items flow naturally. */
+.milkdown-preview .milkdown .milkdown-list-item-block > .list-item,
+.milkdown-preview .milkdown .milkdown-list-item-block li {
+  gap: 0;
+}
+.milkdown-preview .milkdown .milkdown-list-item-block li .label-wrapper,
+.milkdown-preview .milkdown .milkdown-list-item-block li .label-wrapper .label {
+  height: auto;
+  padding: 0;
 }
 
 /* Tables */
