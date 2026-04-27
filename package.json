@@ -42,7 +42,8 @@
     "build:zip": "node scripts/create-zip.js",
     "build:plugins": "node scripts/build-plugins.mjs",
     "build:nsis": "makensis deploy/installer.nsi",
-    "build:dist": "yarn tauri build && yarn build:zip"
+    "build:dist": "yarn tauri build && yarn build:zip",
+    "test:e2e": "cd e2e-tests && yarn test"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.1",
