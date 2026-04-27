@@ -221,10 +221,14 @@
 .milkdown-preview .milkdown .ProseMirror th {
   background: var(--bg-secondary, #f6f8fa);
   font-weight: 600;
-  /* prosemirror-virtual-cursor sets caret-color:transparent on .ProseMirror
-     and injects a position:absolute virtual cursor in its place. Inside <th>
-     elements (thead stacking context), Chromium fails to paint the virtual
-     cursor. Restore the native browser caret specifically for th cells. */
+}
+
+/* prosemirror-virtual-cursor sets caret-color:transparent on .ProseMirror
+   and injects a position:absolute virtual cursor in its place. This virtual
+   cursor fails to render correctly in various contexts (tables, list items,
+   Chromium WebViews). Restore the native browser caret globally. */
+.milkdown-preview .milkdown .ProseMirror,
+.milkdown-preview .milkdown .ProseMirror td {
   caret-color: var(--text-primary, #1f2328);
 }
 

@@ -180,7 +180,7 @@ export const zhCN = {
   'toolbar.editOnly': '仅编辑 (Ctrl+1)',
   'toolbar.split': '分栏视图 (Ctrl+2)',
   'toolbar.previewOnly': '仅预览 (Ctrl+3)',
-  'toolbar.editablePreview': '预览可编辑（Milkdown WYSIWYG）',
+  'toolbar.editablePreview': '预览可编辑（WYSIWYG）',
   'toolbar.mindmapMode': '思维导图 (Ctrl+4)',
   'toolbar.insertSnippet': '插入片段 (Ctrl+Shift+J)',
   'toolbar.prevTab': '上一个标签页',

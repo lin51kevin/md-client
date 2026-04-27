@@ -4,7 +4,9 @@ import { Milkdown, MilkdownProvider, useEditor } from '@milkdown/react';
 import { Crepe, CrepeFeature } from '@milkdown/crepe';
 import { replaceAll, insert } from '@milkdown/kit/utils';
 import { editorViewCtx, commandsCtx } from '@milkdown/core';
+import { Plugin, PluginKey } from 'prosemirror-state';
 import { undoDepth, redoDepth, undo as pmUndo, redo as pmRedo } from 'prosemirror-history';
+import { TextSelection } from 'prosemirror-state';
 import '@milkdown/crepe/theme/frame.css';
 import '@milkdown/crepe/theme/common/style.css';
 import 'katex/dist/katex.min.css';
@@ -160,6 +162,14 @@ function MilkdownEditor({
   // Track full content (with frontmatter) for bridge selection offset computation
   const contentRef = useRef(content);
   contentRef.current = content;
+
+  // Track filePath changes to detect tab switches — reset interaction guard
+  // so the sync effect loads the new file's content instead of being blocked.
+  const prevFilePathRef = useRef(filePath);
+  if (prevFilePathRef.current !== filePath) {
+    prevFilePathRef.current = filePath;
+    hasUserInteractedRef.current = false;
+  }
 
   // Extract frontmatter once per content change
   const { frontmatter, body } = useMemo(() => {
@@ -427,9 +437,14 @@ function MilkdownEditor({
     // between Milkdown's serializer and the raw CodeMirror buffer.
     if (body.trim() === lastContentRef.current.trim()) return;
 
+    // When the user is actively editing, NEVER replaceAll — Milkdown is the
+    // source of truth and replaceAll resets the cursor/selection. Content
+    // differences are expected (e.g. trailing whitespace normalization) and
+    // will be reconciled on the next user-initiated edit cycle.
+    if (hasUserInteractedRef.current) return;
+
     // External content change (tab switch / file reload) — reset interaction state
     // so the newly loaded content isn't immediately marked dirty.
-    hasUserInteractedRef.current = false;
     isExternalUpdate.current = true;
     editor.action(replaceAll(body));
     lastContentRef.current = body;

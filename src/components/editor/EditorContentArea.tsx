@@ -167,7 +167,7 @@ export const EditorContentArea = React.memo(function EditorContentArea({
     <PreviewErrorBoundary fallback={previewFallbackEl}>
       <Suspense fallback={<PreviewFallback />}>
         <PreviewComponent
-          content={debouncedDoc}
+          content={useMilkdownPreview ? activeTab.doc : debouncedDoc}
           filePath={activeTab.filePath ?? undefined}
           onOpenFile={openFileInTab}
           onContentChange={updateActiveDoc}

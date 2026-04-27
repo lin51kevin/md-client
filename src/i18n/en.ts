@@ -182,7 +182,7 @@ export const en: Record<TranslationKey, string> = {
   'toolbar.editOnly': 'Edit Only (Ctrl+1)',
   'toolbar.split': 'Split View (Ctrl+2)',
   'toolbar.previewOnly': 'Preview Only (Ctrl+3)',
-  'toolbar.editablePreview': 'Editable Preview (Milkdown WYSIWYG)',
+  'toolbar.editablePreview': 'Editable Preview (WYSIWYG)',
   'toolbar.mindmapMode': 'Mindmap (Ctrl+4)',
   'toolbar.insertSnippet': 'Insert Snippet (Ctrl+Shift+J)',
   'toolbar.prevTab': 'Previous Tab',

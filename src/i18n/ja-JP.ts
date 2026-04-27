@@ -182,7 +182,7 @@ export const jaJP: Record<TranslationKey, string> = {
   'toolbar.editOnly': '編集のみ (Ctrl+1)',
   'toolbar.split': '分割表示 (Ctrl+2)',
   'toolbar.previewOnly': 'プレビューのみ (Ctrl+3)',
-  'toolbar.editablePreview': '編集可能なプレビュー（Milkdown WYSIWYG）',
+  'toolbar.editablePreview': '編集可能なプレビュー（WYSIWYG）',
   'toolbar.mindmapMode': 'マインドマップ (Ctrl+4)',
   'toolbar.insertSnippet': 'スニペットの挿入 (Ctrl+Shift+J)',
   'toolbar.prevTab': '前のタブ',
