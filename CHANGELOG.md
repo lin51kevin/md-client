@@ -6,6 +6,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [v0.10.5] - 2026-04-27
+
+
+### Changed
+
+- bump version to v0.10.5 (`abdb969`)
+- normalize line endings (CRLF → LF) and add .gitattributes (`6044f1e`)
+- update CHANGELOG.md for v0.10.4 (`5b9fa21`)
+
+
+
+### Fixed
+
+- fix table cell text selection, enable line wrapping, fix overflow (`1e45395`)
+- align Milkdown preview line-height and spacing with markdown-preview (`fc66555`)
+- prevent replaceAll during active editing and fix caret visibility (`afab5b4`)
+- allow composite key combinations in shortcut editor (`79ab277`)
+
+
+
+### Added
+
+- add E2E testing with WebdriverIO and tauri-driver (`534ccfd`)
+
+
+
+
+
+
+
 ## [v0.10.4] - 2026-04-24
 
 
