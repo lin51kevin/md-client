@@ -1,7 +1,7 @@
 # MarkLite 用户指南
 
-> **最后更新**：2026-04-24
-> **MarkLite 版本**：v0.10.4 (当前版本)
+> **最后更新**：2026-04-27
+> **MarkLite 版本**：v0.10.5 (当前版本)
 > **本指南包含**：基础使用、功能详解、快捷键、常见问题、高级技巧
 
 ---
@@ -15,6 +15,7 @@
 5. [常见问题](#5-常见问题)
 6. [提示与技巧](#6-提示与技巧)
 
+> **v0.10.5 新功能**：修复表格单元格文本选择 · CodeMirror 自动换行 · 新增 E2E 测试框架 (WebdriverIO)
 > **v0.10.4 新功能**：移除幻灯片演示模式 · 思维导图快捷键更新为 Ctrl+4
 > **v0.10.3 新功能**：Linux 黑屏修复（WEBKIT_DISABLE_COMPOSITING_MODE）+ AppShell 状态重构（useAppPreferences / useAppLayout / useAppUIState / useAppToolbar）
 > **v0.10.1 新功能**：修复代码质量问题 · 提取搜索模块
