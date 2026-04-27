@@ -201,7 +201,7 @@ export const EditorContentArea = React.memo(function EditorContentArea({
         className="flex h-full min-w-0 overflow-hidden"
         style={{ flex: 1 }}
       >
-        <div className="h-full overflow-y-auto overflow-x-hidden min-w-0" ref={editorRef} onScroll={handleEditorScroll}>
+        <div className="h-full overflow-auto min-w-0" ref={editorRef} onScroll={handleEditorScroll}>
           <div className="min-h-full w-full">
             <CodeMirror
               key={activeTabId}

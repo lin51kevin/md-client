@@ -12,6 +12,7 @@ const mockEditor = { action: vi.fn(), use: vi.fn().mockReturnThis() };
 let registeredMarkdownCallback: ((_ctx: unknown, _newMd: string, _prevMd: string) => void) | null = null;
 
 const mockListenerManager = {
+  mounted: vi.fn(),
   markdownUpdated: vi.fn((callback: (_ctx: unknown, _newMd: string, _prevMd: string) => void) => {
     registeredMarkdownCallback = callback;
   }),

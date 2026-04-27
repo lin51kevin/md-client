@@ -7,6 +7,7 @@
  */
 import { useState, useEffect, useMemo } from 'react';
 import type { Extension } from '@codemirror/state';
+import { EditorView } from '@codemirror/view';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { commonLanguages } from '../lib/cm/cm-languages';
 import { foldGutter } from '@codemirror/language';
@@ -35,6 +36,7 @@ export function useEditorConfig({ theme, vimMode, cursorExtension, searchHighlig
   const editorExtensions = useMemo(() => {
     const exts: Extension[] = [
       markdown({ base: markdownLanguage, codeLanguages: largeFile ? [] : commonLanguages }),
+      EditorView.lineWrapping,
       cursorExtension,
       searchHighlightExtension,
       multicursorKeymap(),

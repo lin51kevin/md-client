@@ -4,7 +4,6 @@ import { Milkdown, MilkdownProvider, useEditor } from '@milkdown/react';
 import { Crepe, CrepeFeature } from '@milkdown/crepe';
 import { replaceAll, insert } from '@milkdown/kit/utils';
 import { editorViewCtx, commandsCtx } from '@milkdown/core';
-import { Plugin, PluginKey } from 'prosemirror-state';
 import { undoDepth, redoDepth, undo as pmUndo, redo as pmRedo } from 'prosemirror-history';
 import { TextSelection } from 'prosemirror-state';
 import '@milkdown/crepe/theme/frame.css';
@@ -182,6 +181,9 @@ function MilkdownEditor({
   const frontmatterRef = useRef(frontmatter);
   frontmatterRef.current = frontmatter;
 
+  // Table cell selection fix (Bug 3) — must be at component level, not inside useEditor factory
+  const tableCellFixRef = useRef<{ anchorPos: number } | null>(null);
+
   const { get } = useEditor((root) => {
     // Initialize lastContentRef to the initial body so the first sync check passes.
     lastContentRef.current = body;
@@ -209,6 +211,70 @@ function MilkdownEditor({
     });
 
     crepeRef.current = crepe;
+
+    // Fix table cell text selection (Bug 3):
+    // The Milkdown TableBlock NodeView's stopEvent intercepts mousedown on
+    // td/th cells and creates a NodeSelection (selecting the entire cell),
+    // preventing the user from placing the cursor at the actual click position
+    // or starting a text selection from there. We use a capture-phase DOM
+    // listener to record the click position, then restore TextSelection after
+    // the NodeView has processed the event.
+    // Note: tableCellFixRef is declared at component top-level (above useEditor).
+
+    crepe.on((listener) => {
+      listener.mounted(() => {
+        try {
+          const view = crepe.editor.ctx.get(editorViewCtx);
+          const dom = view.dom as HTMLElement;
+
+          const handleMouseDown = (e: MouseEvent) => {
+            const target = e.target as HTMLElement;
+            if (!target) return;
+            // Only fix for text-like targets inside td/th, not controls
+            if (target.closest('button') || target.closest('.cell-handle') ||
+                target.closest('.line-handle') || target.closest('.drag-preview') ||
+                target.closest('[contenteditable="false"]')) {
+              return;
+            }
+            const cell = target.closest('td, th');
+            if (!cell) return;
+
+            const pos = view.posAtCoords({ left: e.clientX, top: e.clientY });
+            if (!pos || pos.inside < 0) return;
+
+            const $pos = view.state.doc.resolve(pos.inside);
+            tableCellFixRef.current = { anchorPos: $pos.pos };
+          };
+
+          const handleMouseUp = () => {
+            const fix = tableCellFixRef.current;
+            if (!fix) return;
+            tableCellFixRef.current = null;
+
+            // After TableNodeView.handleClick sets NodeSelection, restore TextSelection
+            const { state } = view;
+            // Check if the selection was changed to a NodeSelection by the TableNodeView
+            if (state.selection.constructor.name === 'NodeSelection') {
+              const $pos = state.doc.resolve(fix.anchorPos);
+              const textSel = TextSelection.create(state.doc, $pos.pos, $pos.pos);
+              view.dispatch(state.tr.setSelection(textSel).scrollIntoView());
+            }
+          };
+
+          // Capture phase: runs before ProseMirror's bubbling handler and NodeView.stopEvent
+          dom.addEventListener('mousedown', handleMouseDown, true);
+          dom.addEventListener('mouseup', handleMouseUp, true);
+
+          // Cleanup will happen when the editor is destroyed
+          (crepe as any)._tableCellFixCleanup = () => {
+            dom.removeEventListener('mousedown', handleMouseDown, true);
+            dom.removeEventListener('mouseup', handleMouseUp, true);
+          };
+        } catch {
+          // editor not ready yet
+        }
+      });
+    });
 
     crepe.on((listener) => {
       listener.markdownUpdated((_ctx, newMarkdown, prevMarkdown) => {
