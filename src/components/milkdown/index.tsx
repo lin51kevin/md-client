@@ -18,6 +18,7 @@ import { renderMermaidPreview } from './nodeviews/MermaidBlockView';
 import { CodeBlockFoldOverlay } from './CodeBlockFoldOverlay';
 import { milkdownBridge } from '../../lib/milkdown/editor-bridge';
 import { resolvePath } from '../../lib/utils/path';
+import GithubSlugger from 'github-slugger';
 
 // ── Selection helpers ─────────────────────────────────────────────────────────
 
@@ -382,6 +383,43 @@ function MilkdownEditor({
       container.removeEventListener('keydown', onInteract, true);
       container.removeEventListener('compositionstart', onInteract, true);
     };
+  }, []);
+
+  // In-document anchor link navigation (e.g. TOC links like [Title](#heading-slug)).
+  // Uses capture phase to intercept BEFORE ProseMirror/LinkTooltip handlers (which use
+  // bubbling), preventing the link-edit toolbar from appearing on anchor clicks.
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handler = (e: MouseEvent) => {
+      const el = e.target as HTMLElement;
+      const anchor = el.closest('a[href]') as HTMLAnchorElement | null;
+      if (!anchor) return;
+      const href = anchor.getAttribute('href') ?? '';
+      if (!href.startsWith('#') || href.length <= 1) return;
+
+      // Prevent LinkTooltip from showing & default browser scroll
+      e.preventDefault();
+      e.stopPropagation();
+
+      const fragment = decodeURIComponent(href.slice(1));
+      const headings = container.querySelectorAll('h1, h2, h3, h4, h5, h6');
+      const slugger = new GithubSlugger();
+
+      for (const heading of headings) {
+        const text = (heading as HTMLElement).textContent ?? '';
+        const slug = slugger.slug(text);
+        if (slug === fragment) {
+          (heading as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'start' });
+          return;
+        }
+      }
+    };
+
+    // Capture phase: fires before ProseMirror's bubbling event handlers
+    container.addEventListener('click', handler, true);
+    return () => container.removeEventListener('click', handler, true);
   }, []);
 
   // Link click delegation (wiki-links + markdown file links)
