@@ -77,6 +77,7 @@ export function AppShell() {
     theme, setTheme, fileWatch, setFileWatch, fileWatchBehavior, setFileWatchBehavior,
     autoUpdateCheck, setAutoUpdateCheck, updateCheckFrequency, setUpdateCheckFrequency,
     contextMenuIntegration, setContextMenuIntegration,
+    zoomLevel, setZoomLevel,
     typewriterOptions, setTypewriterOptions,
   } = useAppPreferences();
 
@@ -150,7 +151,7 @@ export function AppShell() {
   // ── Editor infrastructure ────────────────────────────────────────
   const {
     cmViewRef,
-    editorRef, previewRef, handleEditorScroll, handlePreviewScroll,
+    editorRef, previewRef, zoomContainerRef, handleEditorScroll, handlePreviewScroll,
     setMatches, clearMatches,
     inputDialogState, setInputDialogState,
     handleFormatAction,
@@ -528,27 +529,30 @@ export function AppShell() {
           ))}
         </SidebarContainer>
 
-        <EditorContentArea
-          isPristine={isPristine} welcomeDismissed={welcomeDismissed}
-          viewMode={viewMode} activeTabId={activeTabId} activeTab={activeTab}
-          splitSizes={splitSizes} onSplitDragEnd={setSplitSizes}
-          editorRef={editorRef} previewRef={previewRef}
-          handleEditorScroll={handleEditorScroll} handlePreviewScroll={handlePreviewScroll}
-          editorTheme={editorTheme} editorExtensions={editorExtensions}
-          updateActiveDoc={updateActiveDoc}
-          handleCreateEditor={handleCreateEditor} handleEditorUpdate={handleEditorUpdate}
-          spellCheck={spellCheck} debouncedDoc={debouncedDoc}
-          openFileInTab={openFileInTab} handleWikiLinkNavigate={handleWikiLinkNavigate}
-          theme={theme} recentFiles={recentFiles}
-          onNew={createNewTab} onOpenFile={handleOpenFile} onOpenFolder={handleOpenFolder}
-          onOpenRecent={handleOpenRecent} onNewWithContent={(content, displayName) => {
-    openFileWithContent('', content, displayName);
-  }} onOpenSample={handleOpenSample}
-          onDismiss={handleDismissWelcome} onShowWelcome={handleShowWelcome}
-          pluginRenderers={pluginRenderers}
-          useMilkdownPreview={milkdownPreview}
-          onPreviewContextMenu={(x, y) => setPreviewCtxMenu({ x, y })}
-        />
+        <div ref={zoomContainerRef} className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          <EditorContentArea
+            isPristine={isPristine} welcomeDismissed={welcomeDismissed}
+            viewMode={viewMode} activeTabId={activeTabId} activeTab={activeTab}
+            splitSizes={splitSizes} onSplitDragEnd={setSplitSizes}
+            editorRef={editorRef} previewRef={previewRef}
+            handleEditorScroll={handleEditorScroll} handlePreviewScroll={handlePreviewScroll}
+            editorTheme={editorTheme} editorExtensions={editorExtensions}
+            updateActiveDoc={updateActiveDoc}
+            handleCreateEditor={handleCreateEditor} handleEditorUpdate={handleEditorUpdate}
+            spellCheck={spellCheck} debouncedDoc={debouncedDoc}
+            openFileInTab={openFileInTab} handleWikiLinkNavigate={handleWikiLinkNavigate}
+            theme={theme} recentFiles={recentFiles}
+            onNew={createNewTab} onOpenFile={handleOpenFile} onOpenFolder={handleOpenFolder}
+            onOpenRecent={handleOpenRecent} onNewWithContent={(content, displayName) => {
+      openFileWithContent('', content, displayName);
+    }} onOpenSample={handleOpenSample}
+            onDismiss={handleDismissWelcome} onShowWelcome={handleShowWelcome}
+            pluginRenderers={pluginRenderers}
+            useMilkdownPreview={milkdownPreview}
+            onPreviewContextMenu={(x, y) => setPreviewCtxMenu({ x, y })}
+            zoomLevel={zoomLevel}
+          />
+        </div>
 
         {/* Floating AI Chat Panel */}
         {(() => {
@@ -580,6 +584,8 @@ export function AppShell() {
           updateAvailable={updateInfo}
           onUpdateClick={stableOnUpdateClick}
           onSnapshotRestore={stableOnSnapshotRestore}
+          zoomLevel={zoomLevel}
+          onZoomChange={setZoomLevel}
         />
       )}
 

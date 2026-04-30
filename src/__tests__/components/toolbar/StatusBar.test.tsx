@@ -347,4 +347,104 @@ describe('StatusBar', () => {
       expect(screen.getByText(/行 3，列 5/)).toBeInTheDocument();
     });
   });
+
+  // ── Zoom Indicator ──────────────────────────────────────────────────────
+  describe('Zoom Indicator', () => {
+    it('should display zoom level when provided', () => {
+      render(<StatusBar {...defaultProps} zoomLevel={100} />);
+      expect(screen.getByText('100%')).toBeInTheDocument();
+    });
+
+    it('should not display zoom indicator when zoomLevel is undefined', () => {
+      render(<StatusBar {...defaultProps} />);
+      expect(screen.queryByTitle('缩放级别')).not.toBeInTheDocument();
+    });
+
+    it('should display non-default zoom level', () => {
+      render(<StatusBar {...defaultProps} zoomLevel={150} />);
+      expect(screen.getByText('150%')).toBeInTheDocument();
+    });
+
+    it('should show zoom preset picker on click', async () => {
+      render(<StatusBar {...defaultProps} zoomLevel={100} onZoomChange={vi.fn()} />);
+      const zoomButton = screen.getByTitle('缩放级别');
+      fireEvent.click(zoomButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('50%')).toBeInTheDocument();
+        expect(screen.getByText('75%')).toBeInTheDocument();
+        expect(screen.getByText('200%')).toBeInTheDocument();
+      });
+    });
+
+    it('should call onZoomChange when selecting a preset', async () => {
+      const onZoomChange = vi.fn();
+      render(<StatusBar {...defaultProps} zoomLevel={100} onZoomChange={onZoomChange} />);
+      const zoomButton = screen.getByTitle('缩放级别');
+      fireEvent.click(zoomButton);
+
+      await waitFor(() => {
+        const preset150 = screen.getByText('150%');
+        fireEvent.click(preset150);
+      });
+
+      expect(onZoomChange).toHaveBeenCalledWith(150);
+    });
+
+    it('should close zoom picker after selecting a preset', async () => {
+      const onZoomChange = vi.fn();
+      render(<StatusBar {...defaultProps} zoomLevel={100} onZoomChange={onZoomChange} />);
+      const zoomButton = screen.getByTitle('缩放级别');
+      fireEvent.click(zoomButton);
+
+      await waitFor(() => {
+        fireEvent.click(screen.getByText('75%'));
+      });
+
+      await waitFor(() => {
+        // Picker should be closed — the header "缩放级别" inside picker should be gone
+        // (the button title still exists but the popup panel disappears)
+        expect(screen.queryByText('50%')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should highlight current zoom level in picker', async () => {
+      render(<StatusBar {...defaultProps} zoomLevel={125} onZoomChange={vi.fn()} />);
+      const zoomButton = screen.getByTitle('缩放级别');
+      fireEvent.click(zoomButton);
+
+      await waitFor(() => {
+        const allBtns = screen.getAllByText('125%');
+        const pickerBtn = allBtns.find(el => el.tagName === 'BUTTON');
+        expect(pickerBtn).toHaveStyle({ fontWeight: 600 });
+      });
+    });
+
+    it('should mark 100% preset with default label', async () => {
+      render(<StatusBar {...defaultProps} zoomLevel={80} onZoomChange={vi.fn()} />);
+      const zoomButton = screen.getByTitle('缩放级别');
+      fireEvent.click(zoomButton);
+
+      await waitFor(() => {
+        expect(screen.getByText(/100%.*默认/)).toBeInTheDocument();
+      });
+    });
+
+    it('should toggle zoom picker on repeated clicks', async () => {
+      render(<StatusBar {...defaultProps} zoomLevel={100} onZoomChange={vi.fn()} />);
+      const zoomButton = screen.getByTitle('缩放级别');
+
+      // Open
+      fireEvent.click(zoomButton);
+      await waitFor(() => {
+        expect(screen.getByText('50%')).toBeInTheDocument();
+      });
+
+      // Close
+      fireEvent.click(zoomButton);
+      await waitFor(() => {
+        expect(screen.queryByText('50%')).not.toBeInTheDocument();
+      });
+    });
+  });
 });

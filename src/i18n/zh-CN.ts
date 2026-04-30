@@ -288,6 +288,8 @@ export const zhCN = {
   'status.emptyFile': '(空文件)',
   'status.lineCol': '行 {line}，列 {col}',
   'status.cursorCount': '{count} 个光标',
+  'status.zoomTitle': '缩放级别',
+  'status.zoomReset': '默认',
 
   // ── App ───────────────────────────────────────────────────────────────────
   'app.closeTabUnsaved': '"{name}" 有未保存的更改。\n\n路径: {path}',

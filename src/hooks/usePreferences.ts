@@ -24,6 +24,7 @@ export function usePreferences() {
     autoUpdateCheck, setAutoUpdateCheck,
     updateCheckFrequency, setUpdateCheckFrequency,
     contextMenuIntegration, setContextMenuIntegration,
+    zoomLevel, setZoomLevel,
     theme, setTheme,
  } = usePreferencesStore();
 
@@ -40,6 +41,7 @@ export function usePreferences() {
     mermaidTheme, setMermaidTheme,
     fileWatch, setFileWatch,
     fileWatchBehavior, setFileWatchBehavior,
+    zoomLevel, setZoomLevel,
     theme, setTheme,
   };
 }

@@ -49,6 +49,10 @@ export interface PreferencesState {
   contextMenuIntegration: boolean;
   setContextMenuIntegration: (v: boolean) => void;
 
+  /** Editor/preview zoom level (50–200, default 100) */
+  zoomLevel: number;
+  setZoomLevel: (v: number) => void;
+
   theme: ThemeName;
   setTheme: (v: ThemeName) => void;
 }
@@ -91,6 +95,9 @@ export const usePreferencesStore = create<PreferencesState>()(
 
       contextMenuIntegration: false,
       setContextMenuIntegration: (v) => set({ contextMenuIntegration: v }),
+
+      zoomLevel: 100,
+      setZoomLevel: (v) => set({ zoomLevel: Math.max(50, Math.min(200, v)) }),
 
       theme: 'light' as ThemeName,
       setTheme: (v) => {

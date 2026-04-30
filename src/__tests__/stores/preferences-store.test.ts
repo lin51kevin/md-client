@@ -16,6 +16,7 @@ beforeEach(() => {
     fileWatchBehavior: false,
     autoUpdateCheck: true,
     updateCheckFrequency: '24h',
+    zoomLevel: 100,
     theme: 'light',
   });
 });
@@ -62,5 +63,36 @@ describe('usePreferencesStore', () => {
     expect(usePreferencesStore.getState().fileWatch).toBe(false);
     usePreferencesStore.getState().setFileWatchBehavior(true);
     expect(usePreferencesStore.getState().fileWatchBehavior).toBe(true);
+  });
+
+  describe('zoomLevel', () => {
+    it('defaults to 100', () => {
+      expect(usePreferencesStore.getState().zoomLevel).toBe(100);
+    });
+
+    it('sets zoomLevel to valid value', () => {
+      usePreferencesStore.getState().setZoomLevel(150);
+      expect(usePreferencesStore.getState().zoomLevel).toBe(150);
+    });
+
+    it('clamps zoomLevel at minimum 50', () => {
+      usePreferencesStore.getState().setZoomLevel(30);
+      expect(usePreferencesStore.getState().zoomLevel).toBe(50);
+    });
+
+    it('clamps zoomLevel at maximum 200', () => {
+      usePreferencesStore.getState().setZoomLevel(250);
+      expect(usePreferencesStore.getState().zoomLevel).toBe(200);
+    });
+
+    it('accepts boundary value 50', () => {
+      usePreferencesStore.getState().setZoomLevel(50);
+      expect(usePreferencesStore.getState().zoomLevel).toBe(50);
+    });
+
+    it('accepts boundary value 200', () => {
+      usePreferencesStore.getState().setZoomLevel(200);
+      expect(usePreferencesStore.getState().zoomLevel).toBe(200);
+    });
   });
 });

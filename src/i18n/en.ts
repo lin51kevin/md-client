@@ -291,6 +291,8 @@ export const en: Record<TranslationKey, string> = {
   'status.emptyFile': '(empty)',
   'status.lineCol': 'Ln {line}, Col {col}',
   'status.cursorCount': '{count} cursors',
+  'status.zoomTitle': 'Zoom Level',
+  'status.zoomReset': 'Default',
 
   // ── App ───────────────────────────────────────────────────────────────────
   'app.closeTabUnsaved': '"{name}" has unsaved changes.\n\nPath: {path}',

@@ -24,6 +24,7 @@ import { useSnippetFlow } from './useSnippetFlow';
 import { useEditorInstance } from './useEditorInstance';
 import { useImagePaste } from './useImagePaste';
 import { useEditorContextActions } from './useEditorContextActions';
+import { useZoom } from './useZoom';
 import { milkdownBridge } from '../lib/milkdown/editor-bridge';
 
 interface EditorCoreInput {
@@ -64,6 +65,10 @@ export function useEditorCore({
 
   const { editorRef, previewRef, handleEditorScroll, handlePreviewScroll } = useScrollSync(viewMode);
   const { cursorExtension } = useCursorPosition();
+
+  // ── Zoom (Ctrl+wheel handler attached to zoomContainerRef) ─────────
+  const zoomContainerRef = useRef<HTMLDivElement>(null);
+  useZoom(zoomContainerRef);
   const { searchHighlightExtension, setMatches, clearMatches } = useSearchHighlight();
   const { inputDialogState, setInputDialogState, promptUser } = useInputDialog();
   const { handleFormatAction } = useFormatActions({ cmViewRef, getActiveTab, promptUser, isTauri });
@@ -129,7 +134,7 @@ export function useEditorCore({
 
   return {
     cmViewRef,
-    editorRef, previewRef, handleEditorScroll, handlePreviewScroll,
+    editorRef, previewRef, zoomContainerRef, handleEditorScroll, handlePreviewScroll,
     setMatches, clearMatches,
     inputDialogState, setInputDialogState,
     handleFormatAction,

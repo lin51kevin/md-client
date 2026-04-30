@@ -291,6 +291,8 @@ export const jaJP: Record<TranslationKey, string> = {
   'status.emptyFile': '(空)',
   'status.lineCol': '行 {line}、列 {col}',
   'status.cursorCount': '{count} 個のカーソル',
+  'status.zoomTitle': 'ズームレベル',
+  'status.zoomReset': 'デフォルト',
 
   // ── App ───────────────────────────────────────────────────────────────────
   'app.closeTabUnsaved': '「{name}」に未保存の変更があります。\n\nパス: {path}',

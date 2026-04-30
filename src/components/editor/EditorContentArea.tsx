@@ -59,6 +59,8 @@ interface EditorContentAreaProps {
   useMilkdownPreview?: boolean;
   /** Right-click on preview pane */
   onPreviewContextMenu?: (x: number, y: number) => void;
+  /** Zoom level (50–200, default 100) */
+  zoomLevel?: number;
 }
 
 function PreviewFallback() {
@@ -127,6 +129,7 @@ export const EditorContentArea = React.memo(function EditorContentArea({
   pluginRenderers,
   useMilkdownPreview = true,
   onPreviewContextMenu,
+  zoomLevel = 100,
 }: EditorContentAreaProps) {
   if (isPristine) {
     return welcomeDismissed ? (
@@ -179,6 +182,9 @@ export const EditorContentArea = React.memo(function EditorContentArea({
     </PreviewErrorBoundary>
   );
 
+  // Zoom style applied to inner content wrappers
+  const zoomStyle = zoomLevel !== 100 ? { zoom: zoomLevel / 100 } : undefined;
+
   if (effectiveViewMode === 'split') {
     return (
       <Split
@@ -202,7 +208,7 @@ export const EditorContentArea = React.memo(function EditorContentArea({
         style={{ flex: 1 }}
       >
         <div className="h-full overflow-auto min-w-0" ref={editorRef} onScroll={handleEditorScroll}>
-          <div className="min-h-full w-full">
+          <div className="min-h-full w-full" style={zoomStyle}>
             <CodeMirror
               key={activeTabId}
               value={activeTab.doc}
@@ -224,7 +230,7 @@ export const EditorContentArea = React.memo(function EditorContentArea({
           onScroll={handlePreviewScroll}
           onContextMenu={(e) => { e.preventDefault(); onPreviewContextMenu?.(e.clientX, e.clientY); }}
         >
-          <div className="p-8">
+          <div className="p-8" style={zoomStyle}>
             {renderPreview()}
           </div>
         </div>
@@ -235,7 +241,7 @@ export const EditorContentArea = React.memo(function EditorContentArea({
   return (
     <div className="flex h-full w-full min-w-0 overflow-hidden">
       {effectiveViewMode === 'edit' ? (
-        <div className="w-full h-full overflow-auto min-w-0">
+        <div className="w-full h-full overflow-auto min-w-0" style={zoomStyle}>
           <CodeMirror
             key={activeTabId}
             value={activeTab.doc}
@@ -257,7 +263,7 @@ export const EditorContentArea = React.memo(function EditorContentArea({
           style={{ backgroundColor: 'var(--bg-primary)' }}
           onContextMenu={(e) => { e.preventDefault(); onPreviewContextMenu?.(e.clientX, e.clientY); }}
         >
-          <div className="p-8">
+          <div className="p-8" style={zoomStyle}>
             {renderPreview()}
           </div>
         </div>

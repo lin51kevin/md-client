@@ -1,8 +1,9 @@
 import { useState, useEffect, memo } from 'react';
-import { History, X, Download } from 'lucide-react';
+import { History, X, Download, ZoomIn } from 'lucide-react';
 import { useI18n } from '../../i18n';
 import { formatDuration } from '../../lib/utils';
 import { useEditorStore } from '../../stores/editor-store';
+import { ZOOM_PRESETS } from '../../hooks/useZoom';
 
 interface StatusBarProps {
   filePath: string | null;
@@ -31,15 +32,20 @@ interface StatusBarProps {
   focusStartTime?: number;
   /** WYSIWYG mode — hide editor-specific info */
   wysiwygMode?: boolean;
+  /** Current zoom level (50–200) */
+  zoomLevel?: number;
+  /** Called when user selects a zoom preset */
+  onZoomChange?: (level: number) => void;
 }
 
-export const StatusBar = memo(function StatusBar({ filePath, isDirty, line, col, wordCount, readingTime, cursorCount, vimMode, saveStatus, snapshots, onSnapshotRestore, updateAvailable, onUpdateClick, focusStartTime, wysiwygMode }: StatusBarProps) {
+export const StatusBar = memo(function StatusBar({ filePath, isDirty, line, col, wordCount, readingTime, cursorCount, vimMode, saveStatus, snapshots, onSnapshotRestore, updateAvailable, onUpdateClick, focusStartTime, wysiwygMode, zoomLevel, onZoomChange }: StatusBarProps) {
   const { t } = useI18n();
   const storeCursor = useEditorStore((s) => s.cursor);
   // Props override store — keep backward-compat for tests that pass line/col directly
   const displayLine = line ?? storeCursor.line;
   const displayCol = col ?? storeCursor.col;
   const [showSnapshots, setShowSnapshots] = useState(false);
+  const [showZoomPicker, setShowZoomPicker] = useState(false);
 
   // Self-contained 1s timer — only this component re-renders
   const [focusDuration, setFocusDuration] = useState('');
@@ -100,6 +106,18 @@ export const StatusBar = memo(function StatusBar({ filePath, isDirty, line, col,
           {!wysiwygMode && vimMode && <span className="font-mono font-bold" style={{ color: 'var(--accent-color)' }}>NORMAL</span>}
           {saveStatus === 'saving' && <span>💾</span>}
           {saveStatus === 'unsaved' && <span style={{ color: 'var(--warning-color)' }}>⚠️</span>}
+          {zoomLevel !== undefined && (
+            <button
+              onClick={() => setShowZoomPicker(prev => !prev)}
+              title={t('status.zoomTitle')}
+              className="flex items-center gap-1 tabular-nums transition-colors"
+              onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
+              onMouseLeave={e => (e.currentTarget.style.color = '')}
+            >
+              <ZoomIn size={12} strokeWidth={1.8} />
+              <span>{zoomLevel}%</span>
+            </button>
+          )}
           {!wysiwygMode && <span className="tabular-nums">{t('status.lineCol', { line: displayLine, col: displayCol })}</span>}
         </div>
       </div>
@@ -133,6 +151,37 @@ export const StatusBar = memo(function StatusBar({ filePath, isDirty, line, col,
                 <span className="truncate block mt-0.5" style={{ color: 'var(--text-secondary)' }} title={snap.preview}>
                   {snap.preview || t('status.emptyFile')}
                 </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {/* Zoom preset picker popup */}
+      {showZoomPicker && zoomLevel !== undefined && (
+        <div className="absolute bottom-full right-2 mb-1 w-36 rounded-lg shadow-xl z-50 overflow-hidden flex flex-col" style={{ backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-color)' }}>
+          <div className="shrink-0 flex items-center justify-between px-3 py-1.5" style={{ backgroundColor: 'var(--bg-tertiary)', borderBottom: '1px solid var(--border-color)' }}>
+            <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{t('status.zoomTitle')}</span>
+            <button onClick={() => setShowZoomPicker(false)} style={{ color: 'var(--text-secondary)' }}>
+              <X size={14} />
+            </button>
+          </div>
+          <div className="p-1">
+            {ZOOM_PRESETS.map((preset) => (
+              <button
+                key={preset}
+                onClick={() => {
+                  onZoomChange?.(preset);
+                  setShowZoomPicker(false);
+                }}
+                className="w-full text-left px-3 py-1 rounded text-xs transition-colors"
+                style={{
+                  color: preset === zoomLevel ? 'var(--accent-color)' : 'var(--text-primary)',
+                  fontWeight: preset === zoomLevel ? 600 : 400,
+                }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-secondary)')}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = '')}
+              >
+                {preset}%{preset === 100 ? ` (${t('status.zoomReset')})` : ''}
               </button>
             ))}
           </div>
