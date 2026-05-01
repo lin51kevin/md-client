@@ -21,6 +21,13 @@
   background: transparent;
 }
 
+/* Improve text selection contrast — match CodeMirror editor feel */
+.milkdown-preview .milkdown .ProseMirror ::selection,
+.milkdown-preview .milkdown .ProseMirror ::-moz-selection {
+  background: var(--selection-bg, #d7d4f0) !important;
+  color: inherit;
+}
+
 /* Remove ALL borders/outlines that appear on focus or selection */
 .milkdown-preview .milkdown .milkdown-code-block,
 .milkdown-preview .milkdown .milkdown-code-block.selected {
@@ -352,7 +359,11 @@
 /* ── Remap Crepe palette → app theme variables ── */
 /* Overriding Crepe's own CSS vars at .milkdown-preview scope makes all
    Crepe elements (code block, picker popup, search box, etc.) inherit the
-   correct colours for every app theme (light / dark / sepia / high-contrast). */
+   correct colours for every app theme (light / dark / sepia / high-contrast).
+   NOTE: --crepe-color-selected MUST be set on .milkdown-preview .milkdown
+   (not just .milkdown-preview) because Crepe's frame.css defines the same
+   variable directly on .milkdown — CSS custom properties resolve to the
+   closest ancestor that sets them. */
 .milkdown-preview {
   --crepe-color-surface:           var(--bg-secondary,  #f6f8fa);
   --crepe-color-surface-low:       var(--bg-tertiary,   #eaecef);
@@ -363,10 +374,12 @@
   --crepe-color-primary:           var(--accent-color,  #0969da);
   --crepe-color-outline:           var(--border-color,  #d0d7de);
   --crepe-color-hover:             var(--hover-bg,      #f3f4f6);
-  --crepe-color-selected:          var(--selection-bg,  rgba(70,130,220,0.18));
   --crepe-color-secondary:         var(--bg-tertiary,   #eaecef);
   --crepe-shadow-1:                0 2px 8px rgba(0,0,0,0.18), 0 1px 3px rgba(0,0,0,0.12);
   --crepe-shadow-2:                0 4px 16px rgba(0,0,0,0.22), 0 2px 6px rgba(0,0,0,0.16);
+}
+.milkdown-preview .milkdown {
+  --crepe-color-selected:          var(--selection-bg,  #d7d4f0);
 }
 
 /* ── Floating inline toolbar (text selection) ── */
@@ -649,7 +662,7 @@
 }
 /* Selection highlight */
 .milkdown-preview .milkdown-code-block .cm-selectionBackground {
-  background: var(--selection-bg, rgba(70,130,220,0.25)) !important;
+  background: var(--selection-bg, #d7d4f0) !important;
 }
 
 /* ── Code Block Fold ── */

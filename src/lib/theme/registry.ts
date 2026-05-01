@@ -32,6 +32,7 @@ export const BUILT_IN_THEMES_MAP: Record<string, ThemeConfig> = {
       '--hover-overlay': 'rgba(0, 0, 0, 0.05)',
       '--warning-color': '#f59e0b',
       '--warning-bg': '#fef3c7',
+      '--selection-bg': '#d7d4f0',
     },
   },
   dark: {
@@ -56,6 +57,7 @@ export const BUILT_IN_THEMES_MAP: Record<string, ThemeConfig> = {
       '--hover-overlay': 'rgba(255, 255, 255, 0.1)',
       '--warning-color': '#f59e0b',
       '--warning-bg': '#3e2c0a',
+      '--selection-bg': 'rgba(88, 166, 255, 0.5)',
     },
   },
   sepia: {
@@ -80,6 +82,7 @@ export const BUILT_IN_THEMES_MAP: Record<string, ThemeConfig> = {
       '--hover-overlay': 'rgba(0, 0, 0, 0.05)',
       '--warning-color': '#b8860b',
       '--warning-bg': '#f5e6b8',
+      '--selection-bg': 'rgba(139, 105, 20, 0.25)',
     },
   },
   'high-contrast': {
@@ -104,6 +107,7 @@ export const BUILT_IN_THEMES_MAP: Record<string, ThemeConfig> = {
       '--hover-overlay': 'rgba(0, 0, 0, 0.08)',
       '--warning-color': '#cc5500',
       '--warning-bg': '#fff0e0',
+      '--selection-bg': '#9999ff',
     },
   },
 };
