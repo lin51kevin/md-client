@@ -38,6 +38,7 @@ export const TabBar = memo(function TabBar({ tabs, activeTabId, onActivate, onCl
   const tabDragRef = useRef<{ fromId: string; startX: number; overId: string | null } | null>(null);
   // F013: 重命名输入框 ref，用于自动聚焦
   const renameInputRef = useRef<HTMLInputElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // F013: 当 renamingTabId 变化时自动聚焦输入框
   useEffect(() => {
@@ -45,6 +46,19 @@ export const TabBar = memo(function TabBar({ tabs, activeTabId, onActivate, onCl
       setTimeout(() => renameInputRef.current?.select(), 0);
     }
   }, [renamingTabId]);
+
+  // Auto-scroll active tab into view (VS Code style)
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container || !activeTabId) return;
+    const tabEl = container.querySelector(`[data-tab-id="${activeTabId}"]`) as HTMLElement | null;
+    if (!tabEl) return;
+    const containerRect = container.getBoundingClientRect();
+    const tabRect = tabEl.getBoundingClientRect();
+    if (tabRect.left < containerRect.left || tabRect.right > containerRect.right) {
+      tabEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+    }
+  }, [activeTabId, tabs.length]);
 
   const handlePointerDown = (e: React.PointerEvent, id: string) => {
     if (e.button !== 0) return;
@@ -98,6 +112,7 @@ export const TabBar = memo(function TabBar({ tabs, activeTabId, onActivate, onCl
       role="tablist"
       className="shrink-0 flex items-stretch" style={{ minHeight: 30, backgroundColor: 'var(--bg-tertiary)', borderBottom: '1px solid var(--border-color)' }}>
       <div
+        ref={scrollContainerRef}
         className="flex items-end flex-1 overflow-x-auto tabbar-scroll min-w-0"
       >
         {/* Virtual "Welcome" tab – shown when the welcome page is active */}
