@@ -121,6 +121,7 @@ export function AppShell() {
 
   const isPristine = tabs.length === 1 && !tabs[0].filePath && !tabs[0].isDirty && !tabs[0].displayName;
   const activeTab = getActiveTab();
+  const activeLang = useMemo(() => activeTab.filePath ? getLanguageFromPath(activeTab.filePath) : null, [activeTab.filePath]);
 
   // ── Extracted hooks (depend on useTabs) ──────────────────────────
   const recentFilesHook = useRecentFiles({ openFileInTab });
@@ -429,7 +430,7 @@ export function AppShell() {
             tabs={tabs} activeTabId={activeTabId} onActivateTab={setActiveTabId}
             wysiwygMode={milkdownPreview}
             onToggleWysiwygMode={() => setMilkdownPreview(!milkdownPreview)}
-            isCodeFile={!getLanguageFromPath(activeTab.filePath).isMarkdown}
+            isCodeFile={!!activeLang && !activeLang.isMarkdown}
           />
 
           <Suspense fallback={null}>
@@ -588,7 +589,7 @@ export function AppShell() {
           onSnapshotRestore={stableOnSnapshotRestore}
           zoomLevel={zoomLevel}
           onZoomChange={setZoomLevel}
-          languageName={getLanguageFromPath(activeTab.filePath).name}
+          languageName={activeLang?.name ?? ''}
         />
       )}
 

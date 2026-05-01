@@ -33,21 +33,9 @@ export function codeBaseExtensions(): Extension[] {
  * Returns null if the language is not recognized.
  */
 export async function loadLanguageExtension(languageId: string): Promise<Extension | null> {
-  // First try to find a matching LanguageDescription from our curated list
-  const desc = commonLanguages.find(
-    (lang) =>
-      lang.name.toLowerCase() === languageId ||
-      lang.alias?.some((a) => a === languageId) ||
-      // extensions check: matches when languageId is an extension alias (e.g. 'js')
-      lang.extensions?.some((e) => e === languageId)
-  );
-
-  if (desc) {
-    const support = await desc.load();
-    return support;
-  }
-
-  // Fallback: try to match by language ID directly
+  // Try to find a matching LanguageDescription from our curated list.
+  // LanguageDescription.matchLanguageName handles name, alias, and extension
+  // matching internally, so a single call is sufficient.
   const match = LanguageDescription.matchLanguageName(commonLanguages, languageId, true);
   if (match) {
     const support = await match.load();

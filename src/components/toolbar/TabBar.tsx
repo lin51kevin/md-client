@@ -51,14 +51,15 @@ export const TabBar = memo(function TabBar({ tabs, activeTabId, onActivate, onCl
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container || !activeTabId) return;
-    const tabEl = container.querySelector(`[data-tab-id="${activeTabId}"]`) as HTMLElement | null;
-    if (!tabEl) return;
+    const target = Array.from(container.querySelectorAll<HTMLElement>(`[data-tab-id]`))
+      .find(el => el.dataset.tabId === activeTabId);
+    if (!target) return;
     const containerRect = container.getBoundingClientRect();
-    const tabRect = tabEl.getBoundingClientRect();
+    const tabRect = target.getBoundingClientRect();
     if (tabRect.left < containerRect.left || tabRect.right > containerRect.right) {
-      tabEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+      target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
     }
-  }, [activeTabId, tabs.length]);
+  }, [activeTabId, tabs]);
 
   const handlePointerDown = (e: React.PointerEvent, id: string) => {
     if (e.button !== 0) return;

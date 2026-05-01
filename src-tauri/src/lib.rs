@@ -363,11 +363,21 @@ const SUPPORTED_TEXT_EXTENSIONS: &[&str] = &[
     "diff", "patch", "graphql", "gql",
 ];
 
-/// Check if a file extension is supported for display in the file tree.
-fn is_supported_extension(ext: Option<&str>) -> bool {
-    match ext {
-        Some(e) => SUPPORTED_TEXT_EXTENSIONS.contains(&e),
-        None => false,
+/// Extensionless filenames that are recognized as text files (e.g. Dockerfile, Makefile).
+const SUPPORTED_TEXT_FILENAMES: &[&str] = &[
+    "dockerfile",
+    "makefile",
+];
+
+/// Check if a file is supported for display in the file tree.
+/// Matches by extension first, then by filename for extensionless files (e.g. Dockerfile).
+fn is_supported_file(path: &std::path::Path) -> bool {
+    if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+        SUPPORTED_TEXT_EXTENSIONS.contains(&ext.to_lowercase().as_str())
+    } else if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+        SUPPORTED_TEXT_FILENAMES.contains(&name.to_lowercase().as_str())
+    } else {
+        false
     }
 }
 
@@ -392,11 +402,7 @@ fn list_directory_impl(path: &str) -> Result<Vec<DirEntry>, String> {
             // Show directories and supported text files
             if entry.path().is_dir() { return true; }
             if !entry.path().is_file() { return false; }
-            let ext = entry.path()
-                .extension()
-                .and_then(|e| e.to_str())
-                .map(|s| s.to_lowercase());
-            is_supported_extension(ext.as_deref())
+            is_supported_file(&entry.path())
         })
         .map(|entry| {
             let p = entry.path();
@@ -464,8 +470,7 @@ fn read_dir_recursive_impl(path: &str, depth: Option<u32>) -> Result<DirEntry, S
                 if name_str.starts_with('.') { return false; }
                 if entry.path().is_dir() { return true; }
                 if !entry.path().is_file() { return false; }
-                let ext = entry.path().extension().and_then(|e| e.to_str()).map(|s| s.to_lowercase());
-                is_supported_extension(ext.as_deref())
+                is_supported_file(&entry.path())
             })
             .filter_map(|entry| {
                 let p = entry.path();

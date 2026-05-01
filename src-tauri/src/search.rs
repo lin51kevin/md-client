@@ -63,10 +63,14 @@ pub(crate) fn build_search_regex(
 
 /// Return `true` when `path` has a supported text-file extension.
 pub(crate) fn is_text_file(path: &std::path::Path) -> bool {
-    path.extension()
-        .and_then(|e| e.to_str())
-        .map(|s| matches!(s.to_lowercase().as_str(), "md" | "markdown" | "txt"))
-        .unwrap_or(false)
+    if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+        matches!(ext.to_lowercase().as_str(), "md" | "markdown" | "txt")
+    } else if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+        // Support extensionless filenames like Dockerfile, Makefile
+        matches!(name.to_lowercase().as_str(), "dockerfile" | "makefile")
+    } else {
+        false
+    }
 }
 
 /// Recursively collect all supported text files under `dir`, skipping hidden
@@ -435,7 +439,19 @@ mod tests {
 
     #[test]
     fn text_file_rejects_no_extension() {
-        assert!(!is_text_file(std::path::Path::new("Makefile")));
+        assert!(!is_text_file(std::path::Path::new("README")));
+    }
+
+    #[test]
+    fn text_file_dockerfile() {
+        assert!(is_text_file(std::path::Path::new("Dockerfile")));
+        assert!(is_text_file(std::path::Path::new("dockerfile")));
+    }
+
+    #[test]
+    fn text_file_makefile() {
+        assert!(is_text_file(std::path::Path::new("Makefile")));
+        assert!(is_text_file(std::path::Path::new("makefile")));
     }
 
     #[test]
