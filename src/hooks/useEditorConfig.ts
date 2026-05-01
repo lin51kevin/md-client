@@ -4,6 +4,8 @@
  * Owns async vim loading, editorExtensions, and editorTheme.
  * Extracted from useEditorInstance to separate configuration concerns (pure
  * computation) from runtime state/event handling.
+ *
+ * Supports both Markdown mode and code-file mode (language-aware editing).
  */
 import { useState, useEffect, useMemo } from 'react';
 import type { Extension } from '@codemirror/state';
@@ -16,6 +18,7 @@ import { sepiaCmTheme, highContrastCmTheme } from '../lib/cm/cm-themes';
 import { autoCloseBrackets } from '../lib/cm/cmAutocomplete';
 import { multicursorKeymap } from '../lib/cm/multicursor-keymap';
 import { vimKeymap } from '../lib/cm/cmVim';
+import { codeBaseExtensions, loadLanguageExtension } from '../lib/cm/cm-code-extensions';
 
 interface EditorConfigOptions {
   theme: ThemeName;
@@ -24,16 +27,51 @@ interface EditorConfigOptions {
   searchHighlightExtension: Extension;
   /** When true, disables heavy extensions (folding, autocomplete) for performance */
   largeFile?: boolean;
+  /** Language ID of the active file (e.g. 'markdown', 'typescript', 'python') */
+  languageId?: string;
 }
 
-export function useEditorConfig({ theme, vimMode, cursorExtension, searchHighlightExtension, largeFile = false }: EditorConfigOptions) {
+export function useEditorConfig({ theme, vimMode, cursorExtension, searchHighlightExtension, largeFile = false, languageId = 'markdown' }: EditorConfigOptions) {
   // Vim extension is loaded asynchronously
   const [vimExtension, setVimExtension] = useState<Extension | null>(null);
   useEffect(() => {
     vimKeymap().then(setVimExtension).catch(console.error);
   }, []);
 
+  // Code language extension — loaded asynchronously when languageId changes
+  const isCodeMode = languageId !== 'markdown';
+  const [codeLangExtension, setCodeLangExtension] = useState<Extension | null>(null);
+  useEffect(() => {
+    if (!isCodeMode) {
+      setCodeLangExtension(null);
+      return;
+    }
+    let cancelled = false;
+    loadLanguageExtension(languageId).then((ext) => {
+      if (!cancelled) setCodeLangExtension(ext);
+    }).catch(console.error);
+    return () => { cancelled = true; };
+  }, [languageId, isCodeMode]);
+
   const editorExtensions = useMemo(() => {
+    if (isCodeMode) {
+      // Code file mode: use code-specific extensions
+      const exts: Extension[] = [
+        ...codeBaseExtensions(),
+        cursorExtension,
+        searchHighlightExtension,
+        multicursorKeymap(),
+      ];
+      if (codeLangExtension) {
+        exts.push(codeLangExtension);
+      }
+      if (vimMode && vimExtension) {
+        exts.push(vimExtension);
+      }
+      return exts;
+    }
+
+    // Markdown mode: original behavior
     const exts: Extension[] = [
       markdown({ base: markdownLanguage, codeLanguages: largeFile ? [] : commonLanguages }),
       EditorView.lineWrapping,
@@ -52,7 +90,7 @@ export function useEditorConfig({ theme, vimMode, cursorExtension, searchHighlig
     }
 
     return exts;
-  }, [cursorExtension, vimExtension, vimMode, searchHighlightExtension, largeFile]);
+  }, [cursorExtension, vimExtension, vimMode, searchHighlightExtension, largeFile, isCodeMode, codeLangExtension]);
 
   const editorTheme = useMemo((): 'light' | 'dark' | Extension => {
     const cm = THEMES[theme].cmTheme;

@@ -91,7 +91,9 @@ describe('useFileOps', () => {
 
       expect(open).toHaveBeenCalledWith({
         multiple: true,
-        filters: [{ name: 'Markdown', extensions: ['md', 'markdown', 'txt'] }],
+        filters: expect.arrayContaining([
+          expect.objectContaining({ name: 'All Supported' }),
+        ]),
       });
       expect(mockOpenFileInTab).toHaveBeenCalledWith('/path/to/file.md');
     });

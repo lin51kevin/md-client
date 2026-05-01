@@ -1,12 +1,16 @@
 import { useEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
+import { ALL_SUPPORTED_EXTENSIONS } from '../lib/language-detect';
 
 /** 支持的图片扩展名 */
 const IMAGE_EXT_RE = /\.(png|jpe?g|gif|webp|bmp)$/i;
 
 /** 支持导入的 HTML 扩展名 */
 const HTML_EXT_RE = /\.html?$/i;
+
+/** 支持打开的文本文件扩展名（动态生成） */
+const TEXT_EXT_RE = new RegExp(`\\.(${ALL_SUPPORTED_EXTENSIONS.join('|')})$`, 'i');
 
 export type DragKind = 'file' | 'folder';
 
@@ -66,9 +70,9 @@ export function useDragDrop({ isTauri, setIsDragOver, setDragKind, openFileInTab
           setIsDragOver(false);
           const paths = (event.payload as { type: 'drop'; paths: string[] }).paths;
 
-          // 打开 Markdown / 文本文件
+          // 打开 Markdown / 文本 / 代码文件
           paths
-            .filter(p => /\.(md|markdown|txt)$/i.test(p))
+            .filter(p => TEXT_EXT_RE.test(p))
             .forEach(p => openFileInTab(p));
 
           // 处理 HTML 文件：转换为 Markdown 后打开

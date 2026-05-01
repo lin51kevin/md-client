@@ -32,6 +32,8 @@ interface UseEditorInstanceOptions {
   rawHandleSaveFile: (tabId?: string) => Promise<void>;
   setEditingTable: (table: TableData | null) => void;
   setEditorCtxMenu: (menu: { x: number; y: number; context: ContextInfo } | null) => void;
+  /** Language ID of the active file (e.g. 'markdown', 'typescript') */
+  languageId?: string;
 }
 
 export function useEditorInstance({
@@ -49,6 +51,7 @@ export function useEditorInstance({
   rawHandleSaveFile,
   setEditingTable,
   setEditorCtxMenu,
+  languageId = 'markdown',
 }: UseEditorInstanceOptions) {
   const docRef = useRef<string>(activeDoc);
   const [activeEditorView, setActiveEditorView] = useState<EditorView | null>(null);
@@ -69,6 +72,7 @@ export function useEditorInstance({
     cursorExtension,
     searchHighlightExtension,
     largeFile,
+    languageId,
   });
 
   const handleCreateEditor = useCallback((view: EditorView) => {

@@ -12,6 +12,7 @@ import { useI18n } from '../i18n';
 import type { DragKind as DragOverlayKind } from '../hooks/useDragDrop';
 import { useUpdateNotification } from '../hooks/useUpdateNotification';
 import { useUIStore } from '../stores';
+import { getLanguageFromPath } from '../lib/language-detect';
 import { useTabs } from '../hooks/useTabs';
 import { useFileOps } from '../hooks/useFileOps';
 import { useDragDrop } from '../hooks/useDragDrop';
@@ -428,6 +429,7 @@ export function AppShell() {
             tabs={tabs} activeTabId={activeTabId} onActivateTab={setActiveTabId}
             wysiwygMode={milkdownPreview}
             onToggleWysiwygMode={() => setMilkdownPreview(!milkdownPreview)}
+            isCodeFile={!getLanguageFromPath(activeTab.filePath).isMarkdown}
           />
 
           <Suspense fallback={null}>
@@ -586,6 +588,7 @@ export function AppShell() {
           onSnapshotRestore={stableOnSnapshotRestore}
           zoomLevel={zoomLevel}
           onZoomChange={setZoomLevel}
+          languageName={getLanguageFromPath(activeTab.filePath).name}
         />
       )}
 

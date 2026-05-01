@@ -71,6 +71,8 @@ interface ToolbarProps {
   wysiwygMode?: boolean;
   /** Toggle WYSIWYG / read-only preview mode */
   onToggleWysiwygMode?: () => void;
+  /** When true, hide markdown-specific formatting buttons (file is not markdown) */
+  isCodeFile?: boolean;
 }
 
 const DIVIDER = (
@@ -92,6 +94,7 @@ export const Toolbar = memo(function Toolbar({
   canUndo, canRedo, onUndo, onRedo,
   wysiwygMode = false,
   onToggleWysiwygMode,
+  isCodeFile = false,
 }: ToolbarProps & { onImageLocal?: () => void }) {
   const { t } = useI18n();
   const toolbarRef = useRef<HTMLDivElement>(null);
@@ -192,7 +195,7 @@ export const Toolbar = memo(function Toolbar({
           <Redo2 size={14} strokeWidth={2} />
         </ToolbarButton>
 
-        {!wysiwygMode && (<>
+        {!wysiwygMode && !isCodeFile && (<>
           {/* 格式化 */}
           <ToolbarButton onClick={() => onFormatAction?.('bold')} title={t('toolbar.bold')}>
             <Bold size={14} strokeWidth={2} />
@@ -324,7 +327,8 @@ export const Toolbar = memo(function Toolbar({
           </ToolbarButton>
         )}
 
-        {!wysiwygMode && (<>
+        {/* Code files always show utility buttons even if wysiwygMode is on (code files ignore wysiwyg) */}
+        {(!wysiwygMode || isCodeFile) && (<>
           {/* F013 — 拼写检查 */}
           <ToolbarButton
             variant="toggle"
@@ -381,58 +385,64 @@ export const Toolbar = memo(function Toolbar({
             )}
           </ToolbarButton>
 
-          {DIVIDER}
+          {!isCodeFile && (<>
+            {DIVIDER}
 
-          {/* 视图模式 */}
+            {/* 视图模式 */}
+            <ToolbarButton
+              variant="view"
+              active={viewMode === 'edit'}
+              onClick={() => onSetViewMode('edit')}
+              title={t('toolbar.editOnly')}
+            >
+              <PanelRightClose size={15} strokeWidth={1.8} />
+            </ToolbarButton>
+            <ToolbarButton
+              variant="view"
+              active={viewMode === 'split'}
+              onClick={() => onSetViewMode('split')}
+              title={t('toolbar.split')}
+            >
+              <Columns2 size={15} strokeWidth={1.8} />
+            </ToolbarButton>
+            <ToolbarButton
+              variant="view"
+              active={viewMode === 'preview'}
+              onClick={() => onSetViewMode('preview')}
+              title={t('toolbar.previewOnly')}
+            >
+              <PanelLeftClose size={15} strokeWidth={1.8} />
+            </ToolbarButton>
+          </>)}
+        </>)}
+
+        {/* 思维导图 — only for markdown */}
+        {!isCodeFile && (
           <ToolbarButton
             variant="view"
-            active={viewMode === 'edit'}
-            onClick={() => onSetViewMode('edit')}
-            title={t('toolbar.editOnly')}
+            active={viewMode === 'mindmap'}
+            onClick={() => onSetViewMode('mindmap')}
+            title={t('toolbar.mindmapMode') || 'Mindmap (Ctrl+5)'}
           >
-            <PanelRightClose size={15} strokeWidth={1.8} />
+            <Brain size={15} strokeWidth={1.8} />
           </ToolbarButton>
+        )}
+
+        {/* 预览可编辑切换 — only for markdown */}
+        {!isCodeFile && (<>
+          {DIVIDER}
           <ToolbarButton
-            variant="view"
-            active={viewMode === 'split'}
-            onClick={() => onSetViewMode('split')}
-            title={t('toolbar.split')}
+            variant="toggle"
+            active={wysiwygMode}
+            onClick={onToggleWysiwygMode}
+            title={t('toolbar.editablePreview')}
           >
-            <Columns2 size={15} strokeWidth={1.8} />
-          </ToolbarButton>
-          <ToolbarButton
-            variant="view"
-            active={viewMode === 'preview'}
-            onClick={() => onSetViewMode('preview')}
-            title={t('toolbar.previewOnly')}
-          >
-            <PanelLeftClose size={15} strokeWidth={1.8} />
+            <PenLine size={14} strokeWidth={1.8} />
           </ToolbarButton>
         </>)}
 
-        {/* 思维导图 — always visible */}
-        <ToolbarButton
-          variant="view"
-          active={viewMode === 'mindmap'}
-          onClick={() => onSetViewMode('mindmap')}
-          title={t('toolbar.mindmapMode') || 'Mindmap (Ctrl+5)'}
-        >
-          <Brain size={15} strokeWidth={1.8} />
-        </ToolbarButton>
-
-        {/* 预览可编辑切换 — always visible */}
-        {DIVIDER}
-        <ToolbarButton
-          variant="toggle"
-          active={wysiwygMode}
-          onClick={onToggleWysiwygMode}
-          title={t('toolbar.editablePreview')}
-        >
-          <PenLine size={14} strokeWidth={1.8} />
-        </ToolbarButton>
-
         {/* 导出下拉按钮 — always visible */}
-        <div className="relative" ref={exportMenuRef}>
+        {!isCodeFile && <div className="relative" ref={exportMenuRef}>
           <ToolbarButton onClick={() => setShowExportMenu(v => !v)} title={t('toolbar.export') || 'Export'}>
             <ArrowUpFromLine size={14} strokeWidth={1.8} />
           </ToolbarButton>
@@ -473,7 +483,7 @@ export const Toolbar = memo(function Toolbar({
               )}
             </div>
           )}
-        </div>
+        </div>}
 
         <div className="w-px h-5 mx-1 shrink-0" style={{ backgroundColor: 'var(--border-color)' }} />
 

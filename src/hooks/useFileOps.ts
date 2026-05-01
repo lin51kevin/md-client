@@ -6,6 +6,7 @@ import { markSelfSave } from './useFileWatcher';
 import { computeHash, setFileHash, getFileHash } from './useFileHash';
 import { toErrorMessage } from '../lib/utils/errors';
 import { useExportOps } from './useExportOps';
+import { ALL_SUPPORTED_EXTENSIONS, MARKDOWN_EXTENSIONS, SUPPORTED_CODE_EXTENSIONS, isMarkdownFile } from '../lib/language-detect';
 
 type TFn = (key: TranslationKey, params?: Record<string, string | number>) => string;
 
@@ -34,7 +35,11 @@ export function useFileOps({ getActiveTab, tabs, resolveTabDoc, openFileInTab, m
     try {
       const selected = await open({
         multiple: true,
-        filters: [{ name: 'Markdown', extensions: ['md', 'markdown', 'txt'] }],
+        filters: [
+          { name: 'All Supported', extensions: ALL_SUPPORTED_EXTENSIONS },
+          { name: 'Markdown', extensions: [...MARKDOWN_EXTENSIONS] },
+          { name: 'Source Code', extensions: [...SUPPORTED_CODE_EXTENSIONS] },
+        ],
       });
       const paths = Array.isArray(selected) ? selected : selected ? [selected] : [];
       const LARGE_FILE_WARN = 5 * 1024 * 1024; // 5 MB
@@ -73,7 +78,12 @@ export function useFileOps({ getActiveTab, tabs, resolveTabDoc, openFileInTab, m
     if (!tab) return;
     try {
       const savePath = await save({
-        filters: [{ name: 'Markdown', extensions: ['md'] }],
+        filters: isMarkdownFile(tab.filePath)
+          ? [{ name: 'Markdown', extensions: ['md'] }]
+          : [
+              { name: 'All Supported', extensions: ALL_SUPPORTED_EXTENSIONS },
+              { name: 'Source Code', extensions: [...SUPPORTED_CODE_EXTENSIONS] },
+            ],
       });
       if (savePath) {
         const doc = tabId ? resolveTabDoc(tab.id) : tab.doc;

@@ -11,6 +11,8 @@ export interface Tab {
   /** External modification detected while tab has unsaved changes;
    *  cleared after reload or save. */
   externalModified?: boolean;
+  /** Detected language ID based on file extension (e.g. 'typescript', 'python', 'markdown') */
+  languageId?: string;
 }
 
 export type ViewMode = 'split' | 'edit' | 'preview' | 'mindmap';

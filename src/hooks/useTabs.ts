@@ -9,6 +9,7 @@ import type { TranslationKey } from '../i18n/zh-CN';
 import { normalizePath } from '../lib/utils/path';
 import { toErrorMessage } from '../lib/utils/errors';
 import { restoreSession, persistSession } from '../lib/storage';
+import { getLanguageFromPath } from '../lib/language-detect';
 
 type TFn = (key: TranslationKey, params?: Record<string, string | number>) => string;
 
@@ -200,12 +201,13 @@ export function useTabs(t?: TFn, onRecentChange?: () => void) {
       // Replace the pristine backing tab (no file, not dirty, no custom name) instead of stacking
       const cur = tabsRef.current;
       const isPristineBacking = cur.length === 1 && !cur[0].filePath && !cur[0].isDirty && !cur[0].displayName;
+      const languageId = getLanguageFromPath(filePath).id;
       if (isPristineBacking) {
         docsRef.current[cur[0].id] = content;
-        setTabs([{ id: cur[0].id, filePath, doc: content, isDirty: false }]);
+        setTabs([{ id: cur[0].id, filePath, doc: content, isDirty: false, languageId }]);
         setActiveTabId(cur[0].id);
       } else {
-        const newTab: Tab = { id: genTabId(), filePath, doc: content, isDirty: false };
+        const newTab: Tab = { id: genTabId(), filePath, doc: content, isDirty: false, languageId };
         docsRef.current[newTab.id] = content;
         setTabs(prev => [...prev, newTab]);
         setActiveTabId(newTab.id);

@@ -36,9 +36,11 @@ interface StatusBarProps {
   zoomLevel?: number;
   /** Called when user selects a zoom preset */
   onZoomChange?: (level: number) => void;
+  /** Detected language name for the active file (e.g. 'TypeScript', 'Python') */
+  languageName?: string;
 }
 
-export const StatusBar = memo(function StatusBar({ filePath, isDirty, line, col, wordCount, readingTime, cursorCount, vimMode, saveStatus, snapshots, onSnapshotRestore, updateAvailable, onUpdateClick, focusStartTime, wysiwygMode, zoomLevel, onZoomChange }: StatusBarProps) {
+export const StatusBar = memo(function StatusBar({ filePath, isDirty, line, col, wordCount, readingTime, cursorCount, vimMode, saveStatus, snapshots, onSnapshotRestore, updateAvailable, onUpdateClick, focusStartTime, wysiwygMode, zoomLevel, onZoomChange, languageName }: StatusBarProps) {
   const { t } = useI18n();
   const storeCursor = useEditorStore((s) => s.cursor);
   // Props override store — keep backward-compat for tests that pass line/col directly
@@ -119,6 +121,7 @@ export const StatusBar = memo(function StatusBar({ filePath, isDirty, line, col,
             </button>
           )}
           {!wysiwygMode && <span className="tabular-nums">{t('status.lineCol', { line: displayLine, col: displayCol })}</span>}
+          {languageName && <span className="ml-2 text-xs opacity-70">{languageName}</span>}
         </div>
       </div>
 

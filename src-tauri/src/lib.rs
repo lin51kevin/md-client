@@ -338,6 +338,39 @@ struct DirEntry {
     children: Option<Vec<DirEntry>>,
 }
 
+/// Supported text file extensions shown in the file tree.
+/// IMPORTANT: Must stay in sync with `EXTENSION_MAP` in `src/lib/language-detect.ts` (frontend).
+const SUPPORTED_TEXT_EXTENSIONS: &[&str] = &[
+    // Markdown
+    "md", "markdown", "mdx", "txt",
+    // JavaScript / TypeScript
+    "js", "jsx", "mjs", "cjs", "ts", "tsx", "mts", "cts",
+    // Python
+    "py", "pyw",
+    // Web
+    "html", "htm", "css", "scss", "less",
+    // Data formats
+    "json", "json5", "yaml", "yml", "toml", "xml", "xsl", "svg",
+    // Systems
+    "rs", "go", "c", "h", "cpp", "cc", "cxx", "hpp",
+    // JVM
+    "java", "kt", "kts",
+    // Other languages
+    "php", "rb", "swift", "sql",
+    // Shell & config
+    "sh", "bash", "zsh", "ini", "conf", "env",
+    // Misc
+    "diff", "patch", "graphql", "gql",
+];
+
+/// Check if a file extension is supported for display in the file tree.
+fn is_supported_extension(ext: Option<&str>) -> bool {
+    match ext {
+        Some(e) => SUPPORTED_TEXT_EXTENSIONS.contains(&e),
+        None => false,
+    }
+}
+
 /// Implementation for list_directory (runs on a blocking thread).
 fn list_directory_impl(path: &str) -> Result<Vec<DirEntry>, String> {
     let dir = std::path::Path::new(path);
@@ -356,14 +389,14 @@ fn list_directory_impl(path: &str) -> Result<Vec<DirEntry>, String> {
             let name = entry.file_name();
             let name_str = name.to_string_lossy();
             if name_str.starts_with('.') { return false; }
-            // Show directories and known text files only
+            // Show directories and supported text files
             if entry.path().is_dir() { return true; }
             if !entry.path().is_file() { return false; }
             let ext = entry.path()
                 .extension()
                 .and_then(|e| e.to_str())
                 .map(|s| s.to_lowercase());
-            matches!(ext.as_deref(), Some("md") | Some("markdown") | Some("txt"))
+            is_supported_extension(ext.as_deref())
         })
         .map(|entry| {
             let p = entry.path();
@@ -432,7 +465,7 @@ fn read_dir_recursive_impl(path: &str, depth: Option<u32>) -> Result<DirEntry, S
                 if entry.path().is_dir() { return true; }
                 if !entry.path().is_file() { return false; }
                 let ext = entry.path().extension().and_then(|e| e.to_str()).map(|s| s.to_lowercase());
-                matches!(ext.as_deref(), Some("md") | Some("markdown") | Some("txt"))
+                is_supported_extension(ext.as_deref())
             })
             .filter_map(|entry| {
                 let p = entry.path();

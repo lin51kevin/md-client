@@ -12,6 +12,7 @@ import { useI18n } from '../../i18n';
 import type { Tab } from '../../types';
 import type { ViewMode } from '../../types';
 import type { RecentFile } from '../../lib/file';
+import { isMarkdownFile } from '../../lib/language-detect';
 
 const MarkdownPreview = lazy(() =>
   import('../preview/MarkdownPreview').then((m) => ({ default: m.MarkdownPreview }))
@@ -149,7 +150,9 @@ export const EditorContentArea = React.memo(function EditorContentArea({
   }
 
   // WYSIWYG mode: when Milkdown editable preview is on, force preview-only view
-  const effectiveViewMode = useMilkdownPreview ? 'preview' : viewMode;
+  // Code files: force edit-only mode (no preview pane)
+  const isCodeFile = !isMarkdownFile(activeTab.filePath);
+  const effectiveViewMode = isCodeFile ? 'edit' : useMilkdownPreview ? 'preview' : viewMode;
 
   const previewClass = `markdown-preview max-w-full min-h-full ${THEMES[theme].previewClass}`;
   const PreviewComponent = useMilkdownPreview ? MilkdownPreview : MarkdownPreview;

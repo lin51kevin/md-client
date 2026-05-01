@@ -84,6 +84,7 @@ export function useEditorCore({
     cursorExtension, searchHighlightExtension,
     activeDoc: activeTab.doc, getActiveTab, rawHandleSaveFile,
     setEditingTable, setEditorCtxMenu,
+    languageId: activeTab.languageId,
   });
   void _docRef;
 
