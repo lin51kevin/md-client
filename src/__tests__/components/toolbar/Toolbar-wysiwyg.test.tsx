@@ -32,7 +32,7 @@ vi.mock('../../../i18n', () => ({
         'toolbar.editOnly': '仅编辑',
         'toolbar.split': '分栏预览',
         'toolbar.previewOnly': '仅预览',
-        'about.title': '关于 MarkLite',
+        'about.title': '关于 MarkLite++',
         'toolbar.prevTab': '上一个标签页',
         'toolbar.nextTab': '下一个标签页',
         'toolbar.table': '插入表格',
@@ -171,7 +171,7 @@ describe('Toolbar — WYSIWYG mode (wysiwygMode=true)', () => {
   it('keeps about button', () => {
     render(<Toolbar {...defaultProps} wysiwygMode={true} onOpenAbout={vi.fn()} />);
 
-    expect(screen.getByTitle('关于 MarkLite')).toBeInTheDocument();
+    expect(screen.getByTitle('关于 MarkLite++')).toBeInTheDocument();
   });
 
   // ── AI Copilot 应该保留 ──

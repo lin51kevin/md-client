@@ -28,7 +28,7 @@ describe('useWindowTitle', () => {
 
       renderHook(() => useWindowTitle(tab, true));
 
-      expect(mockSetTitle).toHaveBeenCalledWith('document.md - MarkLite');
+      expect(mockSetTitle).toHaveBeenCalledWith('document.md - MarkLite++');
     });
 
     it('should set window title for new file (no filePath, no displayName)', () => {
@@ -42,7 +42,7 @@ describe('useWindowTitle', () => {
       renderHook(() => useWindowTitle(tab, true));
 
       // No filePath and no displayName → just the app name
-      expect(mockSetTitle).toHaveBeenCalledWith('MarkLite');
+      expect(mockSetTitle).toHaveBeenCalledWith('MarkLite++');
     });
 
     it('should add asterisk prefix for dirty files', () => {
@@ -55,10 +55,10 @@ describe('useWindowTitle', () => {
 
       renderHook(() => useWindowTitle(tab, true));
 
-      expect(mockSetTitle).toHaveBeenCalledWith('*document.md - MarkLite');
+      expect(mockSetTitle).toHaveBeenCalledWith('*document.md - MarkLite++');
     });
 
-    it('should set plain MarkLite title for dirty new files with no displayName', () => {
+    it('should set plain MarkLite++ title for dirty new files with no displayName', () => {
       const tab: Tab = {
         id: 'tab-1',
         filePath: null,
@@ -68,8 +68,8 @@ describe('useWindowTitle', () => {
 
       renderHook(() => useWindowTitle(tab, true));
 
-      // No name available → just 'MarkLite', no prefix
-      expect(mockSetTitle).toHaveBeenCalledWith('MarkLite');
+      // No name available → just 'MarkLite++', no prefix
+      expect(mockSetTitle).toHaveBeenCalledWith('MarkLite++');
     });
 
     it('should extract filename from Windows path', () => {
@@ -82,7 +82,7 @@ describe('useWindowTitle', () => {
 
       renderHook(() => useWindowTitle(tab, true));
 
-      expect(mockSetTitle).toHaveBeenCalledWith('readme.md - MarkLite');
+      expect(mockSetTitle).toHaveBeenCalledWith('readme.md - MarkLite++');
     });
 
     it('should extract filename from Unix path', () => {
@@ -95,7 +95,7 @@ describe('useWindowTitle', () => {
 
       renderHook(() => useWindowTitle(tab, true));
 
-      expect(mockSetTitle).toHaveBeenCalledWith('notes.md - MarkLite');
+      expect(mockSetTitle).toHaveBeenCalledWith('notes.md - MarkLite++');
     });
 
     it('should update title when tab changes', () => {
@@ -111,7 +111,7 @@ describe('useWindowTitle', () => {
         { initialProps: { tab: tab1 } }
       );
 
-      expect(mockSetTitle).toHaveBeenCalledWith('file1.md - MarkLite');
+      expect(mockSetTitle).toHaveBeenCalledWith('file1.md - MarkLite++');
 
       const tab2: Tab = {
         id: 'tab-2',
@@ -122,7 +122,7 @@ describe('useWindowTitle', () => {
 
       rerender({ tab: tab2 });
 
-      expect(mockSetTitle).toHaveBeenCalledWith('file2.md - MarkLite');
+      expect(mockSetTitle).toHaveBeenCalledWith('file2.md - MarkLite++');
     });
 
     it('should update title when dirty state changes', () => {
@@ -138,12 +138,12 @@ describe('useWindowTitle', () => {
         { initialProps: { tab } }
       );
 
-      expect(mockSetTitle).toHaveBeenCalledWith('document.md - MarkLite');
+      expect(mockSetTitle).toHaveBeenCalledWith('document.md - MarkLite++');
 
       const dirtyTab = { ...tab, isDirty: true };
       rerender({ tab: dirtyTab });
 
-      expect(mockSetTitle).toHaveBeenCalledWith('*document.md - MarkLite');
+      expect(mockSetTitle).toHaveBeenCalledWith('*document.md - MarkLite++');
     });
 
     it('should update title when file path changes', () => {
@@ -160,12 +160,12 @@ describe('useWindowTitle', () => {
       );
 
       // No filePath and no displayName → just app name
-      expect(mockSetTitle).toHaveBeenCalledWith('MarkLite');
+      expect(mockSetTitle).toHaveBeenCalledWith('MarkLite++');
 
       const savedTab = { ...tab, filePath: '/path/saved.md' };
       rerender({ tab: savedTab });
 
-      expect(mockSetTitle).toHaveBeenCalledWith('saved.md - MarkLite');
+      expect(mockSetTitle).toHaveBeenCalledWith('saved.md - MarkLite++');
     });
   });
 
@@ -220,7 +220,7 @@ describe('useWindowTitle', () => {
 
       renderHook(() => useWindowTitle(tab, true));
 
-      expect(mockSetTitle).toHaveBeenCalledWith('document.md - MarkLite');
+      expect(mockSetTitle).toHaveBeenCalledWith('document.md - MarkLite++');
     });
 
     it('should handle file paths with trailing slash', () => {
@@ -248,7 +248,7 @@ describe('useWindowTitle', () => {
 
       renderHook(() => useWindowTitle(tab, true));
 
-      expect(mockSetTitle).toHaveBeenCalledWith(`${longName} - MarkLite`);
+      expect(mockSetTitle).toHaveBeenCalledWith(`${longName} - MarkLite++`);
     });
 
     it('should handle file paths with special characters', () => {
@@ -261,7 +261,7 @@ describe('useWindowTitle', () => {
 
       renderHook(() => useWindowTitle(tab, true));
 
-      expect(mockSetTitle).toHaveBeenCalledWith('文档 (1).md - MarkLite');
+      expect(mockSetTitle).toHaveBeenCalledWith('文档 (1).md - MarkLite++');
     });
   });
 

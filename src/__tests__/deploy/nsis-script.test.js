@@ -18,9 +18,9 @@ describe('NSIS Installer Script', () => {
       expect(existsSync(nsiPath)).toBe(true);
     });
 
-    it('should define install directory as $LOCALAPPDATA\\MarkLite', () => {
+    it('should define install directory as $LOCALAPPDATA\\MarkLite++', () => {
       if (scriptContent) {
-        expect(scriptContent).toContain('$LOCALAPPDATA\\MarkLite');
+        expect(scriptContent).toContain('$LOCALAPPDATA\\MarkLite++');
       }
     });
 

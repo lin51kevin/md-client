@@ -135,7 +135,7 @@ export const PROVIDER_PRESETS: readonly ProviderPreset[] = [
     apiKeyUrl: 'https://openrouter.ai/settings/keys',
     defaultHeaders: {
       'HTTP-Referer': 'https://marklite.app',
-      'X-Title': 'MarkLite',
+      'X-Title': 'MarkLite++',
     },
     description: '200+ 模型统一入口，免费模型 ID 末尾带 :free（如 meta-llama/llama-3.3-70b-instruct:free）',
     modelLabels: {

@@ -13,7 +13,7 @@ export const en: Record<TranslationKey, string> = {
   'settings.general.language': 'Language',
   'settings.general.languageDesc': 'Select the interface display language',
   'settings.general.contextMenu': 'Context Menu Integration',
-  'settings.general.contextMenuDesc': 'Add "Open with MarkLite" option to file and folder context menus',
+  'settings.general.contextMenuDesc': 'Add "Open with MarkLite++" option to file and folder context menus',
   'settings.editor.spellCheck': 'Spell Check',
   'settings.editor.spellCheckDesc': 'Enable browser built-in spell check (better for English)',
   'settings.editor.vimMode': 'Vim Mode',
@@ -364,11 +364,11 @@ export const en: Record<TranslationKey, string> = {
   // ── Drag Overlay ──────────────────────────────────────────────────────────
   'drag.dropToOpen': 'Drop to open file',
   'drag.dropToOpenFolder': 'Drop to open folder',
-  'drag.supportedFormats': 'Supports .md · .markdown · .txt',
+  'drag.supportedFormats': 'Supports Markdown, code & text files',
 
   // ── Welcome Page ────────────────────────────────────────────────────────
-  'welcome.title': 'Welcome to MarkLite',
-  'welcome.subtitle': 'A lightweight Markdown editor',
+  'welcome.title': 'Welcome to MarkLite++',
+  'welcome.subtitle': 'A lightweight Markdown & code editor',
   'welcome.newFile': 'New',
   'welcome.openFile': 'Open File',
   'welcome.openFolder': 'Open Folder',
@@ -476,7 +476,7 @@ export const en: Record<TranslationKey, string> = {
   'help.title': 'User Guide',
 
   // ── About Modal ────────────────────────────────────────────────────────────
-  'about.title': 'About MarkLite',
+  'about.title': 'About MarkLite++',
   'about.version': 'Version',
   'about.links': 'Links',
   'about.homepage': 'Homepage',
@@ -612,7 +612,7 @@ export const en: Record<TranslationKey, string> = {
 
   // ── AI Copilot Prompt Builder ──────────────────────────────────────────────
   'aiCopilot.prompt.truncated': '... (truncated)',
-  'aiCopilot.prompt.systemIntro': 'You are the AI assistant for MarkLite, specializing in helping users edit Markdown documents.',
+  'aiCopilot.prompt.systemIntro': 'You are the AI assistant for MarkLite++, specializing in helping users edit Markdown documents.',
   'aiCopilot.prompt.currentFile': 'Current file: {filePath}',
   'aiCopilot.prompt.unsavedFile': '(unsaved)',
   'aiCopilot.prompt.cursorPosition': 'Cursor position: line {line}, column {column}',

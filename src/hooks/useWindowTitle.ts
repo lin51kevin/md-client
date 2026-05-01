@@ -9,7 +9,7 @@ export function useWindowTitle(activeTab: Tab, isTauri: boolean) {
       ? (activeTab.filePath.split(/[\\/]/).pop() ?? activeTab.filePath)
       : (activeTab.displayName ?? null);
     const prefix = activeTab.isDirty ? '*' : '';
-    const title = name ? `${prefix}${name} - MarkLite` : 'MarkLite';
+    const title = name ? `${prefix}${name} - MarkLite++` : 'MarkLite++';
     getCurrentWindow().setTitle(title);
   }, [activeTab.filePath, activeTab.displayName, activeTab.isDirty, activeTab.id, isTauri]);
 }

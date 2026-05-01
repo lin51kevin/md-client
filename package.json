@@ -2,7 +2,7 @@
   "name": "marklite",
   "private": true,
   "version": "0.10.5",
-  "description": "A lightweight Markdown editor built with Tauri, React, and CodeMirror",
+  "description": "A lightweight Markdown & code editor built with Tauri, React, and CodeMirror",
   "author": "kevin",
   "license": "MIT",
   "type": "module",

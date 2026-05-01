@@ -3,11 +3,11 @@
   <Fragment>
     <DirectoryRef Id="ApplicationProgramsFolder">
       <Component Id="CleanupStaleUninstallShortcut" Guid="*">
-        <RemoveFile Id="RemoveOldUninstallShortcutName" Name="Uninstall MarkLite.lnk" On="both" />
+        <RemoveFile Id="RemoveOldUninstallShortcutName" Name="Uninstall MarkLite++.lnk" On="both" />
         <RemoveFile Id="RemoveOldUninstallShortcutPattern" Name="Uninstall*.lnk" On="both" />
         <RegistryValue
           Root="HKCU"
-          Key="Software\lin51kevin\MarkLite"
+          Key="Software\lin51kevin\MarkLite++"
           Name="Cleanup Stale Uninstall Shortcut"
           Type="integer"
           Value="1"

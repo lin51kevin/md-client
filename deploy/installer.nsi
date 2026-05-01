@@ -1,18 +1,18 @@
-; MarkLite Installer Script (NSIS)
+; MarkLite++ Installer Script (NSIS)
 ; Usage: makensis installer.nsi
 
 !include "FileFunc.nsh"
 !include "WinVer.nsh"
 
-!define APPNAME "MarkLite"
-!define COMPANYNAME "MarkLite"
-!define DESCRIPTION "A lightweight Markdown Editor"
-!define VERSION "0.9.2"
+!define APPNAME "MarkLite++"
+!define COMPANYNAME "MarkLite++"
+!define DESCRIPTION "A lightweight Markdown & code editor"
+!define VERSION "0.10.5"
 !define EXENAME "marklite.exe"
-!define PROG_ID "MarkLite.Markdown"
+!define PROG_ID "MarkLitePP.Markdown"
 
 ; Default install location
-InstallDir "$LOCALAPPDATA\MarkLite"
+InstallDir "$LOCALAPPDATA\MarkLite++"
 
 ; Request admin privileges for file association registration
 RequestExecutionLevel user
@@ -34,7 +34,7 @@ UnPage instfiles
 ShowInstDetails show
 ShowUnDetails show
 
-Section "MarkLite Core" SecCore
+Section "MarkLite++ Core" SecCore
   SetOutPath $INSTDIR
   
   ; Extract all files from the ZIP/NSIS archive
@@ -45,13 +45,13 @@ Section "MarkLite Core" SecCore
 SectionEnd
 
 Section /o "Desktop Shortcut" SecDesktop
-  CreateShortCut "$DESKTOP\MarkLite.lnk" "$INSTDIR\${EXENAME}" "" "" 0
+  CreateShortCut "$DESKTOP\MarkLite++.lnk" "$INSTDIR\${EXENAME}" "" "" 0
 SectionEnd
 
 Section /o "Start Menu Entry" SecStartMenu
-  CreateDirectory "$SMPROGRAMS\MarkLite"
-  CreateShortCut "$SMPROGRAMS\MarkLite\MarkLite.lnk" "$INSTDIR\${EXENAME}" "" "" 0
-  CreateShortCut "$SMPROGRAMS\MarkLite\Uninstall.lnk" "$INSTDIR\uninstall.exe"
+  CreateDirectory "$SMPROGRAMS\MarkLite++"
+  CreateShortCut "$SMPROGRAMS\MarkLite++\MarkLite++.lnk" "$INSTDIR\${EXENAME}" "" "" 0
+  CreateShortCut "$SMPROGRAMS\MarkLite++\Uninstall.lnk" "$INSTDIR\uninstall.exe"
 SectionEnd
 
 Section "-File Associations" SecAssoc
@@ -74,9 +74,9 @@ Section "-File Associations" SecAssoc
 SectionEnd
 
 Section "Uninstall"
-  Delete "$DESKTOP\MarkLite.lnk"
+  Delete "$DESKTOP\MarkLite++.lnk"
   
-  RMDir /r "$SMPROGRAMS\MarkLite"
+  RMDir /r "$SMPROGRAMS\MarkLite++"
   
   Delete "$INSTDIR\uninstall.exe"
   Delete "$INSTDIR\${EXENAME}"
@@ -92,9 +92,9 @@ Section "Uninstall"
   DeleteRegValue HKCR ".mdx" ""
 SectionEnd
 
-LangString DESC_SecCore ${LANG_ENGLISH} "Core MarkLite files."
+LangString DESC_SecCore ${LANG_ENGLISH} "Core MarkLite++ files."
 LangString DESC_SecDesktop ${LANG_ENGLISH} "Create a shortcut on the desktop."
-LangString DESC_SecStartMenu ${LANG_ENGLISH} "Add MarkLite to the Start Menu."
+LangString DESC_SecStartMenu ${LANG_ENGLISH} "Add MarkLite++ to the Start Menu."
 LangString DESC_SecAssoc ${LANG_ENGLISH} "Register Markdown file associations (.md, .markdown, .mdown, .mkd, .mdx)."
 
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN

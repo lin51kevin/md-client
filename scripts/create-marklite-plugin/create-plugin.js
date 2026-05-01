@@ -68,7 +68,7 @@ function validatePluginId(pluginId) {
 }
 
 async function main() {
-  console.log('\n🧩 MarkLite Plugin Scaffolding\n');
+  console.log('\n🧩 MarkLite++ Plugin Scaffolding\n');
 
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 

@@ -95,7 +95,7 @@ export function EmptyEditorState({ onShowWelcome }: EmptyEditorStateProps) {
       {/* App logo — sized ~like VS Code's watermark */}
       <img
         src={logoUrl}
-        alt="MarkLite"
+        alt="MarkLite++"
         width={160}
         height={160}
         className="mb-8 select-none"
@@ -268,7 +268,7 @@ export function WelcomePage({ recentFiles, onNew, onOpenFile, onOpenFolder, onOp
               className="font-light tracking-tight mb-2"
               style={{ color: 'var(--text-primary)', fontSize: '4rem' }}
             >
-              MarkLite
+              MarkLite++
             </h1>
             <p className="text-base" style={{ color: 'var(--text-tertiary)', fontSize: '1.25rem' }}>
               {t('welcome.subtitle')}

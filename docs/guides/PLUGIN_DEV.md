@@ -1,7 +1,7 @@
-# MarkLite 插件开发指南
+# MarkLite++ 插件开发指南
 
 > **最后更新**：2026-04-27
-> **MarkLite 版本**：v0.10.5 (当前版本)
+> **MarkLite++ 版本**：v0.10.5 (当前版本)
 > **本指南包含**：插件创建、manifest 配置、API 参考、权限模型、发布流程
 
 ---
@@ -28,7 +28,7 @@ node scripts/create-marklite-plugin/create-plugin.js
 | main | ✅ | 入口文件路径（相对于插件根目录） |
 | activationEvents | ✅ | 激活事件数组 |
 | permissions | ✅ | 所需权限列表 |
-| engines | ❌ | 最低 MarkLite 版本要求，如 `{ "marklite": ">=0.7.0" }` |
+| engines | ❌ | 最低 MarkLite++ 版本要求，如 `{ "marklite": ">=0.7.0" }` |
 
 **示例：**
 

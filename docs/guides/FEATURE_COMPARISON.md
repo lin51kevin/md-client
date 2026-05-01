@@ -1,8 +1,8 @@
-# MarkLite 功能对比
+# MarkLite++ 功能对比
 
-> 最后更新：2026-04-27 | MarkLite v0.10.5 (当前版本)
+> 最后更新：2026-05-01 | MarkLite++ v0.10.5 (当前版本)
 
-本文将 MarkLite 与市场主流 Markdown 编辑器进行功能横向对比，帮助用户了解各工具的适用场景。
+本文将 MarkLite++ 与市场主流 Markdown 编辑器进行功能横向对比，帮助用户了解各工具的适用场景。
 
 ---
 
@@ -10,7 +10,7 @@
 
 | 工具 | 类型 | 授权 | 价格 |
 |------|------|------|------|
-| **MarkLite v0.10.5** | 桌面 Markdown 编辑器 | MIT 开源 | 免费 |
+| **MarkLite++ v0.10.5** | 桌面 Markdown 编辑器 | MIT 开源 | 免费 |
 | Typora | 桌面 WYSIWYG 编辑器 | 闭源 | ¥89（一次性）|
 | Obsidian | 知识管理 / PKM 工具 | 闭源核心+插件生态 | 免费（个人）|
 | VS Code + 插件 | 通用代码编辑器 | MIT 开源 | 免费 |
@@ -20,7 +20,7 @@
 
 ## 核心编辑功能
 
-| 功能 | MarkLite | Typora | Obsidian | VS Code | Mark Text |
+| 功能 | MarkLite++ | Typora | Obsidian | VS Code | Mark Text |
 |------|----------|--------|----------|---------|-----------|
 | 实时分栏预览 | ✅ | ✅（单视图） | ✅（分屏） | ✅（插件） | ✅ |
 | WYSIWYG 预览区直接编辑 | ✅（Milkdown） | ✅（原生） | ✅（实时预览） | ❌ | ✅ |
@@ -39,7 +39,7 @@
 
 ## 文件与导航
 
-| 功能 | MarkLite | Typora | Obsidian | VS Code | Mark Text |
+| 功能 | MarkLite++ | Typora | Obsidian | VS Code | Mark Text |
 |------|----------|--------|----------|---------|-----------|
 | 文件树侧边栏 | ✅ | ✅ | ✅ | ✅ | ✅ |
 | 文件树 CRUD（新建/删除/重命名） | ✅ | ✅ | ✅ | ✅ | ❌ |
@@ -53,7 +53,7 @@
 
 ## 内容增强
 
-| 功能 | MarkLite | Typora | Obsidian | VS Code | Mark Text |
+| 功能 | MarkLite++ | Typora | Obsidian | VS Code | Mark Text |
 |------|----------|--------|----------|---------|-----------|
 | GFM（表格/任务列表/删除线） | ✅ | ✅ | ✅ | ✅（插件） | ✅ |
 | 数学公式（KaTeX） | ✅ | ✅ | ✅ | ✅（插件） | ✅ |
@@ -68,7 +68,7 @@
 
 ## 导出格式
 
-| 格式 | MarkLite | Typora | Obsidian | VS Code | Mark Text |
+| 格式 | MarkLite++ | Typora | Obsidian | VS Code | Mark Text |
 |------|----------|--------|----------|---------|-----------|
 | PDF | ✅ | ✅ | ✅（付费插件） | ✅（插件） | ✅ |
 | DOCX（Word） | ✅ | ✅ | ✅（付费插件） | ✅（插件） | ❌ |
@@ -80,7 +80,7 @@
 
 ## 辅助工具
 
-| 功能 | MarkLite | Typora | Obsidian | VS Code | Mark Text |
+| 功能 | MarkLite++ | Typora | Obsidian | VS Code | Mark Text |
 |------|----------|--------|----------|---------|-----------|
 | AI 辅助编辑（改写/解释/翻译） | ✅（AI Copilot 插件） | ❌ | ✅（插件） | ✅（插件） | ❌ |
 | 片段管理器（变量替换） | ✅ | ❌ | ✅（插件） | ✅（插件） | ❌ |
@@ -94,7 +94,7 @@
 
 ## 界面与体验
 
-| 功能 | MarkLite | Typora | Obsidian | VS Code | Mark Text |
+| 功能 | MarkLite++ | Typora | Obsidian | VS Code | Mark Text |
 |------|----------|--------|----------|---------|-----------|
 | 主题数量 | 4（Light/Dark/Sepia/HC） | ~10 | 数十（社区） | 数百（扩展） | ~5 |
 | 跟随系统深色模式 | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -109,7 +109,7 @@
 
 ## 平台支持
 
-| 平台 | MarkLite | Typora | Obsidian | VS Code | Mark Text |
+| 平台 | MarkLite++ | Typora | Obsidian | VS Code | Mark Text |
 |------|----------|--------|----------|---------|-----------|
 | Windows | ✅ | ✅ | ✅ | ✅ | ✅ |
 | macOS | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -123,10 +123,10 @@
 
 | 使用场景 | 推荐工具 | 理由 |
 |----------|----------|------|
-| 轻量日常写作 | **MarkLite** | 快速启动，功能完备，完全免费开源 |
+| 轻量日常写作 | **MarkLite++** | 快速启动，功能完备，完全免费开源 |
 | WYSIWYG 所见即所得 | Typora | 最佳渲染体验，编辑即预览 |
 | 个人知识库 / PKM | Obsidian | 双链笔记、知识图谱等高级功能 |
 | 技术文档 / 代码结合 | VS Code | 与开发工作流深度集成 |
 | 简洁开源编辑 | Mark Text | 干净界面，支持格式完整 |
 
-> **MarkLite 最适合**：需要 WYSIWYG 预览编辑、多标签页管理、多光标编辑、EPUB 导出、Wiki-Link 导航、版本快照、AI 辅助写作或片段管理的用户，同时希望工具完全免费且开源。
+> **MarkLite++ 最适合**：需要 WYSIWYG 预览编辑、多标签页管理、多光标编辑、EPUB 导出、Wiki-Link 导航、版本快照、AI 辅助写作或片段管理的用户，同时希望工具完全免费且开源。

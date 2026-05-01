@@ -1,5 +1,5 @@
 /**
- * Centralized localStorage key registry for MarkLite.
+ * Centralized localStorage key registry for MarkLite++.
  *
  * All storage keys used across the app are defined here.
  * This prevents typos, key collisions, and aids future migration.

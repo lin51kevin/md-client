@@ -13,7 +13,7 @@ export const jaJP: Record<TranslationKey, string> = {
   'settings.general.language': '言語',
   'settings.general.languageDesc': '表示言語を選択してください',
   'settings.general.contextMenu': 'コンテキストメニュー統合',
-  'settings.general.contextMenuDesc': 'ファイルとフォルダの右クリックメニューに「MarkLiteで開く」オプションを追加',
+  'settings.general.contextMenuDesc': 'ファイルとフォルダの右クリックメニューに「MarkLite++で開く」オプションを追加',
   'settings.editor.spellCheck': 'スペルチェック',
   'settings.editor.spellCheckDesc': 'ブラウザ内蔵のスペルチェックを有効にする（英語向け）',
   'settings.editor.vimMode': 'Vim モード',
@@ -364,11 +364,11 @@ export const jaJP: Record<TranslationKey, string> = {
   // ── Drag Overlay ──────────────────────────────────────────────────────────
   'drag.dropToOpen': 'ドロップしてファイルを開く',
   'drag.dropToOpenFolder': 'ドロップしてフォルダを開く',
-  'drag.supportedFormats': '対応形式: .md · .markdown · .txt',
+  'drag.supportedFormats': 'Markdown・コード・テキストファイルに対応',
 
   // ── Welcome Page ────────────────────────────────────────────────────────
-  'welcome.title': 'MarkLite へようこそ',
-  'welcome.subtitle': '軽量 Markdown エディター',
+  'welcome.title': 'MarkLite++ へようこそ',
+  'welcome.subtitle': '軽量 Markdown & コードエディター',
   'welcome.newFile': '新規作成',
   'welcome.openFile': 'ファイルを開く',
   'welcome.openFolder': 'フォルダを開く',
@@ -476,7 +476,7 @@ export const jaJP: Record<TranslationKey, string> = {
   'help.title': 'ユーザーガイド',
 
   // ── About Modal ────────────────────────────────────────────────────────────
-  'about.title': 'MarkLite について',
+  'about.title': 'MarkLite++ について',
   'about.version': 'バージョン',
   'about.links': 'リンク',
   'about.homepage': 'プロジェクトホームページ',
@@ -612,7 +612,7 @@ export const jaJP: Record<TranslationKey, string> = {
 
   // ── AI Copilot Prompt Builder ──────────────────────────────────────────────
   'aiCopilot.prompt.truncated': '... (省略)',
-  'aiCopilot.prompt.systemIntro': 'あなたは MarkLite の AI アシスタントで、Markdown ドキュメントの編集をサポートします。',
+  'aiCopilot.prompt.systemIntro': 'あなたは MarkLite++ の AI アシスタントで、Markdown ドキュメントの編集をサポートします。',
   'aiCopilot.prompt.currentFile': '現在のファイル: {filePath}',
   'aiCopilot.prompt.unsavedFile': '(未保存)',
   'aiCopilot.prompt.cursorPosition': 'カーソル位置: 行 {line}、列 {column}',

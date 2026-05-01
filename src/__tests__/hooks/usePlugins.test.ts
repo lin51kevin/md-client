@@ -164,8 +164,8 @@ describe('usePlugins - lifecycle callbacks', () => {
 describe('usePlugins - ID migration', () => {
   it('migrates old IDs (backlinks-panel, graph-view) to marklite-* format', () => {
     storageMock['marklite-installed-plugins'] = JSON.stringify([
-      { id: 'backlinks-panel', name: 'Backlinks Panel', version: '1.0.0', author: 'MarkLite Team', description: 'desc', enabled: true, permissions: [] },
-      { id: 'graph-view', name: 'Graph View', version: '1.0.0', author: 'MarkLite Team', description: 'desc', enabled: false, permissions: [] },
+      { id: 'backlinks-panel', name: 'Backlinks Panel', version: '1.0.0', author: 'MarkLite++ Team', description: 'desc', enabled: true, permissions: [] },
+      { id: 'graph-view', name: 'Graph View', version: '1.0.0', author: 'MarkLite++ Team', description: 'desc', enabled: false, permissions: [] },
     ]);
 
     const { result } = renderHook(() => usePlugins());
@@ -178,7 +178,7 @@ describe('usePlugins - ID migration', () => {
 
   it('merges missing default plugins after migration', () => {
     storageMock['marklite-installed-plugins'] = JSON.stringify([
-      { id: 'marklite-backlinks', name: 'Backlinks Panel', version: '1.0.0', author: 'MarkLite Team', description: 'desc', enabled: true, permissions: [] },
+      { id: 'marklite-backlinks', name: 'Backlinks Panel', version: '1.0.0', author: 'MarkLite++ Team', description: 'desc', enabled: true, permissions: [] },
     ]);
 
     const { result } = renderHook(() => usePlugins());

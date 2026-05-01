@@ -8,7 +8,7 @@ export const MILKDOWN_SYNC_DEBOUNCE_MS = 300;
 /** Maximum delay (ms) for auto-save debounce */
 export const AUTO_SAVE_MAX_DELAY_MS = 5000;
 
-export const DEFAULT_MARKDOWN = `# 欢迎使用 MarkLite 🚀
+export const DEFAULT_MARKDOWN = `# 欢迎使用 MarkLite++ 🚀
 
 > 一款轻量、快速的现代化 Markdown 编辑器  
 > 基于 **Tauri 2** + **React 19** + **CodeMirror 6** 构建
@@ -31,7 +31,7 @@ export const DEFAULT_MARKDOWN = `# 欢迎使用 MarkLite 🚀
 #### 代码块（支持语法高亮）
 \`\`\`javascript
 function greet() {
-  console.log("Hello, MarkLite! 👋");
+  console.log("Hello, MarkLite++! 👋");
 }
 greet();
 \`\`\`
@@ -120,13 +120,13 @@ graph LR
 
 ## 🔗 双向链接与知识图谱
 
-MarkLite 支持 \`[[Wiki Links]]\` 语法，将笔记互相连接，构建个人知识网络。
+MarkLite++ 支持 \`[[Wiki Links]]\` 语法，将笔记互相连接，构建个人知识网络。
 
 ### 使用方式
 在文档中用双方括号引用其他笔记：
 
 - 📖 学习笔记请参考 [[Markdown 语法指南]]
-- 🛠️ 编辑器配置详见 [[MarkLite 设置]]
+- 🛠️ 编辑器配置详见 [[MarkLite++ 设置]]
 - 💡 更多创作灵感来自 [[写作技巧]]
 
 ### 知识图谱

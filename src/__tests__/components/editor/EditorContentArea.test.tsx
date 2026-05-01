@@ -131,8 +131,8 @@ describe('EditorContentArea', () => {
   describe('pristine / welcome state', () => {
     it('shows WelcomePage when isPristine=true & welcomeDismissed=false', () => {
       render(<EditorContentArea {...makeProps({ isPristine: true, welcomeDismissed: false })} />);
-      // WelcomePage always renders "MarkLite"
-      expect(screen.getByText('MarkLite')).toBeTruthy();
+      // WelcomePage always renders "MarkLite++"
+      expect(screen.getByText('MarkLite++')).toBeTruthy();
       // No editor or preview
       expect(screen.queryByTestId('codemirror')).toBeNull();
       expect(screen.queryByTestId('markdown-preview')).toBeNull();

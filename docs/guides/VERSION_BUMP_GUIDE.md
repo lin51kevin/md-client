@@ -1,4 +1,4 @@
-# MarkLite v0.9.9 版本 Bump 升级指南
+# MarkLite++ v0.9.9 版本 Bump 升级指南
 
 **日期**：2026-04-22  
 **更新内容**：TBD  

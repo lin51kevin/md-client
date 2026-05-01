@@ -38,7 +38,7 @@ vi.mock('../../../i18n', () => ({
         'toolbar.previewOnly': '仅预览',
         'settings.title': '设置',
         'help.title': '帮助',
-        'about.title': '关于 MarkLite',
+        'about.title': '关于 MarkLite++',
         'toolbar.prevTab': '上一个标签页',
         'toolbar.nextTab': '下一个标签页',
         'toolbar.table': '插入表格',
@@ -119,7 +119,7 @@ describe('Toolbar', () => {
     expect(screen.getByTitle('保存')).toBeInTheDocument();
     expect(screen.getByTitle('另存为')).toBeInTheDocument();
     expect(screen.getByTitle('粗体')).toBeInTheDocument();
-    expect(screen.getByTitle('关于 MarkLite')).toBeInTheDocument();
+    expect(screen.getByTitle('关于 MarkLite++')).toBeInTheDocument();
   });
 
   it('displays Chinese labels by default (i18n zh-CN)', () => {
@@ -133,7 +133,7 @@ describe('Toolbar', () => {
     render(<Toolbar {...defaultProps} />);
 
     const toolbar = screen.getByRole('toolbar');
-    const aboutButton = screen.getByTitle('关于 MarkLite');
+    const aboutButton = screen.getByTitle('关于 MarkLite++');
     toolbar.focus();
 
     fireEvent.keyDown(toolbar, { key: 'ArrowLeft' });
@@ -311,7 +311,7 @@ describe('Toolbar', () => {
   it('calls onOpenAbout when about button is clicked', () => {
     const onOpenAbout = vi.fn();
     render(<Toolbar {...defaultProps} onOpenAbout={onOpenAbout} />);
-    screen.getByTitle('关于 MarkLite').click();
+    screen.getByTitle('关于 MarkLite++').click();
     expect(onOpenAbout).toHaveBeenCalledTimes(1);
   });
 

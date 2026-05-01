@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * MarkLite ZIP Package Builder
+ * MarkLite++ ZIP Package Builder
  * Creates a distributable ZIP package from the Tauri build output.
  *
  * Usage: node scripts/create-zip.js [version]
@@ -128,7 +128,7 @@ export async function createZipPackage(options = {}) {
   const outputPath = join(outputDir, zipFilename);
 
   console.log('');
-  console.log('📦 MarkLite ZIP Builder');
+  console.log('📦 MarkLite++ ZIP Builder');
   console.log(`========================`);
   console.log(`Version: ${appVersion}`);
   console.log('');

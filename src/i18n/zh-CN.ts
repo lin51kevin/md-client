@@ -11,7 +11,7 @@ export const zhCN = {
   'settings.general.language': '语言',
   'settings.general.languageDesc': '选择界面显示语言',
   'settings.general.contextMenu': '右键菜单集成',
-  'settings.general.contextMenuDesc': '在文件和文件夹的右键菜单中添加"用 MarkLite 打开"选项',
+  'settings.general.contextMenuDesc': '在文件和文件夹的右键菜单中添加"用 MarkLite++ 打开"选项',
   'settings.editor.spellCheck': '拼写检查',
   'settings.editor.spellCheckDesc': '启用浏览器内置拼写检查（英文支持较好）',
   'settings.editor.vimMode': 'Vim 模式',
@@ -361,11 +361,11 @@ export const zhCN = {
   // ── Drag Overlay ──────────────────────────────────────────────────────────
   'drag.dropToOpen': '释放以打开文件',
   'drag.dropToOpenFolder': '释放以打开文件夹',
-  'drag.supportedFormats': '支持 .md · .markdown · .txt',
+  'drag.supportedFormats': '支持 Markdown、代码及文本文件',
 
   // ── Welcome Page ────────────────────────────────────────────────────────
-  'welcome.title': '欢迎使用 MarkLite',
-  'welcome.subtitle': '简洁高效的 Markdown 编辑器',
+  'welcome.title': '欢迎使用 MarkLite++',
+  'welcome.subtitle': '简洁高效的 Markdown & 代码编辑器',
   'welcome.newFile': '新建',
   'welcome.openFile': '打开文件',
   'welcome.openFolder': '打开文件夹',
@@ -473,7 +473,7 @@ export const zhCN = {
   'help.title': '用户指南',
 
   // ── About Modal ────────────────────────────────────────────────────────────
-  'about.title': '关于 MarkLite',
+  'about.title': '关于 MarkLite++',
   'about.version': '版本',
   'about.links': '相关链接',
   'about.homepage': '项目主页',
@@ -609,7 +609,7 @@ export const zhCN = {
 
   // ── AI Copilot Prompt Builder ──────────────────────────────────────────────
   'aiCopilot.prompt.truncated': '... (内容已截断)',
-  'aiCopilot.prompt.systemIntro': '你是 MarkLite 的 AI 助手，专门帮助用户编辑 Markdown 文档。',
+  'aiCopilot.prompt.systemIntro': '你是 MarkLite++ 的 AI 助手，专门帮助用户编辑 Markdown 文档。',
   'aiCopilot.prompt.currentFile': '当前文件: {filePath}',
   'aiCopilot.prompt.unsavedFile': '(未保存)',
   'aiCopilot.prompt.cursorPosition': '光标位置: 第{line}行, 第{column}列',

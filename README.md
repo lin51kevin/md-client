@@ -1,13 +1,13 @@
-# MarkLite
+# MarkLite++
 
 <p align="center">
-  <strong>一款轻量、快速的桌面 Markdown 编辑器</strong><br/>
+  <strong>一款轻量、快速的桌面 Markdown & 代码编辑器</strong><br/>
   基于 <strong>Tauri 2</strong> + <strong>React 19</strong> + <strong>CodeMirror 6</strong> 构建
 </p>
 
 <p align="center">
 
-![MarkLite 界面预览](./docs/assets/screenshot.png)
+![MarkLite++ 界面预览](./docs/assets/screenshot.png)
 
 </p>
 

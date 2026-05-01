@@ -8,7 +8,7 @@ interface AboutModalProps {
   onClose: () => void;
 }
 
-const APP_NAME = 'MarkLite';
+const APP_NAME = 'MarkLite++';
 const HOMEPAGE_URL = 'https://github.com/lin51kevin/md-client';
 const ISSUES_URL = 'https://github.com/lin51kevin/md-client/issues';
 const USER_GUIDE_URL = 'https://github.com/lin51kevin/md-client/blob/main/docs/guides/USER_GUIDE.md';

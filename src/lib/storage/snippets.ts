@@ -1,5 +1,5 @@
 /**
- * MarkLite Snippet/Template System
+ * MarkLite++ Snippet/Template System
  *
  * Supports variable placeholders like ${date}, ${cursor}, ${title|default}
  */

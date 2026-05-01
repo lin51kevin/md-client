@@ -1,7 +1,7 @@
 /**
- * @marklite/plugin-api — TypeScript type definitions for MarkLite plugin development.
+ * @marklite/plugin-api — TypeScript type definitions for MarkLite++ plugin development.
  *
- * This package provides all the type definitions needed to develop plugins for MarkLite
+ * This package provides all the type definitions needed to develop plugins for MarkLite++
  * without cloning the full source tree. Install it as a dev dependency:
  *
  *   yarn add -D @marklite/plugin-api

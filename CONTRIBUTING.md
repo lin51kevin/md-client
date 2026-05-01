@@ -1,4 +1,4 @@
-# Contributing to MarkLite
+# Contributing to MarkLite++
 
 Thank you for your interest in contributing!
 

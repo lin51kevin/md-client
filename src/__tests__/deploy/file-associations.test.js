@@ -42,7 +42,7 @@ describe('File Associations', () => {
     });
 
     test('uses single prog id for all extensions', () => {
-      expect(nsi).toMatch(/PROG_ID\s+"MarkLite\.Markdown"/);
+      expect(nsi).toMatch(/PROG_ID\s+"MarkLitePP\.Markdown"/);
       const matches = nsi.match(/WriteRegStr HKCR "\.\w+" "" "\$\{PROG_ID\}"/g);
       expect(matches).toHaveLength(EXPECTED_EXTS.length);
     });

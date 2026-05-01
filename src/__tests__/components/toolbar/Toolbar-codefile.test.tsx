@@ -46,7 +46,7 @@ vi.mock('../../../i18n', () => ({
         'toolbar.aiCopilotOpen': '打开AI助手',
         'toolbar.aiCopilotClose': '关闭AI助手',
         'file.openFolder': '打开文件夹',
-        'about.title': '关于 MarkLite',
+        'about.title': '关于 MarkLite++',
         'toolbar.export': '导出',
       };
       return map[key] ?? key;

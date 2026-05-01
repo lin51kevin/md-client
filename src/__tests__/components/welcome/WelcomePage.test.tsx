@@ -36,7 +36,7 @@ describe('WelcomePage', () => {
         onOpenRecent={onOpenRecent}
       />
     );
-    expect(screen.getByText('MarkLite')).toBeTruthy();
+    expect(screen.getByText('MarkLite++')).toBeTruthy();
   });
 
   it('renders recent files list', () => {
