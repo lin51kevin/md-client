@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [v0.10.6] - 2026-05-01
+
+
+### Added
+
+- 重命名 MarkLite 为 MarkLite++，更新欢迎页和文档支持代码文件编辑 (`d9403a8`)
+- 支持打开和编辑代码文件（非 Markdown） (`8bbd6de`)
+- add zoom support for editor and preview (`fe5679c`)
+
+
+
+### Fixed
+
+- milkdown preview选中文字背景色与编辑器保持一致 (`c39a86d`)
+- pre-import Apple certificate to fix macOS codesign failure (`43bb247`)
+
+
+
+### Changed
+
+- bump version to v0.10.6
+
+
+
 ## [v0.10.5] - 2026-04-27
 
 
