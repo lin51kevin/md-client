@@ -1,0 +1,13 @@
+{
+  "id": "marklite-terminal",
+  "name": "Terminal",
+  "version": "1.0.0",
+  "description": "内置终端 — 底部面板集成 shell 终端，支持命令执行",
+  "author": "MarkLite Team",
+  "main": "dist/index.js",
+  "activationEvents": ["onStartup"],
+  "permissions": ["tauri.raw", "sidebar.panel", "commands", "storage"],
+  "engines": {
+    "marklite": ">=0.11.0"
+  }
+}
