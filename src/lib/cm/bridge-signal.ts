@@ -18,9 +18,12 @@ export function notifyBridgeChange(): void {
 export function useBridgeVersion(): number {
   const [v, setV] = useState(version);
   useEffect(() => {
-    const handler = () => setV(++version);
+    const handler = () => setV(version);
     listeners.add(handler);
+    // Sync in case a change happened between initial render and effect
+    if (v !== version) setV(version);
     return () => { listeners.delete(handler); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return v;
 }

@@ -29,7 +29,7 @@
     "html-encoding-sniffer": "4.0.0"
   },
   "scripts": {
-    "dev": "vite",
+    "dev": "node scripts/build-plugins.mjs && vite",
     "build": "node -e \"require('fs').rmSync('public/plugins',{recursive:true,force:true})\" && node scripts/build-plugins.mjs --resources-only && tsc && vite build",
     "analyze": "tsc && cross-env ANALYZE=true vite build",
     "preview": "vite preview",

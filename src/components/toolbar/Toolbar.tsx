@@ -3,6 +3,7 @@ import { useRef, useState, useEffect, memo } from 'react';
 import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, SpellCheck, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, HelpCircle, FilePlus, FileText, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight, Table2, FileCode2, Minus, ListChecks, Sigma, Library, List, Brain, Undo2, Redo2, Bot, ArrowUpFromLine, PenLine } from 'lucide-react';
 import { ViewMode, FocusMode } from '../../types';
 import { isVimAvailable } from '../../lib/cm/vim-bridge';
+import { useBridgeVersion } from '../../lib/cm/bridge-signal';
 
 import { FileMenuDropdown } from '../editor/FileMenuDropdown';
 import { ToolbarButton } from './ToolbarButton';
@@ -98,6 +99,8 @@ export const Toolbar = memo(function Toolbar({
   isCodeFile = false,
 }: ToolbarProps & { onImageLocal?: () => void }) {
   const { t } = useI18n();
+  // Re-render when plugin bridges change (e.g. vim becomes available)
+  useBridgeVersion();
   const toolbarRef = useRef<HTMLDivElement>(null);
   const [showTablePicker, setShowTablePicker] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);

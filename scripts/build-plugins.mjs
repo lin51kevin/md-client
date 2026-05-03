@@ -89,6 +89,7 @@ const BRIDGE_MODULES = {
   '@marklite/mermaid-bridge': fs.realpathSync(path.join(ROOT, 'src', 'lib', 'markdown', 'mermaid-bridge.ts')),
   '@marklite/vim-bridge': fs.realpathSync(path.join(ROOT, 'src', 'lib', 'cm', 'vim-bridge.ts')),
   '@marklite/png-bridge': fs.realpathSync(path.join(ROOT, 'src', 'lib', 'export', 'png-bridge.ts')),
+  '@marklite/minimap-bridge': fs.realpathSync(path.join(ROOT, 'src', 'lib', 'cm', 'minimap-bridge.ts')),
 };
 
 async function buildShims() {
@@ -119,6 +120,10 @@ async function buildShims() {
   shims['@marklite/png-bridge'] = [
     `const __m = window.__MARKLITE_SHARED__["@marklite/png-bridge"];`,
     `export const { registerPngExporter, unregisterPngExporter, getPngExporter, isPngExportAvailable } = __m;`,
+  ].join('\n');
+  shims['@marklite/minimap-bridge'] = [
+    `const __m = window.__MARKLITE_SHARED__["@marklite/minimap-bridge"];`,
+    `export const { registerMinimap, unregisterMinimap, getMinimapExtension } = __m;`,
   ].join('\n');
 
   return shims;
@@ -256,12 +261,6 @@ function sharedGlobalsPlugin(shims) {
         }
         return undefined;
       });
-
-      // Stub modules — packages not yet published on npm
-      b.onResolve({ filter: /^@codemirror\/minimap$/ }, args => ({
-        path: args.path,
-        namespace: 'shared-globals',
-      }));
 
       b.onLoad({ filter: /.*/, namespace: 'shared-globals' }, args => ({
         contents: shims[args.path] || `export default window.__MARKLITE_SHARED__["${args.path}"];`,
