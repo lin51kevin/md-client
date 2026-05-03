@@ -129,17 +129,11 @@ function MermaidBlock({ code }: { code: string }) {
   const id = `mermaid-${rawId.replace(/:/g, '')}`;
   const [error, setError] = useState<string | null>(null);
 
-  // Graceful degradation when no Mermaid plugin is registered
-  if (!isMermaidAvailable()) {
-    return (
-      <div className="mermaid-unavailable">
-        <pre><code>{code}</code></pre>
-        <small>Install the Mermaid plugin to render diagrams</small>
-      </div>
-    );
-  }
+  const available = isMermaidAvailable();
 
   useEffect(() => {
+    if (!available) return;
+
     let cancelled = false;
     setError(null);
     getMermaidRenderer()!.render(id, code).then(({ svg }) => {
@@ -158,7 +152,16 @@ function MermaidBlock({ code }: { code: string }) {
       }
     });
     return () => { cancelled = true; };
-  }, [code, id]);
+  }, [code, id, available]);
+
+  if (!available) {
+    return (
+      <div className="mermaid-unavailable">
+        <pre><code>{code}</code></pre>
+        <small>Install the Mermaid plugin to render diagrams</small>
+      </div>
+    );
+  }
 
   if (error) {
     return (
