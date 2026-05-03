@@ -6,9 +6,7 @@
  */
 
 import { isMermaidAvailable, getMermaidRenderer } from './mermaid-bridge';
-
-// KaTeX CSS as raw string — inlined into self-contained SVG for formula rendering
-import katexCss from 'katex/dist/katex.min.css?raw';
+import { isKatexAvailable, katexRenderToString, getKatexCSSString } from './katex-bridge';
 
 export interface PreRenderedAsset {
   /** Base64-encoded PNG bytes (no data-URL prefix). */
@@ -209,19 +207,18 @@ export function extractLatexFormulas(markdown: string): LatexDef[] {
   return defs;
 }
 
-/** Dynamically import KaTeX and render a formula string to HTML. */
-async function katexRenderToString(formula: string, display: boolean): Promise<string> {
-  try {
-    const katex = await import('katex');
-    return katex.default.renderToString(formula, { displayMode: display, throwOnError: false });
-  } catch {
-    return `<span style="color:red">[LaTeX Error]</span>`;
-  }
-}
+// katexRenderToString is now imported from katex-bridge.ts
 
 async function renderLatexToPng(formula: string, display: boolean): Promise<PreRenderedAsset | null> {
   try {
-    const html = await katexRenderToString(formula, display);
+    if (!isKatexAvailable()) {
+      console.warn('[export-prerender] KaTeX plugin not available, skipping formula');
+      return null;
+    }
+    const html = katexRenderToString(formula, display);
+    if (!html) return null;
+    const katexCss = getKatexCSSString();
+    if (!katexCss) return null;
 
     // html2canvas cannot render the inline <svg> paths that KaTeX uses for
     // special symbols, so we use a self-contained SVG+foreignObject approach

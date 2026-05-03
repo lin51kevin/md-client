@@ -14,7 +14,7 @@ import rehypeStringify from 'rehype-stringify';
 import rehypeSlug from 'rehype-slug';
 import rehypeHighlight from 'rehype-highlight';
 import { buildCoreRemarkPlugins } from './pipeline';
-import { getKatexPlugin } from './katex-bridge';
+import { getKatexPlugin, getKatexCSSString } from './katex-bridge';
 import { extractToc } from './toc';
 import highlightCss from 'highlight.js/styles/github.css?raw';
 
@@ -223,7 +223,7 @@ export async function generateHtmlDocument(
   let katexCss = '';
   const katex = getKatexPlugin();
   if (katex) {
-    katexCss = (await import('katex/dist/katex.min.css?raw')).default;
+    katexCss = getKatexCSSString() || '';
   }
 
   return `<!DOCTYPE html>

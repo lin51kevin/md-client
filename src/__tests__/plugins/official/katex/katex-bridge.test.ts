@@ -47,11 +47,11 @@ describe('katex-bridge', () => {
     expect(isKatexAvailable()).toBe(false);
   });
 
-  it('ensureKatexCSS should load CSS only once', async () => {
-    // First call should succeed (CSS module import)
-    await expect(ensureKatexCSS()).resolves.not.toThrow();
+  it('ensureKatexCSS should be callable multiple times without error', () => {
+    // First call should succeed
+    expect(() => ensureKatexCSS()).not.toThrow();
 
     // Second call should be a no-op (already loaded)
-    await expect(ensureKatexCSS()).resolves.not.toThrow();
+    expect(() => ensureKatexCSS()).not.toThrow();
   });
 });

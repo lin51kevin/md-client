@@ -1,13 +1,28 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { usePluginRuntime } from '../../hooks/usePluginRuntime';
 
-// Mock the official plugin modules
-vi.mock('../../plugins/official/backlinks/src/index', () => ({
-  activate: vi.fn(),
+// Hoisted mocks so they're available inside vi.mock factories
+const { mockActivate, mockLoadPluginModule } = vi.hoisted(() => ({
+  mockActivate: vi.fn(),
+  mockLoadPluginModule: vi.fn(),
 }));
-vi.mock('../../plugins/official/graph-view/src/index', () => ({
-  activate: vi.fn(),
+
+// Mock plugin-loader so the hook uses our controlled module loader
+vi.mock('../../plugins/plugin-loader', () => ({
+  validateManifest: vi.fn((m: unknown) => m),
+  checkEngineVersion: vi.fn(() => true),
+  loadPluginModuleFromResource: mockLoadPluginModule,
+}));
+
+// Mock Tauri APIs used by the production (non-DEV) code path
+vi.mock('@tauri-apps/api/path', () => ({
+  resolveResource: vi.fn(async (p: string) => p),
+}));
+vi.mock('@tauri-apps/plugin-fs', () => ({
+  readTextFile: vi.fn(async () =>
+    JSON.stringify({ id: 'test', name: 'Test', version: '1.0.0', main: 'dist/index.js' }),
+  ),
 }));
 
 function createMockDeps() {
@@ -26,8 +41,18 @@ function createMockDeps() {
 }
 
 describe('usePluginRuntime', () => {
+  const savedDEV = import.meta.env.DEV;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    // Force the production code path (which uses loadPluginModuleFromResource)
+    import.meta.env.DEV = false as unknown as boolean;
+    mockLoadPluginModule.mockResolvedValue({ activate: mockActivate });
+    mockActivate.mockReturnValue(undefined);
+  });
+
+  afterEach(() => {
+    import.meta.env.DEV = savedDEV;
   });
 
   it('returns activatePlugin and deactivatePlugin callbacks', () => {
@@ -42,15 +67,12 @@ describe('usePluginRuntime', () => {
     const deps = createMockDeps();
     const { result } = renderHook(() => usePluginRuntime(deps));
 
-    const backlinksMod = await import('../../plugins/official/backlinks/src/index');
-
     await act(async () => {
       await result.current.activatePlugin('marklite-backlinks');
     });
 
-    expect(backlinksMod.activate).toHaveBeenCalledTimes(1);
-    // Should receive a PluginContext-shaped object
-    const ctx = (backlinksMod.activate as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(mockActivate).toHaveBeenCalledTimes(1);
+    const ctx = mockActivate.mock.calls[0][0];
     expect(ctx).toBeDefined();
     expect(ctx.editor).toBeDefined();
     expect(ctx.sidebar).toBeDefined();
@@ -71,21 +93,16 @@ describe('usePluginRuntime', () => {
     const deps = createMockDeps();
     const { result } = renderHook(() => usePluginRuntime(deps));
 
-    const graphMod = await import('../../plugins/official/graph-view/src/index');
-
     await act(async () => {
       await result.current.activatePlugin('marklite-graph-view');
     });
 
-    expect(graphMod.activate).toHaveBeenCalledTimes(1);
+    expect(mockActivate).toHaveBeenCalledTimes(1);
   });
 
   it('deactivatePlugin calls deactivate returned by activate', async () => {
     const deactivateFn = vi.fn();
-    const backlinksMod = await import('../../plugins/official/backlinks/src/index');
-    (backlinksMod.activate as ReturnType<typeof vi.fn>).mockReturnValue({
-      deactivate: deactivateFn,
-    });
+    mockActivate.mockReturnValue({ deactivate: deactivateFn });
 
     const deps = createMockDeps();
     const { result } = renderHook(() => usePluginRuntime(deps));
@@ -103,10 +120,7 @@ describe('usePluginRuntime', () => {
 
   it('re-activating an already active plugin deactivates first', async () => {
     const deactivateFn = vi.fn();
-    const backlinksMod = await import('../../plugins/official/backlinks/src/index');
-    (backlinksMod.activate as ReturnType<typeof vi.fn>).mockReturnValue({
-      deactivate: deactivateFn,
-    });
+    mockActivate.mockReturnValue({ deactivate: deactivateFn });
 
     const deps = createMockDeps();
     const { result } = renderHook(() => usePluginRuntime(deps));
@@ -119,6 +133,6 @@ describe('usePluginRuntime', () => {
     });
 
     expect(deactivateFn).toHaveBeenCalledTimes(1);
-    expect(backlinksMod.activate).toHaveBeenCalledTimes(2);
+    expect(mockActivate).toHaveBeenCalledTimes(2);
   });
 });
