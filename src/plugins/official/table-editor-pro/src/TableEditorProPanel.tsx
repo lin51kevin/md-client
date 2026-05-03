@@ -5,9 +5,9 @@
  * for row/column operations and alignment toggling.
  */
 import React, { useState, useCallback, useMemo } from 'react';
-import type { PluginContext } from '../../plugin-sandbox';
-import type { TableData, Alignment } from '../../../lib/markdown/table-parser';
-import { parseTable, serializeTable } from '../../../lib/markdown/table-parser';
+import type { PluginContext } from '../../../../plugins/plugin-sandbox';
+import type { TableData, Alignment } from '../../../../lib/markdown/table-parser';
+import { parseTable, serializeTable } from '../../../../lib/markdown/table-parser';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -22,7 +22,7 @@ interface Props {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Helpers (same logic as index.ts, duplicated for panel isolation)   */
+/*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
 function findTableAtCursor(content: string, cursorOffset: number): TableData | null {
@@ -33,25 +33,21 @@ function findTableAtCursor(content: string, cursorOffset: number): TableData | n
   return null;
 }
 
-function makeEmptyRow(colCount: number): string[] {
-  return Array.from({ length: colCount }, () => '');
-}
-
 function insertRow(data: TableData, afterIndex: number): TableData {
-  const colCount = Math.max(data.headers[0]?.length ?? 0, ...data.rows.map(r => r.length));
+  const colCount = Math.max(data.headers[0]?.length ?? 0, ...data.rows.map((r: string[]) => r.length));
   const rows = [...data.rows];
-  rows.splice(afterIndex + 1, 0, makeEmptyRow(colCount));
+  rows.splice(afterIndex + 1, 0, Array.from({ length: colCount }, () => ''));
   return { ...data, rows };
 }
 
 function deleteRows(data: TableData, indices: number[]): TableData {
   const set = new Set(indices);
-  return { ...data, rows: data.rows.filter((_, i) => !set.has(i)) };
+  return { ...data, rows: data.rows.filter((_: string[], i: number) => !set.has(i)) };
 }
 
 function insertColumn(data: TableData, afterIndex: number): TableData {
-  const headers = data.headers.map(h => { const c = [...h]; c.splice(afterIndex + 1, 0, ''); return c; });
-  const rows = data.rows.map(r => { const c = [...r]; c.splice(afterIndex + 1, 0, ''); return c; });
+  const headers = data.headers.map((h: string[]) => { const c = [...h]; c.splice(afterIndex + 1, 0, ''); return c; });
+  const rows = data.rows.map((r: string[]) => { const c = [...r]; c.splice(afterIndex + 1, 0, ''); return c; });
   const alignment = [...data.alignment]; alignment.splice(afterIndex + 1, 0, 'left');
   return { ...data, headers, rows, alignment };
 }
@@ -59,9 +55,9 @@ function insertColumn(data: TableData, afterIndex: number): TableData {
 function deleteColumn(data: TableData, index: number): TableData {
   return {
     ...data,
-    headers: data.headers.map(h => h.filter((_, i) => i !== index)),
-    rows: data.rows.map(r => r.filter((_, i) => i !== index)),
-    alignment: data.alignment.filter((_, i) => i !== index),
+    headers: data.headers.map((h: string[]) => h.filter((_: string, i: number) => i !== index)),
+    rows: data.rows.map((r: string[]) => r.filter((_: string, i: number) => i !== index)),
+    alignment: data.alignment.filter((_: Alignment, i: number) => i !== index),
   };
 }
 
@@ -73,7 +69,7 @@ function setColumnAlignment(data: TableData, col: number, align: Alignment): Tab
 }
 
 function sortTableByColumn(data: TableData, col: number, dir: 'asc' | 'desc'): TableData {
-  const sorted = [...data.rows].sort((a, b) => {
+  const sorted = [...data.rows].sort((a: string[], b: string[]) => {
     const cmp = (a[col] ?? '').localeCompare(b[col] ?? '', undefined, { numeric: true, sensitivity: 'base' });
     return dir === 'asc' ? cmp : -cmp;
   });
@@ -81,7 +77,7 @@ function sortTableByColumn(data: TableData, col: number, dir: 'asc' | 'desc'): T
 }
 
 function updateCell(data: TableData, rowIdx: number, colIdx: number, value: string): TableData {
-  const rows = data.rows.map((r, i) => {
+  const rows = data.rows.map((r: string[], i: number) => {
     if (i !== rowIdx) return r;
     const row = [...r];
     while (row.length <= colIdx) row.push('');
@@ -92,7 +88,7 @@ function updateCell(data: TableData, rowIdx: number, colIdx: number, value: stri
 }
 
 function updateHeader(data: TableData, colIdx: number, value: string): TableData {
-  const headers = data.headers.map(h => {
+  const headers = data.headers.map((h: string[]) => {
     const row = [...h];
     while (row.length <= colIdx) row.push('');
     row[colIdx] = value;
@@ -112,6 +108,12 @@ function writeBack(context: PluginContext, data: TableData): void {
 const ALIGN_LABEL: Record<Alignment, string> = { left: '左', center: '中', right: '右' };
 const NEXT_ALIGN: Record<Alignment, Alignment> = { left: 'center', center: 'right', right: 'left' };
 
+const cellStyle: React.CSSProperties = {
+  border: '1px solid var(--border, #e0e0e0)',
+  padding: '3px 5px',
+  fontSize: 12,
+};
+
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
@@ -124,7 +126,6 @@ export function TableEditorProPanel({ state, context }: Props): React.ReactNode 
 
   const table = localData ?? state.data;
 
-  // Load table from cursor position
   const loadFromEditor = useCallback(() => {
     const content = context.editor.getContent();
     const pos = context.editor.getCursorPosition().offset;
@@ -143,7 +144,7 @@ export function TableEditorProPanel({ state, context }: Props): React.ReactNode 
 
   const colCount = useMemo(() => {
     if (!table) return 0;
-    return Math.max(table.headers[0]?.length ?? 0, ...table.rows.map(r => r.length));
+    return Math.max(table.headers[0]?.length ?? 0, ...table.rows.map((r: string[]) => r.length));
   }, [table]);
 
   if (!table) {
@@ -211,7 +212,7 @@ export function TableEditorProPanel({ state, context }: Props): React.ReactNode 
         <thead>
           <tr>
             <th style={cellStyle}>#</th>
-            {table.headers[0].map((h, ci) => (
+            {table.headers[0].map((h: string, ci: number) => (
               <th
                 key={ci}
                 style={{
@@ -229,7 +230,7 @@ export function TableEditorProPanel({ state, context }: Props): React.ReactNode 
               >
                 <input
                   value={h}
-                  onChange={e => applyAndWrite(updateHeader(table, ci, e.target.value))}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => applyAndWrite(updateHeader(table, ci, e.target.value))}
                   style={{ width: '100%', border: 'none', background: 'transparent', textAlign: 'inherit', fontSize: 12 }}
                 />
               </th>
@@ -237,7 +238,7 @@ export function TableEditorProPanel({ state, context }: Props): React.ReactNode 
           </tr>
         </thead>
         <tbody>
-          {table.rows.map((row, ri) => (
+          {table.rows.map((row: string[], ri: number) => (
             <tr
               key={ri}
               style={{
@@ -251,12 +252,12 @@ export function TableEditorProPanel({ state, context }: Props): React.ReactNode 
               <td style={{ ...cellStyle, color: 'var(--text-secondary, #aaa)', width: 24, textAlign: 'center' }}>
                 {ri + 1}
               </td>
-              {Array.from({ length: colCount }, (_, ci) => (
+              {Array.from({ length: colCount }, (_: unknown, ci: number) => (
                 <td key={ci} style={{ ...cellStyle, textAlign: table.alignment[ci] ?? 'left' }}>
                   <input
                     value={row[ci] ?? ''}
-                    onChange={e => applyAndWrite(updateCell(table, ri, ci, e.target.value))}
-                    onClick={e => e.stopPropagation()}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => applyAndWrite(updateCell(table, ri, ci, e.target.value))}
+                    onClick={(e: React.MouseEvent) => e.stopPropagation()}
                     style={{ width: '100%', border: 'none', background: 'transparent', textAlign: 'inherit', fontSize: 12 }}
                   />
                 </td>
@@ -273,9 +274,3 @@ export function TableEditorProPanel({ state, context }: Props): React.ReactNode 
     </div>
   );
 }
-
-const cellStyle: React.CSSProperties = {
-  border: '1px solid var(--border, #e0e0e0)',
-  padding: '3px 5px',
-  fontSize: 12,
-};

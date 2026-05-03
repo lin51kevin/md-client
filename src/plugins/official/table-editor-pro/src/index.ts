@@ -8,10 +8,10 @@
  *  4. Draggable column widths in preview
  *  5. Floating toolbar for common table operations
  */
-import type { PluginContext } from '../../plugin-sandbox';
-import type { Disposable } from '../../types';
-import type { TableData, Alignment } from '../../../lib/markdown/table-parser';
-import { parseTable, serializeTable } from '../../../lib/markdown/table-parser';
+import type { PluginContext } from '../../../../plugins/plugin-sandbox';
+import type { Disposable } from '../../../../plugins/types';
+import type { TableData, Alignment } from '../../../../lib/markdown/table-parser';
+import { parseTable, serializeTable } from '../../../../lib/markdown/table-parser';
 import { TableEditorProPanel } from './TableEditorProPanel';
 
 /* ------------------------------------------------------------------ */
@@ -31,7 +31,6 @@ function createState(): TableProState {
 
 /** Detect the cursor is inside a table block in editor content. */
 function findTableAtCursor(content: string, cursorOffset: number): TableData | null {
-  // Try parsing at cursor, then scan a bit around
   for (const offset of [cursorOffset, cursorOffset - 1, cursorOffset + 1]) {
     const result = parseTable(content, Math.max(0, offset));
     if (result) return result;
@@ -39,23 +38,13 @@ function findTableAtCursor(content: string, cursorOffset: number): TableData | n
   return null;
 }
 
-/** Replace the raw table region in editor content. */
-function replaceTableInContent(content: string, table: TableData): string {
-  const before = content.slice(0, table.rawStart);
-  const after = content.slice(table.rawEnd);
-  const serialized = serializeTable(table);
-  return before + serialized + after;
-}
-
 /* ------------------------------------------------------------------ */
 /*  Column sort                                                        */
 /* ------------------------------------------------------------------ */
 
 function sortTableByColumn(data: TableData, col: number, dir: 'asc' | 'desc'): TableData {
-  const sorted = [...data.rows].sort((a, b) => {
-    const va = (a[col] ?? '').toLowerCase();
-    const vb = (b[col] ?? '').toLowerCase();
-    const cmp = va.localeCompare(vb, undefined, { numeric: true, sensitivity: 'base' });
+  const sorted = [...data.rows].sort((a: string[], b: string[]) => {
+    const cmp = (a[col] ?? '').localeCompare(b[col] ?? '', undefined, { numeric: true, sensitivity: 'base' });
     return dir === 'asc' ? cmp : -cmp;
   });
   return { ...data, rows: sorted };
@@ -66,7 +55,7 @@ function sortTableByColumn(data: TableData, col: number, dir: 'asc' | 'desc'): T
 /* ------------------------------------------------------------------ */
 
 function insertRow(data: TableData, afterIndex: number): TableData {
-  const colCount = Math.max(data.headers[0]?.length ?? 0, ...data.rows.map(r => r.length));
+  const colCount = Math.max(data.headers[0]?.length ?? 0, ...data.rows.map((r: string[]) => r.length));
   const emptyRow = Array.from({ length: colCount }, () => '');
   const rows = [...data.rows];
   rows.splice(afterIndex + 1, 0, emptyRow);
@@ -75,7 +64,7 @@ function insertRow(data: TableData, afterIndex: number): TableData {
 
 function deleteRows(data: TableData, indices: number[]): TableData {
   const set = new Set(indices);
-  const rows = data.rows.filter((_, i) => !set.has(i));
+  const rows = data.rows.filter((_: string[], i: number) => !set.has(i));
   return { ...data, rows };
 }
 
@@ -91,12 +80,12 @@ function moveRow(data: TableData, from: number, to: number): TableData {
 /* ------------------------------------------------------------------ */
 
 function insertColumn(data: TableData, afterIndex: number): TableData {
-  const headers = data.headers.map(h => {
+  const headers = data.headers.map((h: string[]) => {
     const copy = [...h];
     copy.splice(afterIndex + 1, 0, '');
     return copy;
   });
-  const rows = data.rows.map(r => {
+  const rows = data.rows.map((r: string[]) => {
     const copy = [...r];
     copy.splice(afterIndex + 1, 0, '');
     return copy;
@@ -107,9 +96,9 @@ function insertColumn(data: TableData, afterIndex: number): TableData {
 }
 
 function deleteColumn(data: TableData, index: number): TableData {
-  const headers = data.headers.map(h => h.filter((_, i) => i !== index));
-  const rows = data.rows.map(r => r.filter((_, i) => i !== index));
-  const alignment = data.alignment.filter((_, i) => i !== index);
+  const headers = data.headers.map((h: string[]) => h.filter((_: string, i: number) => i !== index));
+  const rows = data.rows.map((r: string[]) => r.filter((_: string, i: number) => i !== index));
+  const alignment = data.alignment.filter((_: Alignment, i: number) => i !== index);
   return { ...data, headers, rows, alignment };
 }
 
@@ -148,6 +137,26 @@ function injectColumnResizeCSS(): Disposable {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Context menu action factory                                        */
+/* ------------------------------------------------------------------ */
+
+function tableAction(
+  state: TableProState,
+  editor: PluginContext['editor'],
+  fn: (table: TableData) => TableData,
+): () => void {
+  return () => {
+    const content = editor.getContent();
+    const pos = editor.getCursorPosition().offset;
+    const table = findTableAtCursor(content, pos);
+    if (!table) return;
+    const updated = fn(table);
+    editor.replaceRange(table.rawStart, table.rawEnd, serializeTable(updated));
+    state.data = updated;
+  };
+}
+
+/* ------------------------------------------------------------------ */
 /*  Plugin activate                                                    */
 /* ------------------------------------------------------------------ */
 
@@ -166,19 +175,7 @@ export async function activate(context: PluginContext) {
       icon: 'align-left',
       group: 'table',
       order: 10,
-      action: () => {
-        if (!state.data) return;
-        const content = context.editor.getContent();
-        const pos = context.editor.getCursorPosition().offset;
-        const table = findTableAtCursor(content, pos);
-        if (!table) return;
-        const sel = context.editor.getSelection();
-        // Use first column or selected column (simplified: cycle alignment on col 0)
-        const updated = setAlignment(table, 0, 'left');
-        const newContent = replaceTableInContent(content, updated);
-        context.editor.replaceRange(table.rawStart, table.rawEnd, serializeTable(updated));
-        state.data = updated;
-      },
+      action: tableAction(state, context.editor, t => setAlignment(t, 0, 'left')),
     }),
     context.contextMenu.addItem({
       id: 'table-pro.align-center',
@@ -186,16 +183,7 @@ export async function activate(context: PluginContext) {
       icon: 'align-center',
       group: 'table',
       order: 11,
-      action: () => {
-        if (!state.data) return;
-        const content = context.editor.getContent();
-        const pos = context.editor.getCursorPosition().offset;
-        const table = findTableAtCursor(content, pos);
-        if (!table) return;
-        const updated = setAlignment(table, 0, 'center');
-        context.editor.replaceRange(table.rawStart, table.rawEnd, serializeTable(updated));
-        state.data = updated;
-      },
+      action: tableAction(state, context.editor, t => setAlignment(t, 0, 'center')),
     }),
     context.contextMenu.addItem({
       id: 'table-pro.align-right',
@@ -203,16 +191,7 @@ export async function activate(context: PluginContext) {
       icon: 'align-right',
       group: 'table',
       order: 12,
-      action: () => {
-        if (!state.data) return;
-        const content = context.editor.getContent();
-        const pos = context.editor.getCursorPosition().offset;
-        const table = findTableAtCursor(content, pos);
-        if (!table) return;
-        const updated = setAlignment(table, 0, 'right');
-        context.editor.replaceRange(table.rawStart, table.rawEnd, serializeTable(updated));
-        state.data = updated;
-      },
+      action: tableAction(state, context.editor, t => setAlignment(t, 0, 'right')),
     }),
     context.contextMenu.addItem({
       id: 'table-pro.insert-row',
@@ -220,19 +199,9 @@ export async function activate(context: PluginContext) {
       icon: 'plus',
       group: 'table',
       order: 20,
-      action: () => {
-        const content = context.editor.getContent();
-        const pos = context.editor.getCursorPosition().offset;
-        const table = findTableAtCursor(content, pos);
-        if (!table) return;
-        // Insert after the last selected row, or at end
-        const afterIdx = state.selectedRows.size > 0
-          ? Math.max(...state.selectedRows)
-          : table.rows.length - 1;
-        const updated = insertRow(table, afterIdx);
-        context.editor.replaceRange(table.rawStart, table.rawEnd, serializeTable(updated));
-        state.data = updated;
-      },
+      action: tableAction(state, context.editor, t =>
+        insertRow(t, state.selectedRows.size > 0 ? Math.max(...state.selectedRows) : t.rows.length - 1)
+      ),
     }),
     context.contextMenu.addItem({
       id: 'table-pro.delete-row',
@@ -245,9 +214,7 @@ export async function activate(context: PluginContext) {
         const pos = context.editor.getCursorPosition().offset;
         const table = findTableAtCursor(content, pos);
         if (!table || table.rows.length === 0) return;
-        const indices = state.selectedRows.size > 0
-          ? [...state.selectedRows]
-          : [Math.min(table.rows.length - 1, 0)];
+        const indices = state.selectedRows.size > 0 ? [...state.selectedRows] : [0];
         const updated = deleteRows(table, indices);
         context.editor.replaceRange(table.rawStart, table.rawEnd, serializeTable(updated));
         state.data = updated;
@@ -260,15 +227,9 @@ export async function activate(context: PluginContext) {
       icon: 'columns',
       group: 'table',
       order: 30,
-      action: () => {
-        const content = context.editor.getContent();
-        const pos = context.editor.getCursorPosition().offset;
-        const table = findTableAtCursor(content, pos);
-        if (!table) return;
-        const updated = insertColumn(table, table.headers[0].length - 1);
-        context.editor.replaceRange(table.rawStart, table.rawEnd, serializeTable(updated));
-        state.data = updated;
-      },
+      action: tableAction(state, context.editor, t =>
+        insertColumn(t, t.headers[0].length - 1)
+      ),
     }),
     context.contextMenu.addItem({
       id: 'table-pro.delete-col',
@@ -276,15 +237,9 @@ export async function activate(context: PluginContext) {
       icon: 'minus',
       group: 'table',
       order: 31,
-      action: () => {
-        const content = context.editor.getContent();
-        const pos = context.editor.getCursorPosition().offset;
-        const table = findTableAtCursor(content, pos);
-        if (!table || table.headers[0].length <= 1) return;
-        const updated = deleteColumn(table, table.headers[0].length - 1);
-        context.editor.replaceRange(table.rawStart, table.rawEnd, serializeTable(updated));
-        state.data = updated;
-      },
+      action: tableAction(state, context.editor, t =>
+        t.headers[0].length <= 1 ? t : deleteColumn(t, t.headers[0].length - 1)
+      ),
     }),
     context.contextMenu.addItem({
       id: 'table-pro.sort-asc',
@@ -292,15 +247,7 @@ export async function activate(context: PluginContext) {
       icon: 'arrow-up-narrow-wide',
       group: 'table',
       order: 40,
-      action: () => {
-        const content = context.editor.getContent();
-        const pos = context.editor.getCursorPosition().offset;
-        const table = findTableAtCursor(content, pos);
-        if (!table) return;
-        const updated = sortTableByColumn(table, 0, 'asc');
-        context.editor.replaceRange(table.rawStart, table.rawEnd, serializeTable(updated));
-        state.data = updated;
-      },
+      action: tableAction(state, context.editor, t => sortTableByColumn(t, 0, 'asc')),
     }),
     context.contextMenu.addItem({
       id: 'table-pro.sort-desc',
@@ -308,15 +255,7 @@ export async function activate(context: PluginContext) {
       icon: 'arrow-down-wide-narrow',
       group: 'table',
       order: 41,
-      action: () => {
-        const content = context.editor.getContent();
-        const pos = context.editor.getCursorPosition().offset;
-        const table = findTableAtCursor(content, pos);
-        if (!table) return;
-        const updated = sortTableByColumn(table, 0, 'desc');
-        context.editor.replaceRange(table.rawStart, table.rawEnd, serializeTable(updated));
-        state.data = updated;
-      },
+      action: tableAction(state, context.editor, t => sortTableByColumn(t, 0, 'desc')),
     }),
     context.contextMenu.addItem({
       id: 'table-pro.move-up',
@@ -371,14 +310,9 @@ export async function activate(context: PluginContext) {
   // --- Commands ---
   disposables.push(
     context.commands.register('table-pro.open', () => {
-      // Focus the sidebar panel
       context.ui.showMessage('表格编辑器 Pro：在侧边栏中编辑表格', 'info');
     }),
   );
-
-  // --- Update state when editor changes ---
-  // Note: We refresh on demand via context menu actions; a full reactive
-  // integration would hook into editor.onDidChangeContent (Phase 2).
 
   return {
     deactivate: () => {
