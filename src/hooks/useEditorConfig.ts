@@ -47,8 +47,8 @@ export function useEditorConfig({ theme, vimMode, cursorExtension, searchHighlig
       return;
     }
     let cancelled = false;
-    import('../lib/cm/cmIndentGuides').then(({ indentGuidesExtension }) =>
-      indentGuidesExtension().then((ext) => {
+    import('../lib/cm/cmIndentGuides').then(({ loadIndentGuidesExtension }) =>
+      loadIndentGuidesExtension().then((ext) => {
         if (!cancelled) setIndentGuidesExt(ext);
       })
     ).catch(console.error);
