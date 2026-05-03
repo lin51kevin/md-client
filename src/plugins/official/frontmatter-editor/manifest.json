@@ -1,0 +1,11 @@
+{
+  "id": "marklite-frontmatter-editor",
+  "name": "Frontmatter Editor",
+  "version": "1.0.0",
+  "description": "YAML Frontmatter 可视化编辑器 — 侧边栏显示/编辑文档元数据",
+  "author": "MarkLite Team",
+  "main": "dist/index.js",
+  "activationEvents": ["onStartup"],
+  "permissions": ["editor.read", "editor.write", "sidebar.panel"],
+  "engines": { "marklite": ">=0.11.0" }
+}
