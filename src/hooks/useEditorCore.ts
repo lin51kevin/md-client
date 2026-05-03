@@ -10,6 +10,7 @@
  */
 import { useRef, useCallback, useState, useEffect } from 'react';
 import { EditorView } from '@codemirror/view';
+import type { MutableRefObject } from 'react';
 import type { Tab } from '../types';
 import type { ViewMode } from '../types';
 import type { ThemeName } from '../lib/theme';
@@ -63,7 +64,7 @@ export function useEditorCore({
   // Read setEditorCtxMenu from store — avoids threading it through AppShell
   const setEditorCtxMenu = useUIStore((s) => s.setEditorCtxMenu);
 
-  const { editorRef, previewRef, handleEditorScroll, handlePreviewScroll } = useScrollSync(viewMode);
+  const { editorRef, previewRef, handleEditorScroll, handlePreviewScroll, triggerEditorScroll } = useScrollSync(viewMode);
   const { cursorExtension } = useCursorPosition();
 
   // ── Zoom (Ctrl+wheel handler attached to zoomContainerRef) ─────────
@@ -79,7 +80,7 @@ export function useEditorCore({
     handleSnippetInsert, openSnippetPicker,
   } = useSnippetFlow({ cmViewRef, updateActiveDoc, setEditorCtxMenu });
 
-  const { docRef: _docRef, editorExtensions, editorTheme, handleCreateEditor, handleEditorUpdate, cursorCount, canUndo: cmCanUndo, canRedo: cmCanRedo } = useEditorInstance({
+  const { docRef: _docRef, editorExtensions, editorTheme, handleCreateEditor: _baseHandleCreateEditor, handleEditorUpdate, cursorCount, canUndo: cmCanUndo, canRedo: cmCanRedo } = useEditorInstance({
     cmViewRef, activeTabId, theme, vimMode, spellCheck, autoSave, autoSaveDelay,
     cursorExtension, searchHighlightExtension,
     activeDoc: activeTab.doc, getActiveTab, rawHandleSaveFile,
@@ -87,6 +88,48 @@ export function useEditorCore({
     languageId: activeTab.languageId,
   });
   void _docRef;
+
+  // ── Minimap scroll bridge (split mode) ────────────────────────────────────
+  // In split mode the outer wrapper div is overflow-hidden and CodeMirror owns
+  // its own scroll (height="100%"). The minimap from @replit/codemirror-minimap
+  // sets view.scrollDOM.scrollTop directly. We relay scroll events from
+  // view.scrollDOM → triggerEditorScroll so the preview pane stays in sync.
+  const scrollCleanupRef = useRef<(() => void) | null>(null);
+
+  const attachScrollListener = useCallback((view: EditorView) => {
+    scrollCleanupRef.current?.();
+    // Point editorRef to view.scrollDOM so scroll-sync calculations use the
+    // correct scrollable element.
+    (editorRef as MutableRefObject<HTMLDivElement | null>).current =
+      view.scrollDOM as HTMLDivElement;
+    view.scrollDOM.addEventListener('scroll', triggerEditorScroll, { passive: true });
+    scrollCleanupRef.current = () => {
+      view.scrollDOM.removeEventListener('scroll', triggerEditorScroll);
+    };
+  }, [editorRef, triggerEditorScroll]);
+
+  const handleCreateEditor = useCallback((view: EditorView) => {
+    _baseHandleCreateEditor(view);
+    if (viewMode === 'split') {
+      attachScrollListener(view);
+    }
+  }, [_baseHandleCreateEditor, viewMode, attachScrollListener]);
+
+  // Re-attach / detach listener when the user switches view modes.
+  useEffect(() => {
+    const view = cmViewRef.current;
+    if (!view) return;
+    if (viewMode === 'split') {
+      attachScrollListener(view);
+    } else {
+      scrollCleanupRef.current?.();
+      scrollCleanupRef.current = null;
+    }
+    return () => {
+      scrollCleanupRef.current?.();
+      scrollCleanupRef.current = null;
+    };
+  }, [viewMode, attachScrollListener]);
 
   // WYSIWYG mode: subscribe to milkdownBridge for undo/redo state
   const [milkUndoRedo, setMilkUndoRedo] = useState<[boolean, boolean]>([false, false]);

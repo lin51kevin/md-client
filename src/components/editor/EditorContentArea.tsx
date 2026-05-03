@@ -85,7 +85,7 @@ class PreviewErrorBoundary extends Component<
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error('[MilkdownPreview] Initialization failed, falling back:', error, info);
+    console.error('[PreviewErrorBoundary] Render failure:', error, info);
   }
 
   render() {
@@ -210,12 +210,13 @@ export const EditorContentArea = React.memo(function EditorContentArea({
         className="flex h-full min-w-0 overflow-hidden"
         style={{ flex: 1 }}
       >
-        <div className="h-full overflow-auto min-w-0" ref={editorRef} onScroll={handleEditorScroll}>
-          <div className="min-h-full w-full" style={zoomStyle}>
+        <div className="h-full overflow-hidden min-w-0">
+          <div className="h-full w-full" style={zoomStyle}>
             <CodeMirror
               key={activeTabId}
               value={activeTab.doc}
-              className="text-sm"
+              height="100%"
+              className="h-full text-sm"
               theme={editorTheme}
               extensions={editorExtensions}
               onChange={updateActiveDoc}

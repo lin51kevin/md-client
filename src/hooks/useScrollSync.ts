@@ -68,7 +68,7 @@ export function useScrollSync(viewMode: ViewMode, debouncedDoc?: string) {
     [],
   );
 
-  const handleEditorScroll = (_e: React.UIEvent<HTMLDivElement>) => {
+  const triggerEditorScroll = useCallback(() => {
     if (viewMode !== 'split') return;
     const ed = editorRef.current;
     const pv = previewRef.current;
@@ -82,6 +82,10 @@ export function useScrollSync(viewMode: ViewMode, debouncedDoc?: string) {
       lastSyncRef.current.editor = 0; // reset so next user scroll is not throttled
       timerLeftRef.current = null;
     }, LOCK_DURATION);
+  }, [viewMode, syncScroll]);
+
+  const handleEditorScroll = (_e: React.UIEvent<HTMLDivElement>) => {
+    triggerEditorScroll();
   };
 
   const handlePreviewScroll = (_e: React.UIEvent<HTMLDivElement>) => {
@@ -108,5 +112,5 @@ export function useScrollSync(viewMode: ViewMode, debouncedDoc?: string) {
     };
   }, []);
 
-  return { editorRef, previewRef, handleEditorScroll, handlePreviewScroll };
+  return { editorRef, previewRef, handleEditorScroll, handlePreviewScroll, triggerEditorScroll };
 }
