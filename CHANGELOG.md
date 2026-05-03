@@ -9,37 +9,143 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.11.0] - 2026-05-03
 
 
-### Added
+### Style
 
-- 新增 10 个官方插件：daily-notes、document-templates、file-icons、frontmatter-editor、markdown-lint、minimap、smart-autocomplete、table-editor-pro、tag-system、terminal
-- 插件共享 @codemirror/* 模块（state/view/lint/autocomplete），消除插件间依赖重复
-- PDF/DOCX 导出改为可选 Cargo feature（`export`），支持精简构建模式
-- 插件构建系统新增 minimap-bridge 共享模块
+- align Milkdown and Markdown Preview styles (`0fae672`)
 
-
-### Changed
-
-- bump version to v0.11.0
-- Rust release profile 优化：opt-level "s" → "z"、新增 panic = "abort"、移除 devtools feature
-- xterm 相关依赖移至 devDependencies（仅 terminal 插件使用）
-- genpdf、docx-rs、image、emojis 改为 optional 依赖（通过 export feature 控制）
-
-
-### Performance
-
-- Rust 二进制体积从 ~16MB 减至 8.0MB（含导出）/ 5.7MB（不含导出）
-- vim 插件从 384KB 减至 184KB（共享 @codemirror/state）
-- 插件总体积优化约 400KB
 
 
 ### Fixed
 
-- 新增 10 个插件 ID 到 OFFICIAL_PLUGIN_IDS，修复生产环境下新插件无法加载的问题
-- 修复插件构建重复打包 CodeMirror 模块的问题
+- vim mode and minimap plugins now activate correctly (`478614e`)
+- resolve esbuild font loader errors in plugin builds (`9842130`)
+- resolve verified audit issues across phases 0-3 (`12534cf`)
+- resolve install, build, and test failures (`91daf0e`)
+- plugin activation — minimap bridge shim, toolbar re-render, dev build (`9d9bf13`)
+- separate plugin bundles from main package (`7994984`)
+- create dist subdirectory before copying plugin to public/ (`ac24c4b`)
+- correct engine version to allow activation on v0.10.x (`587d697`)
+- fix Vim plugin import paths and MenuItem disabled type (`4dc39b6`)
+- cast pipeline plugin arrays to any for ReactMarkdown compat (P1.3) (`3ab3094`)
+- resolve production build command recognition and console flash issues (`2f55a12`)
+- move new terminal button to sidebar header and fix input issue (`f30e44e`)
+- fix layout issues and terminal rendering (`8b016ac`)
+- improve selection contrast in milkdown preview & auto-scroll active tab into view (`c7f1d20`)
+
+
+
+### Added
+
+- add 10 missing plugins to official registry (`c39f37c`)
+- support extensionless text files (Dockerfile/Makefile) and minor optimizations (`f1c7c6b`)
+- implement workspace.watch and createSandboxedContext (`04804e8`)
+- share [@codemirror](https://github.com/codemirror)/* modules across plugins (`8bb906d`)
+- register 10 new official plugins (`827c72f`)
+- infrastructure for resizable bottom-docked plugin panels (`d2b7ec6`)
+- add rainbow bracket coloring (T2.2) (`40ae6f8`)
+- enable lint diagnostics framework (T2.4) (`4208ac0`)
+- add symbol-level breadcrumb for code files (T2.6) (`30d90f8`)
+- enable lint diagnostics framework (T2.4) (`dc67741`)
+- add indent guides for code files (T2.1) (`d4de9ed`)
+- add transclusion embedding (T2.5) (`d8d0986`)
+- add callout/admonition blocks (T2.3) (`2010672`)
+- add Tag System plugin (P3.1) (`90879c3`)
+- add Table Editor Pro plugin (P4.3) (`21c60d0`)
+- add Readability Score plugin (P3.8) (`c01a3e3`)
+- add Frontmatter Editor plugin (P3.7) (`9825729`)
+- add Document Templates plugin (P3.3) (`5498005`)
+- implement files.readFile API (T0) (`5cc3b6e`)
+- add Daily Notes plugin (P3.2) (`c64086d`)
+- add Markdown Lint plugin (P3.6) (`a8c78d2`)
+- add File Icons plugin (P3.9) (`8196710`)
+- add Terminal plugin (P4.1) (`7586b79`)
+- add Smart Autocomplete plugin (P4.2) (`a7aa217`)
+- add Minimap plugin (P3.11) (`34e425b`)
+- implement theme.register API (T5) (`e520d89`)
+- implement files.watch API (T1) (`278efa8`)
+- add 4 extracted plugins to official registry (`0f341a7`)
+- implement settings.registerSection API (T4) (`c5b56ff`)
+- add editor.onLanguageChanged API (T8) (`115c22c`)
+- add preview.registerRemarkPlugin API (T7) (`bb247db`)
+- implement export.registerExporter API (T3) (`1fc085d`)
+- redesign to VS Code-style multi-terminal panel (`bc3480d`)
+- fix various terminal plugin issues (`977436b`)
+- move to bottom panel and implement theme synchronization (`ed2e023`)
+- overhaul UI/UX to match VS Code and enhance shell support (`41ca99a`)
+- display current working directory in prompt (`88f47d3`)
+
+
+
+### Changed
+
+- upgrade dependencies to fix security vulnerabilities (`4988034`)
+- configure default enabled/disabled states for official plugins (`4b1a686`)
+- bump version to v0.11.0 (`7b564b5`)
+
+
+
+### Test
+
+- update tests for new permission system (`a38e2cf`)
+- update tests for bridge-based plugin architecture (`7d5e42c`)
+- restore T0 readFile tests overwritten by T1 (`e681f38`)
+
+
+
+### Changed
+
+- split table-editor-pro into smaller modules (`151081f`)
+- introduce dedicated shell.execute and git.command permissions (`7af626d`)
+- move plugin-only packages to devDependencies (`f80b27e`)
+- extract Mermaid diagrams to official plugin (P1.1) (`489006c`)
+- extract PNG export to official plugin (P1.4) (`f8ca0b8`)
+- extract Vim mode to official plugin (P1.2) (`e940670`)
+
+
+
+### Config
+
+- update plugin permissions to use dedicated permissions (`7ee26f6`)
+
+
+
+### Security
+
+- add shell command whitelist and input validation (`fb793fb`)
+
+
+
+### Docs
+
+- update changelog and documentation for v0.11.0 (`0fa4774`)
+
+
+
+### Performance
+
+- optimize Rust binary and move xterm to devDependencies (`92e0333`)
+- eliminate plugin duplication in dist bundle (~3.6 MB) (`58ff818`)
+
+
+
+
+
+### Breaking change
+
+
+- Plugins using tauri.raw should migrate to specific permissions.
+
+
 
 
 
 ## [v0.10.6] - 2026-05-01
+
+
+### Changed
+
+- bump version to v0.10.6 (`e401b54`)
+
 
 
 ### Added
@@ -57,13 +163,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-### Changed
-
-- bump version to v0.10.6
 
 
 
-## [v0.10.5] - 2026-04-27
+
+## [v0.10.5] - 2026-04-28
+
+
+### Fixed
+
+- fix table cell text selection, enable line wrapping, fix overflow (`1e45395`)
+- align Milkdown preview line-height and spacing with markdown-preview (`fc66555`)
+- navigate in-document anchor links instead of showing toolbar (`4a64585`)
+- prevent replaceAll during active editing and fix caret visibility (`afab5b4`)
+- allow composite key combinations in shortcut editor (`79ab277`)
+
+
+
+### Docs
+
+- update CHANGELOG for v0.10.5 (`6355752`)
+
 
 
 ### Changed
@@ -71,15 +191,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - bump version to v0.10.5 (`abdb969`)
 - normalize line endings (CRLF → LF) and add .gitattributes (`6044f1e`)
 - update CHANGELOG.md for v0.10.4 (`5b9fa21`)
-
-
-
-### Fixed
-
-- fix table cell text selection, enable line wrapping, fix overflow (`1e45395`)
-- align Milkdown preview line-height and spacing with markdown-preview (`fc66555`)
-- prevent replaceAll during active editing and fix caret visibility (`afab5b4`)
-- allow composite key combinations in shortcut editor (`79ab277`)
 
 
 
