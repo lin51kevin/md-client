@@ -194,4 +194,95 @@ describe('createEditorAPI', () => {
       expect(api.getContent()).toBe('new content');
     });
   });
+
+  describe('registerExtension', () => {
+    it('should register an extension and return Disposable', () => {
+      const dispose = vi.fn();
+      const registerEditorExtension = vi.fn(() => ({ dispose }));
+      const ext = { someExtension: true };
+      const api = createEditorAPI({ cmViewRef: { current: null }, registerEditorExtension });
+      const disposable = api.registerExtension(ext);
+      expect(registerEditorExtension).toHaveBeenCalledWith(ext);
+      expect(disposable.dispose).toBeDefined();
+      expect(typeof disposable.dispose).toBe('function');
+    });
+
+    it('should remove extension on dispose', () => {
+      const dispose = vi.fn();
+      const registerEditorExtension = vi.fn(() => ({ dispose }));
+      const api = createEditorAPI({ cmViewRef: { current: null }, registerEditorExtension });
+      const disposable = api.registerExtension({});
+      disposable.dispose();
+      expect(dispose).toHaveBeenCalledOnce();
+    });
+
+    it('should return no-op Disposable when registerEditorExtension is not provided', () => {
+      const api = createEditorAPI({ cmViewRef: { current: null } });
+      const disposable = api.registerExtension({});
+      expect(typeof disposable.dispose).toBe('function');
+      expect(() => disposable.dispose()).not.toThrow();
+    });
+  });
+
+  describe('onLanguageChanged', () => {
+    it('should invoke callback immediately with current language', () => {
+      const callback = vi.fn();
+      const api = createEditorAPI({
+        cmViewRef: { current: null },
+        currentLanguageId: 'markdown',
+        getActiveTab: () => ({ path: '/test/note.md', content: '' }),
+      });
+      api.onLanguageChanged(callback);
+      expect(callback).toHaveBeenCalledOnce();
+      expect(callback).toHaveBeenCalledWith({ languageId: 'markdown', filePath: '/test/note.md' });
+    });
+
+    it('should trigger callback when language changes', () => {
+      const callback = vi.fn();
+      let changeHandler: ((info: { languageId: string; filePath: string | null }) => void) | undefined;
+      const onLanguageChange = vi.fn((cb) => { changeHandler = cb; return vi.fn(); });
+      const api = createEditorAPI({
+        cmViewRef: { current: null },
+        onLanguageChange,
+      });
+      api.onLanguageChanged(callback);
+      changeHandler!({ languageId: 'javascript', filePath: '/test/app.js' });
+      expect(callback).toHaveBeenCalledWith({ languageId: 'javascript', filePath: '/test/app.js' });
+    });
+
+    it('should return Disposable that stops callbacks on dispose', () => {
+      const callback = vi.fn();
+      let changeHandler: ((info: { languageId: string; filePath: string | null }) => void) | undefined;
+      const unsub = vi.fn();
+      const onLanguageChange = vi.fn((cb) => { changeHandler = cb; return unsub; });
+      const api = createEditorAPI({ cmViewRef: { current: null }, onLanguageChange });
+      const disposable = api.onLanguageChanged(callback);
+      disposable.dispose();
+      changeHandler!({ languageId: 'python', filePath: '/test/py.py' });
+      expect(callback).not.toHaveBeenCalled();
+      expect(unsub).toHaveBeenCalledOnce();
+    });
+
+    it('should pass { languageId, filePath } to callback', () => {
+      const callback = vi.fn();
+      let changeHandler: ((info: { languageId: string; filePath: string | null }) => void) | undefined;
+      const onLanguageChange = vi.fn((cb) => { changeHandler = cb; return vi.fn(); });
+      const api = createEditorAPI({ cmViewRef: { current: null }, onLanguageChange });
+      api.onLanguageChanged(callback);
+      changeHandler!({ languageId: 'typescript', filePath: '/tmp/index.ts' });
+      const info = callback.mock.calls[0][0];
+      expect(info).toHaveProperty('languageId', 'typescript');
+      expect(info).toHaveProperty('filePath', '/tmp/index.ts');
+    });
+
+    it('should throw PluginPermissionError when no editor.read permission', () => {
+      const { createSandbox } = require('../../plugins/plugin-sandbox');
+      const { PluginPermissionError } = require('../../plugins/permission-checker');
+      const callback = vi.fn();
+      const editorAPI = createEditorAPI({ cmViewRef: { current: null } });
+      const context = { editor: editorAPI } as any;
+      const sandbox = createSandbox(context, () => false);
+      expect(() => sandbox.editor.onLanguageChanged(callback)).toThrow(PluginPermissionError);
+    });
+  });
 });

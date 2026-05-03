@@ -71,6 +71,10 @@ export interface PluginContextDeps {
   readFileContent?: (path: string) => Promise<string | null>;
   /** Watch files matching a glob pattern, call callback on changes. Returns unsubscribe. */
   watchFiles?: (pattern: string, callback: (path: string) => void) => () => void;
+  /** Current language ID of the active editor. */
+  currentLanguageId?: string;
+  /** Subscribe to language change events. Returns unsubscribe. */
+  onLanguageChange?: (callback: (info: { languageId: string; filePath: string | null }) => void) => () => void;
   /** Register a CodeMirror extension. Returns a Disposable. */
   registerEditorExtension?: (extension: unknown) => import('./types').Disposable;
 }
@@ -100,6 +104,8 @@ export function createPluginContext(deps: PluginContextDeps, pluginId?: string):
       cmViewRef: deps.cmViewRef,
       getActiveTab: () => deps.getActiveTab?.() ?? null,
       registerEditorExtension: deps.registerEditorExtension,
+      currentLanguageId: deps.currentLanguageId,
+      onLanguageChange: deps.onLanguageChange,
     }),
     sidebar: createSidebarAPI(deps),
     statusbar: createStatusBarAPI(deps),

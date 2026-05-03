@@ -28,6 +28,7 @@ export type PluginPermission =
   | 'editor.read'
   | 'editor.write'
   | 'editor.decorate'
+  | 'editor.extend'
   | 'workspace'
   | 'preview.extend'
   | 'settings.section'

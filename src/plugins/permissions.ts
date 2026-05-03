@@ -18,7 +18,7 @@ const LOW: readonly PluginPermission[] = [
 
 const MEDIUM: readonly PluginPermission[] = [
   'commands', 'storage', 'contextmenu.item', 'settings.section',
-  'sidebar.panel',
+  'sidebar.panel', 'editor.extend',
 ];
 
 const HIGH: readonly PluginPermission[] = [
@@ -54,6 +54,7 @@ export const PERMISSION_DESCRIPTIONS: Readonly<Record<PluginPermission, { zh: st
   'editor.read':     { zh: '读取编辑器内容',     en: 'Read editor content' },
   'editor.write':    { zh: '修改编辑器内容',     en: 'Write editor content' },
   'editor.decorate': { zh: '添加编辑器装饰',     en: 'Add editor decorations' },
+  'editor.extend':  { zh: '注册编辑器扩展',       en: 'Register editor extension' },
   'workspace':       { zh: '访问工作区',         en: 'Access workspace' },
   'preview.extend':  { zh: '扩展预览渲染',       en: 'Extend preview rendering' },
   'settings.section':{ zh: '注册设置页面',       en: 'Register settings section' },

@@ -1,4 +1,5 @@
 import type { EditorView } from '@codemirror/view';
+import type { Disposable } from './types';
 import type { PluginContext } from './plugin-sandbox';
 import { milkdownBridge } from '../lib/milkdown/editor-bridge';
 
@@ -10,6 +11,12 @@ export interface EditorAPIDeps {
   cmViewRef: React.RefObject<EditorView | null>;
   /** Optional: returns the currently active tab (path + content). */
   getActiveTab?: () => { path: string | null; content: string } | null;
+  /** Optional: register a CodeMirror extension. */
+  registerEditorExtension?: (extension: unknown) => Disposable;
+  /** Optional: current language ID. */
+  currentLanguageId?: string;
+  /** Optional: subscribe to language change events. Returns unsubscribe function. */
+  onLanguageChange?: (callback: (info: { languageId: string; filePath: string | null }) => void) => () => void;
 }
 
 /**
@@ -129,6 +136,41 @@ export function createEditorAPI(deps: EditorAPIDeps): PluginContext['editor'] {
      */
     getActiveFilePath(): string | null {
       return deps.getActiveTab?.()?.path ?? null;
+    },
+
+    /**
+     * Register a CodeMirror extension (e.g. view plugin, decoration, etc.).
+     * Returns a Disposable that removes the extension on dispose.
+     */
+    registerExtension(extension: unknown): Disposable {
+      if (!deps.registerEditorExtension) {
+        return { dispose: () => {} };
+      }
+      return deps.registerEditorExtension(extension);
+    },
+
+    onLanguageChanged(callback: (info: { languageId: string; filePath: string | null }) => void): Disposable {
+      const listeners: Set<(info: { languageId: string; filePath: string | null }) => void> = new Set();
+      const disposable: Disposable = {
+        dispose() {
+          listeners.delete(callback);
+          unsub?.();
+        },
+      };
+
+      const wrappedCallback = (info: { languageId: string; filePath: string | null }) => {
+        for (const listener of listeners) listener(info);
+      };
+
+      listeners.add(callback);
+      const unsub = deps.onLanguageChange?.(wrappedCallback);
+
+      // Invoke immediately with current language
+      if (deps.currentLanguageId != null) {
+        callback({ languageId: deps.currentLanguageId, filePath: deps.getActiveTab?.()?.path ?? null });
+      }
+
+      return disposable;
     },
   };
 }
