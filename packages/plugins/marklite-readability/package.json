@@ -1,0 +1,19 @@
+{
+  "name": "@marklite/plugin-readability",
+  "version": "0.1.0",
+  "description": "Flesch-Kincaid Grade Level readability score in the status bar",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "tsc"
+  },
+  "devDependencies": {
+    "@marklite/plugin-api": "workspace:*",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "@marklite/plugin-api": ">=0.1.0"
+  },
+  "license": "MIT"
+}
