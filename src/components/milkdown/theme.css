@@ -69,6 +69,9 @@
   padding-bottom: 0.3em;
 }
 .milkdown-preview .milkdown .ProseMirror h3 { font-size: 1.25em; }
+.milkdown-preview .milkdown .ProseMirror h4 { font-size: 1em; }
+.milkdown-preview .milkdown .ProseMirror h5 { font-size: 0.875em; }
+.milkdown-preview .milkdown .ProseMirror h6 { font-size: 0.85em; color: var(--text-secondary); }
 
 /* Paragraph sizing to match markdown-preview */
 .milkdown-preview .milkdown .ProseMirror p {
@@ -167,12 +170,14 @@
   display: none;
 }
 
-/* Lists */
+/* Lists — Crepe renders bullet/number via .label-wrapper (24px wide flex child),
+   so reduce padding-left by 24px to match markdown-preview's effective 2em indent. */
 .milkdown-preview .milkdown .ProseMirror ul,
 .milkdown-preview .milkdown .ProseMirror ol {
-  padding-left: 2em;
+  padding-left: calc(2em - 24px);
   margin-top: 0;
   margin-bottom: 16px;
+  list-style: none;
 }
 
 .milkdown-preview .milkdown .ProseMirror li {
@@ -198,6 +203,14 @@
 .milkdown-preview .milkdown .milkdown-list-item-block li .label-wrapper .label {
   height: auto;
   padding: 0;
+}
+/* Crepe defaults label-wrapper color to --crepe-color-outline (dim border color).
+   Override to inherit text color so bullets/numbers match markdown-preview brightness. */
+.milkdown-preview .milkdown .milkdown-list-item-block li .label-wrapper {
+  color: var(--text-primary, inherit);
+}
+.milkdown-preview .milkdown .milkdown-list-item-block li .label-wrapper svg {
+  fill: var(--text-primary, currentColor);
 }
 
 /* Tables */
@@ -263,6 +276,7 @@
 .milkdown-preview .milkdown .ProseMirror img {
   max-width: 100%;
   height: auto;
+  box-sizing: content-box;
 }
 
 /* Horizontal rule */

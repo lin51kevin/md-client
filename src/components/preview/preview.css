@@ -38,6 +38,10 @@
   border-bottom: 1px solid var(--border-color);
   padding-bottom: 0.3em;
 }
+.markdown-preview h3 { font-size: 1.25em; }
+.markdown-preview h4 { font-size: 1em; }
+.markdown-preview h5 { font-size: 0.875em; }
+.markdown-preview h6 { font-size: 0.85em; color: var(--text-secondary); }
 .markdown-preview code {
   background-color: var(--bg-secondary);
   border-radius: 3px;
@@ -109,6 +113,10 @@
 .markdown-preview table td {
   border: 1px solid var(--border-color);
   padding: 6px 13px;
+}
+.markdown-preview table th {
+  background-color: var(--bg-secondary);
+  font-weight: 600;
 }
 .markdown-preview table tr:nth-child(2n) {
   background-color: var(--bg-secondary);
@@ -243,7 +251,7 @@
 
 /* ── Dark theme overrides ── */
 .markdown-preview-dark {
-  color: #d4d4d8;
+  color: var(--text-primary, #d4d4d8);
 }
 .markdown-preview-dark h1,
 .markdown-preview-dark h2,
@@ -251,32 +259,32 @@
 .markdown-preview-dark h4,
 .markdown-preview-dark h5,
 .markdown-preview-dark h6 {
-  color: #e4e4e7;
-  border-bottom-color: #3f3f46;
+  color: var(--text-primary, #e4e4e7);
+  border-bottom-color: var(--border-color, #3f3f46);
 }
 .markdown-preview-dark code {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--bg-tertiary, rgba(255, 255, 255, 0.1));
 }
 .markdown-preview-dark pre {
-  background-color: #0d1117;
-  border: 1px solid #30363d;
+  background-color: var(--bg-secondary, #0d1117);
+  border: 1px solid var(--border-color, #30363d);
 }
 .markdown-preview-dark blockquote {
-  border-left-color: #52525b;
-  color: #a1a1aa;
+  border-left-color: var(--border-color, #52525b);
+  color: var(--text-secondary, #a1a1aa);
 }
 .markdown-preview-dark table th,
 .markdown-preview-dark table td {
-  border-color: #3f3f46;
+  border-color: var(--border-color, #3f3f46);
 }
 .markdown-preview-dark table tr:nth-child(2n) {
-  background-color: #1c1c22;
+  background-color: var(--bg-secondary, #1c1c22);
 }
 
 /* ── Sepia / Eye-care theme ── */
 .markdown-preview-sepia {
-  color: #2b4a2b;
-  background-color: #f0f7ee;
+  color: var(--text-primary, #2b4a2b);
+  background-color: var(--bg-primary, #f0f7ee);
   padding: 8px 16px;
   border-radius: 6px;
 }
@@ -286,35 +294,35 @@
 .markdown-preview-sepia h4,
 .markdown-preview-sepia h5,
 .markdown-preview-sepia h6 {
-  color: #1a3a1a;
-  border-bottom-color: #c8dcc8;
+  color: var(--text-primary, #1a3a1a);
+  border-bottom-color: var(--border-color, #c8dcc8);
 }
 .markdown-preview-sepia code {
-  background-color: #e0ece0;
+  background-color: var(--bg-tertiary, #e0ece0);
 }
 .markdown-preview-sepia pre {
-  background-color: #dce8dc;
-  border: 1px solid #c8dcc8;
+  background-color: var(--bg-secondary, #dce8dc);
+  border: 1px solid var(--border-color, #c8dcc8);
 }
 .markdown-preview-sepia blockquote {
-  border-left-color: #7baa6e;
-  color: #3d603d;
+  border-left-color: var(--border-color, #7baa6e);
+  color: var(--text-secondary, #3d603d);
 }
 .markdown-preview-sepia a {
-  color: #2d7a3a;
+  color: var(--accent-color, #2d7a3a);
 }
 .markdown-preview-sepia table th,
 .markdown-preview-sepia table td {
-  border-color: #c8dcc8;
+  border-color: var(--border-color, #c8dcc8);
 }
 .markdown-preview-sepia table tr:nth-child(2n) {
-  background-color: #e5f0e3;
+  background-color: var(--bg-secondary, #e5f0e3);
 }
 
 /* ── High contrast theme ── */
 .markdown-preview-high-contrast {
-  color: #000;
-  background-color: #fff;
+  color: var(--text-primary, #000);
+  background-color: var(--bg-primary, #fff);
 }
 .markdown-preview-high-contrast h1,
 .markdown-preview-high-contrast h2,
@@ -322,19 +330,19 @@
 .markdown-preview-high-contrast h4,
 .markdown-preview-high-contrast h5,
 .markdown-preview-high-contrast h6 {
-  color: #000;
-  border-bottom-color: #000;
+  color: var(--text-primary, #000);
+  border-bottom-color: var(--border-color, #000);
   font-weight: 700;
 }
 .markdown-preview-high-contrast code {
-  background-color: #eee;
-  border: 1px solid #ccc;
-  color: #000;
+  background-color: var(--bg-tertiary, #eee);
+  border: 1px solid var(--border-color, #ccc);
+  color: var(--text-primary, #000);
   font-weight: 500;
 }
 .markdown-preview-high-contrast pre {
   background-color: #111;
-  border: 2px solid #000;
+  border: 2px solid var(--border-color, #000);
   color: #fff;
 }
 .markdown-preview-high-contrast pre code {
@@ -343,27 +351,27 @@
   color: #fff;
 }
 .markdown-preview-high-contrast blockquote {
-  border-left: 4px solid #000;
-  color: #222;
+  border-left: 4px solid var(--border-color, #000);
+  color: var(--text-secondary, #222);
   font-weight: 500;
 }
 .markdown-preview-high-contrast a {
-  color: #00f;
+  color: var(--accent-color, #00f);
   text-decoration: underline;
 }
 .markdown-preview-high-contrast a:hover {
-  color: #b00;
+  color: var(--accent-hover, #b00);
 }
 .markdown-preview-high-contrast table th,
 .markdown-preview-high-contrast table td {
-  border-color: #333;
+  border-color: var(--border-color, #333);
 }
 .markdown-preview-high-contrast table th {
-  background-color: #ddd;
+  background-color: var(--bg-tertiary, #ddd);
   font-weight: 700;
 }
 .markdown-preview-high-contrast table tr:nth-child(2n) {
-  background-color: #f9f9f9;
+  background-color: var(--bg-secondary, #f9f9f9);
 }
 
 /* ── Syntax Highlighting — Light ── */
