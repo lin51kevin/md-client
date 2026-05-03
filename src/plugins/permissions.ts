@@ -27,7 +27,7 @@ const HIGH: readonly PluginPermission[] = [
 ];
 
 const CRITICAL: readonly PluginPermission[] = [
-  'tauri.raw', 'file.write',
+  'shell.execute', 'git.command', 'tauri.raw', 'file.write',
 ];
 
 const LEVEL_MAP: Readonly<Record<PluginPermission, PermissionLevel>> = Object.fromEntries([
@@ -54,7 +54,7 @@ export const PERMISSION_DESCRIPTIONS: Readonly<Record<PluginPermission, { zh: st
   'editor.read':     { zh: '读取编辑器内容',     en: 'Read editor content' },
   'editor.write':    { zh: '修改编辑器内容',     en: 'Write editor content' },
   'editor.decorate': { zh: '添加编辑器装饰',     en: 'Add editor decorations' },
-  'editor.extend':  { zh: '注册编辑器扩展',       en: 'Register editor extension' },
+  'editor.extend':   { zh: '注册编辑器扩展',     en: 'Register editor extension' },
   'workspace':       { zh: '访问工作区',         en: 'Access workspace' },
   'preview.extend':  { zh: '扩展预览渲染',       en: 'Extend preview rendering' },
   'settings.section':{ zh: '注册设置页面',       en: 'Register settings section' },
@@ -63,12 +63,16 @@ export const PERMISSION_DESCRIPTIONS: Readonly<Record<PluginPermission, { zh: st
   'ui.message':      { zh: '显示 UI 消息',       en: 'Show UI messages' },
   'storage':         { zh: '访问插件存储',       en: 'Access plugin storage' },
   'commands':        { zh: '注册命令',           en: 'Register commands' },
-  'tauri.raw':       { zh: '调用 Tauri 原始 API', en: 'Call Tauri raw API' },
+  'shell.execute':   { zh: '执行Shell命令（受限白名单）', en: 'Execute shell commands (whitelist only)' },
+  'git.command':     { zh: '执行Git命令',        en: 'Execute Git commands' },
+  'tauri.raw':       { zh: '调用 Tauri 原始 API（不推荐）', en: 'Call Tauri raw API (deprecated)' },
 };
 
 // ── Dangerous permissions ──────────────────────────────────────────────────
 
-export const DANGEROUS_PERMISSIONS: readonly PluginPermission[] = ['tauri.raw', 'file.write'];
+export const DANGEROUS_PERMISSIONS: readonly PluginPermission[] = [
+  'shell.execute', 'git.command', 'tauri.raw', 'file.write'
+];
 
 /** Check whether a permission is considered dangerous. */
 export function isDangerous(permission: PluginPermission): boolean {

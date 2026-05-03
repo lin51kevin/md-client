@@ -37,6 +37,8 @@ export type PluginPermission =
   | 'ui.message'
   | 'storage'
   | 'commands'
+  | 'shell.execute'
+  | 'git.command'
   | 'tauri.raw';
 
 export type PluginStatus = 'installed' | 'active' | 'disabled' | 'error';

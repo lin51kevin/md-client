@@ -46,6 +46,7 @@ export type PluginPermission =
   | 'editor.read'
   | 'editor.write'
   | 'editor.decorate'
+  | 'editor.extend'
   | 'workspace'
   | 'preview.extend'
   | 'settings.section'
@@ -54,6 +55,8 @@ export type PluginPermission =
   | 'ui.message'
   | 'storage'
   | 'commands'
+  | 'shell.execute'
+  | 'git.command'
   | 'tauri.raw';
 
 // ── API interfaces ─────────────────────────────────────────────────────────
