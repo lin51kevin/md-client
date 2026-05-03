@@ -13,7 +13,7 @@ import type { PluginPermission } from './types';
 export type PermissionLevel = 'low' | 'medium' | 'high' | 'critical';
 
 const LOW: readonly PluginPermission[] = [
-  'editor.read', 'editor.decorate', 'statusbar.item', 'ui.message',
+  'editor.read', 'editor.decorate', 'statusbar.item', 'ui.message', 'ui.modal',
 ];
 
 const MEDIUM: readonly PluginPermission[] = [
@@ -61,6 +61,7 @@ export const PERMISSION_DESCRIPTIONS: Readonly<Record<PluginPermission, { zh: st
   'theme':           { zh: '注册自定义主题',     en: 'Register custom theme' },
   'export':          { zh: '注册导出器',         en: 'Register exporter' },
   'ui.message':      { zh: '显示 UI 消息',       en: 'Show UI messages' },
+  'ui.modal':        { zh: '显示模态对话框',     en: 'Show modal dialogs' },
   'storage':         { zh: '访问插件存储',       en: 'Access plugin storage' },
   'commands':        { zh: '注册命令',           en: 'Register commands' },
   'shell.execute':   { zh: '执行Shell命令（受限白名单）', en: 'Execute shell commands (whitelist only)' },

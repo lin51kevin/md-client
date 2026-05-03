@@ -5,7 +5,7 @@
  * via the vim-bridge so the core editor can pick it up.
  */
 import { Prec } from '@codemirror/state';
-import type { PluginContext } from '../../../../plugins/plugin-sandbox';
+import type { PluginContext } from '../../../plugin-sandbox';
 import { registerVimExtension, unregisterVimExtension } from '../../../../lib/cm/vim-bridge';
 
 export async function activate(_context: PluginContext) {

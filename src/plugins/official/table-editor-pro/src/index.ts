@@ -8,7 +8,7 @@
  *  4. Draggable column widths in preview
  *  5. Floating toolbar for common table operations
  */
-import type { PluginContext } from '../../../../plugins/plugin-sandbox';
+import type { PluginContext } from '../../../plugin-sandbox';
 import type { Disposable } from '../../../../plugins/types';
 import { serializeTable } from '../../../../lib/markdown/table-parser';
 import { TableEditorProPanel } from './TableEditorProPanel';

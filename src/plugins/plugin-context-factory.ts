@@ -141,6 +141,9 @@ export function createPluginContext(deps: PluginContextDeps, pluginId?: string):
     },
     export: {
       registerExporter(format: string, fn: (content: string, filePath: string) => Promise<void>) {
+        if (registeredExporters.has(format)) {
+          console.warn(`[plugin] Exporter for format "${format}" already registered — overwriting`);
+        }
         registeredExporters.set(format, fn);
         return {
           dispose() {

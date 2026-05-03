@@ -206,7 +206,7 @@ export function getFileIcon(filename: string): FileIconEntry {
 
 // ─── Plugin lifecycle ───
 
-export async function activate() {
+export async function activate(_context: import('../../../plugin-sandbox').PluginContext) {
   // This plugin is a pure utility module consumed by FileTreeNode.
   // No side effects needed; the icon resolver is imported directly.
   return { deactivate: () => {} };

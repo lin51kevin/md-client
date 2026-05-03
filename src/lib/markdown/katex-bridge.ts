@@ -16,7 +16,6 @@ export type KatexPlugin = {
 };
 
 let katexPlugin: KatexPlugin | null = null;
-let cssLoaded = false;
 
 export function registerKatexPlugin(plugin: KatexPlugin): void {
   katexPlugin = plugin;
@@ -60,8 +59,6 @@ export function getKatexCSSString(): string | null {
  * Called by the marklite-katex plugin during activation.
  */
 export function ensureKatexCSS(): void {
-  if (cssLoaded) return;
   // CSS injection is now handled by the plugin itself — this is a no-op
-  // marker to track whether the plugin has loaded its CSS.
-  cssLoaded = true;
+  // retained for backward compatibility.
 }

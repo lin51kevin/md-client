@@ -81,7 +81,7 @@ export async function activate(context: PluginContext) {
     const template = userTemplate ?? DEFAULT_TEMPLATE;
     const content = applyTemplate(template, dateStr);
 
-    context.workspace.createNewDoc(content);
+    context.workspace.createNewDoc(content, filePath);
   };
 
   // Register the command (Ctrl+D is bound via keybinding config)

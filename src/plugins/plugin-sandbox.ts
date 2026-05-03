@@ -52,7 +52,7 @@ const PERMISSION_MAP: Record<string, Record<string, PluginPermission>> = {
   },
   ui: {
     showMessage: 'ui.message',
-    showModal: 'ui.message',
+    showModal: 'ui.modal',
   },
 };
 
@@ -104,7 +104,7 @@ export interface WorkspaceAPI {
   getAllFiles(): string[];
   openFile(path: string): void;
   onFileChanged(callback: (file: { path: string; name: string }) => void): Disposable;
-  createNewDoc(content?: string): void;
+  createNewDoc(content?: string, suggestedPath?: string): void;
 }
 
 export interface StorageAPI {

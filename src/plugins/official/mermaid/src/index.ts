@@ -6,7 +6,7 @@
  * is not active, diagrams degrade to plain code blocks.
  */
 
-import type { PluginContext } from '../../../../plugins/plugin-sandbox';
+import type { PluginContext } from '../../../plugin-sandbox';
 import {
   registerMermaidRenderer,
   unregisterMermaidRenderer,

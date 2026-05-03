@@ -54,14 +54,19 @@ export class TemplatesPanelContent {
 
   /** Called by the command palette — show a quick picker via modal. */
   handleNewFromTemplate() {
-    // Use editor context to get filename
-    const active = this.context.workspace.getActiveFile();
-    const filename = active.name || 'untitled';
-    // vars available for future picker enhancement
-    void getTemplateVars(filename);
-
-    // Show modal with template list
     const allTemplates = this.state.templates;
+    if (allTemplates.length === 0) {
+      this.context.ui.showMessage('没有可用的模板', 'warning');
+      return;
+    }
+
+    // If only one template, use it directly
+    if (allTemplates.length === 1) {
+      this.applyAndCreate(allTemplates[0]);
+      return;
+    }
+
+    // Show confirmation for the first (default) template
     const listHtml = allTemplates
       .map((t, i) => `${i + 1}. ${t.name}${t.builtIn ? ' (内置)' : ''}`)
       .join('\n');
@@ -69,12 +74,13 @@ export class TemplatesPanelContent {
     this.context.ui
       .showModal({
         title: '从模板新建 (New from Template)',
-        content: listHtml + '\n\n请输入编号创建文件：',
-        type: 'info',
+        content: listHtml + '\n\n是否使用第一个模板创建？\n（更多选项请使用侧边栏面板）',
+        type: 'confirm',
       })
-      .then(() => {
-        // Modal-based interaction is limited; for a full picker
-        // the panel UI provides a better experience.
+      .then((confirmed) => {
+        if (confirmed) {
+          this.applyAndCreate(allTemplates[0]);
+        }
       });
   }
 

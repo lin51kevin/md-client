@@ -33,6 +33,7 @@ const CALLOUT_RE = /^\[!(\w+)([+-])?\]\s*(.*)/;
 export const remarkCallouts: Plugin<[], Root> = () => {
   return (tree: Root) => {
     const indices: number[] = [];
+    const replacementMap: Record<number, ContainerDirective> = {};
 
     visit(tree, 'blockquote', (node: Blockquote, index) => {
       if (index == null) return;
@@ -103,19 +104,15 @@ export const remarkCallouts: Plugin<[], Root> = () => {
       } as ContainerDirective;
 
       indices.push(index);
-      // We'll replace after visit completes; use a map for now
-      (tree as any)._calloutReplacements = (tree as any)._calloutReplacements || {};
-      (tree as any)._calloutReplacements[index] = directive;
+      replacementMap[index] = directive;
     });
 
     // Replace blockquotes in reverse order
-    const replacements = (tree as any)._calloutReplacements as Record<number, ContainerDirective> | undefined;
-    if (replacements) {
-      const sortedIndices = Object.keys(replacements).map(Number).sort((a, b) => b - a);
+    if (Object.keys(replacementMap).length > 0) {
+      const sortedIndices = Object.keys(replacementMap).map(Number).sort((a, b) => b - a);
       for (const idx of sortedIndices) {
-        tree.children.splice(idx, 1, replacements[idx]);
+        tree.children.splice(idx, 1, replacementMap[idx]);
       }
-      delete (tree as any)._calloutReplacements;
     }
   };
 };

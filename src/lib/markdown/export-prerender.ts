@@ -7,6 +7,7 @@
 
 import { isMermaidAvailable, getMermaidRenderer } from './mermaid-bridge';
 import { isKatexAvailable, katexRenderToString, getKatexCSSString } from './katex-bridge';
+import { getHtml2Canvas } from '../export/html2canvas-bridge';
 
 export interface PreRenderedAsset {
   /** Base64-encoded PNG bytes (no data-URL prefix). */
@@ -118,7 +119,11 @@ async function elementToPngBase64(
 
   try {
     await document.fonts.ready;
-    const { default: html2canvas } = await import('html2canvas');
+    const html2canvas = getHtml2Canvas();
+    if (!html2canvas) {
+      console.warn('[export-prerender] html2canvas not available via bridge, skipping capture');
+      return null;
+    }
     const canvas = await html2canvas(container, {
       backgroundColor: '#ffffff',
       scale,

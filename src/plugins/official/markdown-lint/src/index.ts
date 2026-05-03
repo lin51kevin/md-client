@@ -8,7 +8,7 @@
  */
 
 import type { Diagnostic } from '@codemirror/lint';
-import type { PluginContext } from '../../../../plugins/plugin-sandbox';
+import type { PluginContext } from '../../../plugin-sandbox';
 
 export async function activate(context: PluginContext) {
   const { linter } = await import('@codemirror/lint');

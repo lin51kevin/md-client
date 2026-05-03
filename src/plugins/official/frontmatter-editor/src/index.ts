@@ -107,8 +107,14 @@ export async function activate(context: PluginContext) {
     },
   });
 
+  // Auto-refresh panel when the active file changes
+  const fileWatcher = context.workspace.onFileChanged(() => {
+    (panel as { refresh?: () => void }).refresh?.();
+  });
+
   return {
     deactivate: () => {
+      fileWatcher.dispose();
       panel.dispose();
     },
   };

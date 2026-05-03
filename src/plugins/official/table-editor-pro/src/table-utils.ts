@@ -1,7 +1,7 @@
 /**
  * Table Editor Pro — Utility functions
  */
-import type { PluginContext } from '../../../../plugins/plugin-sandbox';
+import type { PluginContext } from '../../../plugin-sandbox';
 import type { Disposable } from '../../../../plugins/types';
 import type { TableData } from '../../../../lib/markdown/table-parser';
 import { parseTable, serializeTable } from '../../../../lib/markdown/table-parser';

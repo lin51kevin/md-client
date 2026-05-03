@@ -5,7 +5,7 @@
  * for row/column operations and alignment toggling.
  */
 import React, { useState, useCallback, useMemo } from 'react';
-import type { PluginContext } from '../../../../plugins/plugin-sandbox';
+import type { PluginContext } from '../../../plugin-sandbox';
 import type { TableData, Alignment } from '../../../../lib/markdown/table-parser';
 import { parseTable, serializeTable } from '../../../../lib/markdown/table-parser';
 

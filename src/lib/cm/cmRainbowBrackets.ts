@@ -36,14 +36,15 @@ const rainbowBracketsPlugin = ViewPlugin.fromClass(class {
     const builder = new RangeSetBuilder<Decoration>();
     for (const { from, to } of view.visibleRanges) {
       let depth = 0;
-      for (let pos = from; pos < to; pos++) {
-        const ch = view.state.doc.sliceString(pos, pos + 1);
+      const text = view.state.doc.sliceString(from, to);
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
         if (openBrackets.has(ch)) {
-          builder.add(pos, pos + 1, bracketDeco(depth));
+          builder.add(from + i, from + i + 1, bracketDeco(depth));
           depth++;
         } else if (closeBrackets.has(ch) && depth > 0) {
           depth--;
-          builder.add(pos, pos + 1, bracketDeco(depth));
+          builder.add(from + i, from + i + 1, bracketDeco(depth));
         }
       }
     }

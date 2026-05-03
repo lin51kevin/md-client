@@ -35,6 +35,7 @@ export type PluginPermission =
   | 'theme'
   | 'export'
   | 'ui.message'
+  | 'ui.modal'
   | 'storage'
   | 'commands'
   | 'shell.execute'

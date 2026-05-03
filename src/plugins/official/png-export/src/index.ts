@@ -8,10 +8,15 @@ import { save } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
 import type { PluginContext } from '../../../plugin-sandbox';
 import { registerPngExporter, unregisterPngExporter } from '../../../../lib/export/png-bridge';
+import { registerHtml2Canvas, unregisterHtml2Canvas } from '../../../../lib/export/html2canvas-bridge';
 
 export async function activate(_context: PluginContext) {
+  // Register html2canvas bridge for core export-prerender pipeline
+  const { default: html2canvas } = await import('html2canvas');
+  registerHtml2Canvas(html2canvas as (element: HTMLElement, options?: Record<string, unknown>) => Promise<HTMLCanvasElement>);
+
   const exportFn = async (previewEl: HTMLElement) => {
-    const canvas = await (await import('html2canvas')).default(previewEl, {
+    const canvas = await html2canvas(previewEl, {
       backgroundColor: getComputedStyle(previewEl).backgroundColor || '#ffffff',
       scale: 2,
       useCORS: true,
@@ -36,6 +41,9 @@ export async function activate(_context: PluginContext) {
   registerPngExporter(exportFn);
 
   return {
-    deactivate: () => unregisterPngExporter(),
+    deactivate: () => {
+      unregisterPngExporter();
+      unregisterHtml2Canvas();
+    },
   };
 }

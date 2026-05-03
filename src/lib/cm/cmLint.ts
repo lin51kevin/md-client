@@ -33,6 +33,7 @@ export function getLintSources(): LintSource[] {
 /** Clear all registered linters (for testing). */
 export function clearAllLinters(): void {
   linterRegistry.clear();
+  cachedLintExtensions = null;
 }
 
 /**
@@ -43,8 +44,15 @@ export function clearAllLinters(): void {
  * - A combined `linter()` extension that merges all registered sources
  *
  * Should only be used in code-file mode, not Markdown mode.
+ *
+ * Returns the same extension instances on repeated calls to avoid
+ * unnecessary CodeMirror teardown/reinit when the host useMemo recomputes.
  */
+let cachedLintExtensions: Extension[] | null = null;
+
 export function createLinterExtension(): Extension[] {
+  if (cachedLintExtensions) return cachedLintExtensions;
+
   const exts: Extension[] = [lintGutter()];
 
   exts.push(
@@ -64,5 +72,6 @@ export function createLinterExtension(): Extension[] {
     }),
   );
 
+  cachedLintExtensions = exts;
   return exts;
 }
