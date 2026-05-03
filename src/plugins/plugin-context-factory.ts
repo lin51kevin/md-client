@@ -66,6 +66,7 @@ export function createPluginContext(deps: PluginContextDeps, pluginId?: string):
       getOpenFilePaths: () => deps.getOpenFilePaths(),
       getAllWorkspaceFiles: deps.getAllWorkspaceFiles ? () => deps.getAllWorkspaceFiles!() : undefined,
       openNewUntitled: deps.openNewUntitled ? (c: string) => deps.openNewUntitled!(c) : undefined,
+      onActiveFileChanged: deps.onActiveFileChanged,
     }),
     editor: createEditorAPI({
       cmViewRef: deps.cmViewRef,

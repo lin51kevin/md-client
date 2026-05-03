@@ -21,12 +21,28 @@ export function createUIAPI(): PluginContext['ui'] {
     },
     /**
      * Show a modal dialog.
-     * @param _options - Modal configuration (title, content).
-     * @deprecated Not yet implemented.
+     * Dispatches a `plugin:showModal` custom event and returns a promise
+     * that resolves when the host dispatches `plugin:modalResult`.
+     * @param options - Modal configuration (title, content, type).
      */
-    showModal(_options: { title: string; content: string }) {
-      console.warn('[PluginAPI] showModal is not yet implemented');
-      return Promise.resolve();
+    showModal(options: {
+      title: string;
+      content: string;
+      type?: 'info' | 'confirm';
+    }): Promise<boolean | void> {
+      return new Promise((resolve) => {
+        const handler = (e: Event) => {
+          const result = (e as CustomEvent).detail?.result;
+          window.removeEventListener('plugin:modalResult', handler);
+          resolve(result);
+        };
+        window.addEventListener('plugin:modalResult', handler);
+        window.dispatchEvent(
+          new CustomEvent('plugin:showModal', {
+            detail: { ...options, resolve },
+          }),
+        );
+      });
     },
   };
 }

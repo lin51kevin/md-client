@@ -29,6 +29,7 @@ const PERMISSION_MAP: Record<string, Record<string, PluginPermission>> = {
     getAllFiles: 'workspace',
     openFile: 'workspace',
     createNewDoc: 'workspace',
+    onFileChanged: 'workspace',
   },
   commands: {
     register: 'commands',
@@ -45,12 +46,15 @@ const PERMISSION_MAP: Record<string, Record<string, PluginPermission>> = {
   export: {
     registerExporter: 'export',
   },
+  ui: {
+    showMessage: 'ui.message',
+    showModal: 'ui.message',
+  },
 };
 
 // Namespaces where ALL methods require the same permission
 const WILDCARD_NAMESPACES: Record<string, PluginPermission> = {
   storage: 'storage',
-  ui: 'ui.message',
 };
 
 function resolvePermission(namespace: string, method: string): PluginPermission | null {
@@ -105,7 +109,7 @@ export interface StorageAPI {
 
 export interface UIAPI {
   showMessage(message: string, type?: 'info' | 'warning' | 'error'): void;
-  showModal(options: { title: string; content: string }): Promise<void>;
+  showModal(options: { title: string; content: string; type?: 'info' | 'confirm' }): Promise<boolean | void>;
 }
 
 export interface PreviewAPI {

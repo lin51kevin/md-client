@@ -13,6 +13,7 @@ export function createWorkspaceAPI(deps: {
   getOpenFilePaths: () => string[];
   getAllWorkspaceFiles?: () => string[];
   openNewUntitled?: (content: string) => void;
+  onActiveFileChanged?: (callback: (file: { path: string; name: string }) => void) => () => void;
 }): PluginContext['workspace'] {
   return {
     /**
@@ -45,12 +46,12 @@ export function createWorkspaceAPI(deps: {
 
     /**
      * Subscribe to file change events.
-     * @param _callback - Function called with the changed file info.
+     * @param callback - Function called with the changed file info.
      * @returns A disposable that removes the listener.
-     * @deprecated Not yet implemented — returns a no-op disposable.
      */
-    onFileChanged(_callback: (file: { path: string; name: string }) => void) {
-      return { dispose() {} };
+    onFileChanged(callback: (file: { path: string; name: string }) => void) {
+      const unsub = deps.onActiveFileChanged?.(callback) ?? (() => {});
+      return { dispose: unsub };
     },
     createNewDoc(content?: string) {
       deps.openNewUntitled?.(content ?? '');
