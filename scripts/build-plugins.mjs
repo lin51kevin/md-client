@@ -253,9 +253,10 @@ async function main() {
 
       // Also copy to public/plugins/ for Vite dev server
       const publicDir = path.join(PUBLIC_PLUGINS, `marklite-${name}`);
-      fs.mkdirSync(publicDir, { recursive: true });
+      const publicDistDir = path.join(publicDir, 'dist');
+      fs.mkdirSync(publicDistDir, { recursive: true });
       // Copy dist/index.js
-      fs.copyFileSync(path.join(outDir, 'index.js'), path.join(publicDir, 'dist', 'index.js'));
+      fs.copyFileSync(path.join(outDir, 'index.js'), path.join(publicDistDir, 'index.js'));
       // Copy manifest.json
       if (fs.existsSync(manifestSrc)) {
         fs.copyFileSync(manifestSrc, path.join(publicDir, 'manifest.json'));
