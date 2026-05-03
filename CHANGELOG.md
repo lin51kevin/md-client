@@ -6,6 +6,39 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [v0.11.0] - 2026-05-03
+
+
+### Added
+
+- 新增 10 个官方插件：daily-notes、document-templates、file-icons、frontmatter-editor、markdown-lint、minimap、smart-autocomplete、table-editor-pro、tag-system、terminal
+- 插件共享 @codemirror/* 模块（state/view/lint/autocomplete），消除插件间依赖重复
+- PDF/DOCX 导出改为可选 Cargo feature（`export`），支持精简构建模式
+- 插件构建系统新增 minimap-bridge 共享模块
+
+
+### Changed
+
+- bump version to v0.11.0
+- Rust release profile 优化：opt-level "s" → "z"、新增 panic = "abort"、移除 devtools feature
+- xterm 相关依赖移至 devDependencies（仅 terminal 插件使用）
+- genpdf、docx-rs、image、emojis 改为 optional 依赖（通过 export feature 控制）
+
+
+### Performance
+
+- Rust 二进制体积从 ~16MB 减至 8.0MB（含导出）/ 5.7MB（不含导出）
+- vim 插件从 384KB 减至 184KB（共享 @codemirror/state）
+- 插件总体积优化约 400KB
+
+
+### Fixed
+
+- 新增 10 个插件 ID 到 OFFICIAL_PLUGIN_IDS，修复生产环境下新插件无法加载的问题
+- 修复插件构建重复打包 CodeMirror 模块的问题
+
+
+
 ## [v0.10.6] - 2026-05-01
 
 
