@@ -1,0 +1,11 @@
+{
+  "id": "marklite-minimap",
+  "name": "Minimap",
+  "version": "1.0.0",
+  "description": "CodeMirror minimap — 右侧代码缩略图导航",
+  "author": "MarkLite Team",
+  "main": "dist/index.js",
+  "activationEvents": ["onStartup"],
+  "permissions": ["editor.extend"],
+  "engines": { "marklite": ">=0.10.0" }
+}

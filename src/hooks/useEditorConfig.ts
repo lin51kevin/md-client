@@ -10,6 +10,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import type { Extension } from '@codemirror/state';
 import { getVimExtension } from '../lib/cm/vim-bridge';
+import { getMinimapExtension } from '../lib/cm/minimap-bridge';
 import { EditorView } from '@codemirror/view';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { commonLanguages } from '../lib/cm/cm-languages';
@@ -87,6 +88,10 @@ export function useEditorConfig({ theme, vimMode, cursorExtension, searchHighlig
         const vimExt = getVimExtension();
         if (vimMode && vimExt) exts.push(vimExt);
       }
+      {
+        const minimapExt = getMinimapExtension();
+        if (minimapExt) exts.push(minimapExt);
+      }
       return exts;
     }
 
@@ -107,6 +112,10 @@ export function useEditorConfig({ theme, vimMode, cursorExtension, searchHighlig
     {
       const vimExt = getVimExtension();
       if (vimMode && vimExt) exts.push(vimExt);
+    }
+    {
+      const minimapExt = getMinimapExtension();
+      if (minimapExt && !largeFile) exts.push(minimapExt);
     }
 
     return exts;

@@ -21,6 +21,7 @@ import * as katexBridge from './lib/markdown/katex-bridge';
 import * as mermaidBridge from './lib/markdown/mermaid-bridge';
 import * as vimBridge from './lib/cm/vim-bridge';
 import * as pngBridge from './lib/export/png-bridge';
+import * as minimapBridge from './lib/cm/minimap-bridge';
 
 declare global {
   interface Window {
@@ -39,4 +40,5 @@ window.__MARKLITE_SHARED__ = {
   '@marklite/mermaid-bridge': mermaidBridge,
   '@marklite/vim-bridge': vimBridge,
   '@marklite/png-bridge': pngBridge,
+  '@marklite/minimap-bridge': minimapBridge,
 };
