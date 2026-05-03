@@ -21,6 +21,7 @@ import { autoCloseBrackets } from '../lib/cm/cmAutocomplete';
 import { multicursorKeymap } from '../lib/cm/multicursor-keymap';
 import { codeBaseExtensions, loadLanguageExtension } from '../lib/cm/cm-code-extensions';
 import { createLinterExtension } from '../lib/cm/cmLint';
+import { useBridgeVersion } from '../lib/cm/bridge-signal';
 
 interface EditorConfigOptions {
   theme: ThemeName;
@@ -35,6 +36,8 @@ interface EditorConfigOptions {
 
 export function useEditorConfig({ theme, vimMode, cursorExtension, searchHighlightExtension, largeFile = false, languageId = 'markdown' }: EditorConfigOptions) {
 
+  // Re-compute extensions when plugin bridges register/unregister
+  const bridgeVersion = useBridgeVersion();
 
   // Code language extension — loaded asynchronously when languageId changes
   const isCodeMode = languageId !== 'markdown';
@@ -119,7 +122,7 @@ export function useEditorConfig({ theme, vimMode, cursorExtension, searchHighlig
     }
 
     return exts;
-  }, [cursorExtension, vimMode, searchHighlightExtension, largeFile, isCodeMode, codeLangExtension]);
+  }, [cursorExtension, vimMode, searchHighlightExtension, largeFile, isCodeMode, codeLangExtension, bridgeVersion]);
 
   const editorTheme = useMemo((): 'light' | 'dark' | Extension => {
     const cm = THEMES[theme].cmTheme;

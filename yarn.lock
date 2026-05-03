@@ -1575,6 +1575,13 @@
   resolved "https://registry.npmjs.org/@ocavue/utils/-/utils-1.6.0.tgz"
   integrity sha512-8W3q1hxx9qFdrYgPtbElllG/tqYkO/dMhlRUiqasO0SuDFTj78azSQjhIrBTFWxlBPPsSZN6zXYHmb3RwN2Jtg==
 
+"@replit/codemirror-minimap@0.5.2":
+  version "0.5.2"
+  resolved "https://registry.npmmirror.com/@replit/codemirror-minimap/-/codemirror-minimap-0.5.2.tgz#93c319a0ba84cd533d0ee42b4b00e4941d45a06c"
+  integrity sha512-eNAtpr0hOG09/5zqAQ5PkgZEb3V/MHi30zentCxiR73r+utR2m9yVMCpBmfsWbb8mWxUWhMGPiHxM5hFtnscQA==
+  dependencies:
+    crelt "^1.0.5"
+
 "@replit/codemirror-vim@^6.3.0":
   version "6.3.0"
   resolved "https://registry.npmjs.org/@replit/codemirror-vim/-/codemirror-vim-6.3.0.tgz"

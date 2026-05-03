@@ -121,11 +121,6 @@ async function buildShims() {
     `export const { registerPngExporter, unregisterPngExporter, getPngExporter, isPngExportAvailable } = __m;`,
   ].join('\n');
 
-  // Stub for @codemirror/minimap — package not yet published on npm.
-  // Provides a no-op minimap() that returns an empty Extension so the
-  // minimap plugin builds without error; the minimap simply won't render.
-  shims['@codemirror/minimap'] = `export function minimap() { return []; }`;
-
   return shims;
 }
 

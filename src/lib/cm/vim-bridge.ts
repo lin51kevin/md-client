@@ -6,15 +6,18 @@
  * and the core editor reads it via getVimExtension().
  */
 import type { Extension } from '@codemirror/state';
+import { notifyBridgeChange } from './bridge-signal';
 
 let vimExtension: Extension | null = null;
 
 export function registerVimExtension(ext: Extension): void {
   vimExtension = ext;
+  notifyBridgeChange();
 }
 
 export function unregisterVimExtension(): void {
   vimExtension = null;
+  notifyBridgeChange();
 }
 
 export function getVimExtension(): Extension | null {

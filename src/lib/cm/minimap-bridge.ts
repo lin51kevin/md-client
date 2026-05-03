@@ -6,15 +6,18 @@
  * include it in the extension list.
  */
 import type { Extension } from '@codemirror/state';
+import { notifyBridgeChange } from './bridge-signal';
 
 let _minimapExtension: Extension | null = null;
 
 export function registerMinimap(ext: Extension): void {
   _minimapExtension = ext;
+  notifyBridgeChange();
 }
 
 export function unregisterMinimap(): void {
   _minimapExtension = null;
+  notifyBridgeChange();
 }
 
 export function getMinimapExtension(): Extension | null {
