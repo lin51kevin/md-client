@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updatedAt": "2026-04-15T05:05:00.000Z",
+  "updatedAt": "2026-05-03T01:00:00.000Z",
   "plugins": [
     {
       "id": "marklite-backlinks",
@@ -28,6 +28,42 @@
       "version": "1.0.0",
       "tags": ["ai", "copilot", "editing", "translation"],
       "manifestUrl": "official/ai-copilot/manifest.json"
+    },
+    {
+      "id": "marklite-mermaid",
+      "name": "Mermaid Diagrams",
+      "description": "渲染 Mermaid 图表为 SVG — 流程图、时序图、甘特图、思维导图等",
+      "author": "MarkLite Team",
+      "version": "1.0.0",
+      "tags": ["mermaid", "diagram", "flowchart", "visualization"],
+      "manifestUrl": "official/mermaid/manifest.json"
+    },
+    {
+      "id": "marklite-vim",
+      "name": "Vim Mode",
+      "description": "Vim 键盘映射 — hjkl 导航、dd 删除行等 Vim 风格编辑",
+      "author": "MarkLite Team",
+      "version": "1.0.0",
+      "tags": ["vim", "keybinding", "editing"],
+      "manifestUrl": "official/vim/manifest.json"
+    },
+    {
+      "id": "marklite-katex",
+      "name": "KaTeX Math",
+      "description": "数学公式渲染 — 支持 LaTeX 行内公式 $...$ 和块级公式 $$...$$",
+      "author": "MarkLite Team",
+      "version": "1.0.0",
+      "tags": ["katex", "math", "latex", "formula"],
+      "manifestUrl": "official/katex/manifest.json"
+    },
+    {
+      "id": "marklite-png-export",
+      "name": "PNG Export",
+      "description": "将预览区导出为 PNG 图片，支持 Mermaid 图表和数学公式",
+      "author": "MarkLite Team",
+      "version": "1.0.0",
+      "tags": ["png", "export", "image"],
+      "manifestUrl": "official/png-export/manifest.json"
     },
     {
       "id": "marklite-git",
