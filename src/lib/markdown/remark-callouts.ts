@@ -11,9 +11,16 @@
  */
 
 import type { Plugin } from 'unified';
-import type { Root, Blockquote, Paragraph, Text, Nodes } from 'mdast';
-import type { ContainerDirective } from 'mdast-util-directive';
+import type { Root, Blockquote, Paragraph, Text } from 'mdast';
 import { visit } from 'unist-util-visit';
+
+interface ContainerDirective {
+  type: 'containerDirective';
+  name: string;
+  children: any[];
+  attributes: Record<string, string>;
+  data?: Record<string, any>;
+}
 
 const CALLOUT_TYPES = new Set([
   'note', 'info', 'tip', 'hint', 'warning', 'danger', 'caution',
