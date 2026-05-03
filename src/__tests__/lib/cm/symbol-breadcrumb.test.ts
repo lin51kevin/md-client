@@ -3,23 +3,23 @@ import { EditorState } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import { javascript } from '@codemirror/lang-javascript';
 import { markdown } from '@codemirror/lang-markdown';
+import { ensureSyntaxTree } from '@codemirror/language';
 import { getSymbolBreadcrumbs } from '../../../lib/cm/cmSymbolBreadcrumb';
 import type { BreadcrumbItem } from '../../../lib/cm/cmSymbolBreadcrumb';
 
-function createView(code: string, ext: any = javascript()) {
-  const state = EditorState.create({
-    doc: code,
-    extensions: [ext, EditorView.dom],
-  });
-  return new EditorView({ state });
-}
-
 function findBreadcrumbs(code: string, line: number, col: number, ext?: any): BreadcrumbItem[] {
-  const view = createView(code, ext);
-  const pos = view.state.doc.line(line).from + col;
-  const result = getSymbolBreadcrumbs(view, 'test.ts');
-  view.destroy();
-  return result;
+  // Build state with the cursor at the desired position
+  const baseState = EditorState.create({
+    doc: code,
+    extensions: [ext ?? javascript()],
+  });
+  const pos = baseState.doc.line(line).from + col;
+  const state = baseState.update({ selection: { anchor: pos } }).state;
+  // Force the Lezer parser to fully parse the document
+  ensureSyntaxTree(state, state.doc.length, 5000);
+  // Use a minimal mock view — getSymbolBreadcrumbs only reads view.state
+  const result = getSymbolBreadcrumbs({ state } as EditorView, 'test.ts');
+  return result!;
 }
 
 describe('getSymbolBreadcrumbs', () => {
@@ -47,9 +47,8 @@ describe('getSymbolBreadcrumbs', () => {
 
   it('should return null for markdown files', () => {
     const code = `# Title\n\nSome text\n`;
-    const view = createView(code, markdown());
-    const result = getSymbolBreadcrumbs(view, 'readme.md');
-    view.destroy();
+    const state = EditorState.create({ doc: code, extensions: [markdown()] });
+    const result = getSymbolBreadcrumbs({ state } as EditorView, 'readme.md');
     expect(result).toBeNull();
   });
 

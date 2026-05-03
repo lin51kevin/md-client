@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useCallback } from 'react';
 import { Terminal } from 'xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
-import '@xterm/xterm/css/xterm.css';
+import 'xterm/css/xterm.css';
 
 interface TerminalPanelProps {
   context: import('../../../plugin-sandbox').PluginContext;
@@ -12,7 +12,7 @@ interface TerminalPanelProps {
  * Terminal panel component using xterm.js.
  * Commands are executed via Tauri's shell plugin.
  */
-export const TerminalPanel: React.FC<TerminalPanelProps> = ({ context }) => {
+export const TerminalPanel: React.FC<TerminalPanelProps> = ({ context: _context }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);

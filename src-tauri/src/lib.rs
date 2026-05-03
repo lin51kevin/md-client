@@ -8,6 +8,7 @@ mod commands;
 mod context_menu;
 mod search;
 pub use commands::editor_tools;
+pub use commands::shell;
 
 use export_pdf::export_pdf;
 use export_docx::export_docx;

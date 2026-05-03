@@ -14,7 +14,7 @@ const DEFAULT_MAX_DEPTH = 3;
  * Supports ATX-style headings (`## Title`) and setext-style (`Title\n====`).
  * Returns the heading line + all content until the next heading of equal or higher level.
  */
-function extractHeadingSection(content: string, heading: string): string {
+export function extractHeadingSection(content: string, heading: string): string {
   const normalizedHeading = heading.trim().toLowerCase();
   const lines = content.split('\n');
 

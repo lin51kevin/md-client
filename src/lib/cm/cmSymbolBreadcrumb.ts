@@ -34,7 +34,7 @@ function isMarkdownFile(fileName: string): boolean {
 
 const NAME_NODE_TYPES = new Set([
   'Identifier', 'variable_name', 'property_identifier',
-  'type_identifier', 'identifier',
+  'type_identifier', 'identifier', 'VariableDefinition', 'PropertyDefinition',
 ]);
 
 export function getSymbolBreadcrumbs(view: EditorView, fileName: string): BreadcrumbItem[] | null {

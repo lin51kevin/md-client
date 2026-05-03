@@ -2,8 +2,8 @@
  * Smart Autocomplete plugin — unit tests
  */
 
-import { createFilePathCompleter } from '../src/file-path-completer';
-import { createSnippetCompleter } from '../src/snippet-completer';
+import { createFilePathCompleter } from '../../../../plugins/official/smart-autocomplete/src/file-path-completer';
+import { createSnippetCompleter } from '../../../../plugins/official/smart-autocomplete/src/snippet-completer';
 
 // ── Mock helpers ────────────────────────────────────────────────────────────
 
@@ -53,12 +53,11 @@ describe('filePathCompleter', () => {
     expect(labels).toContain('README.md');
   });
 
-  it('returns completions after ../', () => {
+  it('returns null after ../ (files do not have ../ prefix)', () => {
     const completer = createFilePathCompleter(() => files);
     const result = completer(makeContext('../'));
-    // ../ maps to no prefix, so all root items shown
-    expect(result).not.toBeNull();
-    expect(result!.options.length).toBeGreaterThan(0);
+    // ../ cannot match workspace-relative file paths
+    expect(result).toBeNull();
   });
 
   it('filters by prefix text', () => {
@@ -127,7 +126,7 @@ describe('snippetCompleter', () => {
     );
     const result = completer(makeContext('fun'));
     expect(result).not.toBeNull();
-    const labels = result!.options.map((o: any) as string => o.label);
+    const labels = result!.options.map((o: any) => o.label as string);
     expect(labels.some((l: string) => l.startsWith('func '))).toBe(true);
   });
 

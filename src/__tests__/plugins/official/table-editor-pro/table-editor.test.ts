@@ -210,7 +210,7 @@ describe('Table Editor Pro', () => {
       const updated = insertRow(setAlignment(data, 0, 'center'), 0);
       const md = serializeTable(updated);
       const lines = md.split('\n');
-      expect(lines).toHaveLength(5); // header + sep + 4 rows
+      expect(lines).toHaveLength(6); // header + sep + 4 rows
       // Every line should start and end with |
       lines.forEach(line => {
         expect(line).toMatch(/^\|/);

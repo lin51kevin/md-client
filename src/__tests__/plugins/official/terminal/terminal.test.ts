@@ -32,7 +32,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 describe('Terminal Plugin', () => {
   describe('manifest', () => {
     it('should have correct plugin metadata', async () => {
-      const manifest = await import('../manifest.json');
+      const manifest = await import('../../../../plugins/official/terminal/manifest.json');
       expect(manifest.default.id).toBe('marklite-terminal');
       expect(manifest.default.name).toBe('Terminal');
       expect(manifest.default.version).toBe('1.0.0');
@@ -53,9 +53,9 @@ describe('Terminal Plugin', () => {
         commands: {
           register: vi.fn().mockReturnValue(mockCmd),
         },
-      } as unknown as import('../../../plugin-sandbox').PluginContext;
+      } as unknown as import('../../../../plugins/plugin-sandbox').PluginContext;
 
-      const { activate } = await import('./index');
+      const { activate } = await import('../../../../plugins/official/terminal/src/index');
       const result = activate(mockContext);
 
       expect(mockContext.sidebar.registerPanel).toHaveBeenCalledWith('terminal', {
@@ -79,7 +79,7 @@ describe('Terminal Plugin', () => {
 
   describe('deactivate', () => {
     it('should be a no-op function', async () => {
-      const { deactivate } = await import('./index');
+      const { deactivate } = await import('../../../../plugins/official/terminal/src/index');
       expect(() => deactivate()).not.toThrow();
     });
   });

@@ -2,7 +2,7 @@
  * Tests for Daily Notes plugin
  */
 import { describe, it, expect, vi } from 'vitest';
-import { getTodayDate, getDailyNotePath, applyTemplate } from '../../plugins/official/daily-notes/src/index';
+import { getTodayDate, getDailyNotePath, applyTemplate } from '../../../../plugins/official/daily-notes/src/index';
 
 describe('daily-notes', () => {
   it('should return date in YYYY-MM-DD format', () => {

@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   registerLinter,
   createLinterExtension,
-  getRegisteredLinters,
-  clearLinters,
+  getLintSources,
+  clearAllLinters,
 } from '../../../lib/cm/cmLint';
 import type { Diagnostic, LintSource } from '@codemirror/lint';
 
@@ -21,7 +21,7 @@ const noopView = {} as any; // minimal mock for LintSource
 
 describe('cmLint — lint framework', () => {
   afterEach(() => {
-    clearLinters();
+    clearAllLinters();
   });
 
   describe('linterSource 创建与 diagnostics', () => {
@@ -30,25 +30,25 @@ describe('cmLint — lint framework', () => {
         { from: 0, to: 5, severity: 'error', message: 'test error' },
       ];
       const source: LintSource = (view) => diagnostics;
-      const unregister = registerLinter(source);
-      expect(getRegisteredLinters().size).toBe(1);
+      const unregister = registerLinter('test', source);
+      expect(getLintSources().length).toBe(1);
       unregister();
-      expect(getRegisteredLinters().size).toBe(0);
+      expect(getLintSources().length).toBe(0);
     });
 
     it('注册多个 linter 时应全部保留', () => {
       const s1: LintSource = () => [];
       const s2: LintSource = () => [];
-      registerLinter(s1);
-      registerLinter(s2);
-      expect(getRegisteredLinters().size).toBe(2);
+      registerLinter('s1', s1);
+      registerLinter('s2', s2);
+      expect(getLintSources().length).toBe(2);
     });
 
-    it('重复注册同一 linter 不应产生重复', () => {
+    it('重复注册同一名称 linter 时应替换', () => {
       const s: LintSource = () => [];
-      registerLinter(s);
-      registerLinter(s);
-      expect(getRegisteredLinters().size).toBe(1);
+      registerLinter('s', s);
+      registerLinter('s', s);
+      expect(getLintSources().length).toBe(1);
     });
   });
 
@@ -69,20 +69,20 @@ describe('cmLint — lint framework', () => {
   describe('注册/注销外部 linters', () => {
     it('注销后不应再被包含', () => {
       const s: LintSource = () => [{ from: 0, to: 1, severity: 'warning', message: 'w' }];
-      const unregister = registerLinter(s);
-      expect(getRegisteredLinters().size).toBe(1);
+      const unregister = registerLinter('test', s);
+      expect(getLintSources().length).toBe(1);
       unregister();
-      expect(getRegisteredLinters().size).toBe(0);
+      expect(getLintSources().length).toBe(0);
     });
 
     it('注销某个 linter 不影响其他', () => {
       const s1: LintSource = () => [];
       const s2: LintSource = () => [];
-      const u1 = registerLinter(s1);
-      registerLinter(s2);
+      const u1 = registerLinter('s1', s1);
+      registerLinter('s2', s2);
       u1();
-      expect(getRegisteredLinters().size).toBe(1);
-      expect(getRegisteredLinters().has(s2)).toBe(true);
+      expect(getLintSources().length).toBe(1);
+      expect(getLintSources().includes(s2)).toBe(true);
     });
   });
 

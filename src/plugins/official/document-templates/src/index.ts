@@ -12,7 +12,7 @@ export interface Template {
 
 // ── Default templates ──────────────────────────────────────────────────────
 
-const DEFAULT_TEMPLATES: Template[] = [
+export const DEFAULT_TEMPLATES: Template[] = [
   {
     id: 'meeting-notes',
     name: '📋 会议纪要',

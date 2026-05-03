@@ -29,7 +29,7 @@ export function createFilePathCompleter(
     // Normalize the directory prefix to figure out what directory we're in
     // Simple approach: collect unique directory names from workspace files
     const allFiles = getAllFiles();
-    const normalizedPrefix = dirPrefix === './' ? '' : dirPrefix;
+    const normalizedPrefix = dirPrefix.startsWith('./') ? dirPrefix.slice(2) : dirPrefix;
     const seen = new Set<string>();
     const options: Array<{ label: string; type: string; detail: string }> = [];
 

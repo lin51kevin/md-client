@@ -59,7 +59,7 @@ describe('callouts', () => {
   });
 
   it('should not affect regular blockquotes', () => {
-    const html = render('> This is a normal blockquote\n> with no callout syntax');
+    const html = render('> This is a normal blockquote\n> with no special syntax');
     expect(html).not.toContain('callout');
   });
 

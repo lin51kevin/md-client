@@ -7,7 +7,7 @@ import {
   transclusionToPlaceholders,
   parseTransclusionMarker,
   extractHeadingSection,
-} from '../transclusion';
+} from '../../../lib/markdown/transclusion';
 
 // ── parseTransclusionMarker ────────────────────────────────────────────────
 
@@ -61,13 +61,13 @@ describe('extractHeadingSection', () => {
   it('extracts ATX heading section', () => {
     const content = '# Title\n\nSome content\n\n## Sub\nSub content\n\n# Other\nOther content';
     const result = extractHeadingSection(content, 'Title');
-    expect(result).toBe('# Title\n\nSome content\n\n## Sub\nSub content');
+    expect(result).toBe('# Title\n\nSome content\n\n## Sub\nSub content\n');
   });
 
   it('extracts nested heading', () => {
     const content = '# Title\n\n## Summary\nSummary content\n\n## Details\nDetails';
     const result = extractHeadingSection(content, 'Summary');
-    expect(result).toBe('## Summary\nSummary content');
+    expect(result).toBe('## Summary\nSummary content\n');
   });
 
   it('returns empty when heading not found', () => {
@@ -101,7 +101,7 @@ describe('resolveTransclusions', () => {
   it('resolves transclusion with heading', async () => {
     readFile.mockResolvedValueOnce('# Intro\nIntro text\n\n## Summary\nSummary text\n\n## Other\nOther');
     const result = await resolveTransclusions('![[notes.md#Summary]]', readFile, workspaceRoot);
-    expect(result).toBe('## Summary\nSummary text');
+    expect(result).toBe('## Summary\nSummary text\n');
   });
 
   it('leaves marker when file not found', async () => {

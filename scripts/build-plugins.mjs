@@ -117,6 +117,11 @@ async function buildShims() {
     `export const { registerPngExporter, unregisterPngExporter, getPngExporter, isPngExportAvailable } = __m;`,
   ].join('\n');
 
+  // Stub for @codemirror/minimap — package not yet published on npm.
+  // Provides a no-op minimap() that returns an empty Extension so the
+  // minimap plugin builds without error; the minimap simply won't render.
+  shims['@codemirror/minimap'] = `export function minimap() { return []; }`;
+
   return shims;
 }
 
@@ -252,6 +257,12 @@ function sharedGlobalsPlugin(shims) {
         }
         return undefined;
       });
+
+      // Stub modules — packages not yet published on npm
+      b.onResolve({ filter: /^@codemirror\/minimap$/ }, args => ({
+        path: args.path,
+        namespace: 'shared-globals',
+      }));
 
       b.onLoad({ filter: /.*/, namespace: 'shared-globals' }, args => ({
         contents: shims[args.path] || `export default window.__MARKLITE_SHARED__["${args.path}"];`,
