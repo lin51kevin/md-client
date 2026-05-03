@@ -5,6 +5,8 @@ function createMockDeps() {
   return {
     registerPreviewRenderer: vi.fn(),
     unregisterPreviewRenderer: vi.fn(),
+    registerPreviewRemarkPlugin: vi.fn(() => ({ dispose: vi.fn() })),
+    unregisterPreviewRemarkPlugin: vi.fn(),
   };
 }
 
@@ -77,5 +79,63 @@ describe('plugin-preview', () => {
     // Both calls forwarded to deps
     expect(deps.registerPreviewRenderer).toHaveBeenCalledTimes(2);
     expect(deps.registerPreviewRenderer).toHaveBeenLastCalledWith('blockquote', render2);
+  });
+
+  describe('registerRemarkPlugin', () => {
+    it('should register a remark plugin and return Disposable', () => {
+      const deps = createMockDeps();
+      const api = createPreviewAPI(deps);
+      const plugin = () => {};
+
+      const disposable = api.registerRemarkPlugin(plugin);
+
+      expect(deps.registerPreviewRemarkPlugin).toHaveBeenCalledWith(plugin);
+      expect(disposable).toHaveProperty('dispose');
+      expect(typeof disposable.dispose).toBe('function');
+    });
+
+    it('should remove plugin on dispose', () => {
+      const deps = createMockDeps();
+      const api = createPreviewAPI(deps);
+      const plugin = () => {};
+
+      const disposable = api.registerRemarkPlugin(plugin);
+      disposable.dispose();
+
+      expect(deps.unregisterPreviewRemarkPlugin).toHaveBeenCalledWith(plugin);
+    });
+
+    it('should be idempotent on dispose', () => {
+      const deps = createMockDeps();
+      const api = createPreviewAPI(deps);
+      const plugin = () => {};
+
+      const disposable = api.registerRemarkPlugin(plugin);
+      disposable.dispose();
+      disposable.dispose();
+
+      expect(deps.unregisterPreviewRemarkPlugin).toHaveBeenCalledTimes(1);
+    });
+
+    it('should throw when remark plugin registration is not supported', () => {
+      const deps = createMockDeps();
+      deps.registerPreviewRemarkPlugin = undefined;
+      const api = createPreviewAPI(deps);
+
+      expect(() => api.registerRemarkPlugin(() => {})).toThrow(
+        'Remark plugin registration is not supported in this environment',
+      );
+    });
+
+    it('should work alongside existing registerRenderer', () => {
+      const deps = createMockDeps();
+      const api = createPreviewAPI(deps);
+
+      api.registerRenderer('p', vi.fn());
+      api.registerRemarkPlugin(() => {});
+
+      expect(deps.registerPreviewRenderer).toHaveBeenCalledTimes(1);
+      expect(deps.registerPreviewRemarkPlugin).toHaveBeenCalledTimes(1);
+    });
   });
 });

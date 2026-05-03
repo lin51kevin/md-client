@@ -11,6 +11,9 @@ const PERMISSION_MAP: Record<string, Record<string, PluginPermission>> = {
     getCursorPosition: 'editor.read',
     insertText: 'editor.write',
     replaceRange: 'editor.write',
+    registerExtension: 'editor.extend',
+    getActiveFilePath: 'editor.read',
+    onLanguageChanged: 'editor.read',
   },
   sidebar: {
     registerPanel: 'sidebar.panel',
@@ -36,6 +39,7 @@ const PERMISSION_MAP: Record<string, Record<string, PluginPermission>> = {
   },
   preview: {
     registerRenderer: 'preview.extend',
+    registerRemarkPlugin: 'preview.extend',
   },
   settings: {
     registerSection: 'settings.section',
@@ -91,6 +95,8 @@ export interface EditorAPI {
   insertText(text: string, from?: number, to?: number): void;
   replaceRange(from: number, to: number, text: string): void;
   getActiveFilePath(): string | null;
+  registerExtension(extension: unknown): Disposable;
+  onLanguageChanged(callback: (info: { languageId: string; filePath: string | null }) => void): Disposable;
 }
 
 export interface WorkspaceAPI {
@@ -114,6 +120,7 @@ export interface UIAPI {
 
 export interface PreviewAPI {
   registerRenderer(nodeType: string, renderFn: (props: Record<string, unknown> & { defaultRender: React.ComponentType<Record<string, unknown>> }) => React.ReactNode): Disposable;
+  registerRemarkPlugin(plugin: unknown): Disposable;
 }
 
 export interface PluginContext {

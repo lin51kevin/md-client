@@ -1,4 +1,5 @@
 import type { EditorView } from '@codemirror/view';
+import type { Disposable } from './types';
 import type { PluginContext } from './plugin-sandbox';
 import { createCommandsAPI } from './plugin-commands';
 import { createWorkspaceAPI } from './plugin-workspace';
