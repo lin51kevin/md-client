@@ -69,6 +69,10 @@ const SHARED_MODULES = {
   'react-markdown': 'react-markdown',
   'remark-gfm': 'remark-gfm',
   'rehype-highlight': 'rehype-highlight',
+  '@codemirror/state': '@codemirror/state',
+  '@codemirror/view': '@codemirror/view',
+  '@codemirror/lint': '@codemirror/lint',
+  '@codemirror/autocomplete': '@codemirror/autocomplete',
 };
 
 // App-internal modules exposed as shared
