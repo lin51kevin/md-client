@@ -31,6 +31,7 @@ interface MenuItem {
   removeAction?: () => void;
   submenu?: MenuItem[];
   danger?: boolean;
+  disabled?: boolean;
 }
 
 export function FileMenuDropdown({
