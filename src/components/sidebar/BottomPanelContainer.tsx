@@ -131,21 +131,25 @@ export function BottomPanelContainer({ visible, title, onClose, children }: Bott
         >
           {title}
         </span>
-        <button
-          onClick={onClose}
-          className="flex items-center justify-center"
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            color: 'var(--text-tertiary)',
-            width: 24,
-            height: 24,
-            fontSize: 14,
-          }}
-        >
-          ✕
-        </button>
+        <div className="flex items-center gap-1">
+          {/* Portal target for plugin-contributed header actions */}
+          <div data-bottom-panel-actions="true" className="flex items-center" />
+          <button
+            onClick={onClose}
+            className="flex items-center justify-center"
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--text-tertiary)',
+              width: 24,
+              height: 24,
+              fontSize: 14,
+            }}
+          >
+            ✕
+          </button>
+        </div>
       </div>
 
       {/* Content */}

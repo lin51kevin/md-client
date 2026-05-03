@@ -11,6 +11,9 @@ interface TerminalInstanceProps {
   onUpdateRefs: (id: string, updates: Partial<Pick<TerminalInstanceType, 'termRef' | 'fitAddonRef' | 'inputBuffer' | 'cwd'>>) => void;
 }
 
+/** Track which terminal IDs have been initialized to prevent double-init. */
+const initializedTerminals = new Set<string>();
+
 /** Read a CSS variable value from the document root. */
 function getCSSVar(name: string, fallback: string): string {
   const val = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -77,7 +80,12 @@ export const TerminalInstance: React.FC<TerminalInstanceProps> = ({ instance, is
 
   // Initialize terminal
   useEffect(() => {
-    if (!containerRef.current || instance.termRef) return;
+    if (!containerRef.current) return;
+    // Prevent double initialization (the old code would dispose the terminal
+    // because instance.termRef was in the dep array, causing a re-run after
+    // onUpdateRefs set termRef, which triggered cleanup → dispose).
+    if (initializedTerminals.has(instance.id)) return;
+    initializedTerminals.add(instance.id);
 
     const term = new Terminal({
       cursorBlink: true,
@@ -125,26 +133,26 @@ export const TerminalInstance: React.FC<TerminalInstanceProps> = ({ instance, is
 
     const writePrompt = () => {
       const cwd = cwdRef.current;
-      let displayPath = '~';
-      
-      if (cwd) {
-        // Convert Windows path to Unix-style for display
-        let normalizedPath = cwd.replace(/\\/g, '/');
-        
-        // Convert Windows drive letters (C:/ -> /c/)
-        normalizedPath = normalizedPath.replace(/^([A-Z]):/i, (_, drive) => `/${drive.toLowerCase()}`);
-        
-        // Show abbreviated path if too long (show last 3 segments)
-        const segments = normalizedPath.split('/').filter(Boolean);
-        if (segments.length > 3) {
-          displayPath = '.../' + segments.slice(-3).join('/');
-        } else {
+      const shell = instance.shellType;
+
+      if (shell === 'cmd') {
+        // CMD style: F:\path>
+        const winPath = cwd ? cwd.replace(/\//g, '\\') : 'C:\\';
+        writeOutput(`\r\n${winPath}>`);
+      } else if (shell === 'powershell' || shell === 'pwsh') {
+        // PowerShell style: PS F:\path>
+        const winPath = cwd ? cwd.replace(/\//g, '\\') : 'C:\\';
+        writeOutput(`\x1b[34mPS\x1b[0m ${winPath}> `);
+      } else {
+        // Bash / WSL style: /f/path $
+        let displayPath = '~';
+        if (cwd) {
+          let normalizedPath = cwd.replace(/\\/g, '/');
+          normalizedPath = normalizedPath.replace(/^([A-Z]):/i, (_, drive: string) => `/${drive.toLowerCase()}`);
           displayPath = normalizedPath || '/';
         }
+        writeOutput(`\x1b[36m${displayPath}\x1b[0m $ `);
       }
-      
-      writeOutput(`\x1b[36m${displayPath}\x1b[0m $ `);
-      writeOutput(`${displayPath} $ `);
       inputBufferRef.current = '';
       onUpdateRefs(instance.id, { inputBuffer: '' });
     };
@@ -171,21 +179,6 @@ export const TerminalInstance: React.FC<TerminalInstanceProps> = ({ instance, is
         return;
       }
 
-      if (trimmed.length > 1000) {
-        writeOutput('\x1b[31mError: Command too long (max 1000 characters)\x1b[0m\r\n');
-        writePrompt();
-        return;
-      }
-
-      const dangerousPatterns = ['rm -rf', 'del /f', 'format ', 'shutdown', 'reboot'];
-      const lowerCmd = trimmed.toLowerCase();
-      if (dangerousPatterns.some(pattern => lowerCmd.includes(pattern))) {
-        writeOutput('\x1b[33mWarning: Potentially dangerous command detected.\x1b[0m\r\n');
-        writeOutput('\x1b[33mCommand has been blocked. Only whitelisted commands are allowed.\x1b[0m\r\n');
-        writePrompt();
-        return;
-      }
-
       try {
         const { invoke } = await import('@tauri-apps/api/core');
         const result = await invoke<string>('execute_shell_command', {
@@ -204,12 +197,56 @@ export const TerminalInstance: React.FC<TerminalInstanceProps> = ({ instance, is
       writePrompt();
     };
 
-    // Welcome message
-    term.writeln('  \x1b[36mMarkLite Terminal\x1b[0m');
-    term.writeln('  Commands are restricted to a whitelist for security.');
-    term.writeln('  Type commands below. Use "clear" to clear, "exit" to close.');
-    term.writeln('');
     writePrompt();
+
+    // Copy selected text on Ctrl+C (when selection exists), paste on Ctrl+V
+    const handleKeydown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+        const selection = term.getSelection();
+        if (selection) {
+          navigator.clipboard.writeText(selection);
+          e.preventDefault();
+          return;
+        }
+        // No selection → fall through to onData which sends \x03
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+        e.preventDefault();
+        navigator.clipboard.readText().then((text) => {
+          if (text) {
+            // Only take first line to avoid accidental multi-command execution
+            const firstLine = text.split(/\r?\n/)[0];
+            inputBufferRef.current += firstLine;
+            onUpdateRefs(instance.id, { inputBuffer: inputBufferRef.current });
+            term.write(firstLine);
+          }
+        }).catch(() => { /* clipboard read denied */ });
+      }
+    };
+    const xtermEl = containerRef.current?.querySelector('.xterm') as HTMLElement | null;
+    xtermEl?.addEventListener('keydown', handleKeydown, true);
+
+    // Right-click paste
+    const handleContextMenu = (e: MouseEvent) => {
+      const selection = term.getSelection();
+      if (selection) {
+        // Copy selection on right-click if text is selected
+        navigator.clipboard.writeText(selection);
+        term.clearSelection();
+      } else {
+        // Paste on right-click if no selection (like Windows Terminal / PuTTY)
+        e.preventDefault();
+        navigator.clipboard.readText().then((text) => {
+          if (text) {
+            const firstLine = text.split(/\r?\n/)[0];
+            inputBufferRef.current += firstLine;
+            onUpdateRefs(instance.id, { inputBuffer: inputBufferRef.current });
+            term.write(firstLine);
+          }
+        }).catch(() => { /* clipboard read denied */ });
+      }
+    };
+    xtermEl?.addEventListener('contextmenu', handleContextMenu);
 
     // Handle user input
     term.onData((data: string) => {
@@ -260,10 +297,13 @@ export const TerminalInstance: React.FC<TerminalInstanceProps> = ({ instance, is
     return () => {
       themeObserver.disconnect();
       resizeObserver.disconnect();
+      xtermEl?.removeEventListener('keydown', handleKeydown, true);
+      xtermEl?.removeEventListener('contextmenu', handleContextMenu);
       term.dispose();
+      initializedTerminals.delete(instance.id);
       // CSS is shared globally, don't remove it
     };
-  }, [instance.id, instance.termRef, instance.shellType, onUpdateRefs]);
+  }, [instance.id, instance.shellType, onUpdateRefs]);
 
   // Handle fit when terminal becomes active
   useEffect(() => {

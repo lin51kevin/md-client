@@ -8,6 +8,7 @@ interface TerminalListSidebarProps {
   onSelectTerminal: (id: string) => void;
   onDeleteTerminal: (id: string) => void;
   onRenameTerminal: (id: string, newName: string) => void;
+  width?: number;
 }
 
 /**
@@ -21,6 +22,7 @@ export const TerminalListSidebar: React.FC<TerminalListSidebarProps> = ({
   onSelectTerminal,
   onDeleteTerminal,
   onRenameTerminal,
+  width = 160,
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
@@ -55,7 +57,7 @@ export const TerminalListSidebar: React.FC<TerminalListSidebarProps> = ({
   return (
     <div
       style={{
-        width: '200px',
+        width,
         borderLeft: '1px solid var(--border-color, #333)',
         backgroundColor: 'var(--bg-tertiary, #1a1a1a)',
         display: 'flex',
@@ -63,21 +65,6 @@ export const TerminalListSidebar: React.FC<TerminalListSidebarProps> = ({
         overflow: 'hidden',
       }}
     >
-      {/* Header */}
-      <div
-        style={{
-          padding: '8px',
-          borderBottom: '1px solid var(--border-color, #333)',
-          fontSize: '11px',
-          fontWeight: 'bold',
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px',
-          color: 'var(--text-secondary, #888)',
-        }}
-      >
-        Terminal
-      </div>
-
       {/* Terminal list */}
       <div
         style={{
@@ -98,13 +85,14 @@ export const TerminalListSidebar: React.FC<TerminalListSidebarProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
-                padding: '6px 8px',
-                marginBottom: '2px',
-                borderRadius: '4px',
+                padding: '3px 8px',
+                marginBottom: '1px',
+                borderRadius: '3px',
                 backgroundColor: isActive ? 'var(--accent-color-dim, rgba(74,158,255,0.15))' : 'transparent',
-                border: isActive ? '1px solid var(--accent-color, #4a9eff)' : '1px solid transparent',
+                border: 'none',
+                borderLeft: isActive ? '2px solid var(--accent-color, #4a9eff)' : '2px solid transparent',
                 cursor: isEditing ? 'text' : 'pointer',
-                transition: 'all 0.15s ease',
+                transition: 'background-color 0.1s ease',
               }}
               onMouseEnter={(e) => {
                 if (!isActive && !isEditing) {

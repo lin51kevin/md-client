@@ -34,11 +34,10 @@ export interface TerminalInstance {
  * Shell type options for terminal creation.
  */
 export const SHELL_TYPES = [
-  { value: 'cmd', label: 'CMD (Windows)', icon: '⚡' },
-  { value: 'powershell', label: 'PowerShell', icon: 'PS' },
-  { value: 'pwsh', label: 'PowerShell Core', icon: 'PS' },
-  { value: 'bash', label: 'Bash / Git Bash', icon: '🐚' },
-  { value: 'sh', label: 'sh (Unix/Linux)', icon: '$' },
+  { value: 'bash', label: 'bash', icon: 'bash' },
+  { value: 'powershell', label: 'pwsh', icon: 'pwsh' },
+  { value: 'wsl', label: 'wsl', icon: 'wsl' },
+  { value: 'cmd', label: 'cmd', icon: 'cmd' },
 ] as const;
 
 export type ShellType = typeof SHELL_TYPES[number]['value'];

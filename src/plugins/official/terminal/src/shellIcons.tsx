@@ -1,47 +1,73 @@
 import React from 'react';
 
+const iconStyle: React.CSSProperties = {
+  width: 16,
+  height: 16,
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  flexShrink: 0,
+};
+
 /**
- * Get the icon element for a shell type.
- * Returns a React element displaying the appropriate icon.
+ * VS Code-style shell icons as inline SVGs.
  */
 export function getShellIcon(shellType: string): React.ReactElement {
   switch (shellType) {
-    case 'cmd':
-      return <span style={{ fontSize: '14px', fontWeight: 'bold' }}>⚡</span>;
-    
-    case 'powershell':
-    case 'pwsh':
-      return (
-        <span
-          style={{
-            fontSize: '10px',
-            fontWeight: 'bold',
-            fontFamily: 'monospace',
-            padding: '2px 3px',
-            borderRadius: '2px',
-            backgroundColor: 'rgba(74, 158, 255, 0.2)',
-            color: 'var(--accent-color, #4a9eff)',
-          }}
-        >
-          PS
-        </span>
-      );
-    
     case 'bash':
     case 'git-bash':
-      return <span style={{ fontSize: '14px' }}>🐚</span>;
-    
-    case 'sh':
+      // Git Bash diamond icon (VS Code style)
+      return (
+        <span style={iconStyle}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M8 1L14.5 8L8 15L1.5 8L8 1Z" stroke="currentColor" strokeWidth="1.2" fill="none" />
+            <text x="8" y="11" textAnchor="middle" fontSize="7" fontWeight="bold" fill="currentColor">$</text>
+          </svg>
+        </span>
+      );
+
+    case 'powershell':
+    case 'pwsh':
+      // PowerShell icon (VS Code style - rectangle with >_)
+      return (
+        <span style={iconStyle}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <rect x="1.5" y="2.5" width="13" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
+            <path d="M4 6L7 8.5L4 11" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            <line x1="8.5" y1="11" x2="12" y2="11" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+          </svg>
+        </span>
+      );
+
+    case 'wsl':
+      // WSL penguin icon
+      return (
+        <span style={iconStyle}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <ellipse cx="8" cy="9" rx="4" ry="5" stroke="currentColor" strokeWidth="1.2" fill="none" />
+            <circle cx="6.5" cy="7.5" r="0.8" fill="currentColor" />
+            <circle cx="9.5" cy="7.5" r="0.8" fill="currentColor" />
+            <path d="M7 10L8 11L9 10" stroke="currentColor" strokeWidth="0.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            <path d="M4.5 6.5C3.5 5 4 3 6 2.5" stroke="currentColor" strokeWidth="1" strokeLinecap="round" fill="none" />
+            <path d="M11.5 6.5C12.5 5 12 3 10 2.5" stroke="currentColor" strokeWidth="1" strokeLinecap="round" fill="none" />
+          </svg>
+        </span>
+      );
+
+    case 'cmd':
+      // CMD icon (VS Code style - bracket with >_)
+      return (
+        <span style={iconStyle}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <rect x="1.5" y="2.5" width="13" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
+            <path d="M4.5 6L7.5 8.5L4.5 11" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          </svg>
+        </span>
+      );
+
     default:
       return (
-        <span
-          style={{
-            fontSize: '12px',
-            fontWeight: 'bold',
-            fontFamily: 'monospace',
-            color: 'var(--text-secondary, #888)',
-          }}
-        >
+        <span style={{ ...iconStyle, fontSize: '12px', fontWeight: 'bold', fontFamily: 'monospace', color: 'currentColor' }}>
           $
         </span>
       );

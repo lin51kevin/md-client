@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { TerminalInstance } from './types';
 
+const DEFAULT_SHELL_KEY = 'marklite-terminal-default-shell';
+
 /**
  * Hook to manage multiple terminal instances.
  * Handles creation, deletion, switching, and renaming of terminals.
@@ -9,6 +11,11 @@ export function useTerminalManager() {
   const [terminals, setTerminals] = useState<TerminalInstance[]>([]);
   const [activeTerminalId, setActiveTerminalId] = useState<string | null>(null);
   const [nextId, setNextId] = useState(1);
+  const [defaultShellType, setDefaultShellTypeState] = useState<string>(() => {
+    try {
+      return localStorage.getItem(DEFAULT_SHELL_KEY) || '';
+    } catch { return ''; }
+  });
 
   // Get initial working directory from file tree root
   const getInitialCwd = useCallback((): string => {
@@ -24,14 +31,20 @@ export function useTerminalManager() {
     return '';
   }, []);
 
-  // Get default shell type based on platform
+  // Get default shell type: user preference > platform default
   const getDefaultShellType = useCallback((): string => {
+    if (defaultShellType) return defaultShellType;
     if (typeof navigator !== 'undefined' && navigator.platform) {
       if (navigator.platform.toLowerCase().includes('win')) {
         return 'cmd';
       }
     }
     return 'sh';
+  }, [defaultShellType]);
+
+  const setDefaultShell = useCallback((shellType: string) => {
+    setDefaultShellTypeState(shellType);
+    try { localStorage.setItem(DEFAULT_SHELL_KEY, shellType); } catch { /* ignore */ }
   }, []);
 
   // Auto-create first terminal on mount
@@ -41,7 +54,7 @@ export function useTerminalManager() {
       const initialCwd = getInitialCwd();
       const firstTerminal: TerminalInstance = {
         id: 'terminal-1',
-        name: 'Terminal 1',
+        name: defaultShellType,
         shellType: defaultShellType,
         cwd: initialCwd,
         termRef: null,
@@ -63,7 +76,7 @@ export function useTerminalManager() {
     const initialCwd = getInitialCwd();
     const newTerminal: TerminalInstance = {
       id,
-      name: `Terminal ${nextId}`,
+      name: shellType,
       shellType,
       cwd: initialCwd,
       termRef: null,
@@ -147,10 +160,12 @@ export function useTerminalManager() {
     terminals,
     activeTerminalId,
     activeTerminal,
+    defaultShellType: defaultShellType || getDefaultShellType(),
     createTerminal,
     deleteTerminal,
     renameTerminal,
     setActiveTerminal,
+    setDefaultShell,
     updateTerminalRefs,
   };
 }
