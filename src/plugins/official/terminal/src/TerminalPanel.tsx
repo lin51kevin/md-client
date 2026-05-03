@@ -104,6 +104,23 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ context: _context 
       return;
     }
 
+    // Client-side validation before sending to Tauri
+    if (trimmed.length > 1000) {
+      writeOutput('\x1b[31mError: Command too long (max 1000 characters)\x1b[0m\r\n');
+      writePrompt();
+      return;
+    }
+
+    // Warn about dangerous patterns (defense in depth)
+    const dangerousPatterns = ['rm -rf', 'del /f', 'format ', 'shutdown', 'reboot'];
+    const lowerCmd = trimmed.toLowerCase();
+    if (dangerousPatterns.some(pattern => lowerCmd.includes(pattern))) {
+      writeOutput('\x1b[33mWarning: Potentially dangerous command detected.\x1b[0m\r\n');
+      writeOutput('\x1b[33mCommand has been blocked. Only whitelisted commands are allowed.\x1b[0m\r\n');
+      writePrompt();
+      return;
+    }
+
     try {
       // Use Tauri invoke to execute shell command
       const { invoke } = await import('@tauri-apps/api/core');
@@ -116,7 +133,7 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ context: _context 
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      writeOutput(`\x1b[31mError: ${message}\x1b[0m`);
+      writeOutput(`\x1b[31mError: ${message}\x1b[0m\r\n`);
     }
 
     writePrompt();
@@ -169,6 +186,8 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ context: _context 
     fitAddonRef.current = fitAddon;
 
     // Welcome message
+    term.writeln('  \x1b[36mMarkLite Terminal\x1b[0m');
+    term.writeln('  Commands are restricted to a whitelist for security.');
     term.writeln('  Type commands below. Use "clear" to clear, "exit" to close.');
     term.writeln('');
     writePrompt();
