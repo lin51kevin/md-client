@@ -1,268 +1,27 @@
-import React, { useEffect, useRef, useCallback, useState } from 'react';
-import { Terminal } from 'xterm';
-import { FitAddon } from '@xterm/addon-fit';
-import { WebLinksAddon } from '@xterm/addon-web-links';
-import xtermCss from 'xterm/css/xterm.css?raw';
+import React from 'react';
+import { useTerminalManager } from './useTerminalManager';
+import { TerminalInstance } from './TerminalInstance';
+import { TerminalListSidebar } from './TerminalListSidebar';
+import { NewTerminalButton } from './NewTerminalButton';
 
 interface TerminalPanelProps {
   context: import('../../../plugin-sandbox').PluginContext;
 }
 
-/** Read a CSS variable value from the document root. */
-function getCSSVar(name: string, fallback: string): string {
-  const val = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-  return val || fallback;
-}
-
-/** Detect whether the current theme has a dark background. */
-function isDarkTheme(): boolean {
-  const bg = getCSSVar('--bg-primary', '#ffffff');
-  // Parse hex → luminance; dark if luminance < 128
-  const hex = bg.replace('#', '').slice(0, 6);
-  if (hex.length === 6) {
-    const r = parseInt(hex.slice(0, 2), 16);
-    const g = parseInt(hex.slice(2, 4), 16);
-    const b = parseInt(hex.slice(4, 6), 16);
-    return (r * 299 + g * 587 + b * 114) / 1000 < 128;
-  }
-  return false;
-}
-
-// ANSI color palettes — readable on their respective background
-const DARK_ANSI = {
-  green: '#a6e3a1', red: '#f38ba8', yellow: '#f9e2af',
-  blue: '#89b4fa', magenta: '#cba6f7', cyan: '#94e2d5',
-  white: '#cdd6f4', brightBlack: '#585b70',
-};
-const LIGHT_ANSI = {
-  green: '#1a7f37', red: '#cf222e', yellow: '#9a6700',
-  blue: '#0969da', magenta: '#8250df', cyan: '#0e7c86',
-  white: '#1f2328', brightBlack: '#656d76',
-};
-
-/** Build an xterm theme from the app's CSS variables. */
-function buildThemeFromCSS(): Record<string, string> {
-  const dark = isDarkTheme();
-  const ansi = dark ? DARK_ANSI : LIGHT_ANSI;
-  return {
-    background: getCSSVar('--bg-secondary', dark ? '#161b22' : '#f6f8fa'),
-    foreground: getCSSVar('--text-primary', dark ? '#f0f6fc' : '#1f2328'),
-    cursor: getCSSVar('--accent-color', dark ? '#58a6ff' : '#0969da'),
-    cursorAccent: getCSSVar('--bg-primary', dark ? '#0d1117' : '#ffffff'),
-    selectionBackground: getCSSVar('--selection-bg', dark ? 'rgba(88,166,255,0.5)' : '#d7d4f0'),
-    green: ansi.green,
-    red: ansi.red,
-    yellow: ansi.yellow,
-    blue: ansi.blue,
-    magenta: ansi.magenta,
-    cyan: ansi.cyan,
-    white: ansi.white,
-    brightBlack: ansi.brightBlack,
-  };
-}
-
 /**
- * Terminal panel component using xterm.js.
- * Commands are executed via Tauri's shell plugin.
+ * Multi-terminal panel component (VS Code style).
+ * Displays multiple terminal instances with a right sidebar list.
  */
 export const TerminalPanel: React.FC<TerminalPanelProps> = ({ context: _context }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const termRef = useRef<Terminal | null>(null);
-  const fitAddonRef = useRef<FitAddon | null>(null);
-  const inputBufferRef = useRef<string>('');
-  const cwdRef = useRef<string>('');
-  const [shellType, setShellType] = useState<string>(() => {
-    // Load from storage or default based on platform
-    const stored = localStorage.getItem('marklite-terminal-shell-type');
-    if (stored) return stored;
-    
-    // Default based on platform
-    if (typeof navigator !== 'undefined' && navigator.platform) {
-      if (navigator.platform.toLowerCase().includes('win')) {
-        return 'cmd'; // Default to cmd on Windows
-      }
-    }
-    return 'sh';
-  });
-
-  const writeOutput = useCallback((text: string) => {
-    if (termRef.current) {
-      termRef.current.write(text);
-      termRef.current.scrollToBottom();
-    }
-  }, []);
-
-  const executeCommand = useCallback(async (command: string) => {
-    const term = termRef.current;
-    if (!term) return;
-
-    writeOutput(`\r\n`);
-
-    // Handle built-in commands
-    const trimmed = command.trim();
-    if (!trimmed) {
-      writePrompt();
-      return;
-    }
-
-    if (trimmed === 'clear' || trimmed === 'cls') {
-      term.clear();
-      writePrompt();
-      return;
-    }
-
-    if (trimmed === 'exit') {
-      term.write('\r\n\x1b[33mTerminal session ended.\x1b[0m\r\n');
-      inputBufferRef.current = '';
-      return;
-    }
-
-    // Client-side validation before sending to Tauri
-    if (trimmed.length > 1000) {
-      writeOutput('\x1b[31mError: Command too long (max 1000 characters)\x1b[0m\r\n');
-      writePrompt();
-      return;
-    }
-
-    // Warn about dangerous patterns (defense in depth)
-    const dangerousPatterns = ['rm -rf', 'del /f', 'format ', 'shutdown', 'reboot'];
-    const lowerCmd = trimmed.toLowerCase();
-    if (dangerousPatterns.some(pattern => lowerCmd.includes(pattern))) {
-      writeOutput('\x1b[33mWarning: Potentially dangerous command detected.\x1b[0m\r\n');
-      writeOutput('\x1b[33mCommand has been blocked. Only whitelisted commands are allowed.\x1b[0m\r\n');
-      writePrompt();
-      return;
-    }
-
-    try {
-      // Use Tauri invoke to execute shell command
-      const { invoke } = await import('@tauri-apps/api/core');
-      const result = await invoke<string>('execute_shell_command', {
-        command: trimmed,
-        cwd: cwdRef.current || undefined,
-        shellType: shellType,
-      });
-      if (result) {
-        writeOutput(result);
-      }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      writeOutput(`\x1b[31mError: ${message}\x1b[0m\r\n`);
-    }
-
-    writePrompt();
-  }, [writeOutput, shellType]);
-
-  const writePrompt = useCallback(() => {
-    const cwd = cwdRef.current;
-    const displayPath = cwd ? cwd.replace(/^C:\\/, '/c/').replace(/\\/g, '/') : '~';
-    writeOutput(`${displayPath} $ `);
-    inputBufferRef.current = '';
-  }, [writeOutput]);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    const term = new Terminal({
-      cursorBlink: true,
-      fontSize: 13,
-      fontFamily: '"Cascadia Code", "Fira Code", "JetBrains Mono", Menlo, Monaco, monospace',
-      theme: buildThemeFromCSS(),
-      allowTransparency: true,
-      scrollback: 5000,
-      convertEol: true,
-    });
-
-    const fitAddon = new FitAddon();
-    const webLinksAddon = new WebLinksAddon();
-
-    term.loadAddon(fitAddon);
-    term.loadAddon(webLinksAddon);
-
-    // Inject xterm CSS into document (plugin CSS is not auto-loaded by the plugin system)
-    const style = document.createElement('style');
-    style.setAttribute('data-xterm-css', 'marklite-terminal');
-    style.textContent = xtermCss;
-    document.head.appendChild(style);
-
-    term.open(containerRef.current);
-
-    // Initial fit
-    setTimeout(() => {
-      try {
-        fitAddon.fit();
-      } catch {
-        // Container may not be ready
-      }
-    }, 100);
-
-    termRef.current = term;
-    fitAddonRef.current = fitAddon;
-
-    // Welcome message
-    term.writeln('  \x1b[36mMarkLite Terminal\x1b[0m');
-    term.writeln('  Commands are restricted to a whitelist for security.');
-    term.writeln('  Type commands below. Use "clear" to clear, "exit" to close.');
-    term.writeln('');
-    writePrompt();
-
-    // Handle user input
-    term.onData((data: string) => {
-      if (!term) return;
-
-      if (data === '\r') {
-        // Enter - execute command
-        executeCommand(inputBufferRef.current);
-      } else if (data === '\x7f') {
-        // Backspace
-        if (inputBufferRef.current.length > 0) {
-          inputBufferRef.current = inputBufferRef.current.slice(0, -1);
-          term.write('\b \b');
-        }
-      } else if (data === '\x03') {
-        // Ctrl+C
-        term.write('^C\r\n');
-        writePrompt();
-      } else if (data === '\x15') {
-        // Ctrl+U - clear line
-        const len = inputBufferRef.current.length;
-        if (len > 0) {
-          term.write('\x1b[2K\r');
-          writePrompt();
-        }
-      } else if (data >= ' ') {
-        // Printable characters
-        inputBufferRef.current += data;
-        term.write(data);
-      }
-      // Ignore other control characters
-    });
-
-    // Resize observer
-    const resizeObserver = new ResizeObserver(() => {
-      try {
-        fitAddon.fit();
-      } catch {
-        // Ignore fit errors
-      }
-    });
-    resizeObserver.observe(containerRef.current);
-
-    // Theme observer — update xterm colors when the app theme changes
-    const themeObserver = new MutationObserver(() => {
-      term.options.theme = buildThemeFromCSS();
-    });
-    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'style', 'data-theme'] });
-
-    return () => {
-      themeObserver.disconnect();
-      resizeObserver.disconnect();
-      term.dispose();
-      style.remove();
-      termRef.current = null;
-      fitAddonRef.current = null;
-    };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const {
+    terminals,
+    activeTerminalId,
+    createTerminal,
+    deleteTerminal,
+    renameTerminal,
+    setActiveTerminal,
+    updateTerminalRefs,
+  } = useTerminalManager();
 
   return (
     <div
@@ -281,6 +40,7 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ context: _context 
         style={{
           display: 'flex',
           alignItems: 'center',
+          justifyContent: 'space-between',
           gap: '8px',
           padding: '4px 8px',
           borderBottom: '1px solid var(--border-color, #333)',
@@ -288,62 +48,56 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ context: _context 
           fontSize: '12px',
         }}
       >
-        <label
-          htmlFor="shell-type-select"
-          style={{ color: 'var(--text-secondary, #888)', flexShrink: 0 }}
-        >
-          Shell:
-        </label>
-        <select
-          id="shell-type-select"
-          value={shellType}
-          onChange={(e) => {
-            const newType = e.target.value;
-            setShellType(newType);
-            localStorage.setItem('marklite-terminal-shell-type', newType);
-            // Show notification
-            if (termRef.current) {
-              termRef.current.write(`\r\n\x1b[36m[Shell changed to: ${newType}]\x1b[0m\r\n`);
-            }
-          }}
-          style={{
-            padding: '2px 6px',
-            borderRadius: '4px',
-            border: '1px solid var(--border-color, #444)',
-            backgroundColor: 'var(--bg-secondary, #2a2a2a)',
-            color: 'var(--text-primary, #fff)',
-            fontSize: '12px',
-            cursor: 'pointer',
-          }}
-        >
-          <option value="cmd">CMD (Windows)</option>
-          <option value="powershell">PowerShell</option>
-          <option value="pwsh">PowerShell Core</option>
-          <option value="bash">Bash / Git Bash</option>
-          <option value="sh">sh (Unix/Linux)</option>
-        </select>
         <span
           style={{
-            marginLeft: 'auto',
             color: 'var(--text-secondary, #666)',
             fontSize: '11px',
           }}
         >
           Commands are whitelisted for security
         </span>
+        
+        {/* New Terminal Button */}
+        <NewTerminalButton onCreateTerminal={createTerminal} />
       </div>
 
-      {/* Terminal container */}
+      {/* Main content: terminals + sidebar */}
       <div
-        ref={containerRef}
         style={{
           flex: 1,
+          display: 'flex',
           minHeight: 0,
           overflow: 'hidden',
-          padding: '4px',
-          position: 'relative',
         }}
-      />
+      >
+        {/* Terminal display area */}
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+        >
+          {terminals.map((terminal) => (
+            <TerminalInstance
+              key={terminal.id}
+              instance={terminal}
+              isActive={terminal.id === activeTerminalId}
+              onUpdateRefs={updateTerminalRefs}
+            />
+          ))}
+        </div>
+
+        {/* Right sidebar - terminal list */}
+        <TerminalListSidebar
+          terminals={terminals}
+          activeTerminalId={activeTerminalId}
+          onSelectTerminal={setActiveTerminal}
+          onDeleteTerminal={deleteTerminal}
+          onRenameTerminal={renameTerminal}
+        />
+      </div>
     </div>
   );
 };
