@@ -172,3 +172,15 @@ export function createSandbox(
     },
   });
 }
+
+/**
+ * Convenience wrapper: create a sandboxed context from a plugin context
+ * and an options bag containing the granted permissions and plugin ID.
+ */
+export function createSandboxedContext(
+  context: PluginContext,
+  options: { permissions: PluginPermission[]; pluginId: string },
+): PluginContext {
+  const granted = new Set<PluginPermission>(options.permissions);
+  return createSandbox(context, (perm) => granted.has(perm));
+}

@@ -164,7 +164,20 @@ export function createPluginContext(deps: PluginContextDeps, pluginId?: string):
         })();
         return deps.readFileContent(absolute);
       },
-      watch: () => ({ dispose: () => {} }),
+      watch: (pattern: string, callback: (path: string) => void) => {
+        if (!deps.watchFiles) return { dispose: () => {} };
+        let disposed = false;
+        const guarded = (path: string) => {
+          if (!disposed) callback(path);
+        };
+        const unsub = deps.watchFiles(pattern, guarded);
+        return {
+          dispose: () => {
+            disposed = true;
+            unsub();
+          },
+        };
+      },
     },
     contextMenu: createContextMenuAPI(),
   };
