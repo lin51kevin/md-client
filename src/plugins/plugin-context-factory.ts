@@ -10,6 +10,27 @@ import { createUIAPI } from './plugin-ui';
 import { createPreviewAPI } from './plugin-preview';
 import { createContextMenuAPI } from './plugin-context-menu';
 
+export interface SettingsSection {
+  id: string;
+  title: string;
+  render: () => unknown;
+  pluginId: string;
+}
+
+const registeredSections = new Map<string, SettingsSection>();
+
+export function getRegisteredSections(): Map<string, SettingsSection> {
+  return registeredSections;
+}
+
+/** Module-level exporter registry shared across all plugin contexts. */
+const registeredExporters = new Map<string, (content: string, filePath: string) => Promise<void>>();
+
+/** Get the shared exporter registry (for use by AppShell export menus). */
+export function getRegisteredExporters() {
+  return registeredExporters;
+}
+
 /**
  * Dependencies needed to assemble a full plugin context.
  * These are provided by the host application (App.tsx).
@@ -41,10 +62,16 @@ export interface PluginContextDeps {
   registerPreviewRenderer: (nodeType: string, renderFn: unknown) => void;
   /** Unregister a preview renderer for a node type. */
   unregisterPreviewRenderer: (nodeType: string) => void;
+  /** Register a remark plugin for the preview pipeline. */
+  registerPreviewRemarkPlugin?: (plugin: unknown) => Disposable;
+  /** Unregister a remark plugin from the preview pipeline. */
+  unregisterPreviewRemarkPlugin?: (plugin: unknown) => void;
   /** Read file content by absolute path. Returns null if file does not exist. */
   readFileContent?: (path: string) => Promise<string | null>;
   /** Watch files matching a glob pattern, call callback on changes. Returns unsubscribe. */
   watchFiles?: (pattern: string, callback: (path: string) => void) => () => void;
+  /** Register a CodeMirror extension. Returns a Disposable. */
+  registerEditorExtension?: (extension: unknown) => import('./types').Disposable;
 }
 
 /**
@@ -71,13 +98,24 @@ export function createPluginContext(deps: PluginContextDeps, pluginId?: string):
     editor: createEditorAPI({
       cmViewRef: deps.cmViewRef,
       getActiveTab: () => deps.getActiveTab?.() ?? null,
+      registerEditorExtension: deps.registerEditorExtension,
     }),
     sidebar: createSidebarAPI(deps),
     statusbar: createStatusBarAPI(deps),
     storage: createStorageAPI(pluginId) as PluginContext['storage'],
     ui: createUIAPI(),
     preview: createPreviewAPI(deps),
-    settings: { registerSection: () => ({ dispose: () => {} }) },
+    settings: {
+      registerSection(section: { id: string; title: string; render: () => unknown }) {
+        const key = `${pluginId}:${section.id}`;
+        registeredSections.set(key, { ...section, pluginId: pluginId ?? 'unknown' });
+        return {
+          dispose() {
+            registeredSections.delete(key);
+          },
+        };
+      },
+    },
     theme: {
       register(cssVars: Record<string, string>) {
         const style = document.createElement('style');
@@ -94,7 +132,18 @@ export function createPluginContext(deps: PluginContextDeps, pluginId?: string):
         };
       },
     },
-    export: { registerExporter: () => ({ dispose: () => {} }) },
+    export: {
+      registerExporter(format: string, fn: (content: string, filePath: string) => Promise<void>) {
+        registeredExporters.set(format, fn);
+        return {
+          dispose() {
+            if (registeredExporters.get(format) === fn) {
+              registeredExporters.delete(format);
+            }
+          },
+        };
+      },
+    },
     files: {
       readFile: async (path: string): Promise<string | null> => {
         if (!deps.readFileContent) return null;
