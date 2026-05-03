@@ -6,7 +6,7 @@
   "author": "MarkLite Team",
   "main": "dist/index.js",
   "activationEvents": ["onStartup"],
-  "permissions": ["tauri.raw", "sidebar.panel", "commands", "storage"],
+  "permissions": ["shell.execute", "sidebar.panel", "commands", "storage"],
   "engines": {
     "marklite": ">=0.11.0"
   }

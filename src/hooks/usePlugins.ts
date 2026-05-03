@@ -124,7 +124,7 @@ const DEFAULT_PLUGINS: PluginUIItem[] = [
     author: 'MarkLite Team',
     description: '内置 Git 面板 — 分支信息、变更列表、Diff 查看、提交/推送/拉取',
     enabled: false,
-    permissions: ['sidebar.panel', 'workspace', 'storage', 'commands', 'ui.message', 'tauri.raw'],
+    permissions: ['sidebar.panel', 'workspace', 'storage', 'commands', 'ui.message', 'git.command'],
   },
   {
     id: 'marklite-vim',
@@ -187,7 +187,7 @@ const DEFAULT_PLUGINS: PluginUIItem[] = [
     author: 'MarkLite Team',
     description: '内置终端 — 底部面板集成 shell 终端，支持命令执行',
     enabled: false,
-    permissions: ['tauri.raw', 'sidebar.panel', 'commands', 'storage'],
+    permissions: ['shell.execute', 'sidebar.panel', 'commands', 'storage'],
   },
 ];
 

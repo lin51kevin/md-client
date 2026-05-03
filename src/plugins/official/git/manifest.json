@@ -12,7 +12,7 @@
     "storage",
     "commands",
     "ui.message",
-    "tauri.raw"
+    "git.command"
   ],
   "engines": { "marklite": ">=0.8.0" }
 }
