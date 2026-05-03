@@ -93,7 +93,8 @@
     "remark-gfm": "^4.0.1",
     "turndown": "^7.2.4",
     "unist-util-visit": "^5.1.0",
-    "zustand": "^5.0.12"
+    "zustand": "^5.0.12",
+    "@codemirror/indent-guides": "^1.0.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.1",

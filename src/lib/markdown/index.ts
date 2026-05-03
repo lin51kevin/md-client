@@ -17,3 +17,5 @@ export { renderLatex } from './latex';
 export { markdownToHtml, generateHtmlDocument, generateEpub, type HtmlExportOptions } from './html-export';
 // ── Export Pre-rendering ─────────────────────────────────────────────────────
 export { extractFencedBlocks, extractLatexFormulas, prerenderExportAssets, type PreRenderedAsset, type PreRenderedAssets } from './export-prerender';
+// ── Transclusion ─────────────────────────────────────────────────────────────
+export { resolveTransclusions, transclusionToPlaceholders, parseTransclusionMarker } from './transclusion';

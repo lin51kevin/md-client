@@ -21,6 +21,8 @@ import rehypeSlug from 'rehype-slug';
 import { rehypeFilterInvalidElements } from './rehype-filter-invalid-elements';
 import { remarkWikiLinks } from './remark-wikilinks';
 import { rehypeWikiLinks } from './rehype-wikilinks';
+import { remarkCallouts } from './remark-callouts';
+import { rehypeCallouts } from './rehype-callouts';
 import { getKatexPlugin } from './katex-bridge';
 
 export type Pluggable = ReturnType<typeof remarkGfm> | ReturnType<typeof rehypeHighlight> | unknown;
@@ -30,7 +32,7 @@ export type Pluggable = ReturnType<typeof remarkGfm> | ReturnType<typeof rehypeH
  * marklite-katex plugin has been activated.
  */
 export function buildCoreRemarkPlugins(): Pluggable[] {
-  const plugins: Pluggable[] = [remarkGfm, remarkDirective, remarkDirectiveRehype];
+  const plugins: Pluggable[] = [remarkGfm, remarkDirective, remarkCallouts, remarkDirectiveRehype];
   const katex = getKatexPlugin();
   if (katex) plugins.push(katex.remarkMath as Pluggable);
   return plugins;
@@ -56,6 +58,7 @@ export function buildPreviewRehypePlugins(): Pluggable[] {
     rehypeRaw,
     rehypeWikiLinks,
     rehypeFilterInvalidElements,
+    rehypeCallouts,
   ];
   const katex = getKatexPlugin();
   if (katex) {

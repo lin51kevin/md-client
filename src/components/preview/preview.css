@@ -533,3 +533,81 @@
   color: #ffdcd7;
   background-color: #67060c;
 }
+
+/* ── Callouts / Admonitions ──────────────────────────────────────────────── */
+.markdown-preview .callout,
+.markdown-preview details.callout {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin: 8px 0;
+  border-left: 4px solid var(--callout-color, #888);
+  background: var(--callout-bg, rgba(0,0,0,0.03));
+}
+.markdown-preview .callout-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--callout-color);
+}
+.markdown-preview .callout-content {
+  font-size: inherit;
+}
+.markdown-preview .callout-content > *:first-child {
+  margin-top: 0;
+}
+.markdown-preview .callout-content > *:last-child {
+  margin-bottom: 0;
+}
+/* Collapsible callout summary styling */
+.markdown-preview details.callout summary {
+  cursor: pointer;
+  list-style: none;
+}
+.markdown-preview details.callout summary::-webkit-details-marker {
+  display: none;
+}
+/* Type-specific colors */
+.markdown-preview .callout-note,
+.markdown-preview details.callout-callout-note { --callout-color: #448aff; --callout-bg: rgba(68,138,255,0.06); }
+.markdown-preview .callout-info,
+.markdown-preview details.callout-callout-info { --callout-color: #448aff; --callout-bg: rgba(68,138,255,0.06); }
+.markdown-preview .callout-tip,
+.markdown-preview details.callout-callout-tip { --callout-color: #2dce89; --callout-bg: rgba(45,206,137,0.06); }
+.markdown-preview .callout-hint,
+.markdown-preview details.callout-callout-hint { --callout-color: #2dce89; --callout-bg: rgba(45,206,137,0.06); }
+.markdown-preview .callout-warning,
+.markdown-preview details.callout-callout-warning { --callout-color: #ff9f43; --callout-bg: rgba(255,159,67,0.06); }
+.markdown-preview .callout-caution,
+.markdown-preview details.callout-callout-caution { --callout-color: #ff9f43; --callout-bg: rgba(255,159,67,0.06); }
+.markdown-preview .callout-danger,
+.markdown-preview details.callout-callout-danger { --callout-color: #f14668; --callout-bg: rgba(241,70,104,0.06); }
+.markdown-preview .callout-bug,
+.markdown-preview details.callout-callout-bug { --callout-color: #f14668; --callout-bg: rgba(241,70,104,0.06); }
+.markdown-preview .callout-failure,
+.markdown-preview details.callout-callout-failure { --callout-color: #f14668; --callout-bg: rgba(241,70,104,0.06); }
+.markdown-preview .callout-fail,
+.markdown-preview details.callout-callout-fail { --callout-color: #f14668; --callout-bg: rgba(241,70,104,0.06); }
+.markdown-preview .callout-example,
+.markdown-preview details.callout-callout-example { --callout-color: #b4b4b4; --callout-bg: rgba(180,180,180,0.06); }
+.markdown-preview .callout-quote,
+.markdown-preview details.callout-callout-quote { --callout-color: #b4b4b4; --callout-bg: rgba(180,180,180,0.06); }
+.markdown-preview .callout-cite,
+.markdown-preview details.callout-callout-cite { --callout-color: #b4b4b4; --callout-bg: rgba(180,180,180,0.06); }
+.markdown-preview .callout-abstract,
+.markdown-preview details.callout-callout-abstract { --callout-color: #00b894; --callout-bg: rgba(0,184,148,0.06); }
+.markdown-preview .callout-summary,
+.markdown-preview details.callout-callout-summary { --callout-color: #00b894; --callout-bg: rgba(0,184,148,0.06); }
+.markdown-preview .callout-todo,
+.markdown-preview details.callout-callout-todo { --callout-color: #448aff; --callout-bg: rgba(68,138,255,0.06); }
+.markdown-preview .callout-question,
+.markdown-preview details.callout-callout-question { --callout-color: #8b5cf6; --callout-bg: rgba(139,92,246,0.06); }
+.markdown-preview .callout-help,
+.markdown-preview details.callout-callout-help { --callout-color: #8b5cf6; --callout-bg: rgba(139,92,246,0.06); }
+.markdown-preview .callout-missing,
+.markdown-preview details.callout-callout-missing { --callout-color: #f14668; --callout-bg: rgba(241,70,104,0.06); }
+.markdown-preview .callout-check,
+.markdown-preview details.callout-callout-check { --callout-color: #2dce89; --callout-bg: rgba(45,206,137,0.06); }
+/* Dark theme adjustments */
+.markdown-preview-dark .callout,
+.markdown-preview-dark details.callout {
+  background: var(--callout-bg, rgba(255,255,255,0.04));
+}
