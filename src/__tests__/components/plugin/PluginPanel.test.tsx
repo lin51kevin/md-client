@@ -84,9 +84,11 @@ describe('PluginPanel', () => {
 
   it('点击插件卡片展开详情面板显示权限', () => {
     render(<PluginPanel visible={true} onClose={() => {}} />);
-    // Click the first Settings icon to expand
-    const settingsBtns = screen.getAllByTitle('plugins.detail');
-    fireEvent.click(settingsBtns[0]);
+    // Find Backlinks Panel plugin which has workspace and editor.read permissions
+    const backlinksCard = screen.getByText('Backlinks Panel');
+    const settingsBtn = backlinksCard.closest('.group')?.querySelector('[title="plugins.detail"]') as HTMLElement;
+    expect(settingsBtn).toBeTruthy();
+    fireEvent.click(settingsBtn);
     expect(screen.getByText('plugins.permissions')).toBeTruthy();
     expect(screen.getByText('workspace')).toBeTruthy();
     expect(screen.getByText('editor.read')).toBeTruthy();

@@ -20,10 +20,10 @@ describe('marklite-git manifest', () => {
     expect(m.activationEvents).toContain('onWorkspaceReady');
   });
 
-  it('requires sidebar.panel, tauri.raw, and commands permissions', async () => {
+  it('requires sidebar.panel, git.command, and commands permissions', async () => {
     const m = await import('../../../../plugins/official/git/manifest.json');
     expect(m.permissions).toContain('sidebar.panel');
-    expect(m.permissions).toContain('tauri.raw');
+    expect(m.permissions).toContain('git.command');
     expect(m.permissions).toContain('commands');
   });
 

@@ -37,7 +37,7 @@ describe('Terminal Plugin', () => {
       expect(manifest.default.name).toBe('Terminal');
       expect(manifest.default.version).toBe('1.0.0');
       expect(manifest.default.activationEvents).toContain('onStartup');
-      expect(manifest.default.permissions).toContain('tauri.raw');
+      expect(manifest.default.permissions).toContain('shell.execute');
       expect(manifest.default.permissions).toContain('sidebar.panel');
     });
   });
