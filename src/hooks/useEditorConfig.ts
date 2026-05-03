@@ -19,6 +19,7 @@ import { sepiaCmTheme, highContrastCmTheme } from '../lib/cm/cm-themes';
 import { autoCloseBrackets } from '../lib/cm/cmAutocomplete';
 import { multicursorKeymap } from '../lib/cm/multicursor-keymap';
 import { codeBaseExtensions, loadLanguageExtension } from '../lib/cm/cm-code-extensions';
+import { createLinterExtension } from '../lib/cm/cmLint';
 
 interface EditorConfigOptions {
   theme: ThemeName;
@@ -37,6 +38,23 @@ export function useEditorConfig({ theme, vimMode, cursorExtension, searchHighlig
   // Code language extension — loaded asynchronously when languageId changes
   const isCodeMode = languageId !== 'markdown';
   const [codeLangExtension, setCodeLangExtension] = useState<Extension | null>(null);
+  const [indentGuidesExt, setIndentGuidesExt] = useState<Extension | null>(null);
+
+  // Load indent guides for code mode
+  useEffect(() => {
+    if (!isCodeMode) {
+      setIndentGuidesExt(null);
+      return;
+    }
+    let cancelled = false;
+    import('../lib/cm/cmIndentGuides').then(({ indentGuidesExtension }) =>
+      indentGuidesExtension().then((ext) => {
+        if (!cancelled) setIndentGuidesExt(ext);
+      })
+    ).catch(console.error);
+    return () => { cancelled = true; };
+  }, [isCodeMode]);
+
   useEffect(() => {
     if (!isCodeMode) {
       setCodeLangExtension(null);
@@ -58,9 +76,13 @@ export function useEditorConfig({ theme, vimMode, cursorExtension, searchHighlig
         searchHighlightExtension,
         multicursorKeymap(),
       ];
+      if (indentGuidesExt) {
+        exts.push(indentGuidesExt);
+      }
       if (codeLangExtension) {
         exts.push(codeLangExtension);
       }
+      exts.push(...createLinterExtension());
       {
         const vimExt = getVimExtension();
         if (vimMode && vimExt) exts.push(vimExt);
