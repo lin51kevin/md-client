@@ -3,6 +3,14 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { Toolbar } from '../../../components/toolbar/Toolbar';
 import type { ViewMode, FocusMode } from '../../../types';
 
+// Mock vim-bridge so isVimAvailable() returns true
+vi.mock('../../../lib/cm/vim-bridge', () => ({
+  isVimAvailable: () => true,
+  getVimExtension: () => ({}),
+  registerVimExtension: vi.fn(),
+  unregisterVimExtension: vi.fn(),
+}));
+
 // Mock i18n hook to return Chinese labels
 vi.mock('../../../i18n', () => ({
   useI18n: vi.fn(() => ({

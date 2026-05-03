@@ -1,4 +1,15 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+
+// Mock katex-bridge to provide remark-math + rehype-katex
+vi.mock('../../../lib/markdown/katex-bridge', async () => {
+  const remarkMath = (await import('remark-math')).default;
+  const rehypeKatex = (await import('rehype-katex')).default;
+  return {
+    getKatexPlugin: () => ({ remarkMath, rehypeKatex }),
+    isKatexAvailable: () => true,
+  };
+});
+
 import { renderLatex } from '../../../lib/markdown';
 
 describe('F007 — LaTeX 数学公式渲染', () => {

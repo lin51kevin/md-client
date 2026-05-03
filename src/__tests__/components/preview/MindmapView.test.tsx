@@ -2,12 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MindmapView } from '../../../components/preview/MindmapView';
 
-// Mock mermaid to avoid actual rendering in tests
-vi.mock('mermaid', () => ({
-  default: {
-    initialize: vi.fn(),
+// Mock mermaid-bridge (MindmapView uses the bridge, not mermaid directly)
+vi.mock('../../../lib/markdown/mermaid-bridge', () => ({
+  isMermaidAvailable: () => true,
+  getMermaidRenderer: () => ({
+    init: vi.fn().mockResolvedValue(undefined),
     render: vi.fn().mockResolvedValue({ svg: '<svg data-testid="mermaid-svg"><text>Mock SVG</text></svg>' }),
-  },
+    reset: vi.fn(),
+  }),
 }));
 
 // Mock i18n

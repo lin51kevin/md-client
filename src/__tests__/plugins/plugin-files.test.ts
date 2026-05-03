@@ -38,7 +38,7 @@ describe('files.readFile', () => {
     expect(result).toBeNull();
   });
 
-  it('should throw PluginPermissionError when no file.read permission', async () => {
+  it('should throw PluginPermissionError when no file.read permission', () => {
     const deps = makeDeps({
       readFileContent: async () => 'content',
     });
@@ -48,7 +48,7 @@ describe('files.readFile', () => {
       pluginId: 'test-plugin',
     });
 
-    await expect(sandboxed.files.readFile('/test.md')).rejects.toThrow(
+    expect(() => sandboxed.files.readFile('/test.md')).toThrow(
       expect.objectContaining({ name: 'PluginPermissionError' }),
     );
   });
@@ -105,30 +105,24 @@ describe('files.watch', () => {
 
   it('should stop triggering callback after dispose', () => {
     let callCount = 0;
-    const triggerCb: Array<() => void> = [];
+    let capturedCb: ((path: string) => void) | undefined;
     const deps = makeDeps({
       watchFiles: (_pattern, cb) => {
-        triggerCb.push(() => cb('/test/file.md'));
-        return () => {
-          // simulate disposal — clear callbacks
-          triggerCb.length = 0;
-        };
+        capturedCb = cb;
+        return () => {};
       },
     });
     const ctx = createPluginContext(deps);
     const disposable = ctx.files.watch('**/*.md', () => { callCount++; });
 
     // Before dispose, callback works
-    triggerCb.forEach(fn => fn());
+    capturedCb!('/test/file.md');
     expect(callCount).toBe(1);
 
     disposable.dispose();
 
-    // After dispose, no more triggers (callbacks cleared)
-    triggerCb.push(() => callCount++);
-    triggerCb.forEach(fn => fn());
-    // The internal subscription was disposed; new pushes to triggerCb don't matter
-    // because the watcher no longer calls the callback
+    // After dispose, callback should no longer fire
+    capturedCb!('/test/file.md');
     expect(callCount).toBe(1);
   });
 

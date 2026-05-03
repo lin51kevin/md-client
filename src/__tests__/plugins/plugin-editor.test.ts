@@ -275,9 +275,9 @@ describe('createEditorAPI', () => {
       expect(info).toHaveProperty('filePath', '/tmp/index.ts');
     });
 
-    it('should throw PluginPermissionError when no editor.read permission', () => {
-      const { createSandbox } = require('../../plugins/plugin-sandbox');
-      const { PluginPermissionError } = require('../../plugins/permission-checker');
+    it('should throw PluginPermissionError when no editor.read permission', async () => {
+      const { createSandbox } = await import('../../plugins/plugin-sandbox');
+      const { PluginPermissionError } = await import('../../plugins/permission-checker');
       const callback = vi.fn();
       const editorAPI = createEditorAPI({ cmViewRef: { current: null } });
       const context = { editor: editorAPI } as any;

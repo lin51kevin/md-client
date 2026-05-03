@@ -3,6 +3,14 @@ import { render, screen } from '@testing-library/react';
 import { Toolbar } from '../../../components/toolbar/Toolbar';
 import type { ViewMode, FocusMode } from '../../../types';
 
+// Mock vim-bridge so isVimAvailable() returns true
+vi.mock('../../../lib/cm/vim-bridge', () => ({
+  isVimAvailable: () => true,
+  getVimExtension: () => ({}),
+  registerVimExtension: vi.fn(),
+  unregisterVimExtension: vi.fn(),
+}));
+
 vi.mock('../../../i18n', () => ({
   useI18n: vi.fn(() => ({
     t: (key: string) => {

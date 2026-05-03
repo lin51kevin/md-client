@@ -1,12 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Mock mermaid module
+// Mock mermaid-bridge (core code delegates to the bridge, never imports mermaid directly)
 const mockRender = vi.fn().mockResolvedValue({ svg: '<svg><path d="M0 0"/></svg>' });
-vi.mock('mermaid', () => ({
-  default: {
-    initialize: vi.fn(),
+vi.mock('../../../lib/markdown/mermaid-bridge', () => ({
+  isMermaidAvailable: () => true,
+  getMermaidRenderer: () => ({
+    init: vi.fn().mockResolvedValue(undefined),
     render: mockRender,
-  },
+    reset: vi.fn(),
+  }),
 }));
 
 import { renderMermaid } from '../../../lib/markdown';
