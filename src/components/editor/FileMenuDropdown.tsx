@@ -293,6 +293,7 @@ export function FileMenuDropdown({
       icon: <Image size={13} strokeWidth={1.8} />,
       label: t('file.exportPng'),
       action: onExportPng,
+      disabled: true,
     }] : []),
   ];
 

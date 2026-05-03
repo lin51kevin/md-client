@@ -1,0 +1,11 @@
+{
+  "id": "marklite-vim",
+  "name": "Vim Mode",
+  "version": "1.0.0",
+  "description": "Vim 键盘映射 — hjkl 导航、dd 删除行等",
+  "author": "MarkLite Team",
+  "main": "dist/index.js",
+  "activationEvents": ["onStartup"],
+  "permissions": ["editor.extend", "storage"],
+  "engines": { "marklite": ">=0.11.0" }
+}

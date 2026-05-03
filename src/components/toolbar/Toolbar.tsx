@@ -2,6 +2,7 @@
 import { useRef, useState, useEffect, memo } from 'react';
 import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, SpellCheck, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, HelpCircle, FilePlus, FileText, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight, Table2, FileCode2, Minus, ListChecks, Sigma, Library, List, Brain, Undo2, Redo2, Bot, ArrowUpFromLine, PenLine } from 'lucide-react';
 import { ViewMode, FocusMode } from '../../types';
+import { isVimAvailable } from '../../lib/cm/vim-bridge';
 
 import { FileMenuDropdown } from '../editor/FileMenuDropdown';
 import { ToolbarButton } from './ToolbarButton';
@@ -344,7 +345,8 @@ export const Toolbar = memo(function Toolbar({
             variant="toggle"
             active={!!vimMode}
             onClick={onToggleVimMode}
-            title={vimMode ? t('toolbar.vimModeOff') : t('toolbar.vimModeOn')}
+            disabled={!isVimAvailable()}
+            title={!isVimAvailable() ? '请安装 Vim 插件' : (vimMode ? t('toolbar.vimModeOff') : t('toolbar.vimModeOn'))}
           >
             <Terminal size={14} strokeWidth={1.8} />
           </ToolbarButton>

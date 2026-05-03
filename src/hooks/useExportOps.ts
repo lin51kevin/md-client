@@ -117,28 +117,17 @@ export function useExportOps({ getActiveTab, t }: ExportOpsParams) {
       return;
     }
 
+    const { getPngExporter } = await import('../lib/export/png-bridge');
+    const exporter = getPngExporter();
+    if (!exporter) {
+      await message('请安装 PNG 导出插件', { title: tr('fileOps.hint'), kind: 'warning' });
+      return;
+    }
+
     setExporting('png');
 
     try {
-      const { default: html2canvas } = await import('html2canvas');
-      const canvas = await html2canvas(previewEl, {
-        backgroundColor: getComputedStyle(previewEl).backgroundColor || '#ffffff',
-        scale: 2,
-        useCORS: true,
-        logging: false,
-      });
-      const savePath = await save({
-        filters: [{ name: 'PNG Image', extensions: ['png'] }],
-        defaultPath: getDefaultFileName('png'),
-      });
-      if (savePath) {
-        const blob = await new Promise<Blob>((resolve, reject) =>
-          canvas.toBlob((b) => b ? resolve(b) : reject(new Error('toBlob returned null')), 'image/png')
-        );
-        const buffer = await blob.arrayBuffer();
-        const bytes = new Uint8Array(buffer);
-        await invoke('write_image_bytes', { path: savePath, data: Array.from(bytes) });
-      }
+      await exporter(previewEl);
     } catch (err) {
       const errMsg = toErrorMessage(err);
       await message(errMsg, { title: tr('fileOps.exportPngFailed'), kind: 'error' });

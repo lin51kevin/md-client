@@ -1,0 +1,11 @@
+{
+  "id": "marklite-png-export",
+  "name": "PNG Export",
+  "version": "1.0.0",
+  "description": "将预览区导出为 PNG 图片",
+  "author": "MarkLite Team",
+  "main": "dist/index.js",
+  "activationEvents": ["onStartup"],
+  "permissions": ["export", "commands"],
+  "engines": { "marklite": ">=0.11.0" }
+}

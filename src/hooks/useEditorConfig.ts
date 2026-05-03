@@ -9,6 +9,7 @@
  */
 import { useState, useEffect, useMemo } from 'react';
 import type { Extension } from '@codemirror/state';
+import { getVimExtension } from '../lib/cm/vim-bridge';
 import { EditorView } from '@codemirror/view';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { commonLanguages } from '../lib/cm/cm-languages';
@@ -17,7 +18,6 @@ import { THEMES, type ThemeName } from '../lib/theme';
 import { sepiaCmTheme, highContrastCmTheme } from '../lib/cm/cm-themes';
 import { autoCloseBrackets } from '../lib/cm/cmAutocomplete';
 import { multicursorKeymap } from '../lib/cm/multicursor-keymap';
-import { vimKeymap } from '../lib/cm/cmVim';
 import { codeBaseExtensions, loadLanguageExtension } from '../lib/cm/cm-code-extensions';
 
 interface EditorConfigOptions {
@@ -32,11 +32,7 @@ interface EditorConfigOptions {
 }
 
 export function useEditorConfig({ theme, vimMode, cursorExtension, searchHighlightExtension, largeFile = false, languageId = 'markdown' }: EditorConfigOptions) {
-  // Vim extension is loaded asynchronously
-  const [vimExtension, setVimExtension] = useState<Extension | null>(null);
-  useEffect(() => {
-    vimKeymap().then(setVimExtension).catch(console.error);
-  }, []);
+
 
   // Code language extension — loaded asynchronously when languageId changes
   const isCodeMode = languageId !== 'markdown';
@@ -65,8 +61,9 @@ export function useEditorConfig({ theme, vimMode, cursorExtension, searchHighlig
       if (codeLangExtension) {
         exts.push(codeLangExtension);
       }
-      if (vimMode && vimExtension) {
-        exts.push(vimExtension);
+      {
+        const vimExt = getVimExtension();
+        if (vimMode && vimExt) exts.push(vimExt);
       }
       return exts;
     }
@@ -85,12 +82,13 @@ export function useEditorConfig({ theme, vimMode, cursorExtension, searchHighlig
       exts.push(autoCloseBrackets());
     }
 
-    if (vimMode && vimExtension) {
-      exts.push(vimExtension);
+    {
+      const vimExt = getVimExtension();
+      if (vimMode && vimExt) exts.push(vimExt);
     }
 
     return exts;
-  }, [cursorExtension, vimExtension, vimMode, searchHighlightExtension, largeFile, isCodeMode, codeLangExtension]);
+  }, [cursorExtension, vimMode, searchHighlightExtension, largeFile, isCodeMode, codeLangExtension]);
 
   const editorTheme = useMemo((): 'light' | 'dark' | Extension => {
     const cm = THEMES[theme].cmTheme;

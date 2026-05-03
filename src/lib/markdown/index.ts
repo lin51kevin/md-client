@@ -5,7 +5,8 @@
 // ── Table of Contents ────────────────────────────────────────────────────────
 export { extractToc, slugify, type TocEntry } from './toc';
 // ── Mermaid Diagrams ─────────────────────────────────────────────────────────
-export { initMermaid, renderMermaid, resetMermaidInit, clearMermaidSvgCache } from './mermaid';
+export { initMermaid, renderMermaid, resetMermaidInit, clearMermaidSvgCache, getCurrentThemeConfig } from './mermaid';
+export { isMermaidAvailable, getMermaidRenderer, type MermaidRenderer } from './mermaid-bridge';
 // ── Table Parser ─────────────────────────────────────────────────────────────
 export { parseTable, serializeTable, type TableData, type Alignment } from './table-parser';
 // ── Mindmap Converter ────────────────────────────────────────────────────────

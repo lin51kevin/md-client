@@ -1,11 +1,11 @@
 /**
  * renderMermaidPreview — Milkdown renderPreview API compatible function.
  *
- * Can be used directly in Crepe's featureConfigs[CrepeFeature.CodeMirror].renderPreview
- * to render mermaid code blocks as SVG diagrams.
+ * Delegates to the mermaid-bridge for actual rendering.
+ * When no Mermaid plugin is registered, shows a fallback message.
  */
 
-import { initMermaid } from '../../../lib/markdown';
+import { isMermaidAvailable, getMermaidRenderer } from '../../../lib/markdown/mermaid-bridge';
 import { toErrorMessage } from '../../../lib/utils/errors';
 
 /**
@@ -21,15 +21,21 @@ export function renderMermaidPreview(
 ): string | null {
   if (language !== 'mermaid') return null;
 
+  // Graceful degradation when no Mermaid plugin is registered
+  if (!isMermaidAvailable()) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'mermaid-unavailable';
+    wrapper.innerHTML = `<pre style="background:var(--bg-secondary);padding:12px;border-radius:6px;overflow:auto;"><code>${escapeHtmlSimple(codeContent)}</code></pre><small style="color:var(--text-secondary);margin-top:4px;display:block;">Install the Mermaid plugin to render diagrams</small>`;
+    applyPreview(wrapper);
+    return '⚠ Mermaid plugin not available';
+  }
+
   const id = `milkdown-mermaid-${++mermaidCounter}`;
-  initMermaid()
-    .then(({ default: mermaid }) => mermaid.render(id, codeContent))
+  getMermaidRenderer()!.render(id, codeContent)
     .then(({ svg }) => {
       const wrapper = document.createElement('div');
       wrapper.className = 'mermaid-diagram';
       wrapper.innerHTML = svg;
-      // Text color is handled by theme.css (.mermaid-diagram svg text { fill: var(--text-primary) })
-      // which correctly adapts to light/dark theme without needing inline overrides here.
       applyPreview(wrapper);
     })
     .catch((err) => {
@@ -41,6 +47,10 @@ export function renderMermaidPreview(
     });
 
   return '⏳ Rendering mermaid...';
+}
+
+function escapeHtmlSimple(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 /**

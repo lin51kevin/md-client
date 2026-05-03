@@ -1,0 +1,11 @@
+{
+  "id": "marklite-katex",
+  "name": "KaTeX Math",
+  "version": "1.0.0",
+  "description": "数学公式渲染 — 支持 LaTeX 行内公式 $...$ 和块级公式 $$...$$",
+  "author": "MarkLite Team",
+  "main": "dist/index.js",
+  "activationEvents": ["onStartup"],
+  "permissions": ["preview.extend", "storage"],
+  "engines": { "marklite": ">=0.11.0" }
+}

@@ -11,12 +11,11 @@ import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
 import rehypeStringify from 'rehype-stringify';
-import rehypeKatex from 'rehype-katex';
 import rehypeSlug from 'rehype-slug';
 import rehypeHighlight from 'rehype-highlight';
-import { CORE_REMARK_PLUGINS } from './pipeline';
+import { buildCoreRemarkPlugins } from './pipeline';
+import { getKatexPlugin } from './katex-bridge';
 import { extractToc } from './toc';
-import katexCss from 'katex/dist/katex.min.css?raw';
 import highlightCss from 'highlight.js/styles/github.css?raw';
 
 // ── Shared DOMPurify configuration ─────────────────────────────────────────
@@ -153,13 +152,14 @@ nav.toc a:hover { text-decoration: underline; }
  */
 export async function markdownToHtml(markdown: string): Promise<string> {
   if (!markdown.trim()) return '';
+  const katex = getKatexPlugin();
   const result = await unified()
     .use(remarkParse)
-    .use([...CORE_REMARK_PLUGINS])
+    .use([...buildCoreRemarkPlugins()])
     .use(remarkRehype)
     .use(rehypeSlug)
     .use(rehypeHighlight, { detect: true })
-    .use(rehypeKatex)
+    .use(katex?.rehypeKatex)
     .use(rehypeStringify)
     .process(markdown);
   return sanitizeHtml(String(result));
@@ -218,6 +218,13 @@ export async function generateHtmlDocument(
   const title = options.title ?? extractTitle(bodyHtml);
   const customCss = options.css ? `\n${options.css.replace(/<\/style\s*>/gi, '/* </style> removed */')}` : '';
   const tocHtml = buildTocHtml(markdown);
+
+  // Dynamically load katex CSS for HTML export if KaTeX plugin is active
+  let katexCss = '';
+  const katex = getKatexPlugin();
+  if (katex) {
+    katexCss = (await import('katex/dist/katex.min.css?raw')).default;
+  }
 
   return `<!DOCTYPE html>
 <html lang="en">

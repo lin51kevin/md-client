@@ -1,24 +1,21 @@
 import { useState, useEffect, useMemo, useCallback, useRef, useId, memo } from "react";
 import DOMPurify from "dompurify";
 import ReactMarkdown from "react-markdown";
-import "katex/dist/katex.min.css";
 import '../css/embed-containers.css';
 import './preview.css';
 import { invoke } from "@tauri-apps/api/core";
 import { openPath, openUrl } from "@tauri-apps/plugin-opener";
-import { PREVIEW_REMARK_PLUGINS, PREVIEW_REHYPE_PLUGINS } from "../../lib/markdown/pipeline";
+import { buildPreviewRemarkPlugins, buildPreviewRehypePlugins } from "../../lib/markdown/pipeline";
 import { MAX_IMAGE_CACHE } from "../../constants";
 import { toErrorMessage } from "../../lib/utils/errors";
 import { isAbsolutePath, resolvePath } from "../../lib/utils/path";
-import { initMermaid, type TableData } from "../../lib/markdown";
+import { isMermaidAvailable, getMermaidRenderer, type TableData } from "../../lib/markdown";
 import { extractFrontmatter, type Frontmatter } from "../../lib/markdown/extensions";
 import { TableEditor } from "../modal/TableEditor";
 import { useI18n } from "../../i18n";
 
-// Stable plugin arrays — imported from markdown-pipeline to ensure single source of truth
-// and prevent ReactMarkdown from re-initializing the pipeline on each render.
-const REMARK_PLUGINS = PREVIEW_REMARK_PLUGINS;
-const REHYPE_PLUGINS = PREVIEW_REHYPE_PLUGINS;
+// Plugin arrays are built lazily via buildPreviewRemarkPlugins/buildPreviewRehypePlugins
+// so that the KaTeX plugin (if activated) is picked up at render time.
 
 const MIME_MAP: Record<string, string> = {
   png: "image/png",
@@ -528,8 +525,8 @@ export const MarkdownPreview = memo(function MarkdownPreview({
       {(tableCounterRef.current = 0) === 0 && null}
       {Object.keys(frontmatter).length > 0 && <FrontmatterPanel fm={frontmatter} />}
       <ReactMarkdown
-        remarkPlugins={[...REMARK_PLUGINS]}
-        rehypePlugins={[...REHYPE_PLUGINS]}
+        remarkPlugins={buildPreviewRemarkPlugins()}
+        rehypePlugins={buildPreviewRehypePlugins()}
         urlTransform={safeUrlTransform}
         components={customComponents}
       >

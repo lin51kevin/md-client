@@ -15,6 +15,7 @@ const DEV_PLUGIN_MODULES: Record<string, () => Promise<{ activate?: (ctx: Plugin
     'marklite-graph-view': () => import('../plugins/official/graph-view/src/index'),
     'marklite-ai-copilot': () => import('../plugins/official/ai-copilot/src/index'),
     'marklite-git': () => import('../plugins/official/git/src/index'),
+    'marklite-png-export': () => import('../plugins/official/png-export/src/index'),
   } : {};
 
 /** Official plugin IDs — used in production to discover externally-built plugins. */
@@ -23,6 +24,8 @@ const OFFICIAL_PLUGIN_IDS = [
   'marklite-graph-view',
   'marklite-ai-copilot',
   'marklite-git',
+  'marklite-png-export',
+  'marklite-vim',
 ];
 
 interface ActivePluginEntry {

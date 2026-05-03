@@ -13,48 +13,83 @@
 import remarkGfm from 'remark-gfm';
 import remarkDirective from 'remark-directive';
 import remarkDirectiveRehype from 'remark-directive-rehype';
-import remarkMath from 'remark-math';
 import remarkFootnotes from 'remark-footnotes';
 import remarkFrontmatter from 'remark-frontmatter';
 import rehypeHighlight from 'rehype-highlight';
 import rehypeRaw from 'rehype-raw';
-import rehypeKatex from 'rehype-katex';
 import rehypeSlug from 'rehype-slug';
 import { rehypeFilterInvalidElements } from './rehype-filter-invalid-elements';
 import { remarkWikiLinks } from './remark-wikilinks';
 import { rehypeWikiLinks } from './rehype-wikilinks';
+import { getKatexPlugin } from './katex-bridge';
 
 /**
- * Core remark plugins shared across all markdown rendering contexts.
- * These handle GFM, directives, and math — the common denominator.
+ * Build core remark plugins. Dynamically includes remark-math if the
+ * marklite-katex plugin has been activated.
  */
-export const CORE_REMARK_PLUGINS = [
-  remarkGfm,
-  remarkDirective,
-  remarkDirectiveRehype,
-  remarkMath,
-] as const;
+function buildCoreRemarkPlugins(): unknown[] {
+  const plugins: unknown[] = [remarkGfm, remarkDirective, remarkDirectiveRehype];
+  const katex = getKatexPlugin();
+  if (katex) plugins.push(katex.remarkMath);
+  return plugins;
+}
 
 /**
- * Full remark plugin set for the interactive preview pane (ReactMarkdown).
- * Extends CORE_REMARK_PLUGINS with footnotes, frontmatter, and wiki-links.
+ * Build full remark plugins for the interactive preview pane.
+ * Extends core plugins with footnotes, frontmatter, and wiki-links.
  */
-export const PREVIEW_REMARK_PLUGINS = [
-  ...CORE_REMARK_PLUGINS,
+export function buildPreviewRemarkPlugins(): unknown[] {
+  const plugins = buildCoreRemarkPlugins();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  remarkFootnotes as any, // remark-footnotes bundles duplicate vfile types (known upstream issue)
-  remarkFrontmatter,
-  remarkWikiLinks,
-] as const;
+  plugins.push(remarkFootnotes as any, remarkFrontmatter, remarkWikiLinks);
+  return plugins;
+}
 
 /**
- * Full rehype plugin set for the interactive preview pane (ReactMarkdown).
+ * Build rehype plugins for the interactive preview pane.
+ * Dynamically includes rehype-katex if the marklite-katex plugin is active.
  */
-export const PREVIEW_REHYPE_PLUGINS = [
-  rehypeSlug,
-  rehypeHighlight,
-  rehypeRaw,
-  rehypeKatex,
-  rehypeWikiLinks,
-  rehypeFilterInvalidElements,
-] as const;
+export function buildPreviewRehypePlugins(): unknown[] {
+  const plugins: unknown[] = [
+    rehypeSlug,
+    rehypeHighlight,
+    rehypeRaw,
+    rehypeWikiLinks,
+    rehypeFilterInvalidElements,
+  ];
+  const katex = getKatexPlugin();
+  if (katex) {
+    // Insert katex after rehypeRaw (before wiki-links) for correct processing order
+    plugins.splice(3, 0, katex.rehypeKatex);
+  }
+  return plugins;
+}
+
+/**
+ * Core remark plugins (frozen snapshot). Consumers that need live katex
+ * status should use buildPreviewRemarkPlugins() instead.
+ * @deprecated Use buildPreviewRemarkPlugins() for live katex support.
+ */
+export const CORE_REMARK_PLUGINS = buildCoreRemarkPlugins();
+
+/**
+ * Full remark plugin set for preview. Prefer buildPreviewRemarkPlugins().
+ * @deprecated Use buildPreviewRemarkPlugins() for live katex support.
+ */
+export const PREVIEW_REMARK_PLUGINS = (() => {
+  const plugins = [...CORE_REMARK_PLUGINS];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  plugins.push(remarkFootnotes as any, remarkFrontmatter, remarkWikiLinks);
+  return plugins;
+})();
+
+/**
+ * Full rehype plugin set for preview. Prefer buildPreviewRehypePlugins().
+ * @deprecated Use buildPreviewRehypePlugins() for live katex support.
+ */
+export const PREVIEW_REHYPE_PLUGINS = (() => {
+  const plugins: unknown[] = [rehypeSlug, rehypeHighlight, rehypeRaw, rehypeWikiLinks, rehypeFilterInvalidElements];
+  const katex = getKatexPlugin();
+  if (katex) plugins.splice(3, 0, katex.rehypeKatex);
+  return plugins;
+})();

@@ -1,12 +1,18 @@
 /**
  * F008 — Mermaid 图表渲染
  *
- * 检测 Markdown 中的 ```mermaid 代码块，将其渲染为 SVG。
- * 使用 mermaid.js 进行服务端/客户端渲染。
+ * Detects ```mermaid code blocks in Markdown and renders them to SVG.
+ * Uses the mermaid-bridge for actual rendering — the marklite-mermaid plugin
+ * registers a MermaidRenderer; this module delegates to it.
  */
 
 import { escapeHtml } from '../utils/html-safety';
 import { toErrorMessage } from '../utils/errors';
+import {
+  isMermaidAvailable,
+  getMermaidRenderer,
+  type MermaidRenderer,
+} from './mermaid-bridge';
 
 let mermaidInitialized = false;
 let currentMermaidTheme = '';
@@ -23,16 +29,18 @@ let mermaidIdCounter = 0;
 const svgCache = new Map<string, string>();
 
 /**
- * 重置 Mermaid 初始化状态（仅供测试使用）
+ * Reset Mermaid initialization state (theme changes, tests, etc.)
  */
 export function resetMermaidInit(): void {
   mermaidInitialized = false;
   currentMermaidTheme = '';
   svgCache.clear();
+  // Also tell the plugin to reset if registered
+  getMermaidRenderer()?.reset();
 }
 
 /**
- * 清空 SVG 缓存（仅供测试使用）
+ * Clear SVG cache only (tests)
  */
 export function clearMermaidSvgCache(): void {
   svgCache.clear();
@@ -207,31 +215,29 @@ function getThemeConfig(theme: 'dark' | 'default') {
 }
 
 /**
- * 初始化 Mermaid（只在主题变化时重新初始化）
+ * Get the theme config for the current detected theme.
+ * Exported so the plugin can use it during initialization.
  */
-export async function initMermaid(): Promise<typeof import('mermaid')> {
-  const m = await import('mermaid');
+export function getCurrentThemeConfig() {
+  return getThemeConfig(detectTheme());
+}
 
+/**
+ * Initialize Mermaid via the bridge.
+ * If no renderer is registered, this is a no-op (graceful degradation).
+ */
+export async function initMermaid(): Promise<void> {
+  if (!isMermaidAvailable()) return;
+
+  const renderer = getMermaidRenderer()!;
   const detectedTheme = detectTheme();
 
   // Re-initialize if theme changed
   if (!mermaidInitialized || detectedTheme !== currentMermaidTheme) {
-    const config = getThemeConfig(detectedTheme);
-
-    m.default.initialize({
-      startOnLoad: false,
-      securityLevel: 'strict',
-      fontFamily: 'sans-serif',
-      suppressErrorRendering: false,
-      htmlLabels: false,
-      flowchart: { htmlLabels: false, curve: 'basis' },
-      sequence: { useMaxWidth: false },
-      ...config,
-    });
+    await renderer.init();
     mermaidInitialized = true;
     currentMermaidTheme = detectedTheme;
   }
-  return m;
 }
 
 /**
@@ -241,20 +247,23 @@ export function reinitMermaid(): void {
   mermaidInitialized = false;
   currentMermaidTheme = '';
   svgCache.clear();
+  getMermaidRenderer()?.reset();
 }
 
 /**
- * 渲染文本中的 Mermaid 图表为 SVG
+ * Render Mermaid diagrams in text to SVG.
  *
- * @param text - 包含 ```mermaid 代码块的 Markdown 文本
- * @returns 替换后的文本（mermaid 块变为 <div class="mermaid">...<svg>...</div>）
+ * @param text - Markdown text containing ```mermaid code blocks
+ * @returns Text with mermaid blocks replaced by SVG (or original code if plugin unavailable)
  */
 export async function renderMermaid(text: string): Promise<string> {
   if (!text || !text.includes('mermaid')) return text;
+  if (!isMermaidAvailable()) return text; // Graceful degradation: leave code blocks as-is
 
-  const { default: mermaid } = await initMermaid();
+  await initMermaid();
+  const renderer = getMermaidRenderer()!;
 
-  // 匹配 ```mermaid ... ``` 代码块（非贪婪，支持多行，兼容 LF/CRLF）
+  // Match ```mermaid ... ``` code blocks (non-greedy, multi-line, LF/CRLF)
   const mermaidRe = /```mermaid\r?\n([\s\S]*?)```/g;
 
   let idCounter = mermaidIdCounter;
@@ -262,7 +271,7 @@ export async function renderMermaid(text: string): Promise<string> {
     [...text.matchAll(mermaidRe)].map(async (match) => {
       const code = match[1].trim();
 
-      // Cache hit: same diagram source → reuse previous SVG output
+      // Cache hit
       const cached = svgCache.get(code);
       if (cached !== undefined) {
         return { fullMatch: match[0], replacement: cached };
@@ -271,18 +280,16 @@ export async function renderMermaid(text: string): Promise<string> {
       const id = `mermaid-${idCounter++}`;
       mermaidIdCounter = idCounter;
       try {
-        const { svg } = await mermaid.render(id, code);
+        const { svg } = await renderer.render(id, code);
         svgCache.set(code, svg);
         return { fullMatch: match[0], replacement: svg };
       } catch (err) {
-        // 渲染失败时返回带错误信息的占位符
         const errHtml = `<div class="mermaid-error" style="color:red;padding:8px;border:1px solid red;">Mermaid render error: ${escapeHtml(toErrorMessage(err))}</div>`;
         return { fullMatch: match[0], replacement: errHtml };
       }
     })
   );
 
-  // 替换所有 mermaid 块
   let result = text;
   for (const r of results) {
     result = result.replace(r.fullMatch, r.replacement);
