@@ -43,3 +43,4 @@ sample.md
 
 # Built plugin bundles (output of scripts/build-plugins.mjs)
 resources/plugins/
+public/plugins/

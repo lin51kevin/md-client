@@ -30,7 +30,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/build-plugins.mjs && tsc && vite build",
+    "build": "node scripts/build-plugins.mjs --resources-only && tsc && vite build",
     "analyze": "tsc && cross-env ANALYZE=true vite build",
     "preview": "vite preview",
     "tauri": "tauri",

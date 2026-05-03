@@ -3,7 +3,6 @@ import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { visualizer } from "rollup-plugin-visualizer";
-import { execSync } from "node:child_process";
 import path from "node:path";
 
 // @ts-expect-error process is a nodejs global
@@ -116,25 +115,7 @@ export default defineConfig(async () => ({
     ...(process.env.ANALYZE === 'true'
       ? [visualizer({ open: true, filename: 'stats.html', gzipSize: true, brotliSize: true })]
       : []),
-    // Build official plugins as external bundles after main build
-    {
-      name: 'build-plugins',
-      closeBundle() {
-        // Only run during production build (not dev server)
-        // @ts-expect-error process is a nodejs global
-        if (process.env.NODE_ENV === 'production' || !host) {
-          try {
-            execSync('node scripts/build-plugins.mjs', {
-              cwd: import.meta.dirname,
-              stdio: 'inherit',
-            });
-          } catch {
-            // Non-fatal: plugins can be rebuilt separately
-            console.warn('\n⚠ Plugin build failed — run "node scripts/build-plugins.mjs" manually\n');
-          }
-        }
-      },
-    },
+
   ],
 
   // Redirect @codemirror/language-data to our curated subset (~20 languages).
@@ -185,13 +166,10 @@ export default defineConfig(async () => ({
             "@uiw/react-codemirror",
             "codemirror",
           ],
-          mermaid: ["mermaid"],
-          katex: ["katex"],
           markdownRender: [
             "react-markdown",
             "remark-gfm",
             "rehype-highlight",
-            "rehype-katex",
             "rehype-raw",
             "rehype-slug",
           ],

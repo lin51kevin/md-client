@@ -16,12 +16,30 @@ import { build } from 'esbuild';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 const PLUGINS_SRC = path.join(ROOT, 'src', 'plugins', 'official');
 const DIST_PLUGINS = path.join(ROOT, 'resources', 'plugins');
 const PUBLIC_PLUGINS = path.join(ROOT, 'public', 'plugins');
+
+// --resources-only: skip copying to public/plugins/ (used in production builds
+// where Tauri bundles resources/plugins/ separately and dist/ should not contain
+// a duplicate copy of the plugin bundles).
+const RESOURCES_ONLY = process.argv.includes('--resources-only');
+
+// ── Mermaid slim: exclude rarely-used diagram types (mirrors vite.config.ts) ──
+const EXCLUDED_MERMAID_DIAGRAMS = [
+  'wardleyDiagram', 'architectureDiagram', 'c4Diagram', 'vennDiagram',
+  'xychartDiagram', 'requirementDiagram', 'sankeyDiagram', 'kanban-definition',
+  'ishikawaDiagram',
+];
+const EXCLUDED_PARSER_MODULES = [
+  'wardley', 'architecture', 'kanban', 'packet', 'radar',
+];
 
 // ── Shared dependency handling ──────────────────────────────────────
 //
@@ -103,6 +121,70 @@ async function buildShims() {
 }
 
 // ── esbuild plugin: resolve shared deps to global shims ─────────────
+
+/**
+ * Handle Vite-style `?raw` CSS imports: return file contents as a string export
+ * without processing url() references (font files, images, etc.).
+ */
+function rawImportPlugin() {
+  return {
+    name: 'raw-import',
+    setup(b) {
+      b.onResolve({ filter: /\?raw$/ }, args => {
+        const filePath = args.path.replace(/\?raw$/, '');
+        return {
+          path: require.resolve(filePath, { paths: [args.resolveDir] }),
+          namespace: 'raw-import',
+        };
+      });
+      b.onLoad({ filter: /.*/, namespace: 'raw-import' }, args => {
+        const content = fs.readFileSync(args.path, 'utf8');
+        return {
+          contents: `export default ${JSON.stringify(content)};`,
+          loader: 'js',
+        };
+      });
+    },
+  };
+}
+
+/**
+ * Exclude rarely-used mermaid diagram types from the plugin bundle.
+ * Same logic as mermaidSlimPlugin in vite.config.ts but for esbuild.
+ */
+function mermaidSlimEsbuildPlugin() {
+  return {
+    name: 'mermaid-slim',
+    setup(b) {
+      b.onResolve({ filter: /.*/ }, args => {
+        if (!args.importer) return null;
+        const normalized = args.importer.replace(/\\/g, '/');
+
+        // Intercept mermaid's internal diagram imports
+        if (normalized.includes('node_modules/mermaid/')) {
+          if (EXCLUDED_MERMAID_DIAGRAMS.some(d => args.path.includes(d))) {
+            return { path: args.path, namespace: 'mermaid-excluded' };
+          }
+        }
+
+        // Intercept @mermaid-js/parser lazy grammar imports
+        if (normalized.includes('node_modules/@mermaid-js/parser/')) {
+          const basename = args.path.split('/').pop() || '';
+          if (EXCLUDED_PARSER_MODULES.some(m => basename.startsWith(m + '-') || basename === m)) {
+            return { path: args.path, namespace: 'mermaid-excluded' };
+          }
+        }
+
+        return null;
+      });
+
+      b.onLoad({ filter: /.*/, namespace: 'mermaid-excluded' }, () => ({
+        contents: 'export const diagram = undefined;',
+        loader: 'js',
+      }));
+    },
+  };
+}
 
 function sharedGlobalsPlugin(shims) {
   return {
@@ -211,7 +293,8 @@ function findEntryPoint(pluginDir) {
 }
 
 async function main() {
-  const filter = process.argv[2];
+  const args = process.argv.slice(2).filter(a => !a.startsWith('--'));
+  const filter = args[0];
   const pluginNames = discoverPlugins(filter);
   const shims = await buildShims();
 
@@ -241,7 +324,11 @@ async function main() {
         target: ['es2022'],
         jsx: 'automatic',
         jsxImportSource: 'react',
-        plugins: [sharedGlobalsPlugin(shims)],
+        plugins: [
+          rawImportPlugin(),
+          ...(name === 'mermaid' ? [mermaidSlimEsbuildPlugin()] : []),
+          sharedGlobalsPlugin(shims),
+        ],
         logLevel: 'warning',
       });
 
@@ -251,15 +338,17 @@ async function main() {
         fs.copyFileSync(manifestSrc, manifestDst);
       }
 
-      // Also copy to public/plugins/ for Vite dev server
-      const publicDir = path.join(PUBLIC_PLUGINS, `marklite-${name}`);
-      const publicDistDir = path.join(publicDir, 'dist');
-      fs.mkdirSync(publicDistDir, { recursive: true });
-      // Copy dist/index.js
-      fs.copyFileSync(path.join(outDir, 'index.js'), path.join(publicDistDir, 'index.js'));
-      // Copy manifest.json
-      if (fs.existsSync(manifestSrc)) {
-        fs.copyFileSync(manifestSrc, path.join(publicDir, 'manifest.json'));
+      // Copy to public/plugins/ for Vite dev server (skip in production builds)
+      if (!RESOURCES_ONLY) {
+        const publicDir = path.join(PUBLIC_PLUGINS, `marklite-${name}`);
+        const publicDistDir = path.join(publicDir, 'dist');
+        fs.mkdirSync(publicDistDir, { recursive: true });
+        // Copy dist/index.js
+        fs.copyFileSync(path.join(outDir, 'index.js'), path.join(publicDistDir, 'index.js'));
+        // Copy manifest.json
+        if (fs.existsSync(manifestSrc)) {
+          fs.copyFileSync(manifestSrc, path.join(publicDir, 'manifest.json'));
+        }
       }
 
       const stat = fs.statSync(path.join(outDir, 'index.js'));
