@@ -6,6 +6,7 @@
  */
 import type { Extension } from '@codemirror/state';
 import { bracketMatching, indentOnInput, foldGutter } from '@codemirror/language';
+import { rainbowBrackets } from './cmRainbowBrackets';
 import { closeBrackets, autocompletion } from '@codemirror/autocomplete';
 import { highlightActiveLine, lineNumbers, EditorView } from '@codemirror/view';
 import { commonLanguages } from './cm-languages';
@@ -21,6 +22,7 @@ export function codeBaseExtensions(): Extension[] {
     foldGutter(),
     highlightActiveLine(),
     bracketMatching(),
+    rainbowBrackets(),
     indentOnInput(),
     closeBrackets(),
     autocompletion(),
