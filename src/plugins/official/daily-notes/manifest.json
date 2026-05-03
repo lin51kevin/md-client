@@ -1,0 +1,11 @@
+{
+  "id": "marklite-daily-notes",
+  "name": "Daily Notes",
+  "version": "1.0.0",
+  "description": "每日笔记 — Ctrl+D 快速创建/打开当日笔记，支持模板变量",
+  "author": "MarkLite Team",
+  "main": "dist/index.js",
+  "activationEvents": ["onStartup"],
+  "permissions": ["workspace", "commands", "storage", "editor.write", "sidebar.panel"],
+  "engines": { "marklite": ">=0.11.0" }
+}
