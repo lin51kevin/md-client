@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Terminal } from 'xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
@@ -71,6 +71,11 @@ export const TerminalInstance: React.FC<TerminalInstanceProps> = ({ instance, is
   const inputBufferRef = useRef<string>(instance.inputBuffer);
   const cwdRef = useRef<string>(instance.cwd);
 
+  // Update cwdRef when instance.cwd changes
+  useEffect(() => {
+    cwdRef.current = instance.cwd;
+  }, [instance.cwd]);
+
   // Initialize terminal
   useEffect(() => {
     if (!containerRef.current || instance.termRef) return;
@@ -121,7 +126,25 @@ export const TerminalInstance: React.FC<TerminalInstanceProps> = ({ instance, is
 
     const writePrompt = () => {
       const cwd = cwdRef.current;
-      const displayPath = cwd ? cwd.replace(/^C:\\/, '/c/').replace(/\\/g, '/') : '~';
+      let displayPath = '~';
+      
+      if (cwd) {
+        // Convert Windows path to Unix-style for display
+        let normalizedPath = cwd.replace(/\\/g, '/');
+        
+        // Convert Windows drive letters (C:/ -> /c/)
+        normalizedPath = normalizedPath.replace(/^([A-Z]):/i, (_, drive) => `/${drive.toLowerCase()}`);
+        
+        // Show abbreviated path if too long (show last 3 segments)
+        const segments = normalizedPath.split('/').filter(Boolean);
+        if (segments.length > 3) {
+          displayPath = '.../' + segments.slice(-3).join('/');
+        } else {
+          displayPath = normalizedPath || '/';
+        }
+      }
+      
+      writeOutput(`\x1b[36m${displayPath}\x1b[0m $ `);
       writeOutput(`${displayPath} $ `);
       inputBufferRef.current = '';
       onUpdateRefs(instance.id, { inputBuffer: '' });

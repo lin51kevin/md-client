@@ -10,6 +10,20 @@ export function useTerminalManager() {
   const [activeTerminalId, setActiveTerminalId] = useState<string | null>(null);
   const [nextId, setNextId] = useState(1);
 
+  // Get initial working directory from file tree root
+  const getInitialCwd = useCallback((): string => {
+    try {
+      // Try to get file tree root from localStorage
+      const fileTreeRoot = localStorage.getItem('marklite-filetree-root');
+      if (fileTreeRoot) {
+        return fileTreeRoot;
+      }
+    } catch {
+      // Fallback if localStorage is not available
+    }
+    return '';
+  }, []);
+
   // Get default shell type based on platform
   const getDefaultShellType = useCallback((): string => {
     if (typeof navigator !== 'undefined' && navigator.platform) {
@@ -24,11 +38,12 @@ export function useTerminalManager() {
   useEffect(() => {
     if (terminals.length === 0) {
       const defaultShellType = getDefaultShellType();
+      const initialCwd = getInitialCwd();
       const firstTerminal: TerminalInstance = {
         id: 'terminal-1',
         name: 'Terminal 1',
         shellType: defaultShellType,
-        cwd: '',
+        cwd: initialCwd,
         termRef: null,
         fitAddonRef: null,
         inputBuffer: '',
@@ -45,11 +60,12 @@ export function useTerminalManager() {
    */
   const createTerminal = useCallback((shellType: string) => {
     const id = `terminal-${nextId}`;
+    const initialCwd = getInitialCwd();
     const newTerminal: TerminalInstance = {
       id,
       name: `Terminal ${nextId}`,
       shellType,
-      cwd: '',
+      cwd: initialCwd,
       termRef: null,
       fitAddonRef: null,
       inputBuffer: '',
@@ -61,7 +77,7 @@ export function useTerminalManager() {
     setNextId((n) => n + 1);
     
     return id;
-  }, [nextId]);
+  }, [nextId, getInitialCwd]);
 
   /**
    * Delete a terminal by ID.
