@@ -10,6 +10,7 @@
 ///
 /// We also ensure the closing `:::` is preceded by a blank line so that a `:::`
 /// that immediately follows a GFM table is not mistakenly parsed as a table row.
+#[cfg(feature = "export")]
 fn replace_emoji_shortcodes(text: &str) -> String {
     let mut result = String::with_capacity(text.len());
     let mut chars = text.char_indices().peekable();
@@ -32,6 +33,11 @@ fn replace_emoji_shortcodes(text: &str) -> String {
         result.push(c);
     }
     result
+}
+
+#[cfg(not(feature = "export"))]
+fn replace_emoji_shortcodes(text: &str) -> String {
+    text.to_string()
 }
 
 pub fn preprocess_markdown(markdown: &str) -> String {

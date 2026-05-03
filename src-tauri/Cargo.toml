@@ -17,8 +17,12 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
+[features]
+default = ["export"]
+export = ["dep:docx-rs", "dep:genpdf", "dep:image", "dep:emojis"]
+
 [dependencies]
-tauri = { version = "2", features = ["devtools"] }
+tauri = { version = "2", features = [] }
 tauri-plugin-opener = "2"
 tauri-plugin-single-instance = "2"
 serde = { version = "1", features = ["derive"] }
@@ -28,11 +32,11 @@ tauri-plugin-fs = { version = "2.5", features = ["watch"] }
 tauri-plugin-updater = "2"
 pulldown-cmark = { version = "0.12", features = ["html"] }
 md-5 = "0.10"
-docx-rs = "0.4"
-genpdf = { version = "0.2", features = ["images"] }
+docx-rs = { version = "0.4", optional = true }
+genpdf = { version = "0.2", features = ["images"], optional = true }
 base64 = "0.22"
-image = { version = "0.23", default-features = false, features = ["png", "jpeg"] }
-emojis = "0.8.0"
+image = { version = "0.23", default-features = false, features = ["png", "jpeg"], optional = true }
+emojis = { version = "0.8.0", optional = true }
 regex = "1"
 encoding_rs = "0.8"
 chardetng = "0.1"
@@ -41,7 +45,8 @@ chardetng = "0.1"
 tempfile = "3"
 
 [profile.release]
+panic = "abort"     # Smaller binary (no unwinding tables)
 strip = true        # Strip debug symbols
 lto = true           # Link-time optimization
 codegen-units = 1    # Maximize optimization (slower build)
-opt-level = "s"      # Optimize for size
+opt-level = "z"      # Optimize aggressively for size

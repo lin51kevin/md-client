@@ -1,7 +1,9 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 
 mod markdown_preprocess;
+#[cfg(feature = "export")]
 mod export_pdf;
+#[cfg(feature = "export")]
 mod export_docx;
 mod git;
 mod commands;
@@ -10,8 +12,11 @@ mod search;
 pub use commands::editor_tools;
 pub use commands::shell;
 
+#[cfg(feature = "export")]
 use export_pdf::export_pdf;
+#[cfg(feature = "export")]
 use export_docx::export_docx;
+#[cfg(feature = "export")]
 use base64::Engine as _;
 use tauri::Manager;
 use tauri::Emitter;
@@ -116,6 +121,7 @@ pub(crate) fn validate_user_path(path: &str) -> Result<(), String> {
 /// Pre-rendered image blob passed from the JS side.
 /// The `data` field is a base64-encoded PNG.  `width` and `height` are the
 /// pixel dimensions of the PNG at the render scale used by the frontend.
+#[cfg(feature = "export")]
 #[derive(serde::Deserialize)]
 struct ExportImage {
     data: String,
@@ -159,6 +165,7 @@ fn get_open_file() -> Option<OpenFileResult> {
     }
 }
 
+#[cfg(feature = "export")]
 #[tauri::command]
 async fn export_document(
     markdown: String,
@@ -206,6 +213,17 @@ async fn export_document(
     })
     .await
     .map_err(|e| e.to_string())?
+}
+
+#[cfg(not(feature = "export"))]
+#[tauri::command]
+async fn export_document(
+    _markdown: String,
+    _output_path: String,
+    _format: String,
+    _pre_rendered_images: Option<std::collections::HashMap<String, String>>,
+) -> Result<(), String> {
+    Err("导出功能未启用。请使用包含 export 特性的构建版本。".to_string())
 }
 
 /// Implementation for restore_session_files (runs on a blocking thread).
