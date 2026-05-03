@@ -329,7 +329,7 @@ export const TerminalInstance: React.FC<TerminalInstanceProps> = ({ instance, is
         bottom: 0,
         width: '100%',
         height: '100%',
-        padding: '4px',
+        padding: '12px 4px 12px 12px',
         overflow: 'hidden',
         visibility: isActive ? 'visible' : 'hidden',
         pointerEvents: isActive ? 'auto' : 'none',
