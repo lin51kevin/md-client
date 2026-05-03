@@ -61,6 +61,7 @@ describe('Terminal Plugin', () => {
       expect(mockContext.sidebar.registerPanel).toHaveBeenCalledWith('terminal', {
         title: 'Terminal',
         icon: 'terminal',
+        position: 'bottom',
         render: expect.any(Function),
       });
       expect(mockContext.commands.register).toHaveBeenCalledWith(

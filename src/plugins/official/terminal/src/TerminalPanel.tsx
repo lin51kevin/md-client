@@ -8,6 +8,28 @@ interface TerminalPanelProps {
   context: import('../../../plugin-sandbox').PluginContext;
 }
 
+/** Read a CSS variable value from the document root. */
+function getCSSVar(name: string, fallback: string): string {
+  const val = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return val || fallback;
+}
+
+/** Build an xterm theme from the app's CSS variables. */
+function buildThemeFromCSS(): Record<string, string> {
+  return {
+    background: getCSSVar('--bg-secondary', '#1e1e2e'),
+    foreground: getCSSVar('--text-primary', '#cdd6f4'),
+    cursor: getCSSVar('--accent-color', '#f5e0dc'),
+    selectionBackground: getCSSVar('--selection-bg', '#585b7066'),
+    green: getCSSVar('--terminal-green', '#a6e3a1'),
+    red: getCSSVar('--terminal-red', '#f38ba8'),
+    yellow: getCSSVar('--terminal-yellow', '#f9e2af'),
+    blue: getCSSVar('--terminal-blue', '#89b4fa'),
+    magenta: getCSSVar('--terminal-magenta', '#f5c2e7'),
+    cyan: getCSSVar('--terminal-cyan', '#94e2d5'),
+  };
+}
+
 /**
  * Terminal panel component using xterm.js.
  * Commands are executed via Tauri's shell plugin.
@@ -71,7 +93,7 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ context: _context 
   const writePrompt = useCallback(() => {
     const cwd = cwdRef.current;
     const displayPath = cwd ? cwd.replace(/^C:\\/, '/c/').replace(/\\/g, '/') : '~';
-    writeOutput(`\x1b[32mmarklite\x1b[0m:\x1b[34m${displayPath}\x1b[0m$ `);
+    writeOutput(`${displayPath} $ `);
     inputBufferRef.current = '';
   }, [writeOutput]);
 
@@ -82,18 +104,7 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ context: _context 
       cursorBlink: true,
       fontSize: 13,
       fontFamily: '"Cascadia Code", "Fira Code", "JetBrains Mono", Menlo, Monaco, monospace',
-      theme: {
-        background: '#1e1e2e',
-        foreground: '#cdd6f4',
-        cursor: '#f5e0dc',
-        selectionBackground: '#585b7066',
-        green: '#a6e3a1',
-        red: '#f38ba8',
-        yellow: '#f9e2af',
-        blue: '#89b4fa',
-        magenta: '#f5c2e7',
-        cyan: '#94e2d5',
-      },
+      theme: buildThemeFromCSS(),
       allowTransparency: true,
       scrollback: 5000,
       convertEol: true,
@@ -119,7 +130,6 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ context: _context 
     fitAddonRef.current = fitAddon;
 
     // Welcome message
-    term.writeln('\x1b[1m\x1b[35m  MarkLite Terminal\x1b[0m');
     term.writeln('  Type commands below. Use "clear" to clear, "exit" to close.');
     term.writeln('');
     writePrompt();
@@ -166,7 +176,14 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ context: _context 
     });
     resizeObserver.observe(containerRef.current);
 
+    // Theme observer — update xterm colors when the app theme changes
+    const themeObserver = new MutationObserver(() => {
+      term.options.theme = buildThemeFromCSS();
+    });
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'style', 'data-theme'] });
+
     return () => {
+      themeObserver.disconnect();
       resizeObserver.disconnect();
       term.dispose();
       termRef.current = null;
@@ -181,22 +198,10 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ context: _context 
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        backgroundColor: '#1e1e2e',
+        backgroundColor: 'var(--bg-secondary, #1e1e2e)',
         overflow: 'hidden',
       }}
     >
-      <div
-        style={{
-          padding: '4px 12px',
-          fontSize: '11px',
-          color: '#a6adc8',
-          borderBottom: '1px solid #313244',
-          flexShrink: 0,
-          userSelect: 'none',
-        }}
-      >
-        MarkLite Terminal
-      </div>
       <div
         ref={containerRef}
         style={{

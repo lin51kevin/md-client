@@ -13,6 +13,7 @@ export function activate(context: PluginContext): PluginResult {
   const panel = context.sidebar.registerPanel('terminal', {
     title: 'Terminal',
     icon: 'terminal',
+    position: 'bottom',
     render: () => <TerminalPanel context={context} />,
   });
 
