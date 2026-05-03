@@ -39,6 +39,8 @@ export interface PluginContextDeps {
   registerPreviewRenderer: (nodeType: string, renderFn: unknown) => void;
   /** Unregister a preview renderer for a node type. */
   unregisterPreviewRenderer: (nodeType: string) => void;
+  /** Read file content by absolute path. Returns null if file does not exist. */
+  readFileContent?: (path: string) => Promise<string | null>;
 }
 
 /**
@@ -71,9 +73,38 @@ export function createPluginContext(deps: PluginContextDeps, pluginId?: string):
     ui: createUIAPI(),
     preview: createPreviewAPI(deps),
     settings: { registerSection: () => ({ dispose: () => {} }) },
-    theme: { register: () => ({ dispose: () => {} }) },
+    theme: {
+      register(cssVars: Record<string, string>) {
+        const style = document.createElement('style');
+        style.setAttribute('data-plugin-theme', pluginId ?? 'unknown');
+        const rules = Object.entries(cssVars)
+          .map(([key, val]) => `:root { ${key}: ${val}; }`)
+          .join('\n');
+        style.textContent = rules;
+        document.head.appendChild(style);
+        return {
+          dispose() {
+            style.remove();
+          },
+        };
+      },
+    },
     export: { registerExporter: () => ({ dispose: () => {} }) },
-    files: { readFile: async () => null, watch: () => ({ dispose: () => {} }) },
+    files: {
+      readFile: async (path: string): Promise<string | null> => {
+        if (!deps.readFileContent) return null;
+        const absolute = path.startsWith('/') ? path : (() => {
+          const tab = deps.getActiveTab?.();
+          if (tab?.path) {
+            const dir = tab.path.substring(0, tab.path.lastIndexOf('/'));
+            return dir + '/' + path;
+          }
+          return '/' + path;
+        })();
+        return deps.readFileContent(absolute);
+      },
+      watch: () => ({ dispose: () => {} }),
+    },
     contextMenu: createContextMenuAPI(),
   };
 }
