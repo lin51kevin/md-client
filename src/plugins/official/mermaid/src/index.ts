@@ -6,13 +6,13 @@
  * is not active, diagrams degrade to plain code blocks.
  */
 
-import type { PluginContext } from '../../../plugins/plugin-sandbox';
+import type { PluginContext } from '../../../../plugins/plugin-sandbox';
 import {
   registerMermaidRenderer,
   unregisterMermaidRenderer,
   type MermaidRenderer,
-} from '../../../lib/markdown/mermaid-bridge';
-import { getCurrentThemeConfig } from '../../../lib/markdown/mermaid';
+} from '../../../../lib/markdown/mermaid-bridge';
+import { getCurrentThemeConfig } from '../../../../lib/markdown/mermaid';
 
 function detectTheme(): 'dark' | 'default' {
   if (typeof document === 'undefined') return 'default';

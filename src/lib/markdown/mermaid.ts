@@ -11,7 +11,6 @@ import { toErrorMessage } from '../utils/errors';
 import {
   isMermaidAvailable,
   getMermaidRenderer,
-  type MermaidRenderer,
 } from './mermaid-bridge';
 
 let mermaidInitialized = false;
