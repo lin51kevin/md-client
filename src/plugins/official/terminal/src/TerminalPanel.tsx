@@ -35,32 +35,6 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ context: _context 
         minHeight: 0,
       }}
     >
-      {/* Toolbar */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '8px',
-          padding: '4px 8px',
-          borderBottom: '1px solid var(--border-color, #333)',
-          backgroundColor: 'var(--bg-tertiary, #1a1a1a)',
-          fontSize: '12px',
-        }}
-      >
-        <span
-          style={{
-            color: 'var(--text-secondary, #666)',
-            fontSize: '11px',
-          }}
-        >
-          Commands are whitelisted for security
-        </span>
-        
-        {/* New Terminal Button */}
-        <NewTerminalButton onCreateTerminal={createTerminal} />
-      </div>
-
       {/* Main content: terminals + sidebar */}
       <div
         style={{
@@ -96,6 +70,7 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ context: _context 
           onSelectTerminal={setActiveTerminal}
           onDeleteTerminal={deleteTerminal}
           onRenameTerminal={renameTerminal}
+          onCreateTerminal={createTerminal}
         />
       </div>
     </div>

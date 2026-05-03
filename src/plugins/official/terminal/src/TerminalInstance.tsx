@@ -71,79 +71,6 @@ export const TerminalInstance: React.FC<TerminalInstanceProps> = ({ instance, is
   const inputBufferRef = useRef<string>(instance.inputBuffer);
   const cwdRef = useRef<string>(instance.cwd);
 
-  const writeOutput = useCallback((text: string) => {
-    if (instance.termRef) {
-      instance.termRef.write(text);
-      instance.termRef.scrollToBottom();
-    }
-  }, [instance.termRef]);
-
-  const writePrompt = useCallback(() => {
-    const cwd = cwdRef.current;
-    const displayPath = cwd ? cwd.replace(/^C:\\/, '/c/').replace(/\\/g, '/') : '~';
-    writeOutput(`${displayPath} $ `);
-    inputBufferRef.current = '';
-    onUpdateRefs(instance.id, { inputBuffer: '' });
-  }, [writeOutput, instance.id, onUpdateRefs]);
-
-  const executeCommand = useCallback(async (command: string) => {
-    const term = instance.termRef;
-    if (!term) return;
-
-    writeOutput(`\r\n`);
-
-    const trimmed = command.trim();
-    if (!trimmed) {
-      writePrompt();
-      return;
-    }
-
-    if (trimmed === 'clear' || trimmed === 'cls') {
-      term.clear();
-      writePrompt();
-      return;
-    }
-
-    if (trimmed === 'exit') {
-      term.write('\r\n\x1b[33mTerminal session ended.\x1b[0m\r\n');
-      inputBufferRef.current = '';
-      onUpdateRefs(instance.id, { inputBuffer: '' });
-      return;
-    }
-
-    if (trimmed.length > 1000) {
-      writeOutput('\x1b[31mError: Command too long (max 1000 characters)\x1b[0m\r\n');
-      writePrompt();
-      return;
-    }
-
-    const dangerousPatterns = ['rm -rf', 'del /f', 'format ', 'shutdown', 'reboot'];
-    const lowerCmd = trimmed.toLowerCase();
-    if (dangerousPatterns.some(pattern => lowerCmd.includes(pattern))) {
-      writeOutput('\x1b[33mWarning: Potentially dangerous command detected.\x1b[0m\r\n');
-      writeOutput('\x1b[33mCommand has been blocked. Only whitelisted commands are allowed.\x1b[0m\r\n');
-      writePrompt();
-      return;
-    }
-
-    try {
-      const { invoke } = await import('@tauri-apps/api/core');
-      const result = await invoke<string>('execute_shell_command', {
-        command: trimmed,
-        cwd: cwdRef.current || undefined,
-        shellType: instance.shellType,
-      });
-      if (result) {
-        writeOutput(result);
-      }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      writeOutput(`\x1b[31mError: ${message}\x1b[0m\r\n`);
-    }
-
-    writePrompt();
-  }, [instance.termRef, instance.shellType, instance.id, writeOutput, writePrompt, onUpdateRefs]);
-
   // Initialize terminal
   useEffect(() => {
     if (!containerRef.current || instance.termRef) return;
@@ -185,6 +112,75 @@ export const TerminalInstance: React.FC<TerminalInstanceProps> = ({ instance, is
 
     // Update parent state with refs
     onUpdateRefs(instance.id, { termRef: term, fitAddonRef: fitAddon });
+
+    // Helper functions defined inside useEffect to avoid stale closures
+    const writeOutput = (text: string) => {
+      term.write(text);
+      term.scrollToBottom();
+    };
+
+    const writePrompt = () => {
+      const cwd = cwdRef.current;
+      const displayPath = cwd ? cwd.replace(/^C:\\/, '/c/').replace(/\\/g, '/') : '~';
+      writeOutput(`${displayPath} $ `);
+      inputBufferRef.current = '';
+      onUpdateRefs(instance.id, { inputBuffer: '' });
+    };
+
+    const executeCommand = async (command: string) => {
+      writeOutput(`\r\n`);
+
+      const trimmed = command.trim();
+      if (!trimmed) {
+        writePrompt();
+        return;
+      }
+
+      if (trimmed === 'clear' || trimmed === 'cls') {
+        term.clear();
+        writePrompt();
+        return;
+      }
+
+      if (trimmed === 'exit') {
+        term.write('\r\n\x1b[33mTerminal session ended.\x1b[0m\r\n');
+        inputBufferRef.current = '';
+        onUpdateRefs(instance.id, { inputBuffer: '' });
+        return;
+      }
+
+      if (trimmed.length > 1000) {
+        writeOutput('\x1b[31mError: Command too long (max 1000 characters)\x1b[0m\r\n');
+        writePrompt();
+        return;
+      }
+
+      const dangerousPatterns = ['rm -rf', 'del /f', 'format ', 'shutdown', 'reboot'];
+      const lowerCmd = trimmed.toLowerCase();
+      if (dangerousPatterns.some(pattern => lowerCmd.includes(pattern))) {
+        writeOutput('\x1b[33mWarning: Potentially dangerous command detected.\x1b[0m\r\n');
+        writeOutput('\x1b[33mCommand has been blocked. Only whitelisted commands are allowed.\x1b[0m\r\n');
+        writePrompt();
+        return;
+      }
+
+      try {
+        const { invoke } = await import('@tauri-apps/api/core');
+        const result = await invoke<string>('execute_shell_command', {
+          command: trimmed,
+          cwd: cwdRef.current || undefined,
+          shellType: instance.shellType,
+        });
+        if (result) {
+          writeOutput(result);
+        }
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        writeOutput(`\x1b[31mError: ${message}\x1b[0m\r\n`);
+      }
+
+      writePrompt();
+    };
 
     // Welcome message
     term.writeln('  \x1b[36mMarkLite Terminal\x1b[0m');
@@ -247,7 +243,7 @@ export const TerminalInstance: React.FC<TerminalInstanceProps> = ({ instance, is
         styleRef.current.remove();
       }
     };
-  }, [instance.id, instance.termRef, onUpdateRefs, writePrompt, executeCommand]);
+  }, [instance.id, instance.termRef, instance.shellType, onUpdateRefs]);
 
   // Handle fit when terminal becomes active
   useEffect(() => {
