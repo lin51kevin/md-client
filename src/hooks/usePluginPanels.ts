@@ -4,6 +4,7 @@ export interface PluginPanelEntry {
   id: string;
   title: string;
   icon?: string;
+  position?: 'left' | 'bottom';
   content: unknown;
 }
 
@@ -17,13 +18,14 @@ export function usePluginPanels() {
   const [panels, setPanels] = useState<PluginPanelEntry[]>([]);
 
   const registerPanel = useCallback(
-    (id: string, content: unknown, meta?: { title?: string; icon?: string }) => {
+    (id: string, content: unknown, meta?: { title?: string; icon?: string; position?: 'left' | 'bottom' }) => {
       setPanels((prev) => {
         const existing = prev.find((p) => p.id === id);
         const entry: PluginPanelEntry = {
           id,
           title: meta?.title ?? id,
           icon: meta?.icon,
+          position: meta?.position,
           content,
         };
         if (existing) {

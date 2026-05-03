@@ -52,7 +52,7 @@ export interface PluginContextDeps {
   /** React ref holding the current CodeMirror EditorView. */
   cmViewRef: React.RefObject<EditorView | null>;
   /** Register a sidebar panel by ID. */
-  registerSidebarPanel: (id: string, component: unknown, meta?: { title?: string; icon?: string }) => void;
+  registerSidebarPanel: (id: string, component: unknown, meta?: { title?: string; icon?: string; position?: 'left' | 'bottom' }) => void;
   /** Unregister a sidebar panel by ID. */
   unregisterSidebarPanel: (id: string) => void;
   /** Add an element to the status bar. */

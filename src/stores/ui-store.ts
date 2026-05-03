@@ -50,6 +50,11 @@ interface UIState {
   setActivePanel: (panel: PanelId | null) => void;
   togglePanel: (panel: PanelId) => void;
 
+  // ── Bottom panel (independent from sidebar) ───────────────────────
+  activeBottomPanel: string | null;
+  setActiveBottomPanel: (panel: string | null) => void;
+  toggleBottomPanel: (panel: string) => void;
+
   // ── Context menus ─────────────────────────────────────────────────
   ctxMenu: ({ x: number; y: number; tabId: string } & CtxMenuState) | null;
   setCtxMenu: (v: UIState['ctxMenu']) => void;
@@ -106,6 +111,21 @@ export const useUIStore = create<UIState>()((set, get) => ({
     const next = current === panel ? null : panel;
     set({ activePanel: next });
     try { localStorage.setItem('marklite-active-panel', next ?? ''); } catch { /* ignore */ }
+  },
+
+  // Bottom panel — persisted independently
+  activeBottomPanel: (() => {
+    try { return localStorage.getItem('marklite-active-bottom-panel') || null; } catch { return null; }
+  })(),
+  setActiveBottomPanel: (panel) => {
+    set({ activeBottomPanel: panel });
+    try { localStorage.setItem('marklite-active-bottom-panel', panel ?? ''); } catch { /* ignore */ }
+  },
+  toggleBottomPanel: (panel) => {
+    const current = get().activeBottomPanel;
+    const next = current === panel ? null : panel;
+    set({ activeBottomPanel: next });
+    try { localStorage.setItem('marklite-active-bottom-panel', next ?? ''); } catch { /* ignore */ }
   },
 
   // Context menus

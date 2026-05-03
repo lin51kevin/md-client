@@ -81,7 +81,7 @@ export interface CommandsAPI {
 }
 
 export interface SidebarAPI {
-  registerPanel(id: string, options: { title: string; icon?: string; render: () => unknown }): Disposable;
+  registerPanel(id: string, options: { title: string; icon?: string; position?: 'left' | 'bottom'; render: () => unknown }): Disposable;
 }
 
 export interface StatusBarAPI {

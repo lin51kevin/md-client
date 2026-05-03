@@ -54,6 +54,7 @@ import { FileTreeSidebar as _FileTreeSidebar, type FileTreeSidebarHandle } from 
 const FileTreeSidebar = memo(_FileTreeSidebar);
 import { ActivityBar } from '../components/editor/ActivityBar';
 import { SidebarContainer } from '../components/sidebar/SidebarContainer';
+import { BottomPanelContainer } from '../components/sidebar/BottomPanelContainer';
 import { PluginPanel } from '../components/plugin';
 const AboutModal = lazy(() => import('../components/modal/AboutModal').then(m => ({ default: m.AboutModal })));
 import { EditorContentArea } from '../components/editor/EditorContentArea';
@@ -92,6 +93,9 @@ export function AppShell() {
     welcomeDismissed, handleDismissWelcome, handleShowWelcome,
     focusStartRef,
   } = useAppUIState();
+
+  const activeBottomPanel = useUIStore((s) => s.activeBottomPanel);
+  const setActiveBottomPanel = useUIStore((s) => s.setActiveBottomPanel);
 
   // ── Core hooks ───────────────────────────────────────────────────
 
@@ -246,6 +250,13 @@ export function AppShell() {
     const stillExists = pluginPanels.some((pp) => pp.id === activePanel);
     if (!stillExists) setActivePanel(null);
   }, [pluginPanels, activePanel, setActivePanel]);
+
+  // ── Reset active bottom panel if removed plugin panel was selected ──
+  useEffect(() => {
+    if (!activeBottomPanel) return;
+    const stillExists = pluginPanels.some((pp) => pp.id === activeBottomPanel && pp.position === 'bottom');
+    if (!stillExists) setActiveBottomPanel(null);
+  }, [pluginPanels, activeBottomPanel, setActiveBottomPanel]);
 
   // ── App lifecycle effects ────────────────────────────────────────
   useAppLifecycle({
@@ -481,6 +492,8 @@ export function AppShell() {
           <ActivityBar
             activePanel={activePanel}
             onPanelChange={setActivePanel}
+            activeBottomPanel={activeBottomPanel}
+            onBottomPanelChange={setActiveBottomPanel}
             onOpenSettings={openSettings}
             pluginPanels={pluginPanels}
             floatingPanelId={AI_PANEL_ID}
@@ -518,7 +531,7 @@ export function AppShell() {
           )}
 
           {pluginPanels.map((pp) => (
-            pp.id !== AI_PANEL_ID && activePanel === pp.id && (
+            pp.id !== AI_PANEL_ID && pp.position !== 'bottom' && activePanel === pp.id && (
               <div key={pp.id} className="w-full h-full flex flex-col overflow-hidden text-xs select-none" style={{ backgroundColor: 'var(--bg-secondary)' }}>
                 <div className="flex items-center justify-between px-3 py-2 border-b" style={{ borderColor: 'var(--border-color)' }}>
                   <span className="font-semibold text-xs uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>{pp.title}</span>
@@ -555,6 +568,20 @@ export function AppShell() {
             onPreviewContextMenu={(x, y) => setPreviewCtxMenu({ x, y })}
             zoomLevel={zoomLevel}
           />
+
+          {/* Bottom panels (e.g. Terminal) */}
+          {pluginPanels
+            .filter((pp) => pp.position === 'bottom' && activeBottomPanel === pp.id)
+            .map((pp) => (
+              <BottomPanelContainer
+                key={pp.id}
+                visible
+                title={pp.title}
+                onClose={() => setActiveBottomPanel(null)}
+              >
+                <PluginSidebarRenderer content={pp.content} />
+              </BottomPanelContainer>
+            ))}
         </div>
 
         {/* Floating AI Chat Panel */}
