@@ -533,8 +533,8 @@ export const MarkdownPreview = memo(function MarkdownPreview({
       {(tableCounterRef.current = 0) === 0 && null}
       {Object.keys(frontmatter).length > 0 && <FrontmatterPanel fm={frontmatter} />}
       <ReactMarkdown
-        remarkPlugins={buildPreviewRemarkPlugins()}
-        rehypePlugins={buildPreviewRehypePlugins()}
+        remarkPlugins={buildPreviewRemarkPlugins() as any}
+        rehypePlugins={buildPreviewRehypePlugins() as any}
         urlTransform={safeUrlTransform}
         components={customComponents}
       >
