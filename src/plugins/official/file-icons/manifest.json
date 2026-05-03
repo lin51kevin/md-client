@@ -1,0 +1,11 @@
+{
+  "id": "marklite-file-icons",
+  "name": "File Icons",
+  "version": "1.0.0",
+  "description": "文件树按扩展名显示语言颜色图标",
+  "author": "MarkLite Team",
+  "main": "dist/index.js",
+  "activationEvents": ["onStartup"],
+  "permissions": [],
+  "engines": { "marklite": ">=0.10.0" }
+}
