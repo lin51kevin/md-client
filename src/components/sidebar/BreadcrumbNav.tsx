@@ -5,13 +5,15 @@
  * Clicking a folder segment reveals it in the file tree.
  */
 import { useMemo, useCallback } from 'react';
-import { ChevronRight, FileText, FolderOpen } from 'lucide-react';
+import { ChevronRight, FileText, FolderOpen, Code2 } from 'lucide-react';
+import type { BreadcrumbItem } from '../../lib/cm/cmSymbolBreadcrumb';
 
 interface BreadcrumbNavProps {
   filePath: string | null;
   fileTreeRoot: string;
   onNavigateFolder?: (folderPath: string) => void;
   locale: string;
+  symbolBreadcrumbs?: BreadcrumbItem[] | null;
 }
 
 interface Crumb {
@@ -57,7 +59,7 @@ function buildCrumbs(filePath: string, rootPath: string): Crumb[] {
   return crumbs;
 }
 
-export function BreadcrumbNav({ filePath, fileTreeRoot, onNavigateFolder, locale }: BreadcrumbNavProps) {
+export function BreadcrumbNav({ filePath, fileTreeRoot, onNavigateFolder, locale, symbolBreadcrumbs }: BreadcrumbNavProps) {
   const isZh = locale === 'zh-CN';
 
   const crumbs = useMemo(() => {
@@ -70,6 +72,23 @@ export function BreadcrumbNav({ filePath, fileTreeRoot, onNavigateFolder, locale
       onNavigateFolder(crumb.path);
     }
   }, [onNavigateFolder]);
+
+  // Use symbol breadcrumbs for code files when available
+  if (symbolBreadcrumbs && symbolBreadcrumbs.length > 0) {
+    return (
+      <nav className="breadcrumb-nav" aria-label="Symbol Breadcrumb">
+        {symbolBreadcrumbs.map((item, i) => (
+          <span key={`${item.type}-${item.name}-${i}`} className="breadcrumb-segment">
+            {i > 0 && <ChevronRight size={12} className="breadcrumb-separator" />}
+            <span className="breadcrumb-current">
+              {item.type === 'file' ? <FileText size={12} className="breadcrumb-icon" /> : <Code2 size={12} className="breadcrumb-icon" />}
+              {item.name}
+            </span>
+          </span>
+        ))}
+      </nav>
+    );
+  }
 
   if (crumbs.length === 0) {
     return (
