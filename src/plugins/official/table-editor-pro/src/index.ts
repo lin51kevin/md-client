@@ -10,151 +10,19 @@
  */
 import type { PluginContext } from '../../../../plugins/plugin-sandbox';
 import type { Disposable } from '../../../../plugins/types';
-import type { TableData, Alignment } from '../../../../lib/markdown/table-parser';
-import { parseTable, serializeTable } from '../../../../lib/markdown/table-parser';
+import { serializeTable } from '../../../../lib/markdown/table-parser';
 import { TableEditorProPanel } from './TableEditorProPanel';
-
-/* ------------------------------------------------------------------ */
-/*  Helpers                                                            */
-/* ------------------------------------------------------------------ */
-
-interface TableProState {
-  data: TableData | null;
-  sortCol: number;
-  sortDir: 'asc' | 'desc';
-  selectedRows: Set<number>;
-}
-
-function createState(): TableProState {
-  return { data: null, sortCol: -1, sortDir: 'asc', selectedRows: new Set() };
-}
-
-/** Detect the cursor is inside a table block in editor content. */
-function findTableAtCursor(content: string, cursorOffset: number): TableData | null {
-  for (const offset of [cursorOffset, cursorOffset - 1, cursorOffset + 1]) {
-    const result = parseTable(content, Math.max(0, offset));
-    if (result) return result;
-  }
-  return null;
-}
-
-/* ------------------------------------------------------------------ */
-/*  Column sort                                                        */
-/* ------------------------------------------------------------------ */
-
-function sortTableByColumn(data: TableData, col: number, dir: 'asc' | 'desc'): TableData {
-  const sorted = [...data.rows].sort((a: string[], b: string[]) => {
-    const cmp = (a[col] ?? '').localeCompare(b[col] ?? '', undefined, { numeric: true, sensitivity: 'base' });
-    return dir === 'asc' ? cmp : -cmp;
-  });
-  return { ...data, rows: sorted };
-}
-
-/* ------------------------------------------------------------------ */
-/*  Row operations                                                     */
-/* ------------------------------------------------------------------ */
-
-function insertRow(data: TableData, afterIndex: number): TableData {
-  const colCount = Math.max(data.headers[0]?.length ?? 0, ...data.rows.map((r: string[]) => r.length));
-  const emptyRow = Array.from({ length: colCount }, () => '');
-  const rows = [...data.rows];
-  rows.splice(afterIndex + 1, 0, emptyRow);
-  return { ...data, rows };
-}
-
-function deleteRows(data: TableData, indices: number[]): TableData {
-  const set = new Set(indices);
-  const rows = data.rows.filter((_: string[], i: number) => !set.has(i));
-  return { ...data, rows };
-}
-
-function moveRow(data: TableData, from: number, to: number): TableData {
-  const rows = [...data.rows];
-  const [moved] = rows.splice(from, 1);
-  rows.splice(to, 0, moved);
-  return { ...data, rows };
-}
-
-/* ------------------------------------------------------------------ */
-/*  Column operations                                                  */
-/* ------------------------------------------------------------------ */
-
-function insertColumn(data: TableData, afterIndex: number): TableData {
-  const headers = data.headers.map((h: string[]) => {
-    const copy = [...h];
-    copy.splice(afterIndex + 1, 0, '');
-    return copy;
-  });
-  const rows = data.rows.map((r: string[]) => {
-    const copy = [...r];
-    copy.splice(afterIndex + 1, 0, '');
-    return copy;
-  });
-  const alignment = [...data.alignment];
-  alignment.splice(afterIndex + 1, 0, 'left');
-  return { ...data, headers, rows, alignment };
-}
-
-function deleteColumn(data: TableData, index: number): TableData {
-  const headers = data.headers.map((h: string[]) => h.filter((_: string, i: number) => i !== index));
-  const rows = data.rows.map((r: string[]) => r.filter((_: string, i: number) => i !== index));
-  const alignment = data.alignment.filter((_: Alignment, i: number) => i !== index);
-  return { ...data, headers, rows, alignment };
-}
-
-function setAlignment(data: TableData, col: number, align: Alignment): TableData {
-  const alignment = [...data.alignment];
-  while (alignment.length <= col) alignment.push('left');
-  alignment[col] = align;
-  return { ...data, alignment };
-}
-
-/* ------------------------------------------------------------------ */
-/*  Draggable column-width CSS injection                                */
-/* ------------------------------------------------------------------ */
-
-function injectColumnResizeCSS(): Disposable {
-  const id = 'table-editor-pro-resize';
-  if (document.getElementById(id)) return { dispose: () => {} };
-  const style = document.createElement('style');
-  style.id = id;
-  style.textContent = `
-    .table-editor-pro-resizable th { position: relative; user-select: none; }
-    .table-editor-pro-resizable th .col-resize-handle {
-      position: absolute; right: -3px; top: 0; bottom: 0; width: 6px;
-      cursor: col-resize; background: transparent; z-index: 2;
-    }
-    .table-editor-pro-resizable th .col-resize-handle:hover,
-    .table-editor-pro-resizable th .col-resize-handle.active {
-      background: var(--accent, #6366f1);
-    }
-    .table-editor-pro-resizable th.resizing { background: var(--accent-bg, rgba(99,102,241,0.08)); }
-  `;
-  document.head.appendChild(style);
-  return {
-    dispose: () => { style.remove(); },
-  };
-}
-
-/* ------------------------------------------------------------------ */
-/*  Context menu action factory                                        */
-/* ------------------------------------------------------------------ */
-
-function tableAction(
-  state: TableProState,
-  editor: PluginContext['editor'],
-  fn: (table: TableData) => TableData,
-): () => void {
-  return () => {
-    const content = editor.getContent();
-    const pos = editor.getCursorPosition().offset;
-    const table = findTableAtCursor(content, pos);
-    if (!table) return;
-    const updated = fn(table);
-    editor.replaceRange(table.rawStart, table.rawEnd, serializeTable(updated));
-    state.data = updated;
-  };
-}
+import { createState } from './table-state';
+import {
+  sortTableByColumn,
+  insertRow,
+  deleteRows,
+  moveRow,
+  insertColumn,
+  deleteColumn,
+  setAlignment,
+} from './table-operations';
+import { findTableAtCursor, injectColumnResizeCSS, tableAction } from './table-utils';
 
 /* ------------------------------------------------------------------ */
 /*  Plugin activate                                                    */
