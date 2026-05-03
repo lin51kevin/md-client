@@ -25,6 +25,8 @@ export interface PluginContextDeps {
   getOpenFilePaths: () => string[];
   /** Optional: returns all workspace files (including unopened). */
   getAllWorkspaceFiles?: () => string[];
+  /** Subscribe to active file change events. Returns unsubscribe function. */
+  onActiveFileChanged?: (callback: (file: { path: string; name: string }) => void) => () => void;
   /** React ref holding the current CodeMirror EditorView. */
   cmViewRef: React.RefObject<EditorView | null>;
   /** Register a sidebar panel by ID. */
@@ -41,6 +43,8 @@ export interface PluginContextDeps {
   unregisterPreviewRenderer: (nodeType: string) => void;
   /** Read file content by absolute path. Returns null if file does not exist. */
   readFileContent?: (path: string) => Promise<string | null>;
+  /** Watch files matching a glob pattern, call callback on changes. Returns unsubscribe. */
+  watchFiles?: (pattern: string, callback: (path: string) => void) => () => void;
 }
 
 /**
