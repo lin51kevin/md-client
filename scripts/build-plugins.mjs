@@ -60,6 +60,14 @@ const INTERNAL_SHARED = new Map([
 // Resolve the canonical path for app i18n module
 const I18N_ABS = fs.realpathSync(path.join(ROOT, 'src', 'i18n', 'index.ts'));
 
+// Bridge modules — must be shared singletons (they hold module-level state)
+const BRIDGE_MODULES = {
+  '@marklite/katex-bridge': fs.realpathSync(path.join(ROOT, 'src', 'lib', 'markdown', 'katex-bridge.ts')),
+  '@marklite/mermaid-bridge': fs.realpathSync(path.join(ROOT, 'src', 'lib', 'markdown', 'mermaid-bridge.ts')),
+  '@marklite/vim-bridge': fs.realpathSync(path.join(ROOT, 'src', 'lib', 'cm', 'vim-bridge.ts')),
+  '@marklite/png-bridge': fs.realpathSync(path.join(ROOT, 'src', 'lib', 'export', 'png-bridge.ts')),
+};
+
 async function buildShims() {
   const shims = {};
   for (const [key, specifier] of Object.entries(SHARED_MODULES)) {
@@ -71,6 +79,25 @@ async function buildShims() {
     `export default __m;`,
     `export const { useI18n, getT, I18nContext, useI18nProvider } = __m;`,
   ].join('\n');
+
+  // Bridge module shims — known exports for each bridge
+  shims['@marklite/katex-bridge'] = [
+    `const __m = window.__MARKLITE_SHARED__["@marklite/katex-bridge"];`,
+    `export const { registerKatexPlugin, unregisterKatexPlugin, getKatexPlugin, isKatexAvailable, ensureKatexCSS } = __m;`,
+  ].join('\n');
+  shims['@marklite/mermaid-bridge'] = [
+    `const __m = window.__MARKLITE_SHARED__["@marklite/mermaid-bridge"];`,
+    `export const { registerMermaidRenderer, unregisterMermaidRenderer, getMermaidRenderer, isMermaidAvailable } = __m;`,
+  ].join('\n');
+  shims['@marklite/vim-bridge'] = [
+    `const __m = window.__MARKLITE_SHARED__["@marklite/vim-bridge"];`,
+    `export const { registerVimExtension, unregisterVimExtension, getVimExtension, isVimAvailable } = __m;`,
+  ].join('\n');
+  shims['@marklite/png-bridge'] = [
+    `const __m = window.__MARKLITE_SHARED__["@marklite/png-bridge"];`,
+    `export const { registerPngExporter, unregisterPngExporter, getPngExporter, isPngExportAvailable } = __m;`,
+  ].join('\n');
+
   return shims;
 }
 
@@ -105,6 +132,29 @@ function sharedGlobalsPlugin(shims) {
             const real = fs.realpathSync(c);
             if (real === I18N_ABS || real === I18N_ABS.replace('.ts', '.js')) {
               return { path: '@marklite/i18n', namespace: 'shared-globals' };
+            }
+          } catch { /* not found, skip */ }
+        }
+        return undefined;
+      });
+
+      // App-internal bridge modules — match relative imports that resolve to bridge files
+      b.onResolve({ filter: /bridge/ }, args => {
+        if (args.namespace === 'shared-globals') return undefined;
+        if (!args.resolveDir) return undefined;
+
+        const candidates = [
+          path.resolve(args.resolveDir, args.path),
+          path.resolve(args.resolveDir, args.path + '.ts'),
+          path.resolve(args.resolveDir, args.path + '.js'),
+        ];
+        for (const c of candidates) {
+          try {
+            const real = fs.realpathSync(c);
+            for (const [key, absPath] of Object.entries(BRIDGE_MODULES)) {
+              if (real === absPath || real === absPath.replace('.ts', '.js')) {
+                return { path: key, namespace: 'shared-globals' };
+              }
             }
           } catch { /* not found, skip */ }
         }

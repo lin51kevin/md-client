@@ -17,6 +17,10 @@ import * as i18n from './i18n';
 import * as ReactMarkdown from 'react-markdown';
 import * as remarkGfm from 'remark-gfm';
 import * as rehypeHighlight from 'rehype-highlight';
+import * as katexBridge from './lib/markdown/katex-bridge';
+import * as mermaidBridge from './lib/markdown/mermaid-bridge';
+import * as vimBridge from './lib/cm/vim-bridge';
+import * as pngBridge from './lib/export/png-bridge';
 
 declare global {
   interface Window {
@@ -31,4 +35,8 @@ window.__MARKLITE_SHARED__ = {
   'react-markdown': ReactMarkdown,
   'remark-gfm': remarkGfm,
   'rehype-highlight': rehypeHighlight,
+  '@marklite/katex-bridge': katexBridge,
+  '@marklite/mermaid-bridge': mermaidBridge,
+  '@marklite/vim-bridge': vimBridge,
+  '@marklite/png-bridge': pngBridge,
 };
