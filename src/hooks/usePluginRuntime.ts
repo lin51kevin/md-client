@@ -5,21 +5,6 @@ import { createPluginContext } from '../plugins/plugin-context-factory';
 import { validateManifest, checkEngineVersion, loadPluginModuleFromResource } from '../plugins/plugin-loader';
 import { StorageKeys } from '../lib/storage';
 
-/**
- * In DEV mode, plugins are bundled via Vite's dynamic imports for HMR.
- * In production, plugins are loaded at runtime from /plugins/{id}/.
- */
-const DEV_PLUGIN_MODULES: Record<string, () => Promise<{ activate?: (ctx: PluginContext) => unknown }>> =
-  import.meta.env.DEV ? {
-    'marklite-backlinks': () => import('../plugins/official/backlinks/src/index'),
-    'marklite-graph-view': () => import('../plugins/official/graph-view/src/index'),
-    'marklite-ai-copilot': () => import('../plugins/official/ai-copilot/src/index'),
-    'marklite-git': () => import('../plugins/official/git/src/index'),
-    'marklite-katex': () => import('../plugins/official/katex/src/index'),
-    'marklite-png-export': () => import('../plugins/official/png-export/src/index'),
-    'marklite-mermaid': () => import('../plugins/official/mermaid/src/index'),
-  } : {};
-
 /** Official plugin IDs — used in production to discover externally-built plugins. */
 const OFFICIAL_PLUGIN_IDS = [
   'marklite-backlinks',
@@ -59,34 +44,53 @@ export function usePluginRuntime(deps: PluginContextDeps) {
       activePlugins.current.delete(id);
     }
 
-    // Resolve the module — DEV uses Vite-bundled imports, PROD loads external bundles
+    // Resolve the module — both DEV and PROD load pre-built plugin bundles
     let mod: { activate?: (ctx: PluginContext) => unknown };
 
-    if (import.meta.env.DEV && DEV_PLUGIN_MODULES[id]) {
-      // Dev mode: bundled via Vite for HMR
-      try {
-        mod = await DEV_PLUGIN_MODULES[id]();
-      } catch (err) {
-        console.error(`[PluginRuntime] Failed to load plugin "${id}" (dev):`, err);
-        return;
-      }
-    } else if (!import.meta.env.DEV && OFFICIAL_PLUGIN_IDS.includes(id)) {
-      // Production: load plugin from Tauri resource directory
-      try {
-        const { resolveResource } = await import('@tauri-apps/api/path');
-        const { readTextFile } = await import('@tauri-apps/plugin-fs');
-
-        const manifestPath = await resolveResource(`plugins/${id}/manifest.json`);
-        const manifestText = await readTextFile(manifestPath);
-        const manifest = validateManifest(JSON.parse(manifestText));
-        if (!checkEngineVersion(manifest)) {
-          console.warn(`[PluginRuntime] Plugin "${id}" requires newer engine version`);
+    if (OFFICIAL_PLUGIN_IDS.includes(id)) {
+      if (import.meta.env.DEV) {
+        // Dev mode: fetch pre-built JS from public/plugins/{id}/
+        try {
+          const response = await fetch(`/plugins/${id}/manifest.json`);
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const manifest = validateManifest(await response.json());
+          if (!checkEngineVersion(manifest)) {
+            console.warn(`[PluginRuntime] Plugin "${id}" requires newer engine version`);
+            return;
+          }
+          const jsUrl = `/plugins/${id}/${manifest.main}`;
+          const jsResponse = await fetch(jsUrl);
+          if (!jsResponse.ok) throw new Error(`HTTP ${jsResponse.status}`);
+          const code = await jsResponse.text();
+          const blob = new Blob([code], { type: 'text/javascript' });
+          const blobUrl = URL.createObjectURL(blob);
+          try {
+            mod = await import(/* @vite-ignore */ blobUrl);
+          } finally {
+            URL.revokeObjectURL(blobUrl);
+          }
+        } catch (err) {
+          console.error(`[PluginRuntime] Failed to load plugin "${id}" (dev):`, err);
           return;
         }
-        mod = await loadPluginModuleFromResource(manifest);
-      } catch (err) {
-        console.error(`[PluginRuntime] Failed to load plugin "${id}" (prod):`, err);
-        return;
+      } else {
+        // Production: load plugin from Tauri resource directory
+        try {
+          const { resolveResource } = await import('@tauri-apps/api/path');
+          const { readTextFile } = await import('@tauri-apps/plugin-fs');
+
+          const manifestPath = await resolveResource(`plugins/${id}/manifest.json`);
+          const manifestText = await readTextFile(manifestPath);
+          const manifest = validateManifest(JSON.parse(manifestText));
+          if (!checkEngineVersion(manifest)) {
+            console.warn(`[PluginRuntime] Plugin "${id}" requires newer engine version`);
+            return;
+          }
+          mod = await loadPluginModuleFromResource(manifest);
+        } catch (err) {
+          console.error(`[PluginRuntime] Failed to load plugin "${id}" (prod):`, err);
+          return;
+        }
       }
     } else {
       console.warn(`[PluginRuntime] Unknown plugin "${id}"`);

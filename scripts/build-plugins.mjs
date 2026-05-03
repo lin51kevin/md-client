@@ -21,6 +21,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 const PLUGINS_SRC = path.join(ROOT, 'src', 'plugins', 'official');
 const DIST_PLUGINS = path.join(ROOT, 'resources', 'plugins');
+const PUBLIC_PLUGINS = path.join(ROOT, 'public', 'plugins');
 
 // ── Shared dependency handling ──────────────────────────────────────
 //
@@ -248,6 +249,16 @@ async function main() {
       if (fs.existsSync(manifestSrc)) {
         fs.mkdirSync(path.dirname(manifestDst), { recursive: true });
         fs.copyFileSync(manifestSrc, manifestDst);
+      }
+
+      // Also copy to public/plugins/ for Vite dev server
+      const publicDir = path.join(PUBLIC_PLUGINS, `marklite-${name}`);
+      fs.mkdirSync(publicDir, { recursive: true });
+      // Copy dist/index.js
+      fs.copyFileSync(path.join(outDir, 'index.js'), path.join(publicDir, 'dist', 'index.js'));
+      // Copy manifest.json
+      if (fs.existsSync(manifestSrc)) {
+        fs.copyFileSync(manifestSrc, path.join(publicDir, 'manifest.json'));
       }
 
       const stat = fs.statSync(path.join(outDir, 'index.js'));
