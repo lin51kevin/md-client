@@ -73,6 +73,96 @@
       "version": "1.0.0",
       "tags": ["git", "version-control", "scm"],
       "manifestUrl": "official/git/manifest.json"
+    },
+    {
+      "id": "marklite-daily-notes",
+      "name": "Daily Notes",
+      "description": "每日笔记 — Ctrl+D 快速创建/打开当日笔记，支持模板变量",
+      "author": "MarkLite Team",
+      "version": "1.0.0",
+      "tags": ["daily", "notes", "journal"],
+      "manifestUrl": "official/daily-notes/manifest.json"
+    },
+    {
+      "id": "marklite-document-templates",
+      "name": "Document Templates",
+      "description": "文档模板 — 新建文件时选择预定义模板，支持日期、时间等动态变量",
+      "author": "MarkLite Team",
+      "version": "1.0.0",
+      "tags": ["templates", "document", "scaffold"],
+      "manifestUrl": "official/document-templates/manifest.json"
+    },
+    {
+      "id": "marklite-file-icons",
+      "name": "File Icons",
+      "description": "文件树按扩展名显示语言颜色图标",
+      "author": "MarkLite Team",
+      "version": "1.0.0",
+      "tags": ["icons", "file-tree", "theme"],
+      "manifestUrl": "official/file-icons/manifest.json"
+    },
+    {
+      "id": "marklite-frontmatter-editor",
+      "name": "Frontmatter Editor",
+      "description": "YAML Frontmatter 可视化编辑器 — 侧边栏显示/编辑文档元数据",
+      "author": "MarkLite Team",
+      "version": "1.0.0",
+      "tags": ["frontmatter", "yaml", "metadata"],
+      "manifestUrl": "official/frontmatter-editor/manifest.json"
+    },
+    {
+      "id": "marklite-markdown-lint",
+      "name": "Markdown Lint",
+      "description": "Markdown 格式检查 — 标题风格、列表缩进、空行规则",
+      "author": "MarkLite Team",
+      "version": "1.0.0",
+      "tags": ["lint", "format", "style"],
+      "manifestUrl": "official/markdown-lint/manifest.json"
+    },
+    {
+      "id": "marklite-minimap",
+      "name": "Minimap",
+      "description": "CodeMirror minimap — 右侧代码缩略图导航",
+      "author": "MarkLite Team",
+      "version": "1.0.0",
+      "tags": ["minimap", "navigation", "editor"],
+      "manifestUrl": "official/minimap/manifest.json"
+    },
+    {
+      "id": "marklite-smart-autocomplete",
+      "name": "Smart Autocomplete",
+      "description": "智能代码补全 — 文件路径补全、代码片段、上下文感知建议",
+      "author": "MarkLite Team",
+      "version": "1.0.0",
+      "tags": ["autocomplete", "snippets", "intellisense"],
+      "manifestUrl": "official/smart-autocomplete/manifest.json"
+    },
+    {
+      "id": "marklite-table-editor-pro",
+      "name": "Table Editor Pro",
+      "description": "增强表格编辑器 — 可视化编辑、行列增删、对齐调整、合并单元格",
+      "author": "MarkLite Team",
+      "version": "1.0.0",
+      "tags": ["table", "editor", "markdown"],
+      "manifestUrl": "official/table-editor-pro/manifest.json"
+    },
+    {
+      "id": "marklite-tag-system",
+      "name": "Tag System",
+      "description": "标签系统 — 扫描文档中的 #标签，提供标签云聚合导航",
+      "author": "MarkLite Team",
+      "version": "1.0.0",
+      "tags": ["tags", "navigation", "organization"],
+      "manifestUrl": "official/tag-system/manifest.json"
+    },
+    {
+      "id": "marklite-terminal",
+      "name": "Terminal",
+      "description": "内置终端 — 底部面板集成 shell 终端，支持命令执行",
+      "author": "MarkLite Team",
+      "version": "1.0.0",
+      "tags": ["terminal", "shell", "command-line"],
+      "manifestUrl": "official/terminal/manifest.json"
     }
   ]
 }
