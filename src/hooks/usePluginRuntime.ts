@@ -15,6 +15,16 @@ const OFFICIAL_PLUGIN_IDS = [
   'marklite-png-export',
   'marklite-vim',
   'marklite-mermaid',
+  'marklite-daily-notes',
+  'marklite-document-templates',
+  'marklite-file-icons',
+  'marklite-frontmatter-editor',
+  'marklite-markdown-lint',
+  'marklite-minimap',
+  'marklite-smart-autocomplete',
+  'marklite-table-editor-pro',
+  'marklite-tag-system',
+  'marklite-terminal',
 ];
 
 interface ActivePluginEntry {
