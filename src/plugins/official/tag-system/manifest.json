@@ -1,0 +1,11 @@
+{
+  "id": "marklite-tag-system",
+  "name": "Tag System",
+  "version": "1.0.0",
+  "description": "标签系统 — 扫描文档中的 #标签，提供标签云聚合导航",
+  "author": "MarkLite Team",
+  "main": "dist/index.js",
+  "activationEvents": ["onWorkspaceReady"],
+  "permissions": ["workspace", "sidebar.panel", "editor.read", "storage", "commands"],
+  "engines": { "marklite": ">=0.11.0" }
+}
