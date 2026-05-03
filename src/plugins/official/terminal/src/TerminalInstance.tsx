@@ -67,7 +67,6 @@ function buildThemeFromCSS(): Record<string, string> {
  */
 export const TerminalInstance: React.FC<TerminalInstanceProps> = ({ instance, isActive, onUpdateRefs }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const styleRef = useRef<HTMLStyleElement | null>(null);
   const inputBufferRef = useRef<string>(instance.inputBuffer);
   const cwdRef = useRef<string>(instance.cwd);
 
@@ -96,13 +95,13 @@ export const TerminalInstance: React.FC<TerminalInstanceProps> = ({ instance, is
     term.loadAddon(fitAddon);
     term.loadAddon(webLinksAddon);
 
-    // Inject xterm CSS (only once per document)
+    // Inject xterm CSS (only once per document, shared by all terminals)
     if (!document.querySelector('[data-xterm-css="marklite-terminal"]')) {
       const style = document.createElement('style');
       style.setAttribute('data-xterm-css', 'marklite-terminal');
       style.textContent = xtermCss;
       document.head.appendChild(style);
-      styleRef.current = style;
+      // Don't store in styleRef since we don't want to remove it on cleanup
     }
 
     term.open(containerRef.current);
@@ -262,9 +261,7 @@ export const TerminalInstance: React.FC<TerminalInstanceProps> = ({ instance, is
       themeObserver.disconnect();
       resizeObserver.disconnect();
       term.dispose();
-      if (styleRef.current && styleRef.current.parentNode) {
-        styleRef.current.remove();
-      }
+      // CSS is shared globally, don't remove it
     };
   }, [instance.id, instance.termRef, instance.shellType, onUpdateRefs]);
 
@@ -285,12 +282,20 @@ export const TerminalInstance: React.FC<TerminalInstanceProps> = ({ instance, is
     <div
       ref={containerRef}
       style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
         width: '100%',
         height: '100%',
         padding: '4px',
         overflow: 'hidden',
-        display: isActive ? 'block' : 'none',
+        visibility: isActive ? 'visible' : 'hidden',
+        pointerEvents: isActive ? 'auto' : 'none',
       }}
-    />
+    >
+      {/* xterm.js will render here */}
+    </div>
   );
 };

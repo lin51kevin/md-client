@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { TerminalInstance } from './types';
 import { getShellIcon } from './shellIcons';
-import { NewTerminalButton } from './NewTerminalButton';
 
 interface TerminalListSidebarProps {
   terminals: TerminalInstance[];
@@ -9,7 +8,6 @@ interface TerminalListSidebarProps {
   onSelectTerminal: (id: string) => void;
   onDeleteTerminal: (id: string) => void;
   onRenameTerminal: (id: string, newName: string) => void;
-  onCreateTerminal: (shellType: string) => void;
 }
 
 /**
@@ -23,7 +21,6 @@ export const TerminalListSidebar: React.FC<TerminalListSidebarProps> = ({
   onSelectTerminal,
   onDeleteTerminal,
   onRenameTerminal,
-  onCreateTerminal,
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
@@ -69,9 +66,6 @@ export const TerminalListSidebar: React.FC<TerminalListSidebarProps> = ({
       {/* Header */}
       <div
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
           padding: '8px',
           borderBottom: '1px solid var(--border-color, #333)',
           fontSize: '11px',
@@ -81,8 +75,7 @@ export const TerminalListSidebar: React.FC<TerminalListSidebarProps> = ({
           color: 'var(--text-secondary, #888)',
         }}
       >
-        <span>Terminal</span>
-        <NewTerminalButton onCreateTerminal={onCreateTerminal} />
+        Terminal
       </div>
 
       {/* Terminal list */}

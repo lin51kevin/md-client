@@ -32,9 +32,23 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ context: _context 
         flexDirection: 'column',
         backgroundColor: 'var(--bg-secondary, #1e1e2e)',
         overflow: 'hidden',
-        minHeight: 0,
       }}
     >
+      {/* Top toolbar with new terminal button */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+          padding: '4px 8px',
+          borderBottom: '1px solid var(--border-color, #333)',
+          backgroundColor: 'var(--bg-tertiary, #1a1a1a)',
+          minHeight: '32px',
+        }}
+      >
+        <NewTerminalButton onCreateTerminal={createTerminal} />
+      </div>
+
       {/* Main content: terminals + sidebar */}
       <div
         style={{
@@ -51,6 +65,7 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ context: _context 
             minWidth: 0,
             position: 'relative',
             overflow: 'hidden',
+            backgroundColor: 'var(--bg-secondary, #1e1e2e)',
           }}
         >
           {terminals.map((terminal) => (
@@ -70,7 +85,6 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ context: _context 
           onSelectTerminal={setActiveTerminal}
           onDeleteTerminal={deleteTerminal}
           onRenameTerminal={renameTerminal}
-          onCreateTerminal={createTerminal}
         />
       </div>
     </div>
