@@ -1,0 +1,11 @@
+{
+  "id": "marklite-markdown-lint",
+  "name": "Markdown Lint",
+  "version": "1.0.0",
+  "description": "Markdown 格式检查 — 标题风格、列表缩进、空行规则",
+  "author": "MarkLite Team",
+  "main": "dist/index.js",
+  "activationEvents": ["onFileOpen:.md"],
+  "permissions": ["editor.extend"],
+  "engines": { "marklite": ">=0.10.0" }
+}
