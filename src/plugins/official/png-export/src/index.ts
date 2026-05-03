@@ -4,10 +4,10 @@
  * Migrated from useExportOps.ts handleExportPng().
  * Uses html2canvas to capture the preview element.
  */
-import { save, message } from '@tauri-apps/plugin-dialog';
+import { save } from '@tauri-apps/plugin-dialog';
 import { invoke } from '@tauri-apps/api/core';
 import type { PluginContext } from '../../../plugin-sandbox';
-import { registerPngExporter, unregisterPngExporter } from '../../../lib/export/png-bridge';
+import { registerPngExporter, unregisterPngExporter } from '../../../../lib/export/png-bridge';
 
 export async function activate(_context: PluginContext) {
   const exportFn = async (previewEl: HTMLElement) => {

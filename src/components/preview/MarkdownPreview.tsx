@@ -129,12 +129,20 @@ function MermaidBlock({ code }: { code: string }) {
   const id = `mermaid-${rawId.replace(/:/g, '')}`;
   const [error, setError] = useState<string | null>(null);
 
+  // Graceful degradation when no Mermaid plugin is registered
+  if (!isMermaidAvailable()) {
+    return (
+      <div className="mermaid-unavailable">
+        <pre><code>{code}</code></pre>
+        <small>Install the Mermaid plugin to render diagrams</small>
+      </div>
+    );
+  }
+
   useEffect(() => {
     let cancelled = false;
     setError(null);
-    initMermaid().then(({ default: mermaid }) => {
-      return mermaid.render(id, code);
-    }).then(({ svg }) => {
+    getMermaidRenderer()!.render(id, code).then(({ svg }) => {
       if (!cancelled && divRef.current) {
         // DOMPurify v3 disallows foreignObject/use by default;
         // re-add them so Mermaid's node labels and edge arrows render correctly.

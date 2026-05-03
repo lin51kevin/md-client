@@ -155,11 +155,11 @@ export async function markdownToHtml(markdown: string): Promise<string> {
   const katex = getKatexPlugin();
   const result = await unified()
     .use(remarkParse)
-    .use([...buildCoreRemarkPlugins()])
+    .use(buildCoreRemarkPlugins() as any)
     .use(remarkRehype)
     .use(rehypeSlug)
     .use(rehypeHighlight, { detect: true })
-    .use(katex?.rehypeKatex)
+    .use(katex?.rehypeKatex as any)
     .use(rehypeStringify)
     .process(markdown);
   return sanitizeHtml(String(result));

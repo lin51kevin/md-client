@@ -5,7 +5,7 @@
  * them in the browser and pass the PNG blobs as base64 alongside the raw markdown.
  */
 
-import { initMermaid } from './mermaid';
+import { isMermaidAvailable, getMermaidRenderer } from './mermaid-bridge';
 
 // KaTeX CSS as raw string — inlined into self-contained SVG for formula rendering
 import katexCss from 'katex/dist/katex.min.css?raw';
@@ -72,9 +72,14 @@ async function renderMermaidToPng(
   index: number,
 ): Promise<PreRenderedAsset | null> {
   try {
-    const { default: mermaid } = await initMermaid();
+    if (!isMermaidAvailable()) {
+      console.warn('[export-prerender] Mermaid plugin not available, skipping diagram');
+      return null;
+    }
+    const renderer = getMermaidRenderer()!;
+    await renderer.init();
     const id = `export-mermaid-${index}-${Date.now()}`;
-    const { svg } = await mermaid.render(id, definition.trim());
+    const { svg } = await renderer.render(id, definition.trim());
 
     // Use html2canvas to capture the real DOM (including <foreignObject> text
     // labels) instead of the old svg→img→canvas pipeline which stripped

@@ -3,7 +3,7 @@ import {
   registerKatexPlugin,
   unregisterKatexPlugin,
   ensureKatexCSS,
-} from '../../../lib/markdown/katex-bridge';
+} from '../../../../lib/markdown/katex-bridge';
 
 export async function activate(_context: PluginContext) {
   const remarkMath = (await import('remark-math')).default;

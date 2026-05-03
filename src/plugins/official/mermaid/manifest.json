@@ -1,0 +1,11 @@
+{
+  "id": "marklite-mermaid",
+  "name": "Mermaid Diagrams",
+  "version": "1.0.0",
+  "description": "渲染 Mermaid 图表为 SVG — 流程图、时序图、甘特图、思维导图等",
+  "author": "MarkLite Team",
+  "main": "dist/index.js",
+  "activationEvents": ["onStartup"],
+  "permissions": ["preview.extend", "editor.extend", "storage", "settings.section"],
+  "engines": { "marklite": ">=0.11.0" }
+}

@@ -5,7 +5,7 @@ import { X, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import { useI18n } from '../../i18n';
 import { extractToc, type TocEntry } from '../../lib/markdown';
 import { tocToMindmap, sanitizeText } from '../../lib/markdown';
-import { initMermaid } from '../../lib/markdown';
+import { isMermaidAvailable, getMermaidRenderer } from '../../lib/markdown/mermaid-bridge';
 
 interface MindmapViewProps {
   markdown: string;
@@ -33,8 +33,13 @@ export function MindmapView({ markdown, onClose, onNavigate }: MindmapViewProps)
     let cancelled = false;
     setError(null);
 
-    initMermaid().then(({ default: mermaid }) => {
-      return mermaid.render(diagramId.current, mermaidSyntax);
+    if (!isMermaidAvailable()) {
+      setError('Mermaid plugin not available');
+      return;
+    }
+    const renderer = getMermaidRenderer()!;
+    renderer.init().then(() => {
+      return renderer.render(diagramId.current, mermaidSyntax);
     }).then(({ svg }) => {
       if (!cancelled && canvasRef.current) {
         canvasRef.current.innerHTML = DOMPurify.sanitize(svg, {

@@ -23,22 +23,23 @@ import { remarkWikiLinks } from './remark-wikilinks';
 import { rehypeWikiLinks } from './rehype-wikilinks';
 import { getKatexPlugin } from './katex-bridge';
 
+export type Pluggable = ReturnType<typeof remarkGfm> | ReturnType<typeof rehypeHighlight> | unknown;
+
 /**
  * Build core remark plugins. Dynamically includes remark-math if the
  * marklite-katex plugin has been activated.
  */
-function buildCoreRemarkPlugins(): unknown[] {
-  const plugins: unknown[] = [remarkGfm, remarkDirective, remarkDirectiveRehype];
+export function buildCoreRemarkPlugins(): Pluggable[] {
+  const plugins: Pluggable[] = [remarkGfm, remarkDirective, remarkDirectiveRehype];
   const katex = getKatexPlugin();
-  if (katex) plugins.push(katex.remarkMath);
+  if (katex) plugins.push(katex.remarkMath as Pluggable);
   return plugins;
 }
 
 /**
  * Build full remark plugins for the interactive preview pane.
- * Extends core plugins with footnotes, frontmatter, and wiki-links.
  */
-export function buildPreviewRemarkPlugins(): unknown[] {
+export function buildPreviewRemarkPlugins(): Pluggable[] {
   const plugins = buildCoreRemarkPlugins();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   plugins.push(remarkFootnotes as any, remarkFrontmatter, remarkWikiLinks);
@@ -47,10 +48,9 @@ export function buildPreviewRemarkPlugins(): unknown[] {
 
 /**
  * Build rehype plugins for the interactive preview pane.
- * Dynamically includes rehype-katex if the marklite-katex plugin is active.
  */
-export function buildPreviewRehypePlugins(): unknown[] {
-  const plugins: unknown[] = [
+export function buildPreviewRehypePlugins(): Pluggable[] {
+  const plugins: Pluggable[] = [
     rehypeSlug,
     rehypeHighlight,
     rehypeRaw,
@@ -59,37 +59,25 @@ export function buildPreviewRehypePlugins(): unknown[] {
   ];
   const katex = getKatexPlugin();
   if (katex) {
-    // Insert katex after rehypeRaw (before wiki-links) for correct processing order
-    plugins.splice(3, 0, katex.rehypeKatex);
+    plugins.splice(3, 0, katex.rehypeKatex as Pluggable);
   }
   return plugins;
 }
 
 /**
- * Core remark plugins (frozen snapshot). Consumers that need live katex
- * status should use buildPreviewRemarkPlugins() instead.
- * @deprecated Use buildPreviewRemarkPlugins() for live katex support.
+ * @deprecated Use buildCoreRemarkPlugins()
  */
 export const CORE_REMARK_PLUGINS = buildCoreRemarkPlugins();
 
 /**
- * Full remark plugin set for preview. Prefer buildPreviewRemarkPlugins().
- * @deprecated Use buildPreviewRemarkPlugins() for live katex support.
+ * @deprecated Use buildPreviewRemarkPlugins()
  */
 export const PREVIEW_REMARK_PLUGINS = (() => {
-  const plugins = [...CORE_REMARK_PLUGINS];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  plugins.push(remarkFootnotes as any, remarkFrontmatter, remarkWikiLinks);
+  const plugins = buildPreviewRemarkPlugins();
   return plugins;
 })();
 
 /**
- * Full rehype plugin set for preview. Prefer buildPreviewRehypePlugins().
- * @deprecated Use buildPreviewRehypePlugins() for live katex support.
+ * @deprecated Use buildPreviewRehypePlugins()
  */
-export const PREVIEW_REHYPE_PLUGINS = (() => {
-  const plugins: unknown[] = [rehypeSlug, rehypeHighlight, rehypeRaw, rehypeWikiLinks, rehypeFilterInvalidElements];
-  const katex = getKatexPlugin();
-  if (katex) plugins.splice(3, 0, katex.rehypeKatex);
-  return plugins;
-})();
+export const PREVIEW_REHYPE_PLUGINS = buildPreviewRehypePlugins();

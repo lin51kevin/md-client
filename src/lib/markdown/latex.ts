@@ -32,9 +32,9 @@ export async function renderLatex(text: string): Promise<string> {
 
   const result = await unified()
     .use(remarkParse)
-    .use(katex.remarkMath)
+    .use(katex.remarkMath as any)
     .use(remarkRehype)
-    .use(katex.rehypeKatex)
+    .use(katex.rehypeKatex as any)
     .use(rehypeStringify)
     .process(text);
 
