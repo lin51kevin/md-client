@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { Terminal } from 'xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
@@ -71,6 +71,19 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ context: _context 
   const fitAddonRef = useRef<FitAddon | null>(null);
   const inputBufferRef = useRef<string>('');
   const cwdRef = useRef<string>('');
+  const [shellType, setShellType] = useState<string>(() => {
+    // Load from storage or default based on platform
+    const stored = localStorage.getItem('marklite-terminal-shell-type');
+    if (stored) return stored;
+    
+    // Default based on platform
+    if (typeof navigator !== 'undefined' && navigator.platform) {
+      if (navigator.platform.toLowerCase().includes('win')) {
+        return 'cmd'; // Default to cmd on Windows
+      }
+    }
+    return 'sh';
+  });
 
   const writeOutput = useCallback((text: string) => {
     if (termRef.current) {
@@ -127,6 +140,7 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ context: _context 
       const result = await invoke<string>('execute_shell_command', {
         command: trimmed,
         cwd: cwdRef.current || undefined,
+        shellType: shellType,
       });
       if (result) {
         writeOutput(result);
@@ -137,7 +151,7 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ context: _context 
     }
 
     writePrompt();
-  }, [writeOutput]);
+  }, [writeOutput, shellType]);
 
   const writePrompt = useCallback(() => {
     const cwd = cwdRef.current;
@@ -262,6 +276,64 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({ context: _context 
         minHeight: 0,
       }}
     >
+      {/* Toolbar */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '4px 8px',
+          borderBottom: '1px solid var(--border-color, #333)',
+          backgroundColor: 'var(--bg-tertiary, #1a1a1a)',
+          fontSize: '12px',
+        }}
+      >
+        <label
+          htmlFor="shell-type-select"
+          style={{ color: 'var(--text-secondary, #888)', flexShrink: 0 }}
+        >
+          Shell:
+        </label>
+        <select
+          id="shell-type-select"
+          value={shellType}
+          onChange={(e) => {
+            const newType = e.target.value;
+            setShellType(newType);
+            localStorage.setItem('marklite-terminal-shell-type', newType);
+            // Show notification
+            if (termRef.current) {
+              termRef.current.write(`\r\n\x1b[36m[Shell changed to: ${newType}]\x1b[0m\r\n`);
+            }
+          }}
+          style={{
+            padding: '2px 6px',
+            borderRadius: '4px',
+            border: '1px solid var(--border-color, #444)',
+            backgroundColor: 'var(--bg-secondary, #2a2a2a)',
+            color: 'var(--text-primary, #fff)',
+            fontSize: '12px',
+            cursor: 'pointer',
+          }}
+        >
+          <option value="cmd">CMD (Windows)</option>
+          <option value="powershell">PowerShell</option>
+          <option value="pwsh">PowerShell Core</option>
+          <option value="bash">Bash / Git Bash</option>
+          <option value="sh">sh (Unix/Linux)</option>
+        </select>
+        <span
+          style={{
+            marginLeft: 'auto',
+            color: 'var(--text-secondary, #666)',
+            fontSize: '11px',
+          }}
+        >
+          Commands are whitelisted for security
+        </span>
+      </div>
+
+      {/* Terminal container */}
       <div
         ref={containerRef}
         style={{

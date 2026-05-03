@@ -1,6 +1,9 @@
 use std::process::Command;
 use std::path::Path;
 
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
 /// Whitelist of allowed shell commands for security.
 /// Only these base commands can be executed via the terminal plugin.
 const ALLOWED_COMMANDS: &[&str] = &[
@@ -9,11 +12,11 @@ const ALLOWED_COMMANDS: &[&str] = &[
     // File operations (read-only)
     "cat", "type", "head", "tail", "less", "more",
     // Text processing
-    "grep", "find", "wc", "sort", "uniq", "diff",
+    "grep", "find", "findstr", "wc", "sort", "uniq", "diff",
     // Git operations
     "git",
     // System info (safe)
-    "echo", "date", "whoami", "hostname", "uname",
+    "echo", "date", "whoami", "hostname", "uname", "ver",
     // Network (diagnostic only)
     "ping", "curl", "wget",
     // Package managers (query only, no install)
@@ -21,6 +24,8 @@ const ALLOWED_COMMANDS: &[&str] = &[
     // Build tools
     "node", "python", "python3", "rustc", "gcc",
     "make", "cmake", "mvn", "gradle",
+    // PowerShell cmdlets
+    "get-location", "get-childitem", "set-location",
 ];
 
 /// Commands that are explicitly forbidden due to high security risk.
@@ -131,7 +136,7 @@ fn validate_cwd(cwd: &str) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn execute_shell_command(command: String, cwd: Option<String>) -> Result<String, String> {
+pub fn execute_shell_command(command: String, cwd: Option<String>, shell_type: Option<String>) -> Result<String, String> {
     // Validate command
     let base_cmd = validate_command(&command)?;
 
@@ -143,18 +148,53 @@ pub fn execute_shell_command(command: String, cwd: Option<String>) -> Result<Str
     }
 
     // Log command execution for audit trail
-    eprintln!("[SHELL_AUDIT] Executing: {} | CWD: {:?}", command, cwd);
+    eprintln!("[SHELL_AUDIT] Executing: {} | CWD: {:?} | Shell: {:?}", command, cwd, shell_type);
+
+    // Determine shell type (default to cmd on Windows, sh on Unix)
+    let shell_type = shell_type.as_deref().unwrap_or(if cfg!(target_os = "windows") { "cmd" } else { "sh" });
 
     // Execute command
     let mut cmd = if cfg!(target_os = "windows") {
-        let mut c = Command::new("cmd");
-        c.args(["/C", &command]);
-        c
+        match shell_type {
+            "powershell" | "pwsh" => {
+                let mut c = Command::new("powershell");
+                c.args(["-NoProfile", "-NonInteractive", "-Command", &command]);
+                c
+            },
+            "bash" | "git-bash" => {
+                // Try to find Git Bash
+                let bash_paths = vec![
+                    "C:\\Program Files\\Git\\bin\\bash.exe",
+                    "C:\\Program Files (x86)\\Git\\bin\\bash.exe",
+                    "bash.exe", // Try PATH
+                ];
+                let bash_path = bash_paths.iter()
+                    .find(|p| std::path::Path::new(p).exists())
+                    .unwrap_or(&"bash.exe");
+                
+                let mut c = Command::new(bash_path);
+                c.args(["-c", &command]);
+                c
+            },
+            _ => {
+                // Default: cmd
+                let mut c = Command::new("cmd");
+                c.args(["/C", &command]);
+                c
+            }
+        }
     } else {
         let mut c = Command::new("sh");
         c.args(["-c", &command]);
         c
     };
+
+    // Prevent console window from appearing on Windows
+    #[cfg(target_os = "windows")]
+    {
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
 
     if let Some(dir) = cwd {
         if !dir.is_empty() {
