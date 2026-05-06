@@ -21,7 +21,9 @@ export function createSidebarAPI(deps: {
      * @returns A disposable that removes the panel on dispose.
      */
     registerPanel(id: string, options: { title: string; icon?: string; position?: 'left' | 'bottom'; render: () => unknown }) {
-      const panelContent = options.render();
+      // Wrap the render function in an object so PluginSidebarRenderer
+      // calls it inside React's component lifecycle (avoiding invalid hook calls).
+      const panelContent = { render: options.render };
       registeredPanels.set(id, panelContent);
       deps.registerSidebarPanel(id, panelContent, { title: options.title, icon: options.icon, position: options.position });
       return {
