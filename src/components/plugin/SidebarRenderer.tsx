@@ -34,18 +34,27 @@ export function PluginSidebarRenderer({ content }: PluginSidebarRendererProps) {
 
 /**
  * Renders content from an object with a render() method.
- * Memoises the component reference to prevent remounting when
- * the parent re-renders but the content object hasn't changed.
+ * Wraps render() in a stable React component so any hooks the plugin
+ * calls inside render() run in a valid React component context.
+ * useMemo on [content] ensures we don't create a new component *type*
+ * on every parent re-render (which would force remounting).
  */
 function RenderMethodPanel({ content }: { content: { render: () => unknown } }) {
-  const rendered = useMemo(() => content.render(), [content]);
+  const Comp = useMemo(
+    () =>
+      function PanelContent() {
+        const result = content.render();
+        if (React.isValidElement(result)) return result as React.ReactElement;
+        if (typeof result === 'function') {
+          const Inner = result as React.FunctionComponent;
+          return <Inner />;
+        }
+        return null;
+      },
+    [content]
+  );
 
-  if (React.isValidElement(rendered)) return rendered;
-  if (typeof rendered === 'function') {
-    const Comp = rendered as React.FunctionComponent;
-    return <Comp />;
-  }
-  return null;
+  return <Comp />;
 }
 
 function DOMPanelMount({ content }: { content: unknown }) {
