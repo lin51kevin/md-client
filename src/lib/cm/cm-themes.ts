@@ -40,17 +40,17 @@ const sepiaHighlight = HighlightStyle.define([
 export const sepiaTheme = EditorView.theme(
   {
     '&': {
-      backgroundColor: '#f4ecd8',
-      color: '#3b3228',
+      backgroundColor: 'var(--bg-primary)',
+      color: 'var(--text-primary)',
     },
     '.cm-gutters': {
-      backgroundColor: '#efe5cd',
-      color: '#9a8b75',
-      borderRight: '1px solid #d4c9ab',
+      backgroundColor: 'var(--bg-secondary)',
+      color: 'var(--text-tertiary)',
+      borderRight: '1px solid var(--border-color)',
     },
     '.cm-activeLineGutter': {
-      backgroundColor: '#e8dcc0',
-      color: '#695d4e',
+      backgroundColor: 'var(--bg-tertiary)',
+      color: 'var(--text-secondary)',
     },
     '.cm-activeLine': {
       backgroundColor: 'rgba(212, 201, 171, 0.45)',
@@ -109,21 +109,21 @@ const hcHighlight = HighlightStyle.define([
 export const highContrastTheme = EditorView.theme(
   {
     '&': {
-      backgroundColor: '#ffffff',
-      color: '#000000',
+      backgroundColor: 'var(--bg-primary)',
+      color: 'var(--text-primary)',
     },
     '.cm-gutters': {
-      backgroundColor: '#ffffff',
-      color: '#444444',
-      borderRight: '2px solid #000000',
+      backgroundColor: 'var(--bg-secondary)',
+      color: 'var(--text-tertiary)',
+      borderRight: '2px solid var(--border-color)',
     },
     '.cm-activeLineGutter': {
-      backgroundColor: '#eeeeee',
-      color: '#000000',
+      backgroundColor: 'var(--bg-tertiary)',
+      color: 'var(--text-primary)',
       fontWeight: '700',
     },
     '.cm-activeLine': {
-      backgroundColor: '#eeeeee',
+      backgroundColor: 'var(--hover-bg)',
     },
     '.cm-selectionMatch': {
       backgroundColor: '#ccccff',

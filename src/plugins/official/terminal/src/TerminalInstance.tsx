@@ -48,7 +48,7 @@ function buildThemeFromCSS(): Record<string, string> {
   const dark = isDarkTheme();
   const ansi = dark ? DARK_ANSI : LIGHT_ANSI;
   return {
-    background: getCSSVar('--bg-secondary', dark ? '#161b22' : '#f6f8fa'),
+    background: getCSSVar('--bg-primary', dark ? '#0d1117' : '#ffffff'),
     foreground: getCSSVar('--text-primary', dark ? '#f0f6fc' : '#1f2328'),
     cursor: getCSSVar('--accent-color', dark ? '#58a6ff' : '#0969da'),
     cursorAccent: getCSSVar('--bg-primary', dark ? '#0d1117' : '#ffffff'),

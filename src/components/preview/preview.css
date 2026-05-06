@@ -285,8 +285,6 @@
 .markdown-preview-sepia {
   color: var(--text-primary, #2b4a2b);
   background-color: var(--bg-primary, #f0f7ee);
-  padding: 8px 16px;
-  border-radius: 6px;
 }
 .markdown-preview-sepia h1,
 .markdown-preview-sepia h2,
@@ -341,14 +339,14 @@
   font-weight: 500;
 }
 .markdown-preview-high-contrast pre {
-  background-color: #111;
+  background-color: var(--bg-secondary, #f0f0f0);
   border: 2px solid var(--border-color, #000);
-  color: #fff;
+  color: var(--text-primary, #000);
 }
 .markdown-preview-high-contrast pre code {
   background-color: transparent;
   border: none;
-  color: #fff;
+  color: inherit;
 }
 .markdown-preview-high-contrast blockquote {
   border-left: 4px solid var(--border-color, #000);
@@ -461,7 +459,32 @@
 .markdown-preview-sepia .hljs-title.function_ { color: #1a5276; }
 
 /* ── Syntax Highlighting — High contrast override ── */
-.markdown-preview-high-contrast .hljs { color: #000; }
+.markdown-preview-high-contrast .hljs { color: var(--text-primary, #000); background: transparent; }
+.markdown-preview-high-contrast .hljs-keyword,
+.markdown-preview-high-contrast .hljs-type,
+.markdown-preview-high-contrast .hljs-variable.language_ { color: #0000cc; font-weight: 700; }
+.markdown-preview-high-contrast .hljs-title,
+.markdown-preview-high-contrast .hljs-title.class_,
+.markdown-preview-high-contrast .hljs-title.function_ { color: #800080; font-weight: 700; }
+.markdown-preview-high-contrast .hljs-string,
+.markdown-preview-high-contrast .hljs-regexp,
+.markdown-preview-high-contrast .hljs-meta .hljs-string { color: #006400; }
+.markdown-preview-high-contrast .hljs-number,
+.markdown-preview-high-contrast .hljs-literal,
+.markdown-preview-high-contrast .hljs-built_in,
+.markdown-preview-high-contrast .hljs-symbol { color: #cc0000; }
+.markdown-preview-high-contrast .hljs-comment,
+.markdown-preview-high-contrast .hljs-code,
+.markdown-preview-high-contrast .hljs-formula { color: #555555; font-style: italic; }
+.markdown-preview-high-contrast .hljs-attr,
+.markdown-preview-high-contrast .hljs-attribute,
+.markdown-preview-high-contrast .hljs-selector-attr,
+.markdown-preview-high-contrast .hljs-selector-class,
+.markdown-preview-high-contrast .hljs-selector-id { color: #005c99; }
+.markdown-preview-high-contrast .hljs-name,
+.markdown-preview-high-contrast .hljs-selector-tag { color: #006400; font-weight: 700; }
+.markdown-preview-high-contrast .hljs-addition { color: #006400; background-color: #e6ffe6; }
+.markdown-preview-high-contrast .hljs-deletion { color: #cc0000; background-color: #ffe6e6; }
 
 /* ── Syntax Highlighting — Dark override ── */
 .markdown-preview-dark .hljs {

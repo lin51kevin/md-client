@@ -64,6 +64,26 @@ body {
   background-color: var(--bg-tertiary);
 }
 
+/* ── Normalize CodeMirror editor background to match theme ──
+   Built-in uiw light/dark themes use hardcoded colours.
+   Overriding here ensures the editor content area always matches
+   the preview pane (--bg-primary) and the gutter (--bg-secondary)
+   across all built-in and custom themes.
+   The milkdown-preview code-block rules in theme.css have higher
+   specificity + !important so those inline editors keep transparent
+   backgrounds unchanged.                                            */
+.cm-editor {
+  background-color: var(--bg-primary) !important;
+}
+.cm-editor .cm-scroller {
+  background-color: var(--bg-primary) !important;
+}
+.cm-editor .cm-gutters {
+  background-color: var(--bg-secondary) !important;
+  border-right-color: var(--border-color) !important;
+  color: var(--text-tertiary) !important;
+}
+
 /* ── Export loading indicator ── */
 .export-loading-indicator {
   position: fixed;
