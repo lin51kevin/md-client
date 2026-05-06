@@ -103,7 +103,7 @@ export function ToolbarButton({
       aria-label={title}
       disabled={disabled}
       className={`${BASE} ${className ?? ''}`}
-      style={getStyle(variant, active)}
+      style={{ outline: 'none', ...getStyle(variant, active) }}
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
     >

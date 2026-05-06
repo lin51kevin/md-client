@@ -149,7 +149,7 @@ export const Toolbar = memo(function Toolbar({
       tabIndex={0}
       onKeyDown={handleKeyDown}
       className="relative shrink-0 flex items-center justify-between px-2 py-1"
-      style={{ backgroundColor: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-color)' }}
+      style={{ outline: 'none', backgroundColor: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-color)' }}
     >
       {/* ── Left: file menu + file ops + formatting ── */}
       <div className="flex items-center">
