@@ -3,7 +3,8 @@
   "identifier": "default",
   "description": "Capability for the main window",
   "windows": [
-    "main"
+    "main",
+    "pdf-export"
   ],
   "permissions": [
     "core:default",
@@ -11,6 +12,7 @@
     "core:window:allow-maximize",
     "core:window:allow-set-title",
     "core:window:allow-set-theme",
+    "core:webview:allow-print",
     "opener:default",
     "dialog:default",
     "fs:default",

@@ -48,18 +48,103 @@ fn decode_png_for_pdf(png_bytes: &[u8], w_px: u32, _h_px: u32) -> Option<(elemen
     }
 }
 
-/// Sanitize text for PDF rendering.
+/// Split a line that exceeds `max_chars` into segments at character boundaries.
+/// genpdf 0.2.0 panics with "end of range should be a character boundary" when it
+/// tries to break a long string that contains multi-byte UTF-8 characters. Pre-splitting
+/// prevents genpdf's wrapping path from ever being reached for such strings.
+fn split_long_line(line: &str, max_chars: usize) -> Vec<String> {
+    if line.chars().count() <= max_chars {
+        return vec![line.to_string()];
+    }
+    let mut result = Vec::new();
+    let mut current = String::with_capacity(max_chars * 4);
+    let mut count = 0;
+    for c in line.chars() {
+        current.push(c);
+        count += 1;
+        if count >= max_chars {
+            result.push(current.clone());
+            current.clear();
+            count = 0;
+        }
+    }
+    if !current.is_empty() {
+        result.push(current);
+    }
+    result
+}
+
+/// Split `StyledString` text into chunks that genpdf 0.2 can wrap safely.
+/// genpdf 0.2.0 panics when its word-wrap logic computes a byte-offset that
+/// falls inside a multi-byte UTF-8 character. Pre-splitting at whitespace
+/// and CJK character boundaries prevents genpdf from ever attempting that slice.
+fn split_text_for_pdf(text: &str, style: style::Style) -> Vec<style::StyledString> {
+    const MAX_CHUNK: usize = 60;
+    if text.chars().count() <= MAX_CHUNK && text.contains(' ') {
+        // Short text with spaces — genpdf can wrap it safely
+        return vec![style::StyledString::new(text.to_string(), style)];
+    }
+    let mut result = Vec::new();
+    let mut current = String::with_capacity(MAX_CHUNK * 4);
+    let mut count = 0;
+    for c in text.chars() {
+        current.push(c);
+        count += 1;
+        // Break at whitespace or every MAX_CHUNK chars
+        let should_break = count >= MAX_CHUNK
+            || (c == ' ' && count >= MAX_CHUNK / 2);
+        if should_break {
+            result.push(style::StyledString::new(current.clone(), style.clone()));
+            current.clear();
+            count = 0;
+        }
+    }
+    if !current.is_empty() {
+        result.push(style::StyledString::new(current, style));
+    }
+    result
+}
+
+
 /// System CJK fonts (SimHei, Microsoft YaHei) lack emoji glyphs and genpdf
 /// does not support font fallback.  Strip characters that would render as
 /// blank boxes rather than corrupting the output.
+///
+/// Also inserts thin spaces between adjacent CJK characters so that genpdf
+/// 0.2's byte-indexed word-wrapping can break at ASCII boundaries instead
+/// of panicking with "end of range should be a character boundary".
 fn sanitize_text_for_pdf(text: &str) -> String {
-    let mut out = String::with_capacity(text.len());
+    const THIN_SPACE: char = '\u{2009}';
+    let mut out = String::with_capacity(text.len() + text.chars().count() / 8);
+    let mut prev_was_cjk = false;
     for c in text.chars() {
-        if !is_non_renderable_for_pdf(c as u32) {
-            out.push(c);
+        if is_non_renderable_for_pdf(c as u32) {
+            continue;
         }
+        let is_cjk = is_cjk_char(c);
+        // Insert a thin space between two adjacent CJK characters.
+        // genpdf's word-wrap breaks on ASCII whitespace, so this gives it
+        // safe split points without visually affecting the PDF output.
+        if prev_was_cjk && is_cjk {
+            out.push(THIN_SPACE);
+        }
+        out.push(c);
+        prev_was_cjk = is_cjk;
     }
     out
+}
+
+/// Returns `true` for CJK Unified Ideographs and common CJK ranges.
+fn is_cjk_char(c: char) -> bool {
+    let cp = c as u32;
+    matches!(cp,
+        0x4E00..=0x9FFF   | // CJK Unified Ideographs
+        0x3400..=0x4DBF   | // CJK Extension A
+        0x20000..=0x2A6DF | // CJK Extension B
+        0x3000..=0x303F   | // CJK Symbols and Punctuation
+        0xFF00..=0xFFEF   | // Fullwidth Forms
+        0xF900..=0xFAFF     // CJK Compatibility Ideographs
+    )
 }
 
 /// Returns `true` for codepoints that CJK system fonts cannot render.
@@ -546,10 +631,14 @@ pub fn export_pdf(
                 code_style.set_color(style::Color::Rgb(33, 37, 41)); // Dark gray/black for contrast
                 let mut layout = elements::LinearLayout::vertical();
                 for line in code_block_text.trim_end().lines() {
-                    let text_line = if line.is_empty() { " " } else { line };
-                    layout.push(elements::Paragraph::new(
-                        style::StyledString::new(text_line.to_string(), code_style.clone())
-                    ));
+                    // Pre-split long lines to avoid genpdf 0.2 UTF-8 boundary panic
+                    let segments = split_long_line(line, 80);
+                    for seg in &segments {
+                        let text_line = if seg.is_empty() { " " } else { seg.as_str() };
+                        layout.push(elements::Paragraph::new(
+                            style::StyledString::new(text_line.to_string(), code_style.clone())
+                        ));
+                    }
                 }
 
                 // Add inner padding INSIDE the frame
@@ -802,10 +891,9 @@ pub fn export_pdf(
                 } else if in_table {
                     current_cell_text.push_str(&sanitize_text_for_pdf(&text));
                 } else {
-                    para_parts.push(style::StyledString::new(
-                        sanitize_text_for_pdf(&text),
-                        make_style(is_bold, is_italic, is_strikethrough),
-                    ));
+                    let clean = sanitize_text_for_pdf(&text);
+                    let s = make_style(is_bold, is_italic, is_strikethrough);
+                    para_parts.extend(split_text_for_pdf(&clean, s));
                 }
             }
 
@@ -849,7 +937,14 @@ pub fn export_pdf(
                     let mut url_style = style::Style::new();
                     url_style.set_font_size(8);
                     url_style.set_color(style::Color::Rgb(100, 100, 150));
-                    para_parts.push(style::StyledString::new(format!(" ({url})"), url_style));
+                    // Truncate very long URLs to avoid genpdf 0.2 UTF-8 boundary panic
+                    let display_url = if url.chars().count() > 80 {
+                        let truncated: String = url.chars().take(77).collect();
+                        format!("({truncated}...)")
+                    } else {
+                        format!(" ({url})")
+                    };
+                    para_parts.push(style::StyledString::new(display_url, url_style));
                 }
             }
 

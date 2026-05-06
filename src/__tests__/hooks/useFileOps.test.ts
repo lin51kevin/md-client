@@ -23,6 +23,10 @@ vi.mock('../../lib/export-prerender', () => ({
   prerenderExportAssets: vi.fn(() => Promise.resolve({})),
 }));
 
+vi.mock('../../lib/export/pdf-html-generator', () => ({
+  generatePdfHtml: vi.fn(() => Promise.resolve('<html><body>PDF</body></html>')),
+}));
+
 vi.mock('html2canvas', () => ({
   __esModule: true,
   default: vi.fn().mockResolvedValue({
@@ -443,7 +447,8 @@ describe('useFileOps', () => {
     it('should export to PDF', async () => {
       const { save } = await import('@tauri-apps/plugin-dialog');
       const { invoke } = await import('@tauri-apps/api/core');
-      
+      const { generatePdfHtml } = await import('../../lib/export/pdf-html-generator');
+
       vi.mocked(save).mockResolvedValue('/export.pdf');
       vi.mocked(invoke).mockResolvedValue(undefined);
 
@@ -457,11 +462,10 @@ describe('useFileOps', () => {
         filters: [{ name: 'PDF Document', extensions: ['pdf'] }],
         defaultPath: 'file1.pdf',
       });
-      expect(invoke).toHaveBeenCalledWith('export_document', {
-        markdown: '# Content 1',
+      expect(generatePdfHtml).toHaveBeenCalledWith('# Content 1');
+      expect(invoke).toHaveBeenCalledWith('export_pdf_via_webview', {
+        htmlContent: '<html><body>PDF</body></html>',
         outputPath: '/export.pdf',
-        format: 'pdf',
-        preRenderedImages: {},
       });
     });
 

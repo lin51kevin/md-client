@@ -89,13 +89,24 @@ export function useExportOps({ getActiveTab, t }: ExportOpsParams) {
         defaultPath: getDefaultFileName(format),
       });
       if (savePath) {
-        onProgress?.('Pre-rendering diagrams and formulas...', 20);
-        const { prerenderExportAssets } = await import('../lib/markdown');
-        const preRenderedImages = await prerenderExportAssets(tab.doc);
-        onProgress?.('Exporting document...', 60);
-        await invoke('export_document', { markdown: tab.doc, outputPath: savePath, format, preRenderedImages });
-        onProgress?.('Generating file...', 80);
-        onProgress?.('Complete!', 100);
+        if (format === 'pdf') {
+          // Use WebView print-to-PDF for higher quality output and smaller file sizes
+          onProgress?.('Generating PDF content...', 20);
+          const { generatePdfHtml } = await import('../lib/export/pdf-html-generator');
+          const pdfHtml = await generatePdfHtml(tab.doc);
+          onProgress?.('Rendering PDF...', 50);
+          await invoke('export_pdf_via_webview', { htmlContent: pdfHtml, outputPath: savePath });
+          onProgress?.('Complete!', 100);
+        } else {
+          // DOCX: use existing Rust export pipeline
+          onProgress?.('Pre-rendering diagrams and formulas...', 20);
+          const { prerenderExportAssets } = await import('../lib/markdown');
+          const preRenderedImages = await prerenderExportAssets(tab.doc);
+          onProgress?.('Exporting document...', 60);
+          await invoke('export_document', { markdown: tab.doc, outputPath: savePath, format, preRenderedImages });
+          onProgress?.('Generating file...', 80);
+          onProgress?.('Complete!', 100);
+        }
       }
     } catch (err) {
       const errMsg = toErrorMessage(err);
