@@ -72,15 +72,6 @@ const DEFAULT_PLUGINS: PluginUIItem[] = [
     permissions: ['editor.extend'],
   },
   {
-    id: 'marklite-table-editor-pro',
-    name: 'Table Editor Pro',
-    version: '1.0.0',
-    author: 'MarkLite Team',
-    description: '增强表格编辑器 — 可视化编辑、行列增删、对齐调整、合并单元格',
-    enabled: true,
-    permissions: ['editor.read', 'editor.write', 'contextmenu.item', 'commands', 'sidebar.panel'],
-  },
-  {
     id: 'marklite-backlinks',
     name: 'Backlinks Panel',
     version: '1.0.0',

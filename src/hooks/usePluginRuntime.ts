@@ -22,7 +22,6 @@ const OFFICIAL_PLUGIN_IDS = [
   'marklite-markdown-lint',
   'marklite-minimap',
   'marklite-smart-autocomplete',
-  'marklite-table-editor-pro',
   'marklite-tag-system',
   'marklite-terminal',
 ];
