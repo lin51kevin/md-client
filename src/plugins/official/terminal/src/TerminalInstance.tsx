@@ -115,6 +115,7 @@ export const TerminalInstance: React.FC<TerminalInstanceProps> = ({ instance, is
     term.open(containerRef.current);
 
     setTimeout(() => {
+      if (!containerRef.current || containerRef.current.offsetParent === null) return;
       try {
         fitAddon.fit();
       } catch {
@@ -276,13 +277,19 @@ export const TerminalInstance: React.FC<TerminalInstanceProps> = ({ instance, is
       }
     });
 
-    // Resize observer
+    // Resize observer — debounce fit to avoid flickering during drag resize
+    let resizeTimer: ReturnType<typeof setTimeout> | null = null;
     const resizeObserver = new ResizeObserver(() => {
-      try {
-        fitAddon.fit();
-      } catch {
-        // Ignore fit errors
-      }
+      if (!containerRef.current || containerRef.current.offsetParent === null) return;
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (!containerRef.current || containerRef.current.offsetParent === null) return;
+        try {
+          fitAddon.fit();
+        } catch {
+          // Ignore fit errors
+        }
+      }, 80);
     });
     if (containerRef.current) {
       resizeObserver.observe(containerRef.current);
@@ -295,6 +302,7 @@ export const TerminalInstance: React.FC<TerminalInstanceProps> = ({ instance, is
     themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'style', 'data-theme'] });
 
     return () => {
+      if (resizeTimer) clearTimeout(resizeTimer);
       themeObserver.disconnect();
       resizeObserver.disconnect();
       xtermEl?.removeEventListener('keydown', handleKeydown, true);
@@ -309,6 +317,8 @@ export const TerminalInstance: React.FC<TerminalInstanceProps> = ({ instance, is
   useEffect(() => {
     if (isActive && instance.fitAddonRef) {
       setTimeout(() => {
+        // Guard: skip if container is hidden (display:none on self or ancestor)
+        if (!containerRef.current || containerRef.current.offsetParent === null) return;
         try {
           instance.fitAddonRef?.fit();
         } catch {
