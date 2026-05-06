@@ -51,6 +51,8 @@ interface ShortcutsParams {
   handleFormatAction?: (action: string) => void;
   /** 全屏切换 */
   toggleFullscreen?: () => void;
+  /** 切换底部终端面板 (Ctrl+~) */
+  toggleTerminalPanel?: () => void;
 }
 
 /** 根据 actionId 获取当前快捷键（用户自定义优先） */
@@ -177,6 +179,22 @@ export function useKeyboardShortcuts(params: ShortcutsParams) {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  // Ctrl+~ needs a capture-phase listener so it fires even when xterm.js
+  // (or any other nested input) has focus and would otherwise swallow the event.
+  useEffect(() => {
+    const captureHandler = (e: KeyboardEvent) => {
+      // Match Ctrl+` or Ctrl+~ (Backquote key with or without Shift),
+      // using e.code for layout independence.
+      if ((e.ctrlKey || e.metaKey) && e.code === 'Backquote') {
+        e.preventDefault();
+        e.stopPropagation();
+        paramsRef.current.toggleTerminalPanel?.();
+      }
+    };
+    window.addEventListener('keydown', captureHandler, { capture: true });
+    return () => window.removeEventListener('keydown', captureHandler, { capture: true });
   }, []);
 }
 

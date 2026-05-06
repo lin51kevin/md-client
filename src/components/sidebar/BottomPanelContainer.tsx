@@ -90,13 +90,14 @@ export function BottomPanelContainer({ visible, title, onClose, children }: Bott
     };
   }, [dragging, saveHeight]);
 
-  if (!visible) return null;
-
   return (
     <div
       className="shrink-0 relative flex flex-col"
+      data-bottom-panel-id={visible ? 'active' : undefined}
+      data-panel-visible={visible ? 'true' : 'false'}
       style={{
         height,
+        display: visible ? undefined : 'none',
         borderTop: '1px solid var(--border-color)',
         backgroundColor: 'var(--bg-secondary)',
         pointerEvents: dragging ? 'none' : undefined,

@@ -312,6 +312,7 @@ export function AppShell() {
       if (!isTauri) return;
       try { const { getCurrentWindow: gcw } = await import('@tauri-apps/api/window'); const w = gcw(); w.isFullscreen().then(fs => w.setFullscreen(!fs)); } catch {}
     },
+    toggleTerminalPanel: () => useUIStore.getState().toggleBottomPanel('terminal'),
   });
 
   // useMemo so the registry is only recreated when its stable dependencies change,
@@ -571,11 +572,11 @@ export function AppShell() {
 
           {/* Bottom panels (e.g. Terminal) */}
           {pluginPanels
-            .filter((pp) => pp.position === 'bottom' && activeBottomPanel === pp.id)
+            .filter((pp) => pp.position === 'bottom')
             .map((pp) => (
               <BottomPanelContainer
                 key={pp.id}
-                visible
+                visible={activeBottomPanel === pp.id}
                 title={pp.title}
                 onClose={() => setActiveBottomPanel(null)}
               >
