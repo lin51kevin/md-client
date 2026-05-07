@@ -56,9 +56,9 @@ const highlightTheme = EditorView.baseTheme({
     borderRadius: '2px',
   },
   '.cm-search-match-active': {
-    backgroundColor: 'rgba(255, 150, 0, 0.55)',
+    backgroundColor: 'rgba(255, 213, 0, 0.75)',
     borderRadius: '2px',
-    outline: '1px solid rgba(255, 150, 0, 0.8)',
+    outline: '1px solid rgba(200, 160, 0, 0.8)',
   },
 });
 

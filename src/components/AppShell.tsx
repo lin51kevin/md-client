@@ -21,7 +21,7 @@ import { useWindowInit } from '../hooks/useWindowInit';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { useDocMetrics } from '../hooks/useDocMetrics';
 import { useVersionHistory } from '../hooks/useVersionHistory';
-import { useNavigation } from '../hooks/useNavigation';
+import { useNavigation, type SearchHighlightOpts } from '../hooks/useNavigation';
 import { useAppLifecycle } from '../hooks/useAppLifecycle';
 import { usePendingImageMigration } from '../hooks/usePendingImageMigration';
 import { useFileWatchState } from '../hooks/useFileWatchState';
@@ -276,9 +276,12 @@ export function AppShell() {
   const { debouncedDoc, tocEntries, wordCount } = useDocMetrics(activeTab.doc, activeTabId);
   const readingTime = useMemo(() => getReadingTime(wordCount), [wordCount]);
 
-  const { activeTocId, handleTocNavigate, handleWikiLinkNavigate, handleSearchResultClick } = useNavigation({
+  /** Kept current by SearchPanel; read by handleSearchResultClick to highlight preview */
+  const searchHighlightRef = useRef<SearchHighlightOpts | null>(null);
+
+  const { activeTocId, handleTocNavigate, handleWikiLinkNavigate, handleSearchResultClick, clearSearchHighlight } = useNavigation({
     cmViewRef, previewRef, activeTab, activeTabId, setActiveTabId,
-    getActiveTab, openFileInTab, t,
+    getActiveTab, openFileInTab, t, searchHighlightRef,
   });
 
   useKeyboardShortcuts({
@@ -522,8 +525,9 @@ export function AppShell() {
               return fallback ? fallback.replace(/[/\\][^/\\]+$/, '') : null;
             })()}
             onResultClick={handleSearchResultClick}
-            onClose={() => { clearMatches(); setActivePanel(null); }}
+            onClose={() => { clearMatches(); clearSearchHighlight(); setActivePanel(null); }}
             openTabs={tabs} currentTabId={activeTabId} onAnyTabContentChange={updateTabDoc}
+            onHighlightChange={(opts) => { searchHighlightRef.current = opts; if (!opts) clearSearchHighlight(); }}
           />
           </Suspense>
 

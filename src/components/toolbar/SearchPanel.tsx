@@ -5,6 +5,7 @@ import './command-palette.css';
 import { useSearchLogic } from '../../hooks/useSearchLogic';
 import { useUIStore } from '../../stores/ui-store';
 import type { SearchResultItem } from '../../types/search';
+import type { SearchHighlightOpts } from '../../hooks/useNavigation';
 
 const CONTEXT_LINE_MAX_LEN = 80;
 
@@ -20,11 +21,14 @@ interface SearchPanelProps {
   currentTabId: string;
   onAnyTabContentChange: (tabId: string, content: string) => void;
   openTabs: { id: string; filePath: string | null; doc: string; displayName?: string }[];
+  /** Fired whenever the effective preview-highlight options change (null = clear). */
+  onHighlightChange?: (opts: SearchHighlightOpts | null) => void;
 }
 
 export function SearchPanel({
   visible, content, currentFilePath, onContentChange, onMatchChange,
   searchDir, onResultClick, onClose, openTabs, currentTabId, onAnyTabContentChange,
+  onHighlightChange,
 }: SearchPanelProps) {
   const { t } = useI18n();
 
@@ -67,6 +71,18 @@ export function SearchPanel({
       setTimeout(() => replaceInputRef.current?.focus(), 50);
     }
   }, [visible, pendingFocusReplace, setPendingSearchFocusReplace]);
+
+  // Keep the parent's searchHighlightRef in sync so that clicking a result
+  // can highlight the matching text in the preview pane.
+  const onHighlightChangeRef = useRef(onHighlightChange);
+  onHighlightChangeRef.current = onHighlightChange;
+  useEffect(() => {
+    if (!visible || crossFile || !query.trim()) {
+      onHighlightChangeRef.current?.(null);
+    } else {
+      onHighlightChangeRef.current?.({ query: query.trim(), caseSensitive, regex: useRegex, wholeWord });
+    }
+  }, [visible, query, caseSensitive, useRegex, wholeWord, crossFile]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Escape') { onClose(); }

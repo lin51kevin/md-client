@@ -6,6 +6,14 @@ import type { Tab } from '../types';
 import type { TranslationKey } from '../i18n';
 import type { TocEntry } from '../lib/markdown';
 import type { SearchResultItem } from '../types/search';
+import { clearPreviewHighlight, buildSearchRegex, applyPreviewHighlight } from '../lib/utils/preview-highlight';
+
+export interface SearchHighlightOpts {
+  query: string;
+  caseSensitive: boolean;
+  regex: boolean;
+  wholeWord: boolean;
+}
 
 interface UseNavigationOptions {
   cmViewRef: RefObject<EditorView | null>;
@@ -16,11 +24,13 @@ interface UseNavigationOptions {
   getActiveTab: () => Tab;
   openFileInTab: (path: string) => Promise<void>;
   t: (key: TranslationKey, params?: Record<string, string | number>) => string;
+  /** Ref kept up-to-date by SearchPanel with the current query/options */
+  searchHighlightRef: RefObject<SearchHighlightOpts | null>;
 }
 
 export function useNavigation({
   cmViewRef, previewRef, activeTab, activeTabId, setActiveTabId,
-  getActiveTab, openFileInTab, t,
+  getActiveTab, openFileInTab, t, searchHighlightRef,
 }: UseNavigationOptions) {
   const [activeTocId, setActiveTocId] = useState<string | null>(null);
 
@@ -63,28 +73,83 @@ export function useNavigation({
 
   // Search result navigation
   const handleSearchResultClick = useCallback(async (result: SearchResultItem) => {
+    const applyHighlight = () => {
+      const previewEl = previewRef.current;
+      if (!previewEl) return;
+      const hl = searchHighlightRef.current;
+      clearPreviewHighlight(previewEl);
+      if (hl?.query) {
+        const re = buildSearchRegex(hl.query, hl.caseSensitive, hl.regex, hl.wholeWord);
+        if (re) applyPreviewHighlight(previewEl, re);
+      }
+    };
+
     const scrollTo = (sameTab: boolean) => {
       setTimeout(() => {
         const view = cmViewRef.current;
-        if (view) {
+        // Only use the CM view if it is actually mounted in the DOM. In preview-only
+        // or Milkdown mode the view has been destroyed and its dom node is detached,
+        // so we must fall through to the preview-scroll fallback instead.
+        if (view && view.dom.isConnected) {
           const lineInfo = view.state.doc.line(Math.max(0, result.line_number - 1) + 1);
           const anchor = lineInfo.from + result.match_start;
           view.dispatch({ selection: { anchor, head: lineInfo.from + result.match_end }, effects: EditorView.scrollIntoView(anchor, { y: 'center', yMargin: 40 }) });
           view.focus();
-          return;
+        } else {
+          // Fallback for preview-only / milkdown mode: scroll to the highlighted element
+          const previewEl = previewRef.current;
+          if (previewEl) {
+            const doc = getActiveTab().doc;
+            const lines = doc.split('\n');
+            const targetLine = Math.max(0, result.line_number - 1);
+            let charPos = 0;
+            for (let i = 0; i < Math.min(targetLine, lines.length); i++) {
+              charPos += lines[i].length + 1; // +1 for '\n'
+            }
+            const targetCharPos = charPos + result.match_start;
+
+            // Apply highlights and use DOM range positions for accurate scrolling
+            const hl = searchHighlightRef.current;
+            clearPreviewHighlight(previewEl);
+            let scrolled = false;
+            if (hl?.query) {
+              const re = buildSearchRegex(hl.query, hl.caseSensitive, hl.regex, hl.wholeWord);
+              if (re) {
+                // Count occurrences before the target char position to get occurrence index
+                const reCount = new RegExp(re.source, re.flags);
+                let occurrenceIndex = 0;
+                let m: RegExpExecArray | null;
+                while ((m = reCount.exec(doc)) !== null) {
+                  if (m.index >= targetCharPos) break;
+                  occurrenceIndex++;
+                  if (m[0].length === 0) reCount.lastIndex++;
+                }
+
+                const ranges = applyPreviewHighlight(previewEl, re);
+                const targetRange = ranges[Math.min(occurrenceIndex, ranges.length - 1)];
+                if (targetRange) {
+                  try {
+                    const rangeRect = targetRange.getBoundingClientRect();
+                    const containerRect = previewEl.getBoundingClientRect();
+                    const scrollTop = rangeRect.top - containerRect.top + previewEl.scrollTop - 40;
+                    previewEl.scrollTo({ top: Math.max(0, scrollTop), behavior: 'smooth' });
+                    scrolled = true;
+                  } catch { /* getBoundingClientRect may fail for detached ranges */ }
+                }
+              }
+            }
+
+            if (!scrolled) {
+              // Ratio-based fallback (approximate)
+              const ratio = doc.length > 0 ? charPos / doc.length : 0;
+              previewEl.scrollTo({ top: Math.max(0, ratio * (previewEl.scrollHeight - previewEl.clientHeight) - 40), behavior: 'smooth' });
+            }
+          }
+          return; // highlights already applied above
         }
-        // Fallback for preview-only / milkdown mode: scroll preview by line-number ratio
-        const previewEl = previewRef.current;
-        if (!previewEl) return;
-        const doc = getActiveTab().doc;
-        const lines = doc.split('\n');
-        const targetLine = Math.max(0, result.line_number - 1);
-        let charPos = 0;
-        for (let i = 0; i < Math.min(targetLine, lines.length); i++) {
-          charPos += lines[i].length + 1; // +1 for '\n'
-        }
-        const ratio = doc.length > 0 ? charPos / doc.length : 0;
-        previewEl.scrollTo({ top: Math.max(0, ratio * (previewEl.scrollHeight - previewEl.clientHeight) - 40), behavior: 'smooth' });
+        // Apply highlight to the preview for all view modes so the clicked text
+        // is visually marked regardless of whether the editor pane is visible.
+        applyHighlight();
       }, sameTab ? 0 : 200);
     };
     if (result.tab_id) {
@@ -96,10 +161,16 @@ export function useNavigation({
     const isCurrentFile = !result.file_path || result.file_path === activeTab.filePath;
     if (!isCurrentFile) await openFileInTab(result.file_path);
     scrollTo(isCurrentFile);
-  }, [cmViewRef, previewRef, getActiveTab, openFileInTab, activeTab.filePath, activeTabId, setActiveTabId]);
+  }, [cmViewRef, previewRef, getActiveTab, openFileInTab, activeTab.filePath, activeTabId, setActiveTabId, searchHighlightRef]);
+
+  const clearSearchHighlight = useCallback(() => {
+    const previewEl = previewRef.current;
+    if (previewEl) clearPreviewHighlight(previewEl);
+  }, [previewRef]);
 
   return {
     activeTocId,
     handleTocNavigate, handleWikiLinkNavigate, handleSearchResultClick,
+    clearSearchHighlight,
   };
 }

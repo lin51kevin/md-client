@@ -1,5 +1,20 @@
 /* ── Markdown Preview ──────────────────────────────────────────────── */
 
+/* Search result highlight — DOM-injection path (MarkdownPreview fallback) */
+mark.preview-search-highlight {
+  background-color: rgba(255, 213, 0, 0.55);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+/* Search result highlight — CSS Custom Highlight API path (works inside
+   ProseMirror/Milkdown contenteditable without touching the DOM) */
+::highlight(preview-search-highlight) {
+  background-color: rgba(255, 213, 0, 0.55);
+  color: inherit;
+}
+
 /* Base styles */
 .markdown-preview {
   color: var(--text-primary);
