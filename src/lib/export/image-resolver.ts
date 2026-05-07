@@ -58,8 +58,10 @@ function toAbsPath(src: string, docDir: string | null): string | null {
   // "../image.jpg" patterns while still blocking deeper traversal (e.g. "../../etc/passwd").
   const normalizedBase = base.replace(/\/$/, '');
   const lastSlash = normalizedBase.lastIndexOf('/');
-  const projectRoot = lastSlash > 0 ? normalizedBase.slice(0, lastSlash) : '';
-  if (projectRoot && !result.startsWith(projectRoot + '/') && result !== projectRoot) return null;
+  // If docDir has no parent (root-level like "/docs"), block all ../ traversal
+  if (lastSlash <= 0) return result.startsWith(normalizedBase + '/') || result === normalizedBase ? result : null;
+  const projectRoot = normalizedBase.slice(0, lastSlash);
+  if (!result.startsWith(projectRoot + '/') && result !== projectRoot) return null;
   return result;
 }
 
