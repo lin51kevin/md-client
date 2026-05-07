@@ -6,31 +6,78 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [v0.11.0] - 2026-05-03
+## [v0.11.1] - 2026-05-07
 
 
-### Style
+### Changed
 
-- align Milkdown and Markdown Preview styles (`0fae672`)
+- bump version to v0.11.1 (`bda723f`)
 
 
 
 ### Fixed
 
-- vim mode and minimap plugins now activate correctly (`478614e`)
-- resolve esbuild font loader errors in plugin builds (`9842130`)
-- resolve verified audit issues across phases 0-3 (`12534cf`)
-- resolve install, build, and test failures (`91daf0e`)
+- harden image-resolver regex and clean up dead TOC code (`f8240ae`)
+- remove focus outline on toolbar and toolbar buttons (`1384279`)
+
+
+
+### Added
+
+- resolve local images in HTML/PDF exports (`197f713`)
+- replace genpdf PDF export with WebView2 PrintToPdf (`cc94f3a`)
+
+
+
+
+
+
+
+## [v0.11.0] - 2026-05-06
+
+
+### Changed
+
+- remove table-editor-pro plugin (`6f5e45e`)
+- fix warnings from dev tool (`96a23c9`)
+- upgrade dependencies to fix security vulnerabilities (`4988034`)
+- configure default enabled/disabled states for official plugins (`4b1a686`)
+- bump version to v0.11.0 (`7b564b5`)
+
+
+
+### Fixed
+
 - plugin activation — minimap bridge shim, toolbar re-render, dev build (`9d9bf13`)
-- separate plugin bundles from main package (`7994984`)
+- resolve esbuild font loader errors in plugin builds (`9842130`)
+- wrap plugin render() in object to avoid invalid hook call (`46b0ecc`)
+- unify theme background colors and fix high-contrast code block visibility (`9b1b4a1`)
+- resolve install, build, and test failures (`91daf0e`)
+- normalize registry and update lockfiles to fix esbuild binary install (`b145118`)
+- minimap click unresponsive in split mode (`6744346`)
+- resolve verified audit issues across phases 0-3 (`12534cf`)
+- vim mode and minimap plugins now activate correctly (`478614e`)
 - create dist subdirectory before copying plugin to public/ (`ac24c4b`)
+- separate plugin bundles from main package (`7994984`)
+- remove unused editorRef and handleEditorScroll destructuring (`31d14b3`)
+- fix invalid hooks call in SidebarRenderer (`6bf6602`)
 - correct engine version to allow activation on v0.10.x (`587d697`)
 - fix Vim plugin import paths and MenuItem disabled type (`4dc39b6`)
 - cast pipeline plugin arrays to any for ReactMarkdown compat (P1.3) (`3ab3094`)
 - resolve production build command recognition and console flash issues (`2f55a12`)
 - move new terminal button to sidebar header and fix input issue (`f30e44e`)
 - fix layout issues and terminal rendering (`8b016ac`)
+- guard fitAddon.fit() when container is hidden (`7205556`)
 - improve selection contrast in milkdown preview & auto-scroll active tab into view (`c7f1d20`)
+
+
+
+### Test
+
+- add e2e tests for Ctrl+~ terminal panel shortcut (`480a3b6`)
+- update tests for new permission system (`a38e2cf`)
+- update tests for bridge-based plugin architecture (`7d5e42c`)
+- restore T0 readFile tests overwritten by T1 (`e681f38`)
 
 
 
@@ -39,28 +86,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - add 10 missing plugins to official registry (`c39f37c`)
 - support extensionless text files (Dockerfile/Makefile) and minor optimizations (`f1c7c6b`)
 - implement workspace.watch and createSandboxedContext (`04804e8`)
+- add Ctrl+~ shortcut to toggle bottom terminal panel (`640a2b8`)
 - share [@codemirror](https://github.com/codemirror)/* modules across plugins (`8bb906d`)
 - register 10 new official plugins (`827c72f`)
 - infrastructure for resizable bottom-docked plugin panels (`d2b7ec6`)
 - add rainbow bracket coloring (T2.2) (`40ae6f8`)
-- enable lint diagnostics framework (T2.4) (`4208ac0`)
 - add symbol-level breadcrumb for code files (T2.6) (`30d90f8`)
+- enable lint diagnostics framework (T2.4) (`4208ac0`)
 - enable lint diagnostics framework (T2.4) (`dc67741`)
 - add indent guides for code files (T2.1) (`d4de9ed`)
 - add transclusion embedding (T2.5) (`d8d0986`)
 - add callout/admonition blocks (T2.3) (`2010672`)
-- add Tag System plugin (P3.1) (`90879c3`)
+- add Minimap plugin (P3.11) (`34e425b`)
 - add Table Editor Pro plugin (P4.3) (`21c60d0`)
 - add Readability Score plugin (P3.8) (`c01a3e3`)
 - add Frontmatter Editor plugin (P3.7) (`9825729`)
 - add Document Templates plugin (P3.3) (`5498005`)
-- implement files.readFile API (T0) (`5cc3b6e`)
+- add Tag System plugin (P3.1) (`90879c3`)
 - add Daily Notes plugin (P3.2) (`c64086d`)
 - add Markdown Lint plugin (P3.6) (`a8c78d2`)
 - add File Icons plugin (P3.9) (`8196710`)
 - add Terminal plugin (P4.1) (`7586b79`)
 - add Smart Autocomplete plugin (P4.2) (`a7aa217`)
-- add Minimap plugin (P3.11) (`34e425b`)
+- implement files.readFile API (T0) (`5cc3b6e`)
 - implement theme.register API (T5) (`e520d89`)
 - implement files.watch API (T1) (`278efa8`)
 - add 4 extracted plugins to official registry (`0f341a7`)
@@ -68,27 +116,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - add editor.onLanguageChanged API (T8) (`115c22c`)
 - add preview.registerRemarkPlugin API (T7) (`bb247db`)
 - implement export.registerExporter API (T3) (`1fc085d`)
+- display current working directory in prompt (`88f47d3`)
 - redesign to VS Code-style multi-terminal panel (`bc3480d`)
 - fix various terminal plugin issues (`977436b`)
 - move to bottom panel and implement theme synchronization (`ed2e023`)
 - overhaul UI/UX to match VS Code and enhance shell support (`41ca99a`)
-- display current working directory in prompt (`88f47d3`)
 
 
 
-### Changed
+### Style
 
-- upgrade dependencies to fix security vulnerabilities (`4988034`)
-- configure default enabled/disabled states for official plugins (`4b1a686`)
-- bump version to v0.11.0 (`7b564b5`)
-
+- align Milkdown and Markdown Preview styles (`0fae672`)
+- increase padding for terminal panel content (`8cedbb5`)
 
 
-### Test
 
-- update tests for new permission system (`a38e2cf`)
-- update tests for bridge-based plugin architecture (`7d5e42c`)
-- restore T0 readFile tests overwritten by T1 (`e681f38`)
+### Docs
+
+- update CHANGELOG.md for v0.11.0 (`077c13b`)
+- update changelog and documentation for v0.11.0 (`0fa4774`)
 
 
 
@@ -112,12 +158,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 - add shell command whitelist and input validation (`fb793fb`)
-
-
-
-### Docs
-
-- update changelog and documentation for v0.11.0 (`0fa4774`)
 
 
 
