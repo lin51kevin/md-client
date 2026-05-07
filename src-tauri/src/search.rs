@@ -162,15 +162,25 @@ pub(crate) fn search_files_impl(
                 continue;
             }
 
+            // Compute match offsets as UTF-16 code unit indices so that the
+            // JavaScript frontend (String.slice uses UTF-16 indices) correctly
+            // highlights multi-byte characters including emoji and rare CJK
+            // (characters above U+FFFF become surrogate pairs in JS, counting as 2).
             let (ms, me) = if let Some(ref r) = regex {
-                r.find(line).map(|m| (m.start(), m.end())).unwrap_or((0, 0))
+                r.find(line).map(|m| {
+                    let cs = line[..m.start()].encode_utf16().count();
+                    let ce = cs + line[m.start()..m.end()].encode_utf16().count();
+                    (cs, ce)
+                }).unwrap_or((0, 0))
             } else if case_sensitive {
-                let pos = line.find(pattern.as_str()).unwrap_or(0);
-                (pos, pos + pattern.len())
+                let byte_pos = line.find(pattern.as_str()).unwrap_or(0);
+                let cs = line[..byte_pos].encode_utf16().count();
+                (cs, cs + pattern.encode_utf16().count())
             } else {
                 let lower = line.to_lowercase();
-                let pos = lower.find(&pattern).unwrap_or(0);
-                (pos, pos + pattern.len())
+                let byte_pos = lower.find(&pattern).unwrap_or(0);
+                let cs = lower[..byte_pos].encode_utf16().count();
+                (cs, cs + pattern.encode_utf16().count())
             };
 
             results.push(SearchResult {
@@ -678,7 +688,42 @@ mod tests {
         cleanup(&dir);
     }
 
-    // ── replace_in_files_impl ─────────────────────────────────────────────────
+    #[test]
+    fn search_multibyte_char_offsets() {
+        // "增强" — each CJK character is 3 UTF-8 bytes but 1 UTF-16 code unit.
+        // match_start/match_end must be UTF-16 code unit offsets for JS compatibility.
+        let dir = tmp_dir("search_multibyte");
+        write_file(&dir, "a.md", "内容增强功能");
+
+        // Case-sensitive plain search
+        let results = search_files_impl(&dir.to_string_lossy(), "增强", true, false, false).unwrap();
+        assert_eq!(results[0].match_start, 2); // UTF-16 index 2
+        assert_eq!(results[0].match_end, 4);   // UTF-16 index 4
+
+        // Case-insensitive
+        let results = search_files_impl(&dir.to_string_lossy(), "增强", false, false, false).unwrap();
+        assert_eq!(results[0].match_start, 2);
+        assert_eq!(results[0].match_end, 4);
+
+        cleanup(&dir);
+    }
+
+    #[test]
+    fn search_emoji_surrogate_pair_offsets() {
+        // Emoji above U+FFFF: "😀" is 4 UTF-8 bytes, 2 UTF-16 code units (surrogate pair).
+        // Ensures offset calculation uses encode_utf16 not chars().count().
+        let dir = tmp_dir("search_emoji");
+        write_file(&dir, "a.md", "Hello😀World");
+
+        let results = search_files_impl(&dir.to_string_lossy(), "World", true, false, false).unwrap();
+        // "Hello" = 5, "😀" = 2 UTF-16 code units → match_start = 7
+        assert_eq!(results[0].match_start, 7);
+        assert_eq!(results[0].match_end, 12); // 7 + 5("World")
+
+        cleanup(&dir);
+    }
+
+
 
     #[test]
     fn replace_returns_zero_for_empty_query() {
