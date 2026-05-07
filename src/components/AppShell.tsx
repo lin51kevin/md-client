@@ -404,6 +404,7 @@ export function AppShell() {
         cmViewRef={cmViewRef}
         handleEditorCtxAction={handleEditorCtxAction}
         previewRef={previewRef}
+        isMarkdown={activeLang?.isMarkdown ?? true}
       />
 
       {!effectiveChromeless && (

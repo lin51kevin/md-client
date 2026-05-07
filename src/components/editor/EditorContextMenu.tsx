@@ -19,6 +19,8 @@ interface EditorContextMenuProps {
   y: number;
   context: ContextInfo;
   hasSelection: boolean;
+  /** Whether the active file is a Markdown-family file */
+  isMarkdown: boolean;
   onClose: () => void;
   onAction: (action: string) => void;
 }
@@ -31,14 +33,44 @@ interface MenuItem {
   divider?: boolean; // insert separator before this item
 }
 
+/** Append plugin-contributed items to the result array, parsing emoji prefixes into icons. */
+function appendPluginItems(result: MenuItem[], pluginItems: PluginContextMenuItem[]): void {
+  if (pluginItems.length === 0) return;
+  const emojiRe = /^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F?)\s*/u;
+  result.push(
+    ...pluginItems.map((pi, idx) => {
+      const match = pi.label.match(emojiRe);
+      const emoji = match?.[0]?.trim() ?? '';
+      const text = match ? pi.label.slice(match[0].length) : pi.label;
+      return {
+        id: `plugin:${pi.id}`,
+        label: text,
+        icon: emoji ? <span style={{ fontSize: 14 }}>{emoji}</span> : null,
+        divider: idx === 0,
+      };
+    }),
+  );
+}
+
 /** Build menu items based on context type */
-function buildMenuItems(context: ContextInfo, t: (key: TranslationKey) => string, pluginItems: PluginContextMenuItem[]): MenuItem[] {
+function buildMenuItems(context: ContextInfo, t: (key: TranslationKey) => string, pluginItems: PluginContextMenuItem[], isMarkdown: boolean): MenuItem[] {
   const base: MenuItem[] = [
     { id: 'cut', label: t('ctx.cut'), icon: <Scissors size={14} strokeWidth={1.8} /> },
     { id: 'copy', label: t('ctx.copy'), icon: <Copy size={14} strokeWidth={1.8} /> },
     { id: 'paste', label: t('ctx.paste'), icon: <Clipboard size={14} strokeWidth={1.8} /> },
     { id: 'selectAll', label: t('ctx.selectAll'), icon: <MousePointerClick size={14} strokeWidth={1.8} />, divider: true },
   ];
+
+  // For non-markdown files, only show base actions + snippet + plugin items
+  if (!isMarkdown) {
+    base.push(
+      { id: 'insertSnippet', label: t('snippet.insert'), icon: <FileText size={14} strokeWidth={1.8} /> },
+    );
+
+    const result: MenuItem[] = [...base];
+    appendPluginItems(result, pluginItems);
+    return result;
+  }
 
   const contextual: MenuItem[] = [];
 
@@ -109,27 +141,12 @@ function buildMenuItems(context: ContextInfo, t: (key: TranslationKey) => string
 
   // Plugin-contributed context menu items (e.g. AI actions from AI Copilot plugin)
   // Split emoji prefix from label so it renders in the icon column for alignment
-  if (pluginItems.length > 0) {
-    const emojiRe = /^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F?)\s*/u;
-    result.push(
-      ...pluginItems.map((pi, idx) => {
-        const match = pi.label.match(emojiRe);
-        const emoji = match?.[0]?.trim() ?? '';
-        const text = match ? pi.label.slice(match[0].length) : pi.label;
-        return {
-          id: `plugin:${pi.id}`,
-          label: text,
-          icon: emoji ? <span style={{ fontSize: 14 }}>{emoji}</span> : null as React.ReactNode,
-          divider: idx === 0,
-        };
-      }),
-    );
-  }
+  appendPluginItems(result, pluginItems);
 
   return result;
 }
 
-export function EditorContextMenu({ visible, x, y, context, hasSelection, onClose, onAction }: EditorContextMenuProps) {
+export function EditorContextMenu({ visible, x, y, context, hasSelection, isMarkdown, onClose, onAction }: EditorContextMenuProps) {
   const { t } = useI18n();
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -162,7 +179,7 @@ export function EditorContextMenu({ visible, x, y, context, hasSelection, onClos
 
   if (!visible) return null;
 
-  const items = buildMenuItems(context, t, pluginItems);
+  const items = buildMenuItems(context, t, pluginItems, isMarkdown);
 
   // Clamp position to viewport
   const menuWidth = 180;

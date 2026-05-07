@@ -20,6 +20,8 @@ describe('EditorContextMenu', () => {
     x: 100,
     y: 200,
     context: baseContext,
+    hasSelection: false,
+    isMarkdown: true,
     onClose: vi.fn(),
     onAction: vi.fn(),
   };
@@ -54,5 +56,23 @@ describe('EditorContextMenu', () => {
     const tableContext: ContextInfo = { type: 'table', lineStart: 0, lineText: '| a |', headingLevel: 0 };
     render(<EditorContextMenu {...defaultProps} context={tableContext} />);
     expect(screen.getByText('ctx.tableInsertRow')).toBeTruthy();
+  });
+
+  it('非 Markdown 文件不显示格式化菜单项', () => {
+    render(<EditorContextMenu {...defaultProps} isMarkdown={false} />);
+    expect(screen.getByText('ctx.cut')).toBeTruthy();
+    expect(screen.getByText('ctx.copy')).toBeTruthy();
+    expect(screen.getByText('snippet.insert')).toBeTruthy();
+    expect(screen.queryByText('ctx.bold')).toBeNull();
+    expect(screen.queryByText('ctx.italic')).toBeNull();
+    expect(screen.queryByText('ctx.link')).toBeNull();
+    expect(screen.queryByText('ctx.image')).toBeNull();
+  });
+
+  it('非 Markdown 文件表格上下文不显示表格操作', () => {
+    const tableContext: ContextInfo = { type: 'table', lineStart: 0, lineText: '| a |', headingLevel: 0 };
+    render(<EditorContextMenu {...defaultProps} isMarkdown={false} context={tableContext} />);
+    expect(screen.queryByText('ctx.tableInsertRow')).toBeNull();
+    expect(screen.queryByText('ctx.editTable')).toBeNull();
   });
 });
