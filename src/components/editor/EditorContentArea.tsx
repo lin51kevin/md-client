@@ -22,7 +22,7 @@ const MilkdownPreview = lazy(() =>
   import('../milkdown').then((m) => ({ default: m.MilkdownPreview }))
 );
 
-const EDITOR_SETUP = { lineNumbers: true, foldGutter: true, highlightActiveLine: true, tabSize: 2 };
+const EDITOR_SETUP = { lineNumbers: true, foldGutter: true, highlightActiveLine: true, tabSize: 2, searchKeymap: false };
 
 interface EditorContentAreaProps {
   isPristine: boolean;
