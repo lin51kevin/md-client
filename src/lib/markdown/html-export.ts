@@ -13,9 +13,9 @@ import remarkRehype from 'remark-rehype';
 import rehypeStringify from 'rehype-stringify';
 import rehypeSlug from 'rehype-slug';
 import rehypeHighlight from 'rehype-highlight';
+import rehypeRaw from 'rehype-raw';
 import { buildCoreRemarkPlugins } from './pipeline';
 import { getKatexPlugin, getKatexCSSString } from './katex-bridge';
-// import { extractToc } from './toc';
 import highlightCss from 'highlight.js/styles/github.css?raw';
 
 // ── Shared DOMPurify configuration ─────────────────────────────────────────
@@ -156,7 +156,8 @@ export async function markdownToHtml(markdown: string): Promise<string> {
   const result = await unified()
     .use(remarkParse)
     .use(buildCoreRemarkPlugins() as any)
-    .use(remarkRehype)
+    .use(remarkRehype, { allowDangerousHtml: true })
+    .use(rehypeRaw)
     .use(rehypeSlug)
     .use(rehypeHighlight, { detect: true })
     .use(katex?.rehypeKatex as any)
@@ -173,42 +174,8 @@ function extractTitle(html: string): string {
 }
 
 /**
- * Build an HTML TOC (table of contents) navigation block from Markdown.
- * Returns empty string if fewer than 2 headings are found.
- */
-// function buildTocHtml(markdown: string): string {
-//   const entries = extractToc(markdown);
-//   if (entries.length < 2) return '';
-
-//   const minLevel = Math.min(...entries.map(e => e.level));
-
-//   let tocItems = '<ul>';
-//   let openLists = 0;
-
-//   for (const entry of entries) {
-//     const depth = entry.level - minLevel;
-//     while (openLists < depth) {
-//       tocItems += '<ul>';
-//       openLists++;
-//     }
-//     while (openLists > depth) {
-//       tocItems += '</ul>';
-//       openLists--;
-//     }
-//     tocItems += `<li><a href="#${escapeHtml(entry.id)}">${escapeHtml(entry.text)}</a></li>`;
-//   }
-//   while (openLists > 0) {
-//     tocItems += '</ul>';
-//     openLists--;
-//   }
-//   tocItems += '</ul>';
-
-//   return `<nav class="toc"><details open><summary>Table of Contents</summary>${tocItems}</details></nav>\n`;
-// }
-
-/**
  * Generate a complete, self-contained HTML document from Markdown.
- * Includes CSP meta tag, inline styles, and TOC for offline viewing.
+ * Includes CSP meta tag, inline styles for offline viewing.
  */
 export async function generateHtmlDocument(
   markdown: string,

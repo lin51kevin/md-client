@@ -47,10 +47,20 @@ function toAbsPath(src: string, docDir: string | null): string | null {
   const segments = `${base}/${src}`.split('/');
   const resolved: string[] = [];
   for (const seg of segments) {
-    if (seg === '..') resolved.pop();
+    if (seg === '..') {
+      if (resolved.length === 0) return null; // Path traversal beyond root
+      resolved.pop();
+    }
     else if (seg !== '.') resolved.push(seg);
   }
-  return resolved.join('/');
+  const result = resolved.join('/');
+  // Allow paths up to one level above docDir (parent of docDir) to support
+  // "../image.jpg" patterns while still blocking deeper traversal (e.g. "../../etc/passwd").
+  const normalizedBase = base.replace(/\/$/, '');
+  const lastSlash = normalizedBase.lastIndexOf('/');
+  const projectRoot = lastSlash > 0 ? normalizedBase.slice(0, lastSlash) : '';
+  if (projectRoot && !result.startsWith(projectRoot + '/') && result !== projectRoot) return null;
+  return result;
 }
 
 /** Convert a byte array to a base64 string without stack overflow for large files */
@@ -93,10 +103,10 @@ export async function resolveLocalImagesInHtml(
 
   // Collect unique local src values (only inside img tags)
   const localSrcs = new Set<string>();
-  const IMG_SRC_RE = /(?:<img\b[^>]*?\ssrc="|<img\s+src=")([^"]+)"/gi;
+  const IMG_SRC_RE = /<img\b[^>]*?\s+src\s*=\s*(["'])([^"'\s]+)\1/gi;
   let m: RegExpExecArray | null;
   while ((m = IMG_SRC_RE.exec(html)) !== null) {
-    const src = m[1];
+    const src = m[2];
     if (src && !/^(https?|ftp|data):/i.test(src)) {
       localSrcs.add(src);
     }
@@ -124,9 +134,9 @@ export async function resolveLocalImagesInHtml(
 
   if (srcToDataUri.size === 0) return html;
 
-  // Replace src attributes with resolved data URIs
-  return html.replace(/(\ssrc="|^src=")([^"]+)(")/gim, (full, pre, src, post) => {
+  // Replace src attributes with resolved data URIs (handles both " and ')
+  return html.replace(/<img\b([^>]*?)\s+src\s*=\s*(["'])([^"'\s]+)\2/gi, (full, before, quote, src) => {
     const dataUri = srcToDataUri.get(src);
-    return dataUri ? `${pre}${dataUri}${post}` : full;
+    return dataUri ? `<img${before} src=${quote}${dataUri}${quote}` : full;
   });
 }

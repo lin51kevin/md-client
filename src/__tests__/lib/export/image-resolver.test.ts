@@ -131,4 +131,28 @@ describe('resolveLocalImagesInHtml', () => {
     expect(result).toContain('href="style.css"');
     expect(result).toContain('data:image/png;base64,');
   });
+
+  it('handles single-quoted src attributes', async () => {
+    vi.mocked(invoke).mockResolvedValue(strToBytes('PNG'));
+    const html = "<img src='/img/photo.png'>";
+    const result = await resolveLocalImagesInHtml(html, null);
+    expect(invoke).toHaveBeenCalledWith('read_file_bytes', { path: '/img/photo.png' });
+    expect(result).toContain('data:image/png;base64,');
+  });
+
+  it('handles src with extra whitespace around equals', async () => {
+    vi.mocked(invoke).mockResolvedValue(strToBytes('PNG'));
+    const html = '<img src = "/img/photo.png">';
+    const result = await resolveLocalImagesInHtml(html, null);
+    expect(invoke).toHaveBeenCalledWith('read_file_bytes', { path: '/img/photo.png' });
+    expect(result).toContain('data:image/png;base64,');
+  });
+
+  it('blocks path traversal beyond document directory', async () => {
+    const html = '<img src="../../etc/passwd">';
+    const result = await resolveLocalImagesInHtml(html, '/docs/notes/file.md');
+    // Path goes beyond /docs, should be rejected
+    expect(result).toBe(html);
+    expect(invoke).not.toHaveBeenCalled();
+  });
 });

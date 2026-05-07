@@ -164,10 +164,17 @@ describe('F005 — 导出 HTML', () => {
       expect(html).toContain("Jerry");
     });
 
-    it('body 中不应包含 <script> 标签（remark 默认不允许 raw HTML）', async () => {
+    it('body 中不应包含 <script> 标签（DOMPurify 过滤）', async () => {
       const html = await generateHtmlDocument('<script>alert("xss")</script>hello');
-      // remark-parse 不处理纯 HTML 标签，但需确认不会被原样注入为可执行 script
+      // DOMPurify strips <script> tags even when raw HTML passthrough is enabled
       expect(html).not.toContain('<script>alert');
+    });
+
+    it('原始 HTML 块（如 <p align="center">）的文本内容应保留在导出结果中', async () => {
+      const md = '<p align="center"><strong>居中文字</strong></p>';
+      const html = await markdownToHtml(md);
+      // Content must not be silently dropped
+      expect(html).toContain('居中文字');
     });
 
     it('不应允许 markdown 中的 onclick 等事件属性泄露到输出', async () => {
