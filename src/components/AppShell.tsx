@@ -284,12 +284,17 @@ export function AppShell() {
   useKeyboardShortcuts({
     createNewTab, handleOpenFile, handleSaveFile: handleSaveWithWatchMark, handleSaveAsFile,
     closeTab: handleCloseTab, setViewMode, activeTabIdRef,
-    toggleFindReplace: () => togglePanel('search'),
+    toggleFindReplace: () => { useUIStore.getState().setPendingSearchCrossFile(false); togglePanel('search'); },
     focusMode, setFocusMode,
     openSnippetPicker,
     toggleFileTree: () => togglePanel('filetree'),
     toggleToc: () => togglePanel('toc'),
     toggleSearchPanel: () => togglePanel('search'),
+    openSearchPanel: (crossFile?: boolean, focusReplace?: boolean) => {
+      useUIStore.getState().setPendingSearchCrossFile(crossFile ?? false);
+      useUIStore.getState().setPendingSearchFocusReplace(focusReplace ?? false);
+      togglePanel('search');
+    },
     togglePluginsPanel: () => togglePanel('plugins'),
     toggleAIPanel: () => {
       const s = useUIStore.getState();

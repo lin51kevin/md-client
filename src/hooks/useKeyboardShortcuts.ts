@@ -29,6 +29,8 @@ interface ShortcutsParams {
   toggleToc?: () => void;
   /** 切换搜索面板 */
   toggleSearchPanel?: () => void;
+  /** 打开搜索面板（可选跨文件，可选聚焦替换框） */
+  openSearchPanel?: (crossFile?: boolean, focusReplace?: boolean) => void;
   /** 切换插件面板 */
   togglePluginsPanel?: () => void;
   /** 切换AI面板浮窗 */
@@ -77,6 +79,7 @@ export function useKeyboardShortcuts(params: ShortcutsParams) {
         nextTab, previousTab, closeAllTabs,
         toggleCommandPalette, toggleQuickOpen, revealActiveFile,
         handleFormatAction, toggleFullscreen,
+        openSearchPanel,
       } = paramsRef.current;
 
       // F009 — ESC 退出任何焦点模式（优先处理，无需 Ctrl）
@@ -128,12 +131,16 @@ export function useKeyboardShortcuts(params: ShortcutsParams) {
           case 'saveFile': handleSaveFile(); break;
           case 'saveAsFile': handleSaveAsFile(); break;
           case 'closeTab': closeTab(activeTabIdRef.current); break;
+          case 'closeTabAlt': closeTab(activeTabIdRef.current); break;
           case 'nextTab': nextTab?.(); break;
           case 'previousTab': previousTab?.(); break;
           case 'closeAllTabs': closeAllTabs?.(); break;
 
           // ── 编辑 ──
           case 'findReplace': toggleFindReplace?.(); break;
+          case 'replaceInFile': openSearchPanel?.(false, true); break;
+          case 'globalSearch': openSearchPanel?.(true, false); break;
+          case 'globalReplace': openSearchPanel?.(true, true); break;
           case 'insertSnippet': openSnippetPicker?.(); break;
           case 'foldCodeBlock': toggleCodeBlockFold?.(); break;
 

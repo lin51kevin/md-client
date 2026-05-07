@@ -3,6 +3,7 @@ import { useI18n } from '../../i18n';
 import { Search, X, CaseSensitive, Regex, FileText } from 'lucide-react';
 import './command-palette.css';
 import { useSearchLogic } from '../../hooks/useSearchLogic';
+import { useUIStore } from '../../stores/ui-store';
 import type { SearchResultItem } from '../../types/search';
 
 const CONTEXT_LINE_MAX_LEN = 80;
@@ -41,11 +42,31 @@ export function SearchPanel({
     t: t as (key: string, vars?: Record<string, string | number>) => string,
   });
 
+  const pendingCrossFile = useUIStore((s) => s.pendingSearchCrossFile);
+  const setPendingSearchCrossFile = useUIStore((s) => s.setPendingSearchCrossFile);
+  const pendingFocusReplace = useUIStore((s) => s.pendingSearchFocusReplace);
+  const setPendingSearchFocusReplace = useUIStore((s) => s.setPendingSearchFocusReplace);
+
   const queryInputRef = useRef<HTMLInputElement>(null);
+  const replaceInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (visible) setTimeout(() => queryInputRef.current?.focus(), 50);
   }, [visible]);
+
+  useEffect(() => {
+    if (visible && pendingCrossFile) {
+      setCrossFile(true);
+      setPendingSearchCrossFile(false);
+    }
+  }, [visible, pendingCrossFile, setCrossFile, setPendingSearchCrossFile]);
+
+  useEffect(() => {
+    if (visible && pendingFocusReplace) {
+      setPendingSearchFocusReplace(false);
+      setTimeout(() => replaceInputRef.current?.focus(), 50);
+    }
+  }, [visible, pendingFocusReplace, setPendingSearchFocusReplace]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Escape') { onClose(); }
@@ -131,6 +152,7 @@ export function SearchPanel({
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <input
+            ref={replaceInputRef}
             value={replacement}
             onChange={e => setReplacement(e.target.value)}
             onKeyDown={(e) => {

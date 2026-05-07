@@ -45,6 +45,12 @@ interface UIState {
   showUpdateNotification: boolean;
   setShowUpdateNotification: (v: boolean) => void;
 
+  // ── Search panel cross-file flag ──────────────────────────────
+  pendingSearchCrossFile: boolean;
+  setPendingSearchCrossFile: (v: boolean) => void;
+  pendingSearchFocusReplace: boolean;
+  setPendingSearchFocusReplace: (v: boolean) => void;
+
   // ── Sidebar panel ─────────────────────────────────────────────────
   activePanel: PanelId | null;
   setActivePanel: (panel: PanelId | null) => void;
@@ -97,6 +103,12 @@ export const useUIStore = create<UIState>()((set, get) => ({
 
   showUpdateNotification: false,
   setShowUpdateNotification: (v) => set({ showUpdateNotification: v }),
+
+  pendingSearchCrossFile: false,
+  setPendingSearchCrossFile: (v) => set({ pendingSearchCrossFile: v }),
+
+  pendingSearchFocusReplace: false,
+  setPendingSearchFocusReplace: (v) => set({ pendingSearchFocusReplace: v }),
 
   // Sidebar panel — persisted to localStorage manually
   activePanel: (() => {

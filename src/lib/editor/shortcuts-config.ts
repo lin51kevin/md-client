@@ -28,6 +28,9 @@ export const DEFAULT_SHORTCUTS: ShortcutAction[] = [
 
   // ── 编辑 ──
   { id: 'findReplace', labelKey: 'settings.shortcuts.findReplace', defaultKeys: 'Ctrl+F', category: 'edit' },
+  { id: 'replaceInFile', labelKey: 'settings.shortcuts.replaceInFile', defaultKeys: 'Ctrl+H', category: 'edit' },
+  { id: 'globalSearch', labelKey: 'settings.shortcuts.globalSearch', defaultKeys: 'Ctrl+Shift+F', category: 'edit' },
+  { id: 'globalReplace', labelKey: 'settings.shortcuts.globalReplace', defaultKeys: 'Ctrl+Shift+H', category: 'edit' },
   { id: 'undo', labelKey: 'settings.shortcuts.undo', defaultKeys: 'Ctrl+Z', category: 'edit' },
   { id: 'redo', labelKey: 'settings.shortcuts.redo', defaultKeys: 'Ctrl+Y', category: 'edit' },
   { id: 'multicursor.selectAllOccurrences', labelKey: 'settings.shortcuts.selectAllOccurrences', defaultKeys: 'Alt+D', category: 'edit' },
@@ -138,7 +141,7 @@ export function detectConflict(key: string, excludeId: string): string | null {
     if (current.toLowerCase() === key.toLowerCase()) return sc.id;
   }
   // 浏览器内置快捷键冲突检测
-  const browserKeys = ['Ctrl+H', 'Ctrl+Shift+T', 'Ctrl+Shift+W', 'Ctrl+Shift+N', 'Ctrl+N', 'Ctrl+Shift+I', 'Ctrl+J', 'Ctrl+Shift+J', 'Ctrl+L', 'Ctrl+Shift+Delete'];
+  const browserKeys = ['Ctrl+Shift+T', 'Ctrl+Shift+W', 'Ctrl+Shift+N', 'Ctrl+N', 'Ctrl+Shift+I', 'Ctrl+J', 'Ctrl+Shift+J', 'Ctrl+L', 'Ctrl+Shift+Delete'];
   if (browserKeys.includes(key.toLowerCase()) || browserKeys.includes(key)) {
     return '__browser__';
   }
