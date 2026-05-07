@@ -95,6 +95,10 @@ export function useSearchLogic({
   const onMatchChangeRef = useRef(onMatchChange);
   onMatchChangeRef.current = onMatchChange;
 
+  // Persists the last set of raw match ranges for the current file so we can
+  // re-signal the active index when the user clicks a result in the list.
+  const rawMatchesRef = useRef<{ from: number; to: number }[]>([]);
+
   const opts: SearchOptions = { caseSensitive, wholeWord, regex: useRegex };
 
   // Current-file search
@@ -108,32 +112,45 @@ export function useSearchLogic({
       return;
     }
     const { items, rawMatches } = toSearchResultItems(content, currentFilePath, query, opts);
+    rawMatchesRef.current = rawMatches;
     setSearchResults(items);
     setSelectedIdx(null);
     setSearchStatus({ loading: false, error: null, replaceMessage: null });
     onMatchChangeRef.current?.(rawMatches, rawMatches.length > 0 ? 0 : -1);
   }, [crossFile, query, content, currentFilePath, caseSensitive, wholeWord, useRegex]);
 
-  // Clear on switch to cross-file
+  // Clear results whenever crossFile mode toggles. Without this, stale cross-file
+  // results remain visible for the debounce window after unchecking crossFile, and
+  // stale single-file results flash briefly when checking crossFile.
+  const crossFileFirstMount = useRef(true);
   useEffect(() => {
-    if (crossFile) {
-      setSearchResults([]);
-      setSelectedIdx(null);
-      setSearchStatus({ loading: false, error: null, replaceMessage: null });
-      onMatchChangeRef.current?.([], -1);
-    }
+    if (crossFileFirstMount.current) { crossFileFirstMount.current = false; return; }
+    setSearchResults([]);
+    setSelectedIdx(null);
+    setSearchStatus({ loading: false, error: null, replaceMessage: null });
+    onMatchChangeRef.current?.([], -1);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [crossFile]);
 
   // Clear results immediately when query is emptied
   useEffect(() => {
     if (!query.trim()) {
+      rawMatchesRef.current = [];
       setSearchResults([]);
       setSelectedIdx(null);
       setSearchStatus(s => ({ ...s, loading: false, error: null, replaceMessage: null }));
       onMatchChangeRef.current?.([], -1);
     }
   }, [query]);
+
+  // When the user clicks a result item in the panel (selectedIdx changes), update
+  // the active highlight decoration in the editor so the clicked match is shown
+  // with the active (orange) highlight rather than always showing index 0.
+  // Only applies to current-file search; cross-file results don't have raw offsets.
+  useEffect(() => {
+    if (crossFile || selectedIdx === null) return;
+    onMatchChangeRef.current?.(rawMatchesRef.current, selectedIdx);
+  }, [selectedIdx, crossFile]);
 
   // Cross-file search
   const doSearchAll = useCallback(async () => {
