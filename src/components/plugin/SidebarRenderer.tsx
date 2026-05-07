@@ -49,6 +49,23 @@ function RenderMethodPanel({ content }: { content: { render: () => unknown } }) 
           const Inner = result as React.FunctionComponent;
           return <Inner />;
         }
+        // Handle nested render() objects: plugin's options.render() returned a class instance
+        // (e.g. AICopilotPanelContent) whose own .render() returns the React component.
+        if (
+          result != null &&
+          typeof result === 'object' &&
+          'render' in result &&
+          typeof (result as { render?: unknown }).render === 'function'
+        ) {
+          const nested = (result as { render: () => unknown }).render();
+          if (React.isValidElement(nested)) return nested as React.ReactElement;
+          if (typeof nested === 'function') {
+            const Inner = nested as React.FunctionComponent;
+            return <Inner />;
+          }
+          // eslint-disable-next-line no-console
+          console.warn('[SidebarRenderer] Unsupported nested render result:', nested);
+        }
         return null;
       },
     [content]
