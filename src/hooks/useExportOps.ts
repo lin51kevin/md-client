@@ -58,9 +58,12 @@ export function useExportOps({ getActiveTab, t }: ExportOpsParams) {
           defaultPath: getDefaultFileName('html'),
         });
         if (savePath) {
-          onProgress?.('Writing file...', 70);
+          onProgress?.('Resolving images...', 55);
           const { generateHtmlDocument } = await import('../lib/markdown');
-          const html = await generateHtmlDocument(tab.doc);
+          const { resolveLocalImagesInHtml } = await import('../lib/export/image-resolver');
+          const rawHtml = await generateHtmlDocument(tab.doc);
+          const html = await resolveLocalImagesInHtml(rawHtml, tab.filePath);
+          onProgress?.('Writing file...', 80);
           await invoke('write_file_text', { path: savePath, content: html });
           onProgress?.('Complete!', 100);
         }
@@ -93,8 +96,11 @@ export function useExportOps({ getActiveTab, t }: ExportOpsParams) {
           // Use WebView print-to-PDF for higher quality output and smaller file sizes
           onProgress?.('Generating PDF content...', 20);
           const { generatePdfHtml } = await import('../lib/export/pdf-html-generator');
-          const pdfHtml = await generatePdfHtml(tab.doc);
-          onProgress?.('Rendering PDF...', 50);
+          const { resolveLocalImagesInHtml } = await import('../lib/export/image-resolver');
+          const rawPdfHtml = await generatePdfHtml(tab.doc);
+          onProgress?.('Resolving images...', 40);
+          const pdfHtml = await resolveLocalImagesInHtml(rawPdfHtml, tab.filePath);
+          onProgress?.('Rendering PDF...', 60);
           await invoke('export_pdf_via_webview', { htmlContent: pdfHtml, outputPath: savePath });
           onProgress?.('Complete!', 100);
         } else {

@@ -123,12 +123,10 @@ describe('F005 — 导出 HTML', () => {
       expect(html).toContain('hljs');
     });
 
-    it('多标题文档应生成 TOC 导航', async () => {
+    it('多标题文档不应生成 TOC（导出无目录）', async () => {
       const html = await generateHtmlDocument('# Title\n## Section A\n## Section B');
-      expect(html).toContain('<nav class="toc">');
-      expect(html).toContain('Table of Contents');
-      expect(html).toContain('href="#section-a"');
-      expect(html).toContain('href="#section-b"');
+      expect(html).not.toContain('<nav class="toc">');
+      expect(html).not.toContain('Table of Contents');
     });
 
     it('单标题文档不应生成 TOC', async () => {

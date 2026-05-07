@@ -15,7 +15,7 @@ import rehypeSlug from 'rehype-slug';
 import rehypeHighlight from 'rehype-highlight';
 import { buildCoreRemarkPlugins } from './pipeline';
 import { getKatexPlugin, getKatexCSSString } from './katex-bridge';
-import { extractToc } from './toc';
+// import { extractToc } from './toc';
 import highlightCss from 'highlight.js/styles/github.css?raw';
 
 // ── Shared DOMPurify configuration ─────────────────────────────────────────
@@ -176,35 +176,35 @@ function extractTitle(html: string): string {
  * Build an HTML TOC (table of contents) navigation block from Markdown.
  * Returns empty string if fewer than 2 headings are found.
  */
-function buildTocHtml(markdown: string): string {
-  const entries = extractToc(markdown);
-  if (entries.length < 2) return '';
+// function buildTocHtml(markdown: string): string {
+//   const entries = extractToc(markdown);
+//   if (entries.length < 2) return '';
 
-  const minLevel = Math.min(...entries.map(e => e.level));
+//   const minLevel = Math.min(...entries.map(e => e.level));
 
-  let tocItems = '<ul>';
-  let openLists = 0;
+//   let tocItems = '<ul>';
+//   let openLists = 0;
 
-  for (const entry of entries) {
-    const depth = entry.level - minLevel;
-    while (openLists < depth) {
-      tocItems += '<ul>';
-      openLists++;
-    }
-    while (openLists > depth) {
-      tocItems += '</ul>';
-      openLists--;
-    }
-    tocItems += `<li><a href="#${escapeHtml(entry.id)}">${escapeHtml(entry.text)}</a></li>`;
-  }
-  while (openLists > 0) {
-    tocItems += '</ul>';
-    openLists--;
-  }
-  tocItems += '</ul>';
+//   for (const entry of entries) {
+//     const depth = entry.level - minLevel;
+//     while (openLists < depth) {
+//       tocItems += '<ul>';
+//       openLists++;
+//     }
+//     while (openLists > depth) {
+//       tocItems += '</ul>';
+//       openLists--;
+//     }
+//     tocItems += `<li><a href="#${escapeHtml(entry.id)}">${escapeHtml(entry.text)}</a></li>`;
+//   }
+//   while (openLists > 0) {
+//     tocItems += '</ul>';
+//     openLists--;
+//   }
+//   tocItems += '</ul>';
 
-  return `<nav class="toc"><details open><summary>Table of Contents</summary>${tocItems}</details></nav>\n`;
-}
+//   return `<nav class="toc"><details open><summary>Table of Contents</summary>${tocItems}</details></nav>\n`;
+// }
 
 /**
  * Generate a complete, self-contained HTML document from Markdown.
@@ -217,7 +217,6 @@ export async function generateHtmlDocument(
   const bodyHtml = await markdownToHtml(markdown);
   const title = options.title ?? extractTitle(bodyHtml);
   const customCss = options.css ? `\n${options.css.replace(/<\/style\s*>/gi, '/* </style> removed */')}` : '';
-  const tocHtml = buildTocHtml(markdown);
 
   // Dynamically load katex CSS for HTML export if KaTeX plugin is active
   let katexCss = '';
@@ -238,7 +237,7 @@ export async function generateHtmlDocument(
 <style>${highlightCss}</style>
 </head>
 <body>
-${tocHtml}${bodyHtml}
+${bodyHtml}
 </body>
 </html>`;
 }
