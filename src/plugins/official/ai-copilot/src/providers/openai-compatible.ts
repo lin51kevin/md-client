@@ -1,4 +1,5 @@
 import type { AIProvider, ChatMessage, ProviderConfig, ToolDef, ToolCall } from './types';
+import { silentCatch } from '../../../../../lib/utils/silent-catch';
 
 /**
  * OpenAI-compatible provider.
@@ -85,7 +86,7 @@ export class OpenAICompatibleProvider implements AIProvider {
           try {
             const errBody = JSON.parse(detail);
             if (errBody?.error?.message) hints.unshift(errBody.error.message);
-          } catch {}
+          } catch (e) { silentCatch(e, 'streamChunk'); }
           if (this.name === 'openrouter') {
             hints.push('可尝试 :free 模型，如 meta-llama/llama-3.1-8b-instruct:free');
           }
