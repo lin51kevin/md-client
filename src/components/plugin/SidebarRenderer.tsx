@@ -71,7 +71,7 @@ function RenderMethodPanel({ content }: { content: { render: () => unknown } }) 
             const Inner = nested as React.FunctionComponent;
             return <Inner />;
           }
-          // eslint-disable-next-line no-console
+           
           console.warn('[SidebarRenderer] Unsupported nested render result:', nested);
         }
         return null;
