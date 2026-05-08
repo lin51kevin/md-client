@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { confirm } from '@tauri-apps/plugin-dialog';
 import type { Tab } from '../types';
 import type { TranslationKey } from '../i18n';
+import { silentCatch } from '../lib/utils/silent-catch';
 
 interface UseAppLifecycleOptions {
   isTauri: boolean;
@@ -28,7 +29,7 @@ export function useAppLifecycle({ isTauri, isRestoringSession, openFileWithConte
           openFileWithContent(result.path, result.content);
         }
       })
-      .catch(() => {});
+      .catch((e) => silentCatch(e, 'unminimize'));
   // openFileWithContent / openFolderAsRoot are stable; run exactly once after session restore finishes
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isTauri, isRestoringSession]);

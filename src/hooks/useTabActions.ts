@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import type { Tab } from '../types';
 import type { TranslationKey } from '../i18n';
 import { getPendingImages, clearPendingImages } from '../lib/file';
+import { silentCatch } from '../lib/utils/silent-catch';
 
 type UnsavedChoice = 'save' | 'discard' | 'cancel';
 
@@ -57,7 +58,7 @@ export function useTabActions({
     const pending = getPendingImages(id);
     for (const img of pending) {
       if (img.isTemp) {
-        invoke('delete_file', { path: img.absolutePath }).catch(() => {});
+        invoke('delete_file', { path: img.absolutePath }).catch((e) => silentCatch(e, 'deleteFile'));
       }
     }
     clearPendingImages(id);

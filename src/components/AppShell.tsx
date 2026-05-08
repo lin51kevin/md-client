@@ -10,28 +10,17 @@ import { useRef, useCallback, useEffect, useMemo, memo, lazy, Suspense } from 'r
 
 import { useI18n } from '../i18n';
 import type { DragKind as DragOverlayKind } from '../hooks/useDragDrop';
-import { useUpdateNotification } from '../hooks/useUpdateNotification';
 import { useUIStore } from '../stores';
 import { getLanguageFromPath } from '../lib/language-detect';
-import { useTabs } from '../hooks/useTabs';
-import { useFileOps } from '../hooks/useFileOps';
 import { useDragDrop } from '../hooks/useDragDrop';
+import { useFileWorkspace } from '../hooks/useFileWorkspace';
+import { useEditorSession } from '../hooks/useEditorSession';
+import { useAppEnvironment } from '../hooks/useAppEnvironment';
 import { useWindowTitle } from '../hooks/useWindowTitle';
-import { useWindowInit } from '../hooks/useWindowInit';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
-import { useDocMetrics } from '../hooks/useDocMetrics';
 import { useVersionHistory } from '../hooks/useVersionHistory';
 import { useNavigation, type SearchHighlightOpts } from '../hooks/useNavigation';
-import { useAppLifecycle } from '../hooks/useAppLifecycle';
-import { usePendingImageMigration } from '../hooks/usePendingImageMigration';
-import { useFileWatchState } from '../hooks/useFileWatchState';
-import { useRecentFiles } from '../hooks/useRecentFiles';
 import { useImportOps } from '../hooks/useImportOps';
-import { useTabActions } from '../hooks/useTabActions';
-import { usePreviewRenderers } from '../hooks/usePreviewRenderers';
-import { usePluginRuntime } from '../hooks/usePluginRuntime';
-import { usePluginPanels } from '../hooks/usePluginPanels';
-import { useEditorCore } from '../hooks/useEditorCore';
 import { useAppLayout } from '../hooks/useAppLayout';
 import { useAppPreferences } from '../hooks/useAppPreferences';
 import { useAppUIState } from '../hooks/useAppUIState';
@@ -66,13 +55,7 @@ import { AppGlobalOverlays } from '../components/AppGlobalOverlays';
 export function AppShell() {
   const { t, locale } = useI18n();
 
-  // ── State groups ─────────────────────────────────────────────────
-  const {
-    viewMode, setViewMode, splitSizes, setSplitSizes,
-    fileTreeRoot, setFileTreeRoot,
-    activePanel, setActivePanel, togglePanel, showFileTree, showToc, showSearchPanel, showPluginsPanel,
-  } = useAppLayout();
-
+  // ── Preferences ──────────────────────────────────────────────────
   const {
     spellCheck, setSpellCheck, vimMode, setVimMode, autoSave, setAutoSave, autoSaveDelay, setAutoSaveDelay,
     gitMdOnly, setGitMdOnly, milkdownPreview, setMilkdownPreview, mermaidTheme, setMermaidTheme,
@@ -82,6 +65,13 @@ export function AppShell() {
     zoomLevel, setZoomLevel,
     typewriterOptions, setTypewriterOptions,
   } = useAppPreferences();
+
+  // ── Layout + UI state (no external deps) ────────────────────────
+  const {
+    viewMode, setViewMode, splitSizes, setSplitSizes,
+    fileTreeRoot, setFileTreeRoot,
+    activePanel, setActivePanel, togglePanel, showFileTree, showToc, showSearchPanel, showPluginsPanel,
+  } = useAppLayout();
 
   const {
     showSettings, setShowSettings, openSettings,
@@ -97,46 +87,30 @@ export function AppShell() {
   const activeBottomPanel = useUIStore((s) => s.activeBottomPanel);
   const setActiveBottomPanel = useUIStore((s) => s.setActiveBottomPanel);
 
-  // ── Core hooks ───────────────────────────────────────────────────
-
   const effectiveChromeless = isChromeless || (focusMode === 'typewriter' && typewriterOptions.hideUI);
   const effectiveHideStatusBar = hideStatusBar || (focusMode === 'typewriter' && typewriterOptions.hideUI);
 
-  // WYSIWYG mode: auto-switch to preview view when milkdownPreview is enabled
-  useEffect(() => {
-    if (milkdownPreview && viewMode !== 'preview' && viewMode !== 'mindmap') {
-      setViewMode('preview');
-    }
-  }, [milkdownPreview, viewMode, setViewMode]);
-
-  const { renderers: pluginRenderers, registerPreviewRenderer, unregisterPreviewRenderer } = usePreviewRenderers();
-  const { panels: pluginPanels, registerPanel: registerPluginPanel, unregisterPanel: unregisterPluginPanel } = usePluginPanels();
   const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
+  // ── File workspace (tabs, file ops, watch, recent, tab actions) ──
   const {
     tabs, activeTabId, setActiveTabId, activeTabIdRef, tabsRef,
     isRestoringSession,
     getActiveTab, getTabTitle, updateActiveDoc, updateTabDoc,
-    openFileInTab, openFileWithContent, createNewTab, closeTab, closeMultipleTabs, reorderTabs,
-    markSaved, markSavedAs, renameTab, setTabDisplayName, pinTab, unpinTab, updateTab,
+    openFileInTab, openFileWithContent, createNewTab, reorderTabs,
+    renameTab, pinTab, unpinTab, updateTab,
     nextTab, previousTab,
-    resolveTabDoc,
-  } = useTabs(t, () => recentFilesHook.refreshRecentFiles());
+    handleOpenFile, rawHandleSaveFile, handleSaveAsFile,
+    handleExportDocx, handleExportPdf, handleExportHtml, handleExportEpub, handleExportPng, exporting,
+    fileChangeToast, setFileChangeToast, handleReloadFile, handleKeepFile,
+    recentFiles, handleOpenRecent, handleClearRecent, handleRemoveRecent,
+    handleCloseTab, handleCloseAllTabs, handleCloseOtherTabs, handleCloseToLeft, handleCloseToRight,
+    renamingTabId, setRenamingTabId, handleOpenSample,
+  } = useFileWorkspace({ t, fileWatch, fileWatchBehavior, handleDismissWelcome });
 
   const isPristine = tabs.length === 1 && !tabs[0].filePath && !tabs[0].isDirty && !tabs[0].displayName;
   const activeTab = getActiveTab();
   const activeLang = useMemo(() => activeTab.filePath ? getLanguageFromPath(activeTab.filePath) : null, [activeTab.filePath]);
-
-  // ── Extracted hooks (depend on useTabs) ──────────────────────────
-  const recentFilesHook = useRecentFiles({ openFileInTab });
-  const { recentFiles, handleOpenRecent, handleClearRecent, handleRemoveRecent } = recentFilesHook;
-
-  const { handleFirstSave } = usePendingImageMigration({ tabs, updateTabDoc, markSaved });
-
-  // ── File operations ──────────────────────────────────────────────
-  const { handleOpenFile, handleSaveFile: rawHandleSaveFile, handleSaveAsFile, handleExportDocx, handleExportPdf, handleExportHtml, handleExportEpub, handleExportPng, exporting } = useFileOps({
-    getActiveTab, tabs, resolveTabDoc, openFileInTab, markSaved, markSavedAs, t, updateTab, onFirstSave: handleFirstSave,
-  });
 
   // ── Import operations ──────────────────────────────────────────
   const { handleImportHtml, handleImportHtmlFromPath } = useImportOps({
@@ -147,17 +121,19 @@ export function AppShell() {
     rawHandleSaveFile, getActiveTab, tabs, activeFilePath: activeTab.filePath,
   });
 
-  // ── File watcher state ────────────────────────────────────────
-  const { fileChangeToast, setFileChangeToast, handleReloadFile, handleKeepFile } = useFileWatchState({
-    tabs, enabled: fileWatch, autoReload: fileWatchBehavior, updateTab,
-  });
-
   const handleSaveWithWatchMark = handleSaveFile;
 
-  // ── Editor infrastructure ────────────────────────────────────────
+  // WYSIWYG mode: auto-switch to preview view when milkdownPreview is enabled
+  useEffect(() => {
+    if (milkdownPreview && viewMode !== 'preview' && viewMode !== 'mindmap') {
+      setViewMode('preview');
+    }
+  }, [milkdownPreview, viewMode, setViewMode]);
+
+  // ── Editor session (editor core, plugins, metrics) ───────────────
   const {
-    cmViewRef,
-    editorRef, previewRef, zoomContainerRef, handleEditorScroll, handlePreviewScroll,
+    cmViewRef, editorRef, previewRef, zoomContainerRef,
+    handleEditorScroll, handlePreviewScroll,
     setMatches, clearMatches,
     inputDialogState, setInputDialogState,
     handleFormatAction,
@@ -168,12 +144,15 @@ export function AppShell() {
     editorExtensions, editorTheme,
     handleCreateEditor, handleEditorUpdate,
     cursorCount, canUndo, canRedo,
-    handleEditorCtxAction,
-    saveAndInsertImage,
-  } = useEditorCore({
+    handleEditorCtxAction, saveAndInsertImage,
+    pluginRenderers, pluginPanels,
+    debouncedDoc, tocEntries, wordCount,
+    activatePlugin, deactivatePlugin,
+  } = useEditorSession({
     activeTabId, activeTab, viewMode, milkdownPreview, theme, vimMode,
     spellCheck, autoSave, autoSaveDelay, isTauri,
     rawHandleSaveFile, updateActiveDoc, getActiveTab,
+    openFileInTab, createNewTab, tabsRef,
   });
 
   useEffect(() => {
@@ -186,11 +165,6 @@ export function AppShell() {
       }
     }
   }, [focusMode, typewriterOptions.dimOthers, editorRef]);
-
-  const { handleCloseTab, handleCloseAllTabs, handleCloseOtherTabs, handleCloseToLeft, handleCloseToRight, renamingTabId, setRenamingTabId, handleOpenSample } = useTabActions({
-    tabs, closeTab, closeMultipleTabs, setTabDisplayName, handleDismissWelcome, t,
-    handleSaveFile: handleSaveWithWatchMark,
-  });
 
   const fileTreeSidebarRef = useRef<FileTreeSidebarHandle>(null);
 
@@ -214,35 +188,19 @@ export function AppShell() {
     fileTreeSidebarRef.current?.loadRoot(path);
   } });
   useWindowTitle(activeTab, isTauri);
-  useWindowInit(isTauri, theme);
 
-  // ── Auto-upgrade ────────────────────────────────────────────────
-  const { downloadProgress, readyToRestart, downloadAndInstall, updateInfo, isDownloading } = useUpdateNotification({
-    enabled: autoUpdateCheck,
-    checkFrequency: updateCheckFrequency,
+  // ── App environment (window init, lifecycle, update) ─────────────
+  const { downloadProgress, readyToRestart, downloadAndInstall, updateInfo, isDownloading } = useAppEnvironment({
+    isTauri, theme, autoUpdateCheck, updateCheckFrequency,
+    isRestoringSession, openFileWithContent, tabsRef, t,
+    openFolderAsRoot: (folderPath: string) => {
+      setFileTreeRoot(folderPath);
+      setActivePanel('filetree');
+      fileTreeSidebarRef.current?.loadRoot(folderPath);
+    },
   });
 
-  // ── Plugin runtime ───────────────────────────────────────────────
-  const pluginRuntimeDeps = useMemo(() => ({
-    getActiveTab: () => {
-      const t = getActiveTab();
-      return { path: t.filePath, content: t.doc };
-    },
-    openFileInTab: (path: string) => void openFileInTab(path),
-    openNewUntitled: (content: string) => createNewTab(content),
-    getOpenFilePaths: () => tabsRef.current.filter(t => t.filePath).map(t => t.filePath!),
-    cmViewRef,
-    registerSidebarPanel: registerPluginPanel,
-    unregisterSidebarPanel: unregisterPluginPanel,
-    addStatusBarItem: () => {},
-    removeStatusBarItem: () => {},
-    registerPreviewRenderer,
-    unregisterPreviewRenderer,
-  }), [getActiveTab, openFileInTab, createNewTab, cmViewRef, registerPluginPanel, unregisterPluginPanel, registerPreviewRenderer, unregisterPreviewRenderer]);
-
-  const { activatePlugin, deactivatePlugin } = usePluginRuntime(pluginRuntimeDeps);
-
-  // ── Reset active panel if removed plugin panel was selected ──────
+  // ── Plugin panel reset effects ───────────────────────────────────
   useEffect(() => {
     if (!activePanel) return;
     const isBuiltin = ['filetree', 'search', 'toc', 'plugins'].includes(activePanel);
@@ -251,29 +209,13 @@ export function AppShell() {
     if (!stillExists) setActivePanel(null);
   }, [pluginPanels, activePanel, setActivePanel]);
 
-  // ── Reset active bottom panel if removed plugin panel was selected ──
   useEffect(() => {
     if (!activeBottomPanel) return;
     const stillExists = pluginPanels.some((pp) => pp.id === activeBottomPanel && pp.position === 'bottom');
     if (!stillExists) setActiveBottomPanel(null);
   }, [pluginPanels, activeBottomPanel, setActiveBottomPanel]);
 
-  // ── App lifecycle effects ────────────────────────────────────────
-  useAppLifecycle({
-    isTauri,
-    isRestoringSession,
-    openFileWithContent,
-    openFolderAsRoot: (folderPath: string) => {
-      setFileTreeRoot(folderPath);
-      setActivePanel('filetree');
-      fileTreeSidebarRef.current?.loadRoot(folderPath);
-    },
-    tabsRef,
-    t,
-  });
-
   // ── Navigation ───────────────────────────────────────────────────
-  const { debouncedDoc, tocEntries, wordCount } = useDocMetrics(activeTab.doc, activeTabId);
   const readingTime = useMemo(() => getReadingTime(wordCount), [wordCount]);
 
   /** Kept current by SearchPanel; read by handleSearchResultClick to highlight preview */

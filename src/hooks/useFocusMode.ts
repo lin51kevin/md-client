@@ -10,6 +10,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { FocusMode } from '../types';
 import type { TypewriterOptions } from './useTypewriterOptions';
+import { silentCatch } from '../lib/utils/silent-catch';
 
 interface UseFocusModeOptions {
   onModeChange?: (mode: FocusMode) => void;
@@ -28,10 +29,10 @@ export function useFocusMode(options: UseFocusModeOptions = {}) {
     onModeChangeRef.current?.(mode);
 
     if (mode === 'fullscreen') {
-      document.documentElement.requestFullscreen?.().catch(() => {});
+      document.documentElement.requestFullscreen?.().catch((e) => silentCatch(e, 'requestFullscreen'));
     } else {
       if (document.fullscreenElement) {
-        document.exitFullscreen?.().catch(() => {});
+        document.exitFullscreen?.().catch((e) => silentCatch(e, 'exitFullscreen'));
       }
     }
   }, []);

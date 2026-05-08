@@ -4,6 +4,7 @@ import type { Tab } from '../types';
 import { getPendingImages, clearPendingImages } from '../lib/file';
 import { buildImageMarkdownPath } from '../lib/utils';
 import { markSelfSave } from './useFileWatcher';
+import { silentCatch } from '../lib/utils/silent-catch';
 
 interface UsePendingImageMigrationOptions {
   tabs: Tab[];
@@ -36,7 +37,7 @@ export function usePendingImageMigration({ tabs, updateTabDoc, markSaved }: UseP
         content = content.split(img.absolutePath).join(relPath);
 
         if (img.isTemp) {
-          invoke('delete_file', { path: img.absolutePath }).catch(() => {});
+          invoke('delete_file', { path: img.absolutePath }).catch((e) => silentCatch(e, 'deleteFile'));
         }
       } catch {
         // 复制失败则保留原路径不变

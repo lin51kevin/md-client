@@ -7,6 +7,7 @@
 import { useCallback } from 'react';
 import type { MutableRefObject } from 'react';
 import { EditorView } from '@codemirror/view';
+import { silentCatch } from '../lib/utils/silent-catch';
 import { parseTable, serializeTable, type TableData } from '../lib/markdown';
 import type { ContextInfo } from '../lib/editor';
 
@@ -32,7 +33,7 @@ export function useEditorContextActions({
         case 'cut': {
           const cutSel = view.state.selection.main;
           const cutText = view.state.doc.sliceString(cutSel.from, cutSel.to);
-          navigator.clipboard.writeText(cutText).catch(() => {});
+          navigator.clipboard.writeText(cutText).catch((e) => silentCatch(e, 'clipboard.cut'));
           if (cutSel.from !== cutSel.to) {
             view.dispatch({ changes: { from: cutSel.from, to: cutSel.to, insert: '' } });
           }
@@ -42,7 +43,7 @@ export function useEditorContextActions({
           const copySel = view.state.selection.main;
           navigator.clipboard
             .writeText(view.state.doc.sliceString(copySel.from, copySel.to))
-            .catch(() => {});
+            .catch((e) => silentCatch(e, 'clipboard.paste'));
           break;
         }
         case 'paste':
@@ -132,7 +133,7 @@ export function useEditorContextActions({
           } else {
             navigator.clipboard
               .writeText(view.state.doc.sliceString(sel.from, sel.to))
-              .catch(() => {});
+              .catch((e) => silentCatch(e, 'editorContextAction'));
           }
           break;
         }
