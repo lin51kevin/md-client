@@ -623,6 +623,9 @@ fn show_dialog_impl(title: &str, message: &str, _save: &str, _discard: &str, _ca
 
     let msg = to_wide(message);
     let ttl = to_wide(title);
+    // Safety: Windows API call to MessageBoxW. All string pointers are valid
+    // null-terminated wide strings created by to_wide(). This is the standard
+    // way to call Win32 message box API from Rust.
     let ret = unsafe {
         MessageBoxW(std::ptr::null_mut(), msg.as_ptr(), ttl.as_ptr(), MB_YESNOCANCEL | MB_ICONWARNING)
     };

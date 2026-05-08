@@ -84,7 +84,10 @@ pub async fn export_pdf_via_webview(
                     let _ = wv_clone.close();
 
                     // Send result
-                    if let Some(sender) = tx_inner.lock().unwrap().take() {
+                    // Safety: This runs on a dedicated thread where no other code holds the lock.
+                    // The sender is only accessed once (take()), and panicking here would only
+                    // affect the print task, not the main application.
+                    if let Some(sender) = tx_inner.lock().expect("print task mutex poisoned").take() {
                         let _ = sender.send(result);
                     }
                 });
@@ -121,6 +124,9 @@ fn print_to_pdf_platform<R: tauri::Runtime>(
 
     webview
         .with_webview(move |platform_webview| {
+            // Safety: Required by WebView2 COM API for PDF printing.
+            // The COM interface pointers are obtained from the official WebView2 controller
+            // and are guaranteed valid within this callback's scope.
             unsafe {
                 use webview2_com::Microsoft::Web::WebView2::Win32::*;
                 use windows::core::*;
