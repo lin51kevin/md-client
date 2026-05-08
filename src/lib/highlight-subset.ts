@@ -18,6 +18,7 @@ import hljs from "highlight.js/lib/core";
 // ── Tier 1: Synchronous — always available from first render ─────────────────
 import javascript from "highlight.js/lib/languages/javascript";
 import typescript from "highlight.js/lib/languages/typescript";
+import { silentCatch } from './utils/silent-catch';
 import python from "highlight.js/lib/languages/python";
 import css from "highlight.js/lib/languages/css";
 import xml from "highlight.js/lib/languages/xml";
@@ -96,9 +97,9 @@ async function loadTier2Languages(): Promise<void> {
 // Start loading Tier 2 on the browser's first idle window.
 // Falls back to a 200ms timeout in environments without requestIdleCallback.
 if (typeof requestIdleCallback !== "undefined") {
-  requestIdleCallback(() => { loadTier2Languages().catch(() => {}); });
+  requestIdleCallback(() => { loadTier2Languages().catch((e) => silentCatch(e, 'loadTier2Languages')); });
 } else {
-  setTimeout(() => { loadTier2Languages().catch(() => {}); }, 200);
+  setTimeout(() => { loadTier2Languages().catch((e) => silentCatch(e, 'loadTier2Languages')); }, 200);
 }
 
 export default hljs;

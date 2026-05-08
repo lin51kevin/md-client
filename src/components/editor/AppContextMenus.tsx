@@ -17,6 +17,7 @@ import { TableEditor } from '../modal/TableEditor';
 import { InputDialog } from '../modal/InputDialog';
 import { AI_TOOLBAR_EVENT } from '../milkdown/ai-toolbar-bridge';
 import type { AIToolbarEventDetail } from '../milkdown/ai-toolbar-bridge';
+import { silentCatch } from '../../lib/utils/silent-catch';
 
 interface AppContextMenusProps {
   inputDialogState: InputDialogState | null;
@@ -59,7 +60,7 @@ export function AppContextMenus({
         break;
       case 'copyAsMarkdown': {
         const sel = window.getSelection()?.toString() ?? '';
-        if (sel) navigator.clipboard.writeText(sel).catch(() => {});
+        if (sel) navigator.clipboard.writeText(sel).catch((e) => silentCatch(e, 'clipboard.writeText'));
         break;
       }
       case 'selectAll': {

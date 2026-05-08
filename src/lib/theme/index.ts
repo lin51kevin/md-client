@@ -10,6 +10,7 @@
 
 import { BUILT_IN_NAMES, BUILT_IN_THEMES_MAP } from './registry';
 import { StorageKeys } from '../storage';
+import { silentCatch } from '../utils/silent-catch';
 
 export type ThemeName = 'light' | 'dark' | 'sepia' | 'high-contrast' | (string & {});
 
@@ -92,7 +93,7 @@ export function applyTheme(theme: string): void {
 
   // Reset mermaid so it re-initializes with the new theme on next render
   // (dynamic import to avoid circular dependency and keep mermaid lazy)
-  import('../markdown/mermaid').then(({ reinitMermaid }) => reinitMermaid()).catch(() => {});
+  import('../markdown/mermaid').then(({ reinitMermaid }) => reinitMermaid()).catch((e) => silentCatch(e, 'reinitMermaid'));
 }
 
 /**

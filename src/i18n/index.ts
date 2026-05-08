@@ -1,6 +1,7 @@
 import { useState, useCallback, createContext, useContext } from 'react';
 import { zhCN, type TranslationKey } from './zh-CN';
 import { StorageKeys } from '../lib/storage';
+import { silentCatch } from '../lib/utils/silent-catch';
 
 export type { TranslationKey };
 
@@ -63,7 +64,7 @@ function translate(
 // before the first setLocale call or t() invocation.
 const _detectedLocale = getSavedLocale();
 if (_detectedLocale !== 'zh-CN') {
-  fetchLocale(_detectedLocale).catch(() => {});
+  fetchLocale(_detectedLocale).catch((e) => silentCatch(e, 'fetchLocale'));
 }
 
 // ── Standalone translator (for non-React code) ──────────────────────────────

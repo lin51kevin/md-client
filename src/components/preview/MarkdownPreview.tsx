@@ -13,6 +13,7 @@ import { isMermaidAvailable, getMermaidRenderer, type TableData } from "../../li
 import { extractFrontmatter, type Frontmatter } from "../../lib/markdown/extensions";
 import { TableEditor } from "../modal/TableEditor";
 import { useI18n } from "../../i18n";
+import { silentCatch } from '../../lib/utils/silent-catch';
 
 // Plugin arrays are built lazily via buildPreviewRemarkPlugins/buildPreviewRehypePlugins
 // so that the KaTeX plugin (if activated) is picked up at render time.
@@ -387,7 +388,7 @@ export const MarkdownPreview = memo(function MarkdownPreview({
 
         // External URLs
         if (/^https?:/.test(href)) {
-          openUrl(href).catch(() => {});
+          openUrl(href).catch((e) => silentCatch(e, 'openUrl'));
           return;
         }
 
@@ -398,7 +399,7 @@ export const MarkdownPreview = memo(function MarkdownPreview({
         if (MD_EXTENSIONS.has(ext)) {
           onOpen?.(absPath);
         } else {
-          openPath(absPath).catch(() => {});
+          openPath(absPath).catch((e) => silentCatch(e, 'openPath'));
         }
       };
 

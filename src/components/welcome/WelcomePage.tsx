@@ -4,6 +4,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { useI18n } from '../../i18n';
 import type { RecentFile } from '../../lib/file';
 import logoUrl from '../../../src-tauri/icons/128x128.png';
+import { silentCatch } from '../../lib/utils/silent-catch';
 
 const MAX_VISIBLE_RECENT = 5;
 
@@ -224,7 +225,7 @@ export function WelcomePage({ recentFiles, onNew, onOpenFile, onOpenFolder, onOp
         .then(text => {
           if (!cancelled) setPreviews(prev => ({ ...prev, [file.path]: text.split('\n').slice(0, 3).join(' ').slice(0, 100) }));
         })
-        .catch(() => {});
+        .catch((e) => silentCatch(e, 'WelcomePage'));
     });
     return () => { cancelled = true; };
   }, [recentFiles, isTauri]);

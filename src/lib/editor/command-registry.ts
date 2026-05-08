@@ -1,5 +1,6 @@
 import { undo, redo } from '@codemirror/commands';
 import type { Command } from './commands';
+import { silentCatch } from '../utils/silent-catch';
 
 /** Custom commands registered by plugins */
 export const customCommands: Command[] = [];
@@ -83,7 +84,7 @@ export function createCommandRegistry(deps: CommandRegistryDeps): Command[] {
     { id: 'view.focusMode', label: '专注模式', labelEn: 'Focus Mode', shortcut: 'Ctrl+\\', category: 'view', action: () => setFocusMode(focusMode === 'focus' ? 'normal' : 'focus') },
     { id: 'view.fullscreen', label: '全屏模式', labelEn: 'Fullscreen', shortcut: 'F11', category: 'view', action: async () => {
       if (!isTauri) return;
-      try { const { getCurrentWindow: gcw } = await import('@tauri-apps/api/window'); const w = gcw(); w.isFullscreen().then(fs => w.setFullscreen(!fs)); } catch {}
+      try { const { getCurrentWindow: gcw } = await import('@tauri-apps/api/window'); const w = gcw(); w.isFullscreen().then(fs => w.setFullscreen(!fs)); } catch (e) { silentCatch(e, 'toggleFullscreen'); }
     }},
 
     // ── 导出 ──
