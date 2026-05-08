@@ -6,6 +6,7 @@
  */
 
 import { isMermaidAvailable, getMermaidRenderer } from '../../../lib/markdown/mermaid-bridge';
+import DOMPurify from 'dompurify';
 import { toErrorMessage } from '../../../lib/utils/errors';
 
 /**
@@ -35,7 +36,10 @@ export function renderMermaidPreview(
     .then(({ svg }) => {
       const wrapper = document.createElement('div');
       wrapper.className = 'mermaid-diagram';
-      wrapper.innerHTML = svg;
+      wrapper.innerHTML = DOMPurify.sanitize(svg, {
+        ADD_TAGS: ['foreignObject', 'use'],
+        ADD_ATTR: ['xlink:href', 'marker-end', 'marker-start', 'marker-mid', 'viewBox', 'preserveAspectRatio'],
+      });
       applyPreview(wrapper);
     })
     .catch((err) => {
