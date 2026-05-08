@@ -51,12 +51,20 @@ function RenderMethodPanel({ content }: { content: { render: () => unknown } }) 
         }
         // Handle nested render() objects: plugin's options.render() returned a class instance
         // (e.g. AICopilotPanelContent) whose own .render() returns the React component.
+        // Also propagate callback props (onClose, onDragStart) from the outer wrapper to
+        // the inner instance so FloatingPanel wiring reaches the actual component.
         if (
           result != null &&
           typeof result === 'object' &&
           'render' in result &&
           typeof (result as { render?: unknown }).render === 'function'
         ) {
+          // Propagate any callback props set on the outer wrapper to the inner instance.
+          const outer = content as Record<string, unknown>;
+          const inner = result as Record<string, unknown>;
+          for (const key of ['onClose', 'onDragStart'] as const) {
+            if (outer[key] !== undefined) inner[key] = outer[key];
+          }
           const nested = (result as { render: () => unknown }).render();
           if (React.isValidElement(nested)) return nested as React.ReactElement;
           if (typeof nested === 'function') {

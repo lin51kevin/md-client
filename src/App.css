@@ -39,11 +39,6 @@ body {
 
 /* ── Sidebar resize handle ── */
 .sidebar-resize-handle {
-  transition: background-color 0.15s ease;
-}
-.sidebar-resize-handle:hover {
-  background-color: var(--accent-color, #4f8cf7);
-  opacity: 0.35;
 }
 
 /* ── Split pane gutter (react-split) ── */
