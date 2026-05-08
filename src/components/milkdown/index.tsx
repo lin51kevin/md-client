@@ -3,6 +3,8 @@ import { Milkdown, MilkdownProvider, useEditor } from '@milkdown/react';
 import { Crepe, CrepeFeature } from '@milkdown/crepe';
 import { editorViewCtx } from '@milkdown/core';
 import { TextSelection } from 'prosemirror-state';
+import { Prec } from '@codemirror/state';
+import { keymap as cmKeymap } from '@codemirror/view';
 import '@milkdown/crepe/theme/frame.css';
 import '@milkdown/crepe/theme/common/style.css';
 import '../css/embed-containers.css';
@@ -77,7 +79,17 @@ function MilkdownEditor({
       root,
       defaultValue: body,
       featureConfigs: {
-        [CrepeFeature.CodeMirror]: { renderPreview: renderMermaidPreview },
+        [CrepeFeature.CodeMirror]: {
+          renderPreview: renderMermaidPreview,
+          // Suppress CodeMirror's built-in Ctrl+F/H search panel so the
+          // global find/replace (useKeyboardShortcuts) handles them instead.
+          extensions: [
+            Prec.highest(cmKeymap.of([
+              { key: 'Mod-f', run: () => true },
+              { key: 'Mod-h', run: () => true },
+            ])),
+          ],
+        },
       },
       features: {
         [CrepeFeature.CodeMirror]: true,
