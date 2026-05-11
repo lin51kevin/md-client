@@ -177,7 +177,7 @@ const DEFAULT_PLUGINS: PluginUIItem[] = [
     version: '1.0.0',
     author: 'MarkLite Team',
     description: '内置终端 — 底部面板集成 shell 终端，支持命令执行',
-    enabled: false,
+    enabled: true,
     permissions: ['shell.execute', 'sidebar.panel', 'commands', 'storage'],
   },
 ];
@@ -213,6 +213,18 @@ function migratePluginIds(plugins: PluginUIItem[]): PluginUIItem[] {
     if (!existingIds.has(dp.id)) {
       changed = true;
       migrated.push(dp);
+    }
+  }
+
+  // One-time migration: enable the terminal plugin for users who had it
+  // disabled from before the PTY implementation (v0.11.2).
+  const PTY_MIGRATION_KEY = 'marklite-terminal-pty-migrated';
+  if (!localStorage.getItem(PTY_MIGRATION_KEY)) {
+    localStorage.setItem(PTY_MIGRATION_KEY, '1');
+    const termEntry = migrated.find((p) => p.id === 'marklite-terminal');
+    if (termEntry && !termEntry.enabled) {
+      termEntry.enabled = true;
+      changed = true;
     }
   }
 

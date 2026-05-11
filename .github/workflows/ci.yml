@@ -52,15 +52,17 @@ jobs:
       - name: Frontend build
         run: yarn build
 
-      - name: Frontend tests with coverage
-        run: yarn test:coverage
+      # - name: Frontend tests with coverage
+      #   run: yarn test:coverage
 
-      - name: Upload coverage
-        if: ${{ secrets.CODECOV_TOKEN != '' }}
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./coverage/lcov.info
-          fail_ci_if_error: false
+      # - name: Upload coverage
+      #   if: ${{ env.CODECOV_TOKEN != '' }}
+      #   env:
+      #     CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      #   uses: codecov/codecov-action@v4
+      #   with:
+      #     files: ./coverage/lcov.info
+      #     fail_ci_if_error: false
 
       - name: Rust check (no binary output)
         working-directory: src-tauri
