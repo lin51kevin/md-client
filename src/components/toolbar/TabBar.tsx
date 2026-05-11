@@ -272,24 +272,24 @@ export const TabBar = memo(function TabBar({ tabs, activeTabId, onActivate, onCl
             </div>
           );
         })}
+        {/* New-tab button — sticky inside scroll container: follows last tab when few tabs, sticks to right on overflow */}
+        <button
+          onClick={() => onNew()}
+          title={t('tab.newTab')}
+          className="flex self-end items-center justify-center w-6 h-6 shrink-0 ml-0.5 sticky right-0"
+          style={{ color: 'var(--text-secondary)', backgroundColor: 'var(--bg-tertiary)' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'var(--text-primary)';
+            e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'var(--text-secondary)';
+            e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)';
+          }}
+        >
+          <Plus size={14} />
+        </button>
       </div>
-      {/* New-tab button — outside scroll container so it stays visible */}
-      <button
-        onClick={() => onNew()}
-        title={t('tab.newTab')}
-        className="flex self-end items-center justify-center w-6 h-6 shrink-0 ml-0.5"
-        style={{ color: 'var(--text-secondary)' }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.color = 'var(--text-primary)';
-          e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.color = 'var(--text-secondary)';
-          e.currentTarget.style.backgroundColor = '';
-        }}
-      >
-        <Plus size={14} />
-      </button>
     </div>
   );
 });
