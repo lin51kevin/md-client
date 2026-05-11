@@ -14,7 +14,7 @@ export interface TerminalInstance {
   /** Shell type (cmd, powershell, pwsh, bash, sh) */
   shellType: string;
   
-  /** Current working directory */
+  /** Current working directory (used only for initial PTY spawn) */
   cwd: string;
   
   /** xterm.js Terminal instance */
@@ -22,9 +22,6 @@ export interface TerminalInstance {
   
   /** FitAddon instance for terminal resizing */
   fitAddonRef: FitAddon | null;
-  
-  /** Input buffer for the current command line */
-  inputBuffer: string;
   
   /** Creation timestamp */
   createdAt: number;

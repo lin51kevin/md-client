@@ -59,7 +59,6 @@ export function useTerminalManager() {
         cwd: initialCwd,
         termRef: null,
         fitAddonRef: null,
-        inputBuffer: '',
         createdAt: Date.now(),
       };
       setTerminals([firstTerminal]);
@@ -81,7 +80,6 @@ export function useTerminalManager() {
       cwd: initialCwd,
       termRef: null,
       fitAddonRef: null,
-      inputBuffer: '',
       createdAt: Date.now(),
     };
     
@@ -146,7 +144,7 @@ export function useTerminalManager() {
    */
   const updateTerminalRefs = useCallback((
     id: string,
-    updates: Partial<Pick<TerminalInstance, 'termRef' | 'fitAddonRef' | 'inputBuffer' | 'cwd'>>
+    updates: Partial<Pick<TerminalInstance, 'termRef' | 'fitAddonRef'>>
   ) => {
     setTerminals((prev) =>
       prev.map((t) => (t.id === id ? { ...t, ...updates } : t))

@@ -32,6 +32,14 @@ vi.mock('@xterm/addon-web-links', () => ({
   WebLinksAddon: vi.fn().mockImplementation(() => ({})),
 }));
 
+vi.mock('@xterm/addon-search', () => ({
+  SearchAddon: vi.fn().mockImplementation(() => ({
+    findNext: vi.fn(),
+    findPrevious: vi.fn(),
+    clearDecorations: vi.fn(),
+  })),
+}));
+
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
 }));
