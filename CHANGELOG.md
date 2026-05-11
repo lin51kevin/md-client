@@ -6,26 +6,82 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [v0.11.1] - 2026-05-07
+## [v0.11.2] - 2026-05-11
 
 
-### Changed
+### Added
 
-- bump version to v0.11.1 (`bda723f`)
+- rewrite terminal frontend to use real PTY sessions (`80f822c`)
+- add portable-pty backend for real PTY terminal sessions (`a10f949`)
+- filter context menu items for non-markdown files (`d957c8b`)
 
 
 
 ### Fixed
 
+- move new tab button inside scroll container with sticky positioning (`6a8c7f8`)
+- add close button to AI Copilot floating panel; remove sidebar handle hover effect (`7b219ec`)
+- suppress CodeMirror built-in Ctrl+F search panel in Milkdown (`a78745d`)
+- handle nested render() objects in PluginSidebarRenderer (`4465499`)
+- fix tab completion candidates and extract path utilities (`28253bf`)
+
+
+
+### Changed
+
+- remove eslint-disable comment in SidebarRenderer (`a0a2a79`)
+- add ESLint and Prettier, upgrade test coverage to 80% (`ab05ac7`)
+
+
+
+### Changed
+
+- add type definitions, silent-catch utility, and import updates (`a32f01c`)
+- split panel into modular components (`9dbec4d`)
+- extract AppShell aggregation hooks (`b8426c1`)
+- modularize editor logic (`7a8f8a7`)
+- split search.rs into search/ module (`5e2812e`)
+
+
+
+
+
+
+
+## [v0.11.1] - 2026-05-07
+
+
+### Fixed
+
+- 禁用 CodeMirror 内置搜索快捷键避免与自定义快捷键冲突 (`183d3d7`)
 - harden image-resolver regex and clean up dead TOC code (`f8240ae`)
+- crossFile 切换立即清空结果，selectedIdx 驱动 active 高亮 (`a99a4fe`)
+- 修复 Rust 后端多字节字符/emoji 偏移量计算为 UTF-16 (`09747d5`)
+- image-resolver 修复根级目录路径穿越漏洞 (`0efe04b`)
 - remove focus outline on toolbar and toolbar buttons (`1384279`)
 
 
 
 ### Added
 
+- 新增搜索/替换快捷键 (Ctrl+H/F4/Shift+F/Shift+H) (`89a7e0a`)
+- TabBar 鼠标滚轮横向滚动（VS Code 风格） (`4069137`)
 - resolve local images in HTML/PDF exports (`197f713`)
 - replace genpdf PDF export with WebView2 PrintToPdf (`cc94f3a`)
+- 搜索结果在预览面板中高亮匹配文本 (`f59f805`)
+
+
+
+### Changed
+
+- bump Cargo.lock marklite 至 0.11.1 (`99637e7`)
+- bump version to v0.11.1 (`bda723f`)
+
+
+
+### Docs
+
+- update CHANGELOG.md for v0.11.1 (`3aae6a0`)
 
 
 
