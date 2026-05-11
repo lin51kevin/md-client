@@ -4,6 +4,7 @@ import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import xtermCss from 'xterm/css/xterm.css?raw';
 import type { TerminalInstance as TerminalInstanceType } from './types';
+import { toNativePath, resolvePath, extractCdTarget, buildCompletionFullName, buildCompletionDisplayName } from './terminalUtils';
 
 interface TerminalInstanceProps {
   instance: TerminalInstanceType;
@@ -158,6 +159,104 @@ export const TerminalInstance: React.FC<TerminalInstanceProps> = ({ instance, is
       onUpdateRefs(instance.id, { inputBuffer: '' });
     };
 
+    // Directory stack for pushd/popd and OLDPWD for cd -
+    const dirStack: string[] = [];
+    let prevDir = '';
+
+    // Path utilities are imported from terminalUtils.ts (toNativePath, resolvePath, extractCdTarget)
+
+    /**
+     * Change the tracked cwd to `resolved`, saving the old value as prevDir.
+     */
+    const applyNewCwd = (resolved: string) => {
+      prevDir = cwdRef.current;
+      cwdRef.current = resolved;
+      onUpdateRefs(instance.id, { cwd: resolved });
+    };
+
+    /**
+     * Validate that `resolved` is an existing directory via the backend.
+     * Returns true if it exists, false otherwise.
+     */
+    const validateDir = async (resolved: string): Promise<boolean> => {
+      try {
+        const { invoke } = await import('@tauri-apps/api/core');
+        return await invoke<boolean>('is_directory', { path: resolved });
+      } catch {
+        return false;
+      }
+    };
+
+    /**
+     * Handle cd/pushd/popd commands client-side, updating cwdRef.
+     * Returns true if the command was a directory command (handled), false otherwise.
+     */
+    const handleDirectoryCommand = async (trimmed: string): Promise<boolean> => {
+      // --- cd / chdir / drive switch ---
+      const cdTarget = extractCdTarget(trimmed);
+      if (cdTarget !== null) {
+        // "cd -" → restore OLDPWD
+        if (cdTarget === '-') {
+          if (!prevDir) {
+            writeOutput(`\x1b[31mcd: OLDPWD not set\x1b[0m\r\n`);
+          } else {
+            const dest = prevDir;
+            prevDir = cwdRef.current;
+            cwdRef.current = dest;
+            onUpdateRefs(instance.id, { cwd: dest });
+            writeOutput(dest + '\r\n');
+          }
+          return true;
+        }
+
+        // Convert Unix-style absolute path to Windows path if needed
+        const nativeTarget = toNativePath(cdTarget, cwdRef.current);
+        const resolved = resolvePath(nativeTarget, cwdRef.current);
+
+        // Validate existence before updating cwdRef
+        const exists = await validateDir(resolved);
+        if (!exists) {
+          writeOutput(`\x1b[31mcd: ${cdTarget}: No such file or directory\x1b[0m\r\n`);
+        } else {
+          applyNewCwd(resolved);
+        }
+        return true;
+      }
+
+      // --- pushd ---
+      const pushdMatch = trimmed.match(/^pushd\s+(.+)$/i);
+      if (pushdMatch) {
+        let target = pushdMatch[1].trim();
+        if ((target.startsWith('"') && target.endsWith('"')) ||
+            (target.startsWith("'") && target.endsWith("'"))) {
+          target = target.slice(1, -1);
+        }
+        const nativeTarget = toNativePath(target, cwdRef.current);
+        const resolved = resolvePath(nativeTarget, cwdRef.current);
+
+        const exists = await validateDir(resolved);
+        if (!exists) {
+          writeOutput(`\x1b[31mcd: ${target}: No such file or directory\x1b[0m\r\n`);
+        } else {
+          dirStack.push(cwdRef.current);
+          applyNewCwd(resolved);
+        }
+        return true;
+      }
+
+      // --- popd ---
+      if (/^popd\s*$/i.test(trimmed)) {
+        if (dirStack.length === 0) {
+          writeOutput(`\x1b[31mDirectory stack is empty.\x1b[0m\r\n`);
+        } else {
+          applyNewCwd(dirStack.pop()!);
+        }
+        return true;
+      }
+
+      return false;
+    };
+
     const executeCommand = async (command: string) => {
       writeOutput(`\r\n`);
 
@@ -177,6 +276,13 @@ export const TerminalInstance: React.FC<TerminalInstanceProps> = ({ instance, is
         term.write('\r\n\x1b[33mTerminal session ended.\x1b[0m\r\n');
         inputBufferRef.current = '';
         onUpdateRefs(instance.id, { inputBuffer: '' });
+        return;
+      }
+
+      // Handle directory-changing commands (cd, pushd, popd, drive switch)
+      const handled = await handleDirectoryCommand(trimmed);
+      if (handled) {
+        writePrompt();
         return;
       }
 
@@ -249,28 +355,149 @@ export const TerminalInstance: React.FC<TerminalInstanceProps> = ({ instance, is
     };
     xtermEl?.addEventListener('contextmenu', handleContextMenu);
 
+    // Tab-completion state
+    let lastTabCompletions: string[] = [];
+    let lastTabIndex = -1;
+    let lastTabPartial = '';
+    let lastTabPrefix = ''; // the part of inputBuffer before the token being completed
+
+    /**
+     * Perform tab-completion on the current input buffer.
+     * Completes file/directory names for the last whitespace-delimited token.
+     */
+    const handleTabCompletion = async () => {
+      const input = inputBufferRef.current;
+
+      // Find the token being completed (last whitespace-delimited segment)
+      const lastSpaceIdx = input.lastIndexOf(' ');
+      const partial = lastSpaceIdx === -1 ? input : input.slice(lastSpaceIdx + 1);
+      const prefix = lastSpaceIdx === -1 ? '' : input.slice(0, lastSpaceIdx + 1);
+
+      // If pressing Tab again on the same partial, cycle through results
+      if (lastTabCompletions.length > 0 && partial === lastTabPartial && prefix === lastTabPrefix) {
+        lastTabIndex = (lastTabIndex + 1) % lastTabCompletions.length;
+        const completion = lastTabCompletions[lastTabIndex];
+        // Erase current partial from terminal and input buffer
+        const currentPartial = inputBufferRef.current.slice(prefix.length);
+        if (currentPartial.length > 0) {
+          term.write('\b \b'.repeat(currentPartial.length));
+        }
+        inputBufferRef.current = prefix + completion;
+        onUpdateRefs(instance.id, { inputBuffer: inputBufferRef.current });
+        term.write(completion);
+        return;
+      }
+
+      // New completion request
+      try {
+        const { invoke } = await import('@tauri-apps/api/core');
+        const entries = await invoke<Array<{ name: string; is_dir: boolean }>>('shell_tab_complete', {
+          cwd: cwdRef.current || '',
+          partial,
+        });
+
+        if (entries.length === 0) {
+          lastTabCompletions = [];
+          lastTabIndex = -1;
+          return;
+        }
+
+        // Build completion strings (append separator for directories)
+        const sep = (instance.shellType === 'bash' || instance.shellType === 'wsl') ? '/' : '\\';
+        const completions = entries.map((e) =>
+          buildCompletionFullName(e.name, e.is_dir, partial, sep)
+        );
+
+        lastTabCompletions = completions;
+        lastTabPrefix = prefix;
+        lastTabPartial = partial;
+        lastTabIndex = 0;
+
+        if (completions.length === 1) {
+          // Single match — auto-complete
+          const completion = completions[0];
+          if (partial.length > 0) {
+            term.write('\b \b'.repeat(partial.length));
+          }
+          inputBufferRef.current = prefix + completion;
+          onUpdateRefs(instance.id, { inputBuffer: inputBufferRef.current });
+          term.write(completion);
+        } else {
+          // Multiple matches — show list (basenames only, like real bash) and fill common prefix
+          writeOutput('\r\n');
+          for (let i = 0; i < completions.length; i++) {
+            const entry = entries[i];
+            const displayName = buildCompletionDisplayName(entry.name, entry.is_dir, sep);
+            if (entry.is_dir) {
+              writeOutput(`\x1b[34m${displayName}\x1b[0m  `);
+            } else {
+              writeOutput(`${displayName}  `);
+            }
+          }
+          writeOutput('\r\n');
+
+          // Find longest common prefix among completions
+          let common = completions[0];
+          for (let i = 1; i < completions.length; i++) {
+            let j = 0;
+            while (j < common.length && j < completions[i].length &&
+                   common[j].toLowerCase() === completions[i][j].toLowerCase()) {
+              j++;
+            }
+            common = common.slice(0, j);
+          }
+
+          // Redraw prompt with common prefix
+          writePrompt();
+          if (common.length > partial.length) {
+            inputBufferRef.current = prefix + common;
+          } else {
+            inputBufferRef.current = prefix + partial;
+          }
+          onUpdateRefs(instance.id, { inputBuffer: inputBufferRef.current });
+          term.write(inputBufferRef.current);
+        }
+      } catch {
+        // Silently ignore completion errors
+        lastTabCompletions = [];
+        lastTabIndex = -1;
+      }
+    };
+
     // Handle user input
     term.onData((data: string) => {
       if (!term) return;
 
-      if (data === '\r') {
+      if (data === '\t') {
+        handleTabCompletion();
+      } else if (data === '\r') {
+        lastTabCompletions = [];
+        lastTabIndex = -1;
         executeCommand(inputBufferRef.current);
       } else if (data === '\x7f') {
+        lastTabCompletions = [];
+        lastTabIndex = -1;
         if (inputBufferRef.current.length > 0) {
           inputBufferRef.current = inputBufferRef.current.slice(0, -1);
           onUpdateRefs(instance.id, { inputBuffer: inputBufferRef.current });
           term.write('\b \b');
         }
       } else if (data === '\x03') {
+        lastTabCompletions = [];
+        lastTabIndex = -1;
         term.write('^C\r\n');
         writePrompt();
       } else if (data === '\x15') {
+        lastTabCompletions = [];
+        lastTabIndex = -1;
         const len = inputBufferRef.current.length;
         if (len > 0) {
           term.write('\x1b[2K\r');
           writePrompt();
         }
       } else if (data >= ' ') {
+        lastTabCompletions = [];
+        lastTabIndex = -1;
         inputBufferRef.current += data;
         onUpdateRefs(instance.id, { inputBuffer: inputBufferRef.current });
         term.write(data);
