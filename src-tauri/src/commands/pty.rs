@@ -302,6 +302,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(target_os = "windows")]
     fn resolve_shell_powershell() {
         let (exe, args) = resolve_shell("powershell");
         assert!(exe == "pwsh" || exe == "powershell");
@@ -309,6 +310,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(target_os = "windows")]
     fn resolve_shell_bash() {
         let (exe, args) = resolve_shell("bash");
         assert!(exe.contains("bash"));

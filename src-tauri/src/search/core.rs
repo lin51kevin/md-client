@@ -350,7 +350,8 @@ mod tests {
 
     #[test]
     fn test_invalid_regex() {
-        let r = build_search_regex("fo+", true, true, false);
+        // Test with an actually invalid regex pattern (unclosed bracket)
+        let r = build_search_regex("fo[", true, true, false);
         assert!(r.is_err());
     }
 
@@ -590,10 +591,10 @@ mod tests {
         std::fs::write(&p, "foo123bar\nbaz").unwrap();
 
         let result = replace_in_files_impl(&dir.to_string_lossy(), r"\d+", "NUM", true, true, false).unwrap();
-        assert_eq!(result.replaced_count, 3);
+        assert_eq!(result.replaced_count, 1);
 
         let content = std::fs::read_to_string(&p).unwrap();
-        assert_eq!(content, "fooNUMNUMNUMbar\nbaz");
+        assert_eq!(content, "fooNUMbar\nbaz");
 
         let _ = std::fs::remove_dir_all(&dir);
     }
