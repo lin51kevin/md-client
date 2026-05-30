@@ -108,6 +108,11 @@ export const usePreferencesStore = create<PreferencesState>()(
     }),
     {
       name: 'marklite-preferences-store',
+      // Exclude milkdownPreview from persistence so it always starts as false
+      partialize: (state) => {
+        const { milkdownPreview, setMilkdownPreview, ...rest } = state;
+        return rest;
+      },
       // Hydrate theme CSS on first load
       onRehydrateStorage: () => (state) => {
         if (state) {
