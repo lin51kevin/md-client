@@ -170,8 +170,8 @@ function MilkdownEditor({
 
     crepe.editor.use(remarkWikiLinkPlugin).use(wikiLinkSchema);
 
-    // Bridge commands (undo/redo/runCommand)
-    setupBridgeCommands(crepe, hasUserInteractedRef);
+    // Bridge commands (undo/redo/runCommand/toggleList/listLift/getContent)
+    setupBridgeCommands(crepe, hasUserInteractedRef, lastContentRef);
 
     if (!editable) crepe.setReadonly(true);
     return crepe;
@@ -186,7 +186,7 @@ function MilkdownEditor({
   useHtmlBlocks(containerRef, content);
 
   // AI Copilot bridge + selection tracking
-  useMilkdownBridge(crepeRef, containerRef, contentRef, onContentChangeRef, hasUserInteractedRef);
+  useMilkdownBridge(crepeRef, containerRef, contentRef, onContentChangeRef, hasUserInteractedRef, isExternalUpdate, lastContentRef);
 
   // DOM event effects + get syncContent helper
   const { syncContent } = useMilkdownEvents(

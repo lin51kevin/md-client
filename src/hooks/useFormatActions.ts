@@ -14,6 +14,8 @@ import {
 } from '../lib/editor';
 import { getImageSaveDir, generateImageFileName } from '../lib/utils';
 import { addPendingImage } from '../lib/file';
+import { milkdownBridge } from '../lib/milkdown/editor-bridge';
+import { renumberOrderedListsInMarkdown } from '../lib/editor/renumber-lists';
 
 import type { InputDialogConfig } from '../components/modal/InputDialog';
 
@@ -24,10 +26,43 @@ interface UseFormatActionsParams {
   promptUser: (config: InputDialogConfig) => Promise<string | null>;
   /** 是否处于 Tauri 环境 */
   isTauri?: boolean;
+  /** When true, route list/heading actions through the Milkdown bridge */
+  milkdownPreview?: boolean;
 }
 
-export function useFormatActions({ cmViewRef, getActiveTab, promptUser, isTauri = false }: UseFormatActionsParams) {
+export function useFormatActions({ cmViewRef, getActiveTab, promptUser, isTauri = false, milkdownPreview = false }: UseFormatActionsParams) {
   const handleFormatAction = useCallback((action: string) => {
+    // ── Milkdown (WYSIWYG) routing ─────────────────────────────────────────
+    if (milkdownPreview) {
+      switch (action) {
+        case 'ul':
+          milkdownBridge.toggleList?.('bullet');
+          return;
+        case 'ol':
+          milkdownBridge.toggleList?.('ordered');
+          return;
+        case 'list-lift':
+          milkdownBridge.listLift?.();
+          return;
+        case 'heading-promote':
+          milkdownBridge.headingPromote?.();
+          return;
+        case 'heading-demote':
+          milkdownBridge.headingDemote?.();
+          return;
+        case 'renumber-ol': {
+          // Use live bridge content (avoids React batching lag) with fallback to React state
+          const currentContent = milkdownBridge.getContent?.() ?? getActiveTab().doc;
+          const renumbered = renumberOrderedListsInMarkdown(currentContent);
+          milkdownBridge.forceReplaceContent?.(renumbered);
+          return;
+        }
+        default:
+          // Other actions fall through to CodeMirror handler below
+          break;
+      }
+    }
+
     const view = cmViewRef.current;
     if (!view) return;
 
@@ -322,6 +357,17 @@ export function useFormatActions({ cmViewRef, getActiveTab, promptUser, isTauri 
         break;
       }
       default: {
+        // renumber-ol: renumber ALL ordered lists in the document
+        if (action === 'renumber-ol') {
+          const renumbered = renumberOrderedListsInMarkdown(docText);
+          if (renumbered !== docText) {
+            view.dispatch({
+              changes: { from: 0, to: docText.length, insert: renumbered },
+              selection: { anchor: Math.min(sel.from, renumbered.length) },
+            });
+          }
+          break;
+        }
         // Handle parameterized actions like "table:3x4"
         if (action.startsWith('table:')) {
           const match = action.match(/^table:(\d+)x(\d+)$/);
@@ -348,7 +394,7 @@ export function useFormatActions({ cmViewRef, getActiveTab, promptUser, isTauri 
       }
     }
     view.focus();
-  }, [getActiveTab]);
+  }, [getActiveTab, milkdownPreview]);
 
   return { handleFormatAction };
 }

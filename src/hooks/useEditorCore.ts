@@ -72,7 +72,7 @@ export function useEditorCore({
   useZoom(zoomContainerRef);
   const { searchHighlightExtension, setMatches, clearMatches } = useSearchHighlight();
   const { inputDialogState, setInputDialogState, promptUser } = useInputDialog();
-  const { handleFormatAction } = useFormatActions({ cmViewRef, getActiveTab, promptUser, isTauri });
+  const { handleFormatAction } = useFormatActions({ cmViewRef, getActiveTab, promptUser, isTauri, milkdownPreview });
   const { editingTable, setEditingTable, handleTableConfirm } = useTableEditor({ cmViewRef, updateActiveDoc });
   const {
     showSnippetPicker, setShowSnippetPicker,

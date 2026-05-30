@@ -1,7 +1,14 @@
 import { useEffect, useRef } from 'react';
 import { editorViewCtx, commandsCtx } from '@milkdown/core';
 import { undoDepth, redoDepth, undo as pmUndo, redo as pmRedo } from 'prosemirror-history';
-import { insert } from '@milkdown/kit/utils';
+import {
+  wrapInHeadingCommand,
+  wrapInBulletListCommand,
+  wrapInOrderedListCommand,
+  liftListItemCommand,
+  liftFirstListItemCommand,
+} from '@milkdown/preset-commonmark';
+import { insert, replaceAll } from '@milkdown/kit/utils';
 import { Crepe } from '@milkdown/crepe';
 import type { RefObject } from 'react';
 import { milkdownBridge } from '../../lib/milkdown/editor-bridge';
@@ -22,6 +29,8 @@ export function useMilkdownBridge(
   contentRef: RefObject<string>,
   onContentChangeRef: RefObject<((c: string) => void) | undefined>,
   hasUserInteractedRef: RefObject<boolean>,
+  isExternalUpdateRef: RefObject<boolean>,
+  lastContentRef: RefObject<string>,
 ) {
   // ── Bridge setup: undo/redo, runCommand, setContent, insertText, focus ───────
   useEffect(() => {
@@ -45,6 +54,24 @@ export function useMilkdownBridge(
       }
     };
 
+    milkdownBridge.forceReplaceContent = (fullContent: string) => {
+      const crepe = crepeRef.current;
+      if (!crepe) return;
+      try {
+        // Strip frontmatter to get the body Milkdown renders
+        const body = fullContent.replace(/^---[\s\S]*?---\n?/, '').replace(/^\n+/, '');
+        // Directly replace Milkdown editor content (bypasses hasUserInteracted guard)
+        isExternalUpdateRef.current = true;
+        crepe.editor.action(replaceAll(body));
+        lastContentRef.current = body;
+        queueMicrotask(() => { isExternalUpdateRef.current = false; });
+        // Also update React state so activeTab.doc stays in sync
+        onContentChangeRef.current?.(fullContent);
+      } catch (e) {
+        console.warn('[milkdown-bridge] forceReplaceContent failed:', e);
+      }
+    };
+
     const onFocusIn = () => { milkdownBridge.hasFocus = true; };
     const onFocusOut = (e: FocusEvent) => {
       if (!container.contains(e.relatedTarget as Node | null)) {
@@ -64,6 +91,12 @@ export function useMilkdownBridge(
       milkdownBridge.redo = null;
       milkdownBridge.runCommand = null;
       milkdownBridge.insertText = null;
+      milkdownBridge.headingPromote = null;
+      milkdownBridge.headingDemote = null;
+      milkdownBridge.forceReplaceContent = null;
+      milkdownBridge.toggleList = null;
+      milkdownBridge.listLift = null;
+      milkdownBridge.getContent = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -112,7 +145,11 @@ export function useMilkdownBridge(
 }
 
 /** Called inside useEditor to set up undo/redo and runCommand on the bridge */
-export function setupBridgeCommands(crepe: Crepe, hasUserInteractedRef: RefObject<boolean>) {
+export function setupBridgeCommands(
+  crepe: Crepe,
+  hasUserInteractedRef: RefObject<boolean>,
+  lastContentRef: RefObject<string>,
+) {
   // Listen to ProseMirror transactions to sync undo/redo state
   crepe.on((listener) => {
     listener.updated(() => {
@@ -149,6 +186,91 @@ export function setupBridgeCommands(crepe: Crepe, hasUserInteractedRef: RefObjec
       commands.call(commandKey as any, payload);
     } catch (e) {
       console.warn('[milkdown-bridge] runCommand failed:', e);
+    }
+  };
+
+  milkdownBridge.headingPromote = () => {
+    try {
+      hasUserInteractedRef.current = true;
+      const view = crepe.editor.ctx.get(editorViewCtx);
+      if (!view.hasFocus()) view.focus();
+      const { $from } = view.state.selection;
+      const node = $from.node();
+      if (node.type.name !== 'heading') return;
+      const level: number = node.attrs.level;
+      if (level <= 1) return; // already h1, can't promote further
+      const commands = crepe.editor.ctx.get(commandsCtx);
+      commands.call(wrapInHeadingCommand.key, level - 1);
+    } catch (e) {
+      console.warn('[milkdown-bridge] headingPromote failed:', e);
+    }
+  };
+
+  milkdownBridge.headingDemote = () => {
+    try {
+      hasUserInteractedRef.current = true;
+      const view = crepe.editor.ctx.get(editorViewCtx);
+      if (!view.hasFocus()) view.focus();
+      const { $from } = view.state.selection;
+      const node = $from.node();
+      const commands = crepe.editor.ctx.get(commandsCtx);
+      if (node.type.name === 'heading') {
+        const level: number = node.attrs.level;
+        if (level >= 6) return; // already h6
+        commands.call(wrapInHeadingCommand.key, level + 1);
+      } else if (node.type.name === 'paragraph') {
+        // paragraph → h2 (matching CodeMirror's 'headingDemote' which inserts '## ')
+        commands.call(wrapInHeadingCommand.key, 2);
+      }
+    } catch (e) {
+      console.warn('[milkdown-bridge] headingDemote failed:', e);
+    }
+  };
+
+  milkdownBridge.getContent = () => lastContentRef.current;
+
+  milkdownBridge.toggleList = (type: 'bullet' | 'ordered') => {
+    try {
+      hasUserInteractedRef.current = true;
+      const view = crepe.editor.ctx.get(editorViewCtx);
+      if (!view.hasFocus()) view.focus();
+      const commands = crepe.editor.ctx.get(commandsCtx);
+
+      // Walk the resolved position's ancestors to determine if we're already inside
+      // a list of the same type.
+      const { $from } = view.state.selection;
+      let insideSameList = false;
+      for (let depth = $from.depth; depth >= 0; depth--) {
+        const nodeName = $from.node(depth).type.name;
+        if (type === 'bullet' && nodeName === 'bullet_list') { insideSameList = true; break; }
+        if (type === 'ordered' && nodeName === 'ordered_list') { insideSameList = true; break; }
+      }
+
+      if (insideSameList) {
+        // Toggle off: try nested-lift first; fall back to liftFirstListItem
+        const lifted = commands.call(liftListItemCommand.key);
+        if (!lifted) commands.call(liftFirstListItemCommand.key);
+      } else if (type === 'bullet') {
+        commands.call(wrapInBulletListCommand.key);
+      } else {
+        commands.call(wrapInOrderedListCommand.key);
+      }
+    } catch (e) {
+      console.warn('[milkdown-bridge] toggleList failed:', e);
+    }
+  };
+
+  milkdownBridge.listLift = () => {
+    try {
+      hasUserInteractedRef.current = true;
+      const view = crepe.editor.ctx.get(editorViewCtx);
+      if (!view.hasFocus()) view.focus();
+      const commands = crepe.editor.ctx.get(commandsCtx);
+      // liftListItemCommand lifts nested items; liftFirstListItemCommand handles top-level
+      const lifted = commands.call(liftListItemCommand.key);
+      if (!lifted) commands.call(liftFirstListItemCommand.key);
+    } catch (e) {
+      console.warn('[milkdown-bridge] listLift failed:', e);
     }
   };
 }

@@ -105,7 +105,7 @@ describe('Toolbar — WYSIWYG mode (wysiwygMode=true)', () => {
 
   // ── 格式化按钮应该隐藏 ──
 
-  it('hides all formatting buttons (bold/italic/strikethrough/code/heading/quote/lists)', () => {
+  it('hides all source-only formatting buttons (bold/italic/strikethrough/code/heading/quote)', () => {
     render(<Toolbar {...defaultProps} wysiwygMode={true} onFormatAction={vi.fn()} />);
 
     expect(screen.queryByTitle('粗体')).not.toBeInTheDocument();
@@ -114,8 +114,14 @@ describe('Toolbar — WYSIWYG mode (wysiwygMode=true)', () => {
     expect(screen.queryByTitle('行内代码')).not.toBeInTheDocument();
     expect(screen.queryByTitle('标题')).not.toBeInTheDocument();
     expect(screen.queryByTitle('引用')).not.toBeInTheDocument();
-    expect(screen.queryByTitle('无序列表')).not.toBeInTheDocument();
-    expect(screen.queryByTitle('有序列表')).not.toBeInTheDocument();
+    // Note: 无序列表 / 有序列表 intentionally appear in wysiwyg mode as milkdown list-toggle buttons
+  });
+
+  it('shows list and heading control buttons in wysiwyg mode', () => {
+    render(<Toolbar {...defaultProps} wysiwygMode={true} onFormatAction={vi.fn()} />);
+
+    expect(screen.getByTitle('无序列表')).toBeInTheDocument();
+    expect(screen.getByTitle('有序列表')).toBeInTheDocument();
   });
 
   it('hides link/image/table/codeblock/hr/task/math/snippet buttons', () => {

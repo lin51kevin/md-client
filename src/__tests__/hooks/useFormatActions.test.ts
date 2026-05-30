@@ -1,8 +1,9 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { EditorState } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import { useFormatActions } from '../../hooks/useFormatActions';
+import { milkdownBridge } from '../../lib/milkdown/editor-bridge';
 
 // Mock Tauri APIs
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
@@ -325,5 +326,176 @@ describe('useFormatActions', () => {
     const { action } = buildHook(view);
     expect(() => action('unknown-action')).not.toThrow();
     expect(view.state.doc.toString()).toBe('unchanged');
+  });
+});
+
+// ── Milkdown (WYSIWYG) mode — routing through bridge ──────────────────────────
+
+/** Build the hook with milkdownPreview=true and a mock active tab doc */
+function buildMilkdownHook(doc: string) {
+  const cmViewRef = { current: null };
+  const mockGetActiveTab = vi.fn(() => ({
+    id: '1',
+    filePath: '/docs/test.md',
+    doc,
+    isDirty: false,
+  }));
+  const mockPromptUser = vi.fn();
+  const { result } = renderHook(() =>
+    useFormatActions({
+      cmViewRef: cmViewRef as any,
+      getActiveTab: mockGetActiveTab as any,
+      promptUser: mockPromptUser,
+      milkdownPreview: true,
+    })
+  );
+  return { action: result.current.handleFormatAction, mockGetActiveTab };
+}
+
+describe('useFormatActions — milkdown mode', () => {
+  // Save and restore bridge mocks around each test
+  let savedToggleList: typeof milkdownBridge.toggleList;
+  let savedListLift: typeof milkdownBridge.listLift;
+  let savedGetContent: typeof milkdownBridge.getContent;
+  let savedForceReplace: typeof milkdownBridge.forceReplaceContent;
+  let savedHeadingPromote: typeof milkdownBridge.headingPromote;
+  let savedHeadingDemote: typeof milkdownBridge.headingDemote;
+
+  const toggleListSpy = vi.fn();
+  const listLiftSpy = vi.fn();
+  const forceReplaceSpy = vi.fn();
+  const headingPromoteSpy = vi.fn();
+  const headingDemoteSpy = vi.fn();
+
+  beforeEach(() => {
+    savedToggleList = milkdownBridge.toggleList;
+    savedListLift = milkdownBridge.listLift;
+    savedGetContent = milkdownBridge.getContent;
+    savedForceReplace = milkdownBridge.forceReplaceContent;
+    savedHeadingPromote = milkdownBridge.headingPromote;
+    savedHeadingDemote = milkdownBridge.headingDemote;
+
+    milkdownBridge.toggleList = toggleListSpy;
+    milkdownBridge.listLift = listLiftSpy;
+    milkdownBridge.forceReplaceContent = forceReplaceSpy;
+    milkdownBridge.headingPromote = headingPromoteSpy;
+    milkdownBridge.headingDemote = headingDemoteSpy;
+    milkdownBridge.getContent = null; // default: no live content getter
+  });
+
+  afterEach(() => {
+    milkdownBridge.toggleList = savedToggleList;
+    milkdownBridge.listLift = savedListLift;
+    milkdownBridge.getContent = savedGetContent;
+    milkdownBridge.forceReplaceContent = savedForceReplace;
+    milkdownBridge.headingPromote = savedHeadingPromote;
+    milkdownBridge.headingDemote = savedHeadingDemote;
+    vi.clearAllMocks();
+  });
+
+  // ── ul / ol via toggleList ─────────────────────────────────────────────
+
+  it("'ul' action calls milkdownBridge.toggleList('bullet')", () => {
+    const { action } = buildMilkdownHook('some text');
+    action('ul');
+    expect(toggleListSpy).toHaveBeenCalledTimes(1);
+    expect(toggleListSpy).toHaveBeenCalledWith('bullet');
+  });
+
+  it("'ol' action calls milkdownBridge.toggleList('ordered')", () => {
+    const { action } = buildMilkdownHook('some text');
+    action('ol');
+    expect(toggleListSpy).toHaveBeenCalledTimes(1);
+    expect(toggleListSpy).toHaveBeenCalledWith('ordered');
+  });
+
+  it("'ul' does NOT call forceReplaceContent", () => {
+    const { action } = buildMilkdownHook('some text');
+    action('ul');
+    expect(forceReplaceSpy).not.toHaveBeenCalled();
+  });
+
+  it("'ol' does NOT call forceReplaceContent", () => {
+    const { action } = buildMilkdownHook('some text');
+    action('ol');
+    expect(forceReplaceSpy).not.toHaveBeenCalled();
+  });
+
+  // ── list-lift ──────────────────────────────────────────────────────────
+
+  it("'list-lift' action calls milkdownBridge.listLift()", () => {
+    const { action } = buildMilkdownHook('- item');
+    action('list-lift');
+    expect(listLiftSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("'list-lift' does NOT call toggleList", () => {
+    const { action } = buildMilkdownHook('- item');
+    action('list-lift');
+    expect(toggleListSpy).not.toHaveBeenCalled();
+  });
+
+  // ── heading-promote / heading-demote ──────────────────────────────────
+
+  it("'heading-promote' calls milkdownBridge.headingPromote()", () => {
+    const { action } = buildMilkdownHook('## heading');
+    action('heading-promote');
+    expect(headingPromoteSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("'heading-demote' calls milkdownBridge.headingDemote()", () => {
+    const { action } = buildMilkdownHook('## heading');
+    action('heading-demote');
+    expect(headingDemoteSpy).toHaveBeenCalledTimes(1);
+  });
+
+  // ── renumber-ol ───────────────────────────────────────────────────────
+
+  it("'renumber-ol' reads live content from getContent when available", () => {
+    milkdownBridge.getContent = () => '1. a\n3. b\n5. c';
+    const { action } = buildMilkdownHook('STALE REACT STATE');
+    action('renumber-ol');
+    expect(forceReplaceSpy).toHaveBeenCalledTimes(1);
+    expect(forceReplaceSpy).toHaveBeenCalledWith('1. a\n2. b\n3. c');
+  });
+
+  it("'renumber-ol' falls back to getActiveTab().doc when getContent is null", () => {
+    milkdownBridge.getContent = null;
+    const { action } = buildMilkdownHook('1. a\n3. b');
+    action('renumber-ol');
+    expect(forceReplaceSpy).toHaveBeenCalledWith('1. a\n2. b');
+  });
+
+  it("'renumber-ol' does not call forceReplaceContent when list is already correct", () => {
+    milkdownBridge.getContent = () => '1. a\n2. b\n3. c';
+    const { action } = buildMilkdownHook('');
+    action('renumber-ol');
+    // It still calls forceReplaceContent, but with the same (already-correct) content
+    expect(forceReplaceSpy).toHaveBeenCalledWith('1. a\n2. b\n3. c');
+  });
+
+  it("'renumber-ol' preserves frontmatter in the output", () => {
+    const content = '---\ntitle: test\n---\n\n1. a\n3. b';
+    milkdownBridge.getContent = () => content;
+    const { action } = buildMilkdownHook('');
+    action('renumber-ol');
+    const result: string = forceReplaceSpy.mock.calls[0][0];
+    expect(result).toContain('title: test');
+    expect(result).toContain('1. a');
+    expect(result).toContain('2. b');
+  });
+
+  // ── Guard: non-milkdown actions still fall through ────────────────────
+
+  it('unknown actions in milkdown mode do not throw', () => {
+    const { action } = buildMilkdownHook('');
+    expect(() => action('unknown-milkdown-action')).not.toThrow();
+  });
+
+  it("'bold' in milkdown mode does not call toggleList (falls through to CM handler)", () => {
+    const { action } = buildMilkdownHook('');
+    // CodeMirror view is null; action just no-ops without throwing
+    expect(() => action('bold')).not.toThrow();
+    expect(toggleListSpy).not.toHaveBeenCalled();
   });
 });

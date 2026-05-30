@@ -46,6 +46,40 @@ class MilkdownEditorBridgeStore {
   undo: (() => void) | null = null;
   redo: (() => void) | null = null;
 
+  /** Promote the current heading one level up (e.g. h3 → h2). No-op on paragraph or h1. */
+  headingPromote: (() => void) | null = null;
+  /** Demote the current heading one level down (e.g. h2 → h3). Paragraph → h2. No-op on h6. */
+  headingDemote: (() => void) | null = null;
+
+  /**
+   * Toggle a bullet or ordered list on/off for the current selection.
+   * If the cursor is already inside a list of the same type, removes the list wrapping;
+   * otherwise wraps the selection in the requested list type.
+   * Routes through ProseMirror-native commands (accurate PM selection, no DOM tracking delay).
+   */
+  toggleList: ((type: 'bullet' | 'ordered') => void) | null = null;
+
+  /**
+   * Lift (outdent / remove) the current list item.
+   * For nested items: moves them one level up.
+   * For top-level items: converts them back to a plain paragraph.
+   */
+  listLift: (() => void) | null = null;
+
+  /**
+   * Return the current live content of the Milkdown editor as a markdown string.
+   * Reads directly from lastContentRef — no React batching delay.
+   * Falls back to the value set by forceReplaceContent if that is more recent.
+   */
+  getContent: (() => string) | null = null;
+
+  /**
+   * Force-replace the full document content in both the Milkdown ProseMirror editor
+   * AND the React state (activeTab.doc).  Unlike setContent, this works even after
+   * the user has interacted with the editor (bypasses the hasUserInteracted guard).
+   */
+  forceReplaceContent: ((fullContent: string) => void) | null = null;
+
   // Subscribers for undo/redo state changes
   private _undoRedoListeners: Array<(canUndo: boolean, canRedo: boolean) => void> = [];
 

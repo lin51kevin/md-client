@@ -1,6 +1,6 @@
 
 import { useRef, useState, useEffect, memo } from 'react';
-import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, SpellCheck, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, HelpCircle, FilePlus, FileText, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight, Table2, FileCode2, Minus, ListChecks, Sigma, Library, List, Brain, Undo2, Redo2, Bot, ArrowUpFromLine, PenLine } from 'lucide-react';
+import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, SpellCheck, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, HelpCircle, FilePlus, FileText, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight, Table2, FileCode2, Minus, ListChecks, Sigma, Library, List, Brain, Undo2, Redo2, Bot, ArrowUpFromLine, PenLine, IndentDecrease, ListRestart, ChevronsUp, ChevronsDown } from 'lucide-react';
 import { ViewMode, FocusMode } from '../../types';
 import { isVimAvailable } from '../../lib/cm/vim-bridge';
 import { useBridgeVersion } from '../../lib/cm/bridge-signal';
@@ -269,6 +269,44 @@ export const Toolbar = memo(function Toolbar({
           </ToolbarButton>
           <ToolbarButton onClick={onInsertSnippet} title={t('toolbar.insertSnippet')}>
             <Library size={14} strokeWidth={1.8} />
+          </ToolbarButton>
+
+          {DIVIDER}
+
+          {/* 重新编号按钮 — source mode */}
+          <ToolbarButton onClick={() => onFormatAction?.('renumber-ol')} title={t('toolbar.renumberOl')}>
+            <ListRestart size={14} strokeWidth={2} />
+          </ToolbarButton>
+        </>)}
+
+        {/* ── Milkdown (WYSIWYG) 模式下的列表 / 标题按钮 ────────────────── */}
+        {wysiwygMode && !isCodeFile && (<>
+          {DIVIDER}
+
+          <ToolbarButton onClick={() => onFormatAction?.('ul')} title={t('toolbar.ul')}>
+            <List size={14} strokeWidth={2} />
+          </ToolbarButton>
+          <ToolbarButton onClick={() => onFormatAction?.('ol')} title={t('toolbar.ol')}>
+            <ListOrdered size={14} strokeWidth={2} />
+          </ToolbarButton>
+          <ToolbarButton onClick={() => onFormatAction?.('list-lift')} title={t('toolbar.listLift')}>
+            <IndentDecrease size={14} strokeWidth={2} />
+          </ToolbarButton>
+
+          {DIVIDER}
+
+          <ToolbarButton onClick={() => onFormatAction?.('heading-promote')} title={t('toolbar.headingPromote')}>
+            <ChevronsUp size={14} strokeWidth={2} />
+          </ToolbarButton>
+          <ToolbarButton onClick={() => onFormatAction?.('heading-demote')} title={t('toolbar.headingDemote')}>
+            <ChevronsDown size={14} strokeWidth={2} />
+          </ToolbarButton>
+
+          {DIVIDER}
+
+          {/* 重新编号按钮 — wysiwyg mode */}
+          <ToolbarButton onClick={() => onFormatAction?.('renumber-ol')} title={t('toolbar.renumberOl')}>
+            <ListRestart size={14} strokeWidth={2} />
           </ToolbarButton>
         </>)}
       </div>
