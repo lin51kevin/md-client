@@ -29,6 +29,7 @@ vi.mock('../../lib/export/pdf-html-generator', () => ({
 
 vi.mock('../../lib/export/image-resolver', () => ({
   resolveLocalImagesInHtml: vi.fn((html: string) => Promise.resolve(html)),
+  resolveMarkdownImages: vi.fn(() => Promise.resolve({})),
 }));
 
 vi.mock('html2canvas', () => ({

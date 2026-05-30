@@ -107,9 +107,13 @@ export function useExportOps({ getActiveTab, t }: ExportOpsParams) {
           // DOCX: use existing Rust export pipeline
           onProgress?.('Pre-rendering diagrams and formulas...', 20);
           const { prerenderExportAssets } = await import('../lib/markdown');
+          const { resolveMarkdownImages } = await import('../lib/export/image-resolver');
           const preRenderedImages = await prerenderExportAssets(tab.doc);
+          onProgress?.('Resolving images...', 40);
+          const localImages = await resolveMarkdownImages(tab.doc, tab.filePath);
+          const allImages = { ...preRenderedImages, ...localImages };
           onProgress?.('Exporting document...', 60);
-          await invoke('export_document', { markdown: tab.doc, outputPath: savePath, format, preRenderedImages });
+          await invoke('export_document', { markdown: tab.doc, outputPath: savePath, format, preRenderedImages: allImages });
           onProgress?.('Generating file...', 80);
           onProgress?.('Complete!', 100);
         }

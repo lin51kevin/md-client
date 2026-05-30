@@ -11,6 +11,7 @@
  */
 
 import { invoke } from '@tauri-apps/api/core';
+import type { PreRenderedAsset } from '../markdown/export-prerender';
 
 /** Supported image MIME types keyed by lowercase extension */
 const MIME_BY_EXT: Record<string, string> = {
@@ -140,5 +141,69 @@ export async function resolveLocalImagesInHtml(
   return html.replace(/<img\b([^>]*?)\s+src\s*=\s*(["'])([^"'\s]+)\2/gi, (full, before, quote, src) => {
     const dataUri = srcToDataUri.get(src);
     return dataUri ? `<img${before} src=${quote}${dataUri}${quote}` : full;
+  });
+}
+
+/**
+ * Resolve local image references in a markdown string to base64 PreRenderedAsset entries.
+ *
+ * This is used by the DOCX export pipeline: since the Rust backend cannot resolve
+ * relative image paths (it doesn't know the source document's directory), we read
+ * each image file in the frontend and pass bytes + dimensions via the preRenderedImages map.
+ *
+ * Keys in the returned record match the original `dest_url` from the markdown
+ * (e.g. "images/photo.png") so the Rust `images.get(dest_url)` lookup matches directly.
+ *
+ * Remote URLs (http/https/ftp) and data URIs are skipped.
+ * Files that cannot be read are silently skipped.
+ */
+export async function resolveMarkdownImages(
+  markdown: string,
+  documentPath: string | null,
+): Promise<Record<string, PreRenderedAsset>> {
+  const docDir = getDocDir(documentPath);
+  const assets: Record<string, PreRenderedAsset> = {};
+
+  // Match markdown image syntax: ![alt](path) and ![alt](path "title")
+  const MD_IMG_RE = /!\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
+  const localSrcs = new Set<string>();
+  let m: RegExpExecArray | null;
+  while ((m = MD_IMG_RE.exec(markdown)) !== null) {
+    const src = m[1];
+    if (src && !/^(https?|ftp|data):/i.test(src)) {
+      localSrcs.add(src);
+    }
+  }
+
+  if (localSrcs.size === 0) return assets;
+
+  await Promise.all(
+    Array.from(localSrcs).map(async (src) => {
+      const absPath = toAbsPath(src, docDir);
+      if (!absPath) return;
+      try {
+        const bytes = await invoke<number[]>('read_file_bytes', { path: absPath });
+        if (!bytes || bytes.length === 0) return;
+        const base64 = bytesToBase64(bytes);
+        // Decode image dimensions using browser Image API
+        const mime = getMimeType(absPath);
+        const { width, height } = await getImageDimensions(base64, mime);
+        assets[src] = { data: base64, width, height };
+      } catch {
+        // File not found or unreadable — skip silently
+      }
+    }),
+  );
+
+  return assets;
+}
+
+/** Decode image dimensions from base64 data using browser Image element */
+function getImageDimensions(base64: string, mime: string): Promise<{ width: number; height: number }> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+    img.onerror = () => resolve({ width: 300, height: 200 }); // fallback dimensions
+    img.src = `data:${mime};base64,${base64}`;
   });
 }
