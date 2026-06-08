@@ -25,6 +25,7 @@ import { useAppLayout } from '../hooks/useAppLayout';
 import { useAppPreferences } from '../hooks/useAppPreferences';
 import { useAppUIState } from '../hooks/useAppUIState';
 import { useAppToolbar } from '../hooks/useAppToolbar';
+import type { ScrollRefsSnapshot } from '../hooks/useScrollPreserve';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { getReadingTime } from '../lib/utils/text-stats';
 import { revealInExplorer } from '../lib/file/reveal-in-explorer';
@@ -93,6 +94,11 @@ export function AppShell() {
   const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
   // ── File workspace (tabs, file ops, watch, recent, tab actions) ──
+  // Mutable ref for scroll preservation — populated after useEditorSession runs.
+  // The provider closure is only invoked at reload time, so refs are always available.
+  const scrollRefsRef = useRef<ScrollRefsSnapshot | null>(null);
+  const scrollRefsProvider = useCallback(() => scrollRefsRef.current, []);
+
   const {
     tabs, activeTabId, setActiveTabId, activeTabIdRef, tabsRef,
     isRestoringSession,
@@ -106,7 +112,7 @@ export function AppShell() {
     recentFiles, handleOpenRecent, handleClearRecent, handleRemoveRecent,
     handleCloseTab, handleCloseAllTabs, handleCloseOtherTabs, handleCloseToLeft, handleCloseToRight,
     renamingTabId, setRenamingTabId, handleOpenSample,
-  } = useFileWorkspace({ t, fileWatch, fileWatchBehavior, handleDismissWelcome });
+  } = useFileWorkspace({ t, fileWatch, fileWatchBehavior, handleDismissWelcome, scrollRefsProvider });
 
   const isPristine = tabs.length === 1 && !tabs[0].filePath && !tabs[0].isDirty && !tabs[0].displayName;
   const activeTab = getActiveTab();
@@ -154,6 +160,9 @@ export function AppShell() {
     rawHandleSaveFile, updateActiveDoc, getActiveTab,
     openFileInTab, createNewTab, tabsRef,
   });
+
+  // Populate scroll refs for the file-reload scroll preservation
+  scrollRefsRef.current = { editorRef, previewRef, cmViewRef, viewMode };
 
   useEffect(() => {
     const editorEl = editorRef.current?.querySelector('.cm-editor');

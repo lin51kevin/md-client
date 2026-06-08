@@ -44,12 +44,18 @@ export function TabContextMenu({ x, y, tabId, tabs, onSave, onSaveAs, onClose, o
   const isPinned = tab?.isPinned ?? false;
   const hasFilePath = !!tab?.filePath;
 
+  const menuMinWidth = 220;
+  const nearRightEdge = x + menuMinWidth > window.innerWidth;
+  const positionStyle = nearRightEdge
+    ? { right: window.innerWidth - x, top: y }
+    : { left: x, top: y };
+
   return (
     <>
       <div className="fixed inset-0 z-40" onPointerDown={onDismiss} />
       <div
         className="fixed z-50 shadow-lg py-1 text-sm"
-        style={{ left: x, top: y, minWidth: 180, backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
+        style={{ ...positionStyle, minWidth: 180, backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
       >
         <button
           className="w-full flex items-center justify-between px-4 py-1.5 gap-6"

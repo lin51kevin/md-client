@@ -10,6 +10,8 @@ import { invoke } from '@tauri-apps/api/core';
 import type { Tab } from '../types';
 import { useFileWatcher } from './useFileWatcher';
 import { computeHash, setFileHash } from './useFileHash';
+import { saveScrollPosition, restoreScrollPosition } from './useScrollPreserve';
+import type { ScrollRefsProvider } from './useScrollPreserve';
 
 interface FileWatchStateParams {
   tabs: Tab[];
@@ -17,6 +19,8 @@ interface FileWatchStateParams {
   /** True = auto-reload clean tabs silently; False = always show toast */
   autoReload: boolean;
   updateTab: (tabId: string, patch: Partial<Tab>) => void;
+  /** Lazy provider for scroll refs — called at reload time to capture/restore scroll */
+  scrollRefsProvider?: ScrollRefsProvider;
 }
 
 export interface FileChangeToast {
@@ -25,7 +29,7 @@ export interface FileChangeToast {
   filePath: string;
 }
 
-export function useFileWatchState({ tabs, enabled, autoReload, updateTab }: FileWatchStateParams) {
+export function useFileWatchState({ tabs, enabled, autoReload, updateTab, scrollRefsProvider }: FileWatchStateParams) {
   const [fileChangeToast, setFileChangeToast] = useState<FileChangeToast | null>(null);
   const tabsRef = useRef(tabs);
   tabsRef.current = tabs;
@@ -35,14 +39,23 @@ export function useFileWatchState({ tabs, enabled, autoReload, updateTab }: File
       const content = await invoke<string>('read_file_text', { path: filePath });
       const tab = tabsRef.current.find(t => t.id === tabId);
       if (tab) {
+        // Save scroll position before updating content
+        const refs = scrollRefsProvider?.();
+        const savedScroll = refs ? saveScrollPosition(refs) : null;
+
         updateTab(tabId, { doc: content, isDirty: false, externalModified: false });
         // Update hash after reload so subsequent saves compare against fresh disk state
         void computeHash(content).then(h => setFileHash(filePath, h));
+
+        // Restore scroll position after React re-renders
+        if (savedScroll && refs) {
+          restoreScrollPosition(savedScroll, refs);
+        }
       }
     } catch (err) {
       console.warn('[useFileWatchState] reload failed:', err);
     }
-  }, [updateTab]);
+  }, [updateTab, scrollRefsProvider]);
 
   /**
    * User chose "Keep" — dismiss toast but mark the tab so that a

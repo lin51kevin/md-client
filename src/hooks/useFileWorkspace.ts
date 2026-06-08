@@ -10,6 +10,7 @@ import { useTabs } from './useTabs';
 import { useFileOps } from './useFileOps';
 import { useFileWatchState } from './useFileWatchState';
 import { useRecentFiles } from './useRecentFiles';
+import type { ScrollRefsProvider } from './useScrollPreserve';
 import { useTabActions } from './useTabActions';
 import { usePendingImageMigration } from './usePendingImageMigration';
 
@@ -20,9 +21,11 @@ export interface UseFileWorkspaceParams {
   fileWatch: boolean;
   fileWatchBehavior: boolean;
   handleDismissWelcome: () => void;
+  /** Lazy provider for scroll refs — used to preserve scroll on file reload */
+  scrollRefsProvider?: ScrollRefsProvider;
 }
 
-export function useFileWorkspace({ t, fileWatch, fileWatchBehavior, handleDismissWelcome }: UseFileWorkspaceParams) {
+export function useFileWorkspace({ t, fileWatch, fileWatchBehavior, handleDismissWelcome, scrollRefsProvider }: UseFileWorkspaceParams) {
   // Ref to bridge useTabs ↔ useRecentFiles circular dependency:
   // useTabs needs a refresh callback, but useRecentFiles needs openFileInTab from useTabs.
   const refreshRecentRef = useRef<() => void>(() => {});
@@ -61,6 +64,7 @@ export function useFileWorkspace({ t, fileWatch, fileWatchBehavior, handleDismis
     enabled: fileWatch,
     autoReload: fileWatchBehavior,
     updateTab: tabsResult.updateTab,
+    scrollRefsProvider,
   });
 
   // ── Tab actions ──────────────────────────────────────────────────
