@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [v0.11.3] - 2026-06-08
+
+
+### Added
+
+- resolve local images in DOCX export (`ca54a4a`)
+- milkdown WYSIWYG toolbar — list toggle, heading promote/demote, renumber-ol (`46f6197`)
+
+
+### Fixed
+
+- tab context menu overflow when tab is at rightmost position (`5f3bf8e`)
+- milkdownPreview defaults to off on app startup (`9bded60`)
+
+
+### Changed
+
+- preserve scroll position on file external-reload (`5f3bf8e`)
+
+
 ## [v0.11.2] - 2026-05-11
 
 
