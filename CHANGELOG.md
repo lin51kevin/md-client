@@ -6,13 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [v0.11.3] - 2026-06-08
+## [v0.12.0] - 2026-07-27
+
+
+### Changed
+
+- bump version to v0.12.0 (`628e94e`)
+
 
 
 ### Added
 
-- resolve local images in DOCX export (`ca54a4a`)
-- milkdown WYSIWYG toolbar — list toggle, heading promote/demote, renumber-ol (`46f6197`)
+- add Format Document action and refactor toolbar into grouped menus (`ef8025a`)
+- add Text Compare (diff) plugin (`b4757e2`)
+
+
+
+
+
+
+
+## [v0.11.3] - 2026-06-08
+
+
+### Changed
+
+- bump version to v0.11.3 (`a41f6ca`)
+- fix test errors (`49b016c`)
+
 
 
 ### Fixed
@@ -21,12 +42,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - milkdownPreview defaults to off on app startup (`9bded60`)
 
 
-### Changed
 
-- preserve scroll position on file external-reload (`5f3bf8e`)
+### Added
+
+- resolve local images in DOCX export (`ca54a4a`)
+- milkdown WYSIWYG toolbar — list toggle, heading promote/demote, renumber-ol (`46f6197`)
+
+
+
+### Ci
+
+- update code coverage token config (`e4e0f83`)
+
+
+
+
+
 
 
 ## [v0.11.2] - 2026-05-11
+
+
+### Ci
+
+- update code coverage token config (`ae69079`)
+
+
+
+### Changed
+
+- bump version to v0.11.2 (`41c0f11`)
+- remove eslint-disable comment in SidebarRenderer (`a0a2a79`)
+- add ESLint and Prettier, upgrade test coverage to 80% (`ab05ac7`)
+
 
 
 ### Added
@@ -44,13 +92,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - suppress CodeMirror built-in Ctrl+F search panel in Milkdown (`a78745d`)
 - handle nested render() objects in PluginSidebarRenderer (`4465499`)
 - fix tab completion candidates and extract path utilities (`28253bf`)
-
-
-
-### Changed
-
-- remove eslint-disable comment in SidebarRenderer (`a0a2a79`)
-- add ESLint and Prettier, upgrade test coverage to 80% (`ab05ac7`)
 
 
 
