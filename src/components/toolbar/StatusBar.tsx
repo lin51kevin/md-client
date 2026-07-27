@@ -1,9 +1,23 @@
-import { useState, useEffect, memo } from 'react';
+import { useState, useEffect, useRef, memo } from 'react';
 import { History, X, Download, ZoomIn } from 'lucide-react';
 import { useI18n } from '../../i18n';
 import { formatDuration } from '../../lib/utils';
 import { useEditorStore } from '../../stores/editor-store';
 import { ZOOM_PRESETS } from '../../hooks/useZoom';
+import { getStatusBarItems, onStatusBarItemsChanged } from '../../plugins/plugin-statusbar-registry';
+
+/** Mounts plugin-contributed DOM elements into the status bar. */
+function PluginStatusBarSlot() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [items, setItems] = useState(getStatusBarItems);
+  useEffect(() => onStatusBarItemsChanged(() => setItems(getStatusBarItems())), []);
+  useEffect(() => {
+    const container = ref.current;
+    if (!container) return;
+    container.replaceChildren(...items);
+  }, [items]);
+  return <div ref={ref} className="flex items-center gap-1" />;
+}
 
 interface StatusBarProps {
   filePath: string | null;
@@ -122,6 +136,7 @@ export const StatusBar = memo(function StatusBar({ filePath, isDirty, line, col,
           )}
           {!wysiwygMode && <span className="tabular-nums">{t('status.lineCol', { line: displayLine, col: displayCol })}</span>}
           {languageName && <span className="ml-2 text-xs opacity-70">{languageName}</span>}
+          <PluginStatusBarSlot />
         </div>
       </div>
 

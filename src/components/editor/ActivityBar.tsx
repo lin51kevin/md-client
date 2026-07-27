@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, memo } from 'react';
-import { FolderTree, Search, List, GitBranch, Settings, Package, Link, Share2, Braces, Sparkles, Bot, MessageSquare, Terminal, type LucideIcon } from 'lucide-react';
+import { FolderTree, Search, List, GitBranch, GitCompare, Settings, Package, Link, Share2, Braces, Sparkles, Bot, MessageSquare, Terminal, type LucideIcon } from 'lucide-react';
 
 /** Map of icon name strings to Lucide icon components for plugin panels */
 const LUCIDE_ICON_MAP: Record<string, LucideIcon> = {
@@ -11,6 +11,7 @@ const LUCIDE_ICON_MAP: Record<string, LucideIcon> = {
   list: List,
   'folder-tree': FolderTree,
   'git-branch': GitBranch,
+  'git-compare': GitCompare,
   settings: Settings,
   sparkles: Sparkles,
   bot: Bot,

@@ -24,6 +24,7 @@ const OFFICIAL_PLUGIN_IDS = [
   'marklite-smart-autocomplete',
   'marklite-tag-system',
   'marklite-terminal',
+  'marklite-diff',
 ];
 
 interface ActivePluginEntry {

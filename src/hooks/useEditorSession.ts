@@ -5,6 +5,7 @@
  * and document metrics into a single cohesive hook.
  */
 import { useMemo } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import type { Tab } from '../types';
 import type { ViewMode } from '../types';
 import type { ThemeName } from '../lib/theme';
@@ -13,6 +14,7 @@ import { usePluginRuntime } from './usePluginRuntime';
 import { usePluginPanels } from './usePluginPanels';
 import { usePreviewRenderers } from './usePreviewRenderers';
 import { useDocMetrics } from './useDocMetrics';
+import { registerStatusBarItem, removeStatusBarItem } from '../plugins/plugin-statusbar-registry';
 
 export interface UseEditorSessionParams {
   activeTabId: string;
@@ -65,11 +67,13 @@ export function useEditorSession({
     openFileInTab: (path: string) => void openFileInTab(path),
     openNewUntitled: (content: string) => createNewTab(content),
     getOpenFilePaths: () => tabsRef.current.filter(t => t.filePath).map(t => t.filePath!),
+    readFileContent: (path: string) =>
+      invoke<string>('read_file_text', { path }).then((c) => c).catch(() => null),
     cmViewRef: editorCoreResult.cmViewRef,
     registerSidebarPanel: registerPluginPanel,
     unregisterSidebarPanel: unregisterPluginPanel,
-    addStatusBarItem: () => {},
-    removeStatusBarItem: () => {},
+    addStatusBarItem: (el: unknown) => registerStatusBarItem(el as HTMLElement),
+    removeStatusBarItem: (el: unknown) => removeStatusBarItem(el as HTMLElement),
     registerPreviewRenderer,
     unregisterPreviewRenderer,
   }), [getActiveTab, openFileInTab, createNewTab, editorCoreResult.cmViewRef, registerPluginPanel, unregisterPluginPanel, registerPreviewRenderer, unregisterPreviewRenderer]);

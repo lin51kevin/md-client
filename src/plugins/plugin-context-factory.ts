@@ -157,13 +157,17 @@ export function createPluginContext(deps: PluginContextDeps, pluginId?: string):
     files: {
       readFile: async (path: string): Promise<string | null> => {
         if (!deps.readFileContent) return null;
-        const absolute = path.startsWith('/') ? path : (() => {
+        // Absolute paths: POSIX (/…), Windows drive (C:\… or C:/…), UNC (\\…).
+        const isAbsolute = /^([a-zA-Z]:[\\/]|\\\\|\/)/.test(path);
+        const absolute = isAbsolute ? path : (() => {
           const tab = deps.getActiveTab?.();
           if (tab?.path) {
-            const dir = tab.path.substring(0, tab.path.lastIndexOf('/'));
-            return dir + '/' + path;
+            const idx = Math.max(tab.path.lastIndexOf('/'), tab.path.lastIndexOf('\\'));
+            const sep = tab.path.includes('\\') ? '\\' : '/';
+            const dir = idx >= 0 ? tab.path.substring(0, idx) : tab.path;
+            return dir + sep + path;
           }
-          return '/' + path;
+          return path;
         })();
         return deps.readFileContent(absolute);
       },

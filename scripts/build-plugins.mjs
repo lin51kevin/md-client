@@ -66,6 +66,8 @@ async function makeShim(key, moduleSpecifier) {
 const SHARED_MODULES = {
   'react': 'react',
   'react/jsx-runtime': 'react/jsx-runtime',
+  'react-dom': 'react-dom',
+  'react-dom/client': 'react-dom/client',
   'react-markdown': 'react-markdown',
   'remark-gfm': 'remark-gfm',
   'rehype-highlight': 'rehype-highlight',
@@ -301,6 +303,26 @@ function findEntryPoint(pluginDir) {
   return null;
 }
 
+/**
+ * Discover Web Worker entry points inside a plugin's src/ tree.
+ * Any file matching `*.worker.ts|tsx|js` is built as a standalone bundle so it
+ * can be loaded at runtime via `new Worker('/plugins/<id>/dist/<name>.js')`.
+ */
+function findWorkerEntries(pluginDir) {
+  const srcDir = path.join(pluginDir, 'src');
+  if (!fs.existsSync(srcDir)) return [];
+  const out = [];
+  const walk = (dir) => {
+    for (const d of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, d.name);
+      if (d.isDirectory()) walk(full);
+      else if (/\.worker\.(ts|tsx|js)$/.test(d.name)) out.push(full);
+    }
+  };
+  walk(srcDir);
+  return out;
+}
+
 async function main() {
   const args = process.argv.slice(2).filter(a => !a.startsWith('--'));
   const filter = args[0];
@@ -347,6 +369,30 @@ async function main() {
         fs.copyFileSync(manifestSrc, manifestDst);
       }
 
+      // Build any Web Worker entry points into standalone bundles.
+      const workerEntries = findWorkerEntries(pluginSrc);
+      const workerOutputs = [];
+      for (const wEntry of workerEntries) {
+        const outName = path.basename(wEntry).replace(/\.(ts|tsx|js)$/, '.js');
+        await build({
+          entryPoints: [wEntry],
+          bundle: true,
+          format: 'esm',
+          outfile: path.join(outDir, outName),
+          minify: true,
+          sourcemap: false,
+          target: ['es2022'],
+          jsx: 'automatic',
+          jsxImportSource: 'react',
+          plugins: [
+            rawImportPlugin(),
+            sharedGlobalsPlugin(shims),
+          ],
+          logLevel: 'warning',
+        });
+        workerOutputs.push(outName);
+      }
+
       // Copy to public/plugins/ for Vite dev server (skip in production builds)
       if (!RESOURCES_ONLY) {
         const publicDir = path.join(PUBLIC_PLUGINS, `marklite-${name}`);
@@ -354,6 +400,10 @@ async function main() {
         fs.mkdirSync(publicDistDir, { recursive: true });
         // Copy dist/index.js
         fs.copyFileSync(path.join(outDir, 'index.js'), path.join(publicDistDir, 'index.js'));
+        // Copy worker bundles
+        for (const outName of workerOutputs) {
+          fs.copyFileSync(path.join(outDir, outName), path.join(publicDistDir, outName));
+        }
         // Copy manifest.json
         if (fs.existsSync(manifestSrc)) {
           fs.copyFileSync(manifestSrc, path.join(publicDir, 'manifest.json'));

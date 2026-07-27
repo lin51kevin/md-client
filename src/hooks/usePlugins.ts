@@ -180,6 +180,15 @@ const DEFAULT_PLUGINS: PluginUIItem[] = [
     enabled: true,
     permissions: ['shell.execute', 'sidebar.panel', 'commands', 'storage'],
   },
+  {
+    id: 'marklite-diff',
+    name: 'Text Compare',
+    version: '1.0.0',
+    author: 'MarkLite Team',
+    description: '文本比较 — Beyond Compare 风格的双栏差异对比，支持文件与剪贴板来源、行内高亮、浮动工具栏导航',
+    enabled: false,
+    permissions: ['workspace', 'file.read', 'editor.read', 'sidebar.panel', 'statusbar.item', 'contextmenu.item', 'commands', 'ui.message', 'storage'],
+  },
 ];
 
 /** Migration map: old plugin IDs → new marklite-* IDs */
