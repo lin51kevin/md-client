@@ -1,6 +1,7 @@
 // Toolbar components
 export { Toolbar } from './Toolbar';
 export { ToolbarButton } from './ToolbarButton';
+export { ToolbarMenu } from './ToolbarMenu';
 export { CommandPalette } from './CommandPalette';
 export { QuickOpen } from './QuickOpen';
 export { TabBar } from './TabBar';

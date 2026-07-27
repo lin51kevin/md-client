@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { Toolbar } from '../../../components/toolbar/Toolbar';
 import type { ViewMode, FocusMode } from '../../../types';
 
@@ -231,7 +231,7 @@ describe('Toolbar — normal mode (wysiwygMode=false, default)', () => {
 
     expect(screen.getByTitle('粗体')).toBeInTheDocument();
     expect(screen.getByTitle('斜体')).toBeInTheDocument();
-    expect(screen.getByTitle('标题')).toBeInTheDocument();
+    expect(screen.getByTitle('行内代码')).toBeInTheDocument();
   });
 
   it('shows undo/redo buttons', () => {

@@ -52,6 +52,7 @@ export const DEFAULT_SHORTCUTS: ShortcutAction[] = [
   { id: 'format.blockquote', labelKey: 'settings.shortcuts.formatBlockquote', defaultKeys: 'Ctrl+Shift+Q', category: 'format' },
   { id: 'format.table', labelKey: 'settings.shortcuts.formatTable', defaultKeys: '', category: 'format' },
   { id: 'format.horizontalRule', labelKey: 'settings.shortcuts.formatHorizontalRule', defaultKeys: 'Ctrl+Shift+-', category: 'format' },
+  { id: 'format.formatDocument', labelKey: 'settings.shortcuts.formatDocument', defaultKeys: 'Shift+Alt+F', category: 'format' },
 
   // ── 视图 ──
   { id: 'editMode', labelKey: 'settings.shortcuts.editMode', defaultKeys: 'Ctrl+1', category: 'view' },

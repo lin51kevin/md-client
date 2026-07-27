@@ -1,12 +1,13 @@
 
 import { useRef, useState, useEffect, memo } from 'react';
-import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, SpellCheck, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, HelpCircle, FilePlus, FileText, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight, Table2, FileCode2, Minus, ListChecks, Sigma, Library, List, Brain, Undo2, Redo2, Bot, ArrowUpFromLine, PenLine, IndentDecrease, ListRestart, ChevronsUp, ChevronsDown } from 'lucide-react';
+import { PanelLeftClose, PanelRightClose, Columns2, Type, Monitor, Maximize, Minimize, SpellCheck, ImagePlus, Link2, Bold, Italic, Strikethrough, Code, Heading, Quote, ListOrdered, Link, Terminal, HelpCircle, FilePlus, FileText, FolderOpen as FolderOpenIcon, Save, SaveAll, ChevronLeft, ChevronRight, Table2, FileCode2, Minus, ListChecks, Sigma, Library, List, Brain, Undo2, Redo2, Bot, ArrowUpFromLine, PenLine, IndentDecrease, ListRestart, ChevronsUp, ChevronsDown, AlignLeft, Pilcrow, Plus, MoreHorizontal } from 'lucide-react';
 import { ViewMode, FocusMode } from '../../types';
 import { isVimAvailable } from '../../lib/cm/vim-bridge';
 import { useBridgeVersion } from '../../lib/cm/bridge-signal';
 
 import { FileMenuDropdown } from '../editor/FileMenuDropdown';
 import { ToolbarButton } from './ToolbarButton';
+import { ToolbarMenu, type ToolbarMenuItem } from './ToolbarMenu';
 import { TableSizePicker } from '../modal/TableSizePicker';
 import { useI18n } from '../../i18n';
 
@@ -106,6 +107,21 @@ export const Toolbar = memo(function Toolbar({
   const [showExportMenu, setShowExportMenu] = useState(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
 
+  // Responsive overflow: collapse secondary toggles into a "More" menu when the
+  // toolbar becomes too narrow to show every button comfortably.
+  const [compact, setCompact] = useState(false);
+  useEffect(() => {
+    const el = toolbarRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setCompact(entry.contentRect.width < 1080);
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   // Close export menu on click outside
   useEffect(() => {
     if (!showExportMenu) return;
@@ -141,6 +157,32 @@ export const Toolbar = memo(function Toolbar({
   const nextTabId =
     activeIdx >= 0 && activeIdx < tabList.length - 1 ? tabList[activeIdx + 1].id : null;
 
+  // ── Grouped formatting menus (declutter the source-mode toolbar) ──────────
+  const paragraphMenuItems: ToolbarMenuItem[] = [
+    { id: 'heading', label: t('toolbar.heading'), icon: <Heading size={14} strokeWidth={2} />, onClick: () => onFormatAction?.('heading') },
+    { id: 'blockquote', label: t('toolbar.blockquote'), icon: <Quote size={14} strokeWidth={2} />, onClick: () => onFormatAction?.('blockquote') },
+    { id: 'strikethrough', label: t('toolbar.strikethrough'), icon: <Strikethrough size={14} strokeWidth={2} />, onClick: () => onFormatAction?.('strikethrough') },
+    { id: 'task', label: t('toolbar.task'), icon: <ListChecks size={14} strokeWidth={2} />, onClick: () => onFormatAction?.('task') },
+    { id: 'renumber-ol', label: t('toolbar.renumberOl'), icon: <ListRestart size={14} strokeWidth={2} />, onClick: () => onFormatAction?.('renumber-ol') },
+  ];
+  const insertMenuItems: ToolbarMenuItem[] = [
+    { id: 'image-local', label: t('toolbar.imageLocal'), icon: <ImagePlus size={14} strokeWidth={2} />, onClick: () => onImageLocal?.() },
+    { id: 'image-link', label: t('toolbar.imageLink'), icon: <Link2 size={14} strokeWidth={2} />, onClick: () => onFormatAction?.('image-link') },
+    { id: 'codeblock', label: t('toolbar.codeblock'), icon: <FileCode2 size={14} strokeWidth={2} />, onClick: () => onFormatAction?.('codeblock') },
+    { id: 'hr', label: t('toolbar.hr'), icon: <Minus size={14} strokeWidth={2} />, onClick: () => onFormatAction?.('hr') },
+    { id: 'math', label: t('toolbar.math'), icon: <Sigma size={14} strokeWidth={2} />, onClick: () => onFormatAction?.('math') },
+    { id: 'snippet', label: t('toolbar.insertSnippet'), icon: <Library size={14} strokeWidth={1.8} />, onClick: () => onInsertSnippet?.() },
+  ];
+
+  // ── Secondary toggles collapsed into a "More" menu when the toolbar is narrow
+  const moreMenuItems: ToolbarMenuItem[] = [
+    { id: 'spellCheck', label: t('toolbar.spellCheck'), icon: <SpellCheck size={14} strokeWidth={1.8} />, active: !!spellCheck, onClick: () => onToggleSpellCheck?.() },
+    { id: 'vimMode', label: t('toolbar.vimMode'), icon: <Terminal size={14} strokeWidth={1.8} />, active: !!vimMode, disabled: !isVimAvailable(), onClick: () => onToggleVimMode?.() },
+    { id: 'typewriter', label: t('toolbar.typewriter'), icon: <Type size={14} strokeWidth={1.8} />, active: focusMode === 'typewriter', onClick: () => onFocusModeChange?.('typewriter') },
+    { id: 'focus', label: t('toolbar.focus'), icon: <Monitor size={14} strokeWidth={1.8} />, active: focusMode === 'focus', onClick: () => onFocusModeChange?.('focus') },
+    { id: 'fullscreen', label: t('toolbar.fullscreen'), icon: <Maximize size={14} strokeWidth={1.8} />, active: focusMode === 'fullscreen', onClick: () => onFocusModeChange?.(focusMode === 'fullscreen' ? 'normal' : 'fullscreen') },
+  ];
+
   return (
     <div
       ref={toolbarRef}
@@ -148,11 +190,11 @@ export const Toolbar = memo(function Toolbar({
       aria-label={t('toolbar.label')}
       tabIndex={0}
       onKeyDown={handleKeyDown}
-      className="relative shrink-0 flex items-center justify-between px-2 py-1"
+      className="relative shrink-0 flex items-center gap-1 px-2 py-1"
       style={{ outline: 'none', backgroundColor: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-color)' }}
     >
       {/* ── Left: file menu + file ops + formatting ── */}
-      <div className="flex items-center">
+      <div className="flex items-center shrink-0">
         <FileMenuDropdown
           onNewTab={onNewTab}
           onOpenFile={onOpenFile}
@@ -172,7 +214,8 @@ export const Toolbar = memo(function Toolbar({
           onCloseAll={onCloseAll}
         />
 
-        {/* 文件操作 */}
+        {/* 文件操作 — 窄屏时收起（可从左侧 ☰ 菜单访问） */}
+        {!compact && (<>
         <ToolbarButton onClick={() => onNewTab()} title={t('file.new')} className="px-2.5">
           <FilePlus size={14} strokeWidth={1.8} />
         </ToolbarButton>
@@ -188,6 +231,7 @@ export const Toolbar = memo(function Toolbar({
         <ToolbarButton onClick={onSaveAsFile} title={t('file.saveAs')} className="px-2.5">
           <SaveAll size={14} strokeWidth={1.8} />
         </ToolbarButton>
+        </>)}
 
         <div className="w-px h-5 mx-1 shrink-0" style={{ backgroundColor: 'var(--border-color)' }} />
 
@@ -199,28 +243,28 @@ export const Toolbar = memo(function Toolbar({
           <Redo2 size={14} strokeWidth={2} />
         </ToolbarButton>
 
+        {/* 格式化文档 (代码文件 + Markdown 源码模式) */}
+        {!wysiwygMode && (
+          <ToolbarButton onClick={() => onFormatAction?.('format-document')} title={t('toolbar.formatDocument')}>
+            <AlignLeft size={14} strokeWidth={2} />
+          </ToolbarButton>
+        )}
+
         {!wysiwygMode && !isCodeFile && (<>
-          {/* 格式化 */}
+          {DIVIDER}
+
+          {/* 常用格式（内联） */}
           <ToolbarButton onClick={() => onFormatAction?.('bold')} title={t('toolbar.bold')}>
             <Bold size={14} strokeWidth={2} />
           </ToolbarButton>
           <ToolbarButton onClick={() => onFormatAction?.('italic')} title={t('toolbar.italic')}>
             <Italic size={14} strokeWidth={2} />
           </ToolbarButton>
-          <ToolbarButton onClick={() => onFormatAction?.('strikethrough')} title={t('toolbar.strikethrough')}>
-            <Strikethrough size={14} strokeWidth={2} />
-          </ToolbarButton>
           <ToolbarButton onClick={() => onFormatAction?.('code')} title={t('toolbar.code')}>
             <Code size={14} strokeWidth={2} />
           </ToolbarButton>
-
-          {DIVIDER}
-
-          <ToolbarButton onClick={() => onFormatAction?.('heading')} title={t('toolbar.heading')}>
-            <Heading size={14} strokeWidth={2} />
-          </ToolbarButton>
-          <ToolbarButton onClick={() => onFormatAction?.('blockquote')} title={t('toolbar.blockquote')}>
-            <Quote size={14} strokeWidth={2} />
+          <ToolbarButton onClick={() => onFormatAction?.('link')} title={t('toolbar.link')}>
+            <Link size={14} strokeWidth={2} />
           </ToolbarButton>
           <ToolbarButton onClick={() => onFormatAction?.('ul')} title={t('toolbar.ul')}>
             <List size={14} strokeWidth={2} />
@@ -229,21 +273,7 @@ export const Toolbar = memo(function Toolbar({
             <ListOrdered size={14} strokeWidth={2} />
           </ToolbarButton>
 
-          {DIVIDER}
-
-          <ToolbarButton onClick={() => onFormatAction?.('link')} title={t('toolbar.link')}>
-            <Link size={14} strokeWidth={2} />
-          </ToolbarButton>
-          <ToolbarButton onClick={() => onImageLocal?.()} title={t('toolbar.imageLocal')}>
-            <ImagePlus size={14} strokeWidth={2} />
-          </ToolbarButton>
-          <ToolbarButton onClick={() => onFormatAction?.('image-link')} title={t('toolbar.imageLink')}>
-            <Link2 size={14} strokeWidth={2} />
-          </ToolbarButton>
-
-          {DIVIDER}
-
-          {/* 插入表格 */}
+          {/* 插入表格 — 保留悬停网格选择器 */}
           <div className="relative">
             <ToolbarButton onClick={() => setShowTablePicker(v => !v)} title={t('toolbar.table')}>
               <Table2 size={14} strokeWidth={2} />
@@ -255,28 +285,21 @@ export const Toolbar = memo(function Toolbar({
               />
             )}
           </div>
-          <ToolbarButton onClick={() => onFormatAction?.('codeblock')} title={t('toolbar.codeblock')}>
-            <FileCode2 size={14} strokeWidth={2} />
-          </ToolbarButton>
-          <ToolbarButton onClick={() => onFormatAction?.('hr')} title={t('toolbar.hr')}>
-            <Minus size={14} strokeWidth={2} />
-          </ToolbarButton>
-          <ToolbarButton onClick={() => onFormatAction?.('task')} title={t('toolbar.task')}>
-            <ListChecks size={14} strokeWidth={2} />
-          </ToolbarButton>
-          <ToolbarButton onClick={() => onFormatAction?.('math')} title={t('toolbar.math')}>
-            <Sigma size={14} strokeWidth={2} />
-          </ToolbarButton>
-          <ToolbarButton onClick={onInsertSnippet} title={t('toolbar.insertSnippet')}>
-            <Library size={14} strokeWidth={1.8} />
-          </ToolbarButton>
 
           {DIVIDER}
 
-          {/* 重新编号按钮 — source mode */}
-          <ToolbarButton onClick={() => onFormatAction?.('renumber-ol')} title={t('toolbar.renumberOl')}>
-            <ListRestart size={14} strokeWidth={2} />
-          </ToolbarButton>
+          {/* 段落格式 — 下拉收纳 */}
+          <ToolbarMenu
+            icon={<Pilcrow size={14} strokeWidth={2} />}
+            title={t('toolbar.paragraphGroup')}
+            items={paragraphMenuItems}
+          />
+          {/* 插入内容 — 下拉收纳 */}
+          <ToolbarMenu
+            icon={<Plus size={14} strokeWidth={2} />}
+            title={t('toolbar.insertGroup')}
+            items={insertMenuItems}
+          />
         </>)}
 
         {/* ── Milkdown (WYSIWYG) 模式下的列表 / 标题按钮 ────────────────── */}
@@ -311,52 +334,54 @@ export const Toolbar = memo(function Toolbar({
         </>)}
       </div>
 
-      {/* ── Center: tab navigation (VS Code title-bar style) ── */}
-      {tabList.length > 1 && (
-        <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-0.5 pointer-events-none select-none">
-          <button
-            disabled={!prevTabId}
-            onClick={() => prevTabId && onActivateTab?.(prevTabId)}
-            title={t('toolbar.prevTab')}
-            className="pointer-events-auto flex items-center justify-center w-6 h-6 rounded disabled:opacity-25 disabled:cursor-default"
-            style={{ color: 'var(--text-secondary)' }}
-            onMouseEnter={(e) => {
-              if (prevTabId) {
-                e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
-                e.currentTarget.style.color = 'var(--text-primary)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '';
-              e.currentTarget.style.color = 'var(--text-secondary)';
-            }}
-          >
-            <ChevronLeft size={16} strokeWidth={1.8} />
-          </button>
-          <button
-            disabled={!nextTabId}
-            onClick={() => nextTabId && onActivateTab?.(nextTabId)}
-            title={t('toolbar.nextTab')}
-            className="pointer-events-auto flex items-center justify-center w-6 h-6 rounded disabled:opacity-25 disabled:cursor-default"
-            style={{ color: 'var(--text-secondary)' }}
-            onMouseEnter={(e) => {
-              if (nextTabId) {
-                e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
-                e.currentTarget.style.color = 'var(--text-primary)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '';
-              e.currentTarget.style.color = 'var(--text-secondary)';
-            }}
-          >
-            <ChevronRight size={16} strokeWidth={1.8} />
-          </button>
-        </div>
-      )}
+      {/* ── Center: flexible spacer + tab navigation (VS Code title-bar style) ── */}
+      <div className="flex-1 flex items-center justify-center min-w-0">
+        {tabList.length > 1 && (
+          <div className="flex items-center gap-0.5 select-none">
+            <button
+              disabled={!prevTabId}
+              onClick={() => prevTabId && onActivateTab?.(prevTabId)}
+              title={t('toolbar.prevTab')}
+              className="flex items-center justify-center w-6 h-6 rounded disabled:opacity-25 disabled:cursor-default"
+              style={{ color: 'var(--text-secondary)' }}
+              onMouseEnter={(e) => {
+                if (prevTabId) {
+                  e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
+                  e.currentTarget.style.color = 'var(--text-primary)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '';
+                e.currentTarget.style.color = 'var(--text-secondary)';
+              }}
+            >
+              <ChevronLeft size={16} strokeWidth={1.8} />
+            </button>
+            <button
+              disabled={!nextTabId}
+              onClick={() => nextTabId && onActivateTab?.(nextTabId)}
+              title={t('toolbar.nextTab')}
+              className="flex items-center justify-center w-6 h-6 rounded disabled:opacity-25 disabled:cursor-default"
+              style={{ color: 'var(--text-secondary)' }}
+              onMouseEnter={(e) => {
+                if (nextTabId) {
+                  e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
+                  e.currentTarget.style.color = 'var(--text-primary)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '';
+                e.currentTarget.style.color = 'var(--text-secondary)';
+              }}
+            >
+              <ChevronRight size={16} strokeWidth={1.8} />
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* ── Right: toggles + view mode + settings ── */}
-      <div className="flex items-center gap-0.5">
+      <div className="flex items-center gap-0.5 shrink-0">
         {/* AI Copilot 聊天面板切换 — 仅插件启用时展示 */}
         {aiCopilotEnabled && (
           <ToolbarButton
@@ -371,6 +396,14 @@ export const Toolbar = memo(function Toolbar({
 
         {/* Code files always show utility buttons even if wysiwygMode is on (code files ignore wysiwyg) */}
         {(!wysiwygMode || isCodeFile) && (<>
+          {compact ? (
+            <ToolbarMenu
+              icon={<MoreHorizontal size={14} strokeWidth={1.8} />}
+              title={t('toolbar.moreGroup')}
+              items={moreMenuItems}
+              align="right"
+            />
+          ) : (<>
           {/* F013 — 拼写检查 */}
           <ToolbarButton
             variant="toggle"
@@ -427,6 +460,7 @@ export const Toolbar = memo(function Toolbar({
               <Maximize size={14} strokeWidth={1.8} />
             )}
           </ToolbarButton>
+          </>)}
 
           {!isCodeFile && (<>
             {DIVIDER}

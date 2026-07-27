@@ -16,6 +16,8 @@ import { getImageSaveDir, generateImageFileName } from '../lib/utils';
 import { addPendingImage } from '../lib/file';
 import { milkdownBridge } from '../lib/milkdown/editor-bridge';
 import { renumberOrderedListsInMarkdown } from '../lib/editor/renumber-lists';
+import { useToast } from '../components/toast/ToastContext';
+import { getT } from '../i18n';
 
 import type { InputDialogConfig } from '../components/modal/InputDialog';
 
@@ -31,6 +33,7 @@ interface UseFormatActionsParams {
 }
 
 export function useFormatActions({ cmViewRef, getActiveTab, promptUser, isTauri = false, milkdownPreview = false }: UseFormatActionsParams) {
+  const { show } = useToast();
   const handleFormatAction = useCallback((action: string) => {
     // ── Milkdown (WYSIWYG) routing ─────────────────────────────────────────
     if (milkdownPreview) {
@@ -356,6 +359,42 @@ export function useFormatActions({ cmViewRef, getActiveTab, promptUser, isTauri 
         }
         break;
       }
+      case 'format-document': {
+        const languageId = getActiveTab().languageId ?? 'markdown';
+        (async () => {
+          const t = getT();
+          try {
+            const { formatCode, canFormatLanguage } = await import('../lib/editor/format-document');
+            if (!canFormatLanguage(languageId)) {
+              show(t('format.unsupported'), 'warning');
+              return;
+            }
+            const current = view.state.doc.toString();
+            const outcome = await formatCode(current, languageId, {
+              cursorOffset: view.state.selection.main.head,
+            });
+            if ('unsupported' in outcome) {
+              show(t('format.unsupported'), 'warning');
+              return;
+            }
+            if (outcome.formatted === current) {
+              show(t('format.noChange'), 'info');
+              view.focus();
+              return;
+            }
+            const anchor = Math.max(0, Math.min(outcome.cursorOffset, outcome.formatted.length));
+            view.dispatch({
+              changes: { from: 0, to: current.length, insert: outcome.formatted },
+              selection: { anchor },
+            });
+            view.focus();
+            show(t('format.success'), 'success');
+          } catch {
+            show(t('format.error'), 'error');
+          }
+        })();
+        break;
+      }
       default: {
         // renumber-ol: renumber ALL ordered lists in the document
         if (action === 'renumber-ol') {
@@ -394,7 +433,7 @@ export function useFormatActions({ cmViewRef, getActiveTab, promptUser, isTauri 
       }
     }
     view.focus();
-  }, [getActiveTab, milkdownPreview]);
+  }, [getActiveTab, milkdownPreview, show]);
 
   return { handleFormatAction };
 }

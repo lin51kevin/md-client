@@ -1669,6 +1669,13 @@
   resolved "https://registry.npmmirror.com/@ocavue/utils/-/utils-1.6.0.tgz#602780f68e87cf8e9465eacb457730e68f73523b"
   integrity sha512-8W3q1hxx9qFdrYgPtbElllG/tqYkO/dMhlRUiqasO0SuDFTj78azSQjhIrBTFWxlBPPsSZN6zXYHmb3RwN2Jtg==
 
+"@prettier/plugin-xml@^3.4.1":
+  version "3.4.2"
+  resolved "https://registry.npmmirror.com/@prettier/plugin-xml/-/plugin-xml-3.4.2.tgz#ad0b46a6d73ae16cefb744c98c0ccc604c51f98a"
+  integrity sha512-/UyNlHfkuLXG6Ed85KB0WBF283xn2yavR+UtRibBRUcvEJId2DSLdGXwJ/cDa1X++SWDPzq3+GSFniHjkNy7yg==
+  dependencies:
+    "@xml-tools/parser" "^1.0.11"
+
 "@replit/codemirror-minimap@0.5.2":
   version "0.5.2"
   resolved "https://registry.npmmirror.com/@replit/codemirror-minimap/-/codemirror-minimap-0.5.2.tgz#93c319a0ba84cd533d0ee42b4b00e4941d45a06c"
@@ -2822,6 +2829,13 @@
   resolved "https://registry.npmmirror.com/@vue/shared/-/shared-3.5.33.tgz#b41070039e91d2921edb4c38cbcc80f498a24f3a"
   integrity sha512-5vR2QIlmaLG77Ygd4pMP6+SGQ5yox9VhtnbDWTy9DzMzdmeLxZ1QqxrywEZ9sa1AVubfIJyaCG3ytyWU81ufcQ==
 
+"@xml-tools/parser@^1.0.11":
+  version "1.0.11"
+  resolved "https://registry.npmmirror.com/@xml-tools/parser/-/parser-1.0.11.tgz#a118a14099ea5c3c537e4781fad2fc195b57f8ff"
+  integrity sha512-aKqQ077XnR+oQtHJlrAflaZaL7qZsulWc/i/ZEooar5JiWj1eLt0+Wg28cpa+XLney107wXqneC+oG1IZvxkTA==
+  dependencies:
+    chevrotain "7.1.1"
+
 "@xterm/addon-fit@^0.10.0":
   version "0.10.0"
   resolved "https://registry.npmmirror.com/@xterm/addon-fit/-/addon-fit-0.10.0.tgz#bebf87fadd74e3af30fdcdeef47030e2592c6f55"
@@ -3165,6 +3179,13 @@ chevrotain-allstar@~0.4.3:
   integrity sha512-2X4mkroolSMKqW+H22pyPMUVDqYZzPhephTmg/NODKb1IGYPHfxfhcW0EjS7wcPJNbze2i4vBWT7zT5FKF2lrQ==
   dependencies:
     lodash-es "^4.18.1"
+
+chevrotain@7.1.1:
+  version "7.1.1"
+  resolved "https://registry.npmmirror.com/chevrotain/-/chevrotain-7.1.1.tgz#5122814eafd1585a9601f9180a7be9c42d5699c6"
+  integrity sha512-wy3mC1x4ye+O+QkEinVJkPf5u2vsrDIYW9G7ZuwFl6v/Yu0LwUuT2POsb+NUWApebyxfkQq6+yDfRExbnI5rcw==
+  dependencies:
+    regexp-to-ast "0.5.0"
 
 chevrotain@~12.0.0:
   version "12.0.0"
@@ -6924,6 +6945,11 @@ reflect.getprototypeof@^1.0.6, reflect.getprototypeof@^1.0.9:
     get-intrinsic "^1.2.7"
     get-proto "^1.0.1"
     which-builtin-type "^1.2.1"
+
+regexp-to-ast@0.5.0:
+  version "0.5.0"
+  resolved "https://registry.npmmirror.com/regexp-to-ast/-/regexp-to-ast-0.5.0.tgz#56c73856bee5e1fef7f73a00f1473452ab712a24"
+  integrity sha512-tlbJqcMHnPKI9zSrystikWKwHkBqu2a/Sgw01h3zFjvYrMxEDYHzzoMZnUrbIfpTFEsoRnnviOXNCzFiSc54Qw==
 
 regexp.prototype.flags@^1.5.4:
   version "1.5.4"

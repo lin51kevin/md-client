@@ -74,6 +74,7 @@ export function createCommandRegistry(deps: CommandRegistryDeps): Command[] {
     { id: 'format.blockquote', label: '引用', labelEn: 'Blockquote', shortcut: 'Ctrl+Shift+Q', category: 'format', action: () => handleFormatAction('blockquote') },
     { id: 'format.table', label: '插入表格', labelEn: 'Insert Table', shortcut: '', category: 'format', action: () => handleFormatAction('table') },
     { id: 'format.horizontalRule', label: '分割线', labelEn: 'Horizontal Rule', shortcut: 'Ctrl+Shift+-', category: 'format', action: () => handleFormatAction('hr') },
+    { id: 'format.formatDocument', label: '格式化文档', labelEn: 'Format Document', shortcut: 'Shift+Alt+F', category: 'format', action: () => handleFormatAction('format-document') },
 
     // ── 视图 ──
     { id: 'view.editOnly', label: '仅编辑器', labelEn: 'Editor Only', shortcut: 'Ctrl+1', category: 'view', action: () => setViewMode('edit') },

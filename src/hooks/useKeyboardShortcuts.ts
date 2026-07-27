@@ -157,6 +157,7 @@ export function useKeyboardShortcuts(params: ShortcutsParams) {
           case 'format.blockquote': handleFormatAction?.('blockquote'); break;
           case 'format.table': handleFormatAction?.('table'); break;
           case 'format.horizontalRule': handleFormatAction?.('hr'); break;
+          case 'format.formatDocument': handleFormatAction?.('format-document'); break;
 
           // ── 视图 ──
           case 'editMode': setViewMode('edit'); break;

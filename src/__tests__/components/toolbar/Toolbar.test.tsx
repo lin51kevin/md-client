@@ -57,6 +57,10 @@ vi.mock('../../../i18n', () => ({
         'toolbar.label': '工具栏',
         'toolbar.insertSnippet': '插入片段',
         'toolbar.export': '导出',
+        'toolbar.paragraphGroup': '段落格式',
+        'toolbar.insertGroup': '插入内容',
+        'toolbar.moreGroup': '更多',
+        'toolbar.renumberOl': '重新编号',
       };
       return map[key] ?? key;
     },
@@ -168,29 +172,18 @@ describe('Toolbar', () => {
     expect(onFormatAction).toHaveBeenCalledWith('bold');
   });
 
-  it('calls correct onFormatAction for all inline format buttons', () => {
+  it('calls correct onFormatAction for inline format buttons', () => {
     const onFormatAction = vi.fn();
     render(<Toolbar {...defaultProps} onFormatAction={onFormatAction} />);
 
     screen.getByTitle('斜体').click();
     expect(onFormatAction).toHaveBeenLastCalledWith('italic');
 
-    screen.getByTitle('删除线').click();
-    expect(onFormatAction).toHaveBeenLastCalledWith('strikethrough');
-
     screen.getByTitle('行内代码').click();
     expect(onFormatAction).toHaveBeenLastCalledWith('code');
-  });
 
-  it('calls correct onFormatAction for block element buttons', () => {
-    const onFormatAction = vi.fn();
-    render(<Toolbar {...defaultProps} onFormatAction={onFormatAction} />);
-
-    screen.getByTitle('标题').click();
-    expect(onFormatAction).toHaveBeenLastCalledWith('heading');
-
-    screen.getByTitle('引用').click();
-    expect(onFormatAction).toHaveBeenLastCalledWith('blockquote');
+    screen.getByTitle('链接').click();
+    expect(onFormatAction).toHaveBeenLastCalledWith('link');
 
     screen.getByTitle('无序列表').click();
     expect(onFormatAction).toHaveBeenLastCalledWith('ul');
@@ -199,38 +192,57 @@ describe('Toolbar', () => {
     expect(onFormatAction).toHaveBeenLastCalledWith('ol');
   });
 
-  it('calls correct onFormatAction for link/image buttons', () => {
+  it('calls correct onFormatAction for paragraph menu items', () => {
     const onFormatAction = vi.fn();
     render(<Toolbar {...defaultProps} onFormatAction={onFormatAction} />);
 
-    screen.getByTitle('链接').click();
-    expect(onFormatAction).toHaveBeenLastCalledWith('link');
+    const openParagraph = () => fireEvent.click(screen.getByTitle('段落格式'));
 
-    screen.getByTitle('插入图片链接').click();
-    expect(onFormatAction).toHaveBeenLastCalledWith('image-link');
+    openParagraph();
+    fireEvent.click(screen.getByText('标题'));
+    expect(onFormatAction).toHaveBeenLastCalledWith('heading');
+
+    openParagraph();
+    fireEvent.click(screen.getByText('引用'));
+    expect(onFormatAction).toHaveBeenLastCalledWith('blockquote');
+
+    openParagraph();
+    fireEvent.click(screen.getByText('删除线'));
+    expect(onFormatAction).toHaveBeenLastCalledWith('strikethrough');
+
+    openParagraph();
+    fireEvent.click(screen.getByText('任务列表'));
+    expect(onFormatAction).toHaveBeenLastCalledWith('task');
   });
 
-  it('calls correct onFormatAction for extra buttons (codeblock, hr, task, math)', () => {
+  it('calls correct onFormatAction for insert menu items', () => {
     const onFormatAction = vi.fn();
     render(<Toolbar {...defaultProps} onFormatAction={onFormatAction} />);
 
-    screen.getByTitle('代码块').click();
+    const openInsert = () => fireEvent.click(screen.getByTitle('插入内容'));
+
+    openInsert();
+    fireEvent.click(screen.getByText('插入图片链接'));
+    expect(onFormatAction).toHaveBeenLastCalledWith('image-link');
+
+    openInsert();
+    fireEvent.click(screen.getByText('代码块'));
     expect(onFormatAction).toHaveBeenLastCalledWith('codeblock');
 
-    screen.getByTitle('分割线').click();
+    openInsert();
+    fireEvent.click(screen.getByText('分割线'));
     expect(onFormatAction).toHaveBeenLastCalledWith('hr');
 
-    screen.getByTitle('任务列表').click();
-    expect(onFormatAction).toHaveBeenLastCalledWith('task');
-
-    screen.getByTitle('数学公式').click();
+    openInsert();
+    fireEvent.click(screen.getByText('数学公式'));
     expect(onFormatAction).toHaveBeenLastCalledWith('math');
   });
 
-  it('calls onImageLocal when image local button is clicked', () => {
+  it('calls onImageLocal when the image local menu item is clicked', () => {
     const onImageLocal = vi.fn();
     render(<Toolbar {...defaultProps} onImageLocal={onImageLocal} />);
-    screen.getByTitle('插入本地图片').click();
+    fireEvent.click(screen.getByTitle('插入内容'));
+    fireEvent.click(screen.getByText('插入本地图片'));
     expect(onImageLocal).toHaveBeenCalledTimes(1);
   });
 
@@ -462,32 +474,27 @@ describe('Toolbar', () => {
     });
   });
 
-  describe('Insert Snippet Button', () => {
-    it('renders the insert snippet button with correct i18n title', () => {
+  describe('Insert Snippet (Insert menu)', () => {
+    const openInsert = () => fireEvent.click(screen.getByTitle('插入内容'));
+
+    it('renders the insert snippet item with correct i18n label', () => {
       render(<Toolbar {...defaultProps} />);
-      expect(screen.getByTitle('插入片段')).toBeInTheDocument();
+      openInsert();
+      expect(screen.getByText('插入片段')).toBeInTheDocument();
     });
 
-    it('calls onInsertSnippet when snippet button is clicked', () => {
+    it('calls onInsertSnippet when snippet item is clicked', () => {
       const onInsertSnippet = vi.fn();
       render(<Toolbar {...defaultProps} onInsertSnippet={onInsertSnippet} />);
-      screen.getByTitle('插入片段').click();
+      openInsert();
+      fireEvent.click(screen.getByText('插入片段'));
       expect(onInsertSnippet).toHaveBeenCalledTimes(1);
     });
 
     it('does not throw when onInsertSnippet is not provided', () => {
       render(<Toolbar {...defaultProps} />);
-      expect(() => screen.getByTitle('插入片段').click()).not.toThrow();
-    });
-
-    it('snippet button appears directly after the math (Sigma) button', () => {
-      render(<Toolbar {...defaultProps} onInsertSnippet={vi.fn()} />);
-      const mathBtn = screen.getByTitle('数学公式');
-      const snippetBtn = screen.getByTitle('插入片段');
-      const allButtons = screen.getAllByRole('button');
-      const mathIdx = allButtons.indexOf(mathBtn);
-      const snippetIdx = allButtons.indexOf(snippetBtn);
-      expect(snippetIdx).toBe(mathIdx + 1);
+      openInsert();
+      expect(() => fireEvent.click(screen.getByText('插入片段'))).not.toThrow();
     });
   });
 });
